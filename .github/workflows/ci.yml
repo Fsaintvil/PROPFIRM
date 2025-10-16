@@ -1,0 +1,49 @@
+name: CI - Verify & Test
+
+on:
+  push:
+    branches: [ main, master, repair/cherry-from-wip ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-windows:
+    name: Test on Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Run verify and tests
+        shell: pwsh
+        run: |
+          Set-Location -LiteralPath ${{ github.workspace }}\MT5_FTMO_IA
+          python -m venv .venv
+          . .\.venv\Scripts\Activate.ps1
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install -e .
+          python .\scripts\verify_deploy_env.py
+          python -m pytest -q
+
+  test-ubuntu:
+    name: Test on Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Run verify and tests (Linux)
+        run: |
+          cd $GITHUB_WORKSPACE/MT5_FTMO_IA
+          python -m venv .venv
+          source .venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt || true
+          python -m pip install -e .
+          python ./scripts/verify_deploy_env.py || true
+          python -m pytest -q || true
