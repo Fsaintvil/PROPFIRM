@@ -1,0 +1,20 @@
+{
+  "instrument": "BTCUSD_H1",
+  "technical_indicators": {
+    "SMA": 0.0,
+    "EMA": 0.0,
+    "RSI": 50.0,
+    "MACD": 0.0,
+    "VWAP": 0.0,
+    "ATR": 0.0
+  },
+  "fundamental_indicators": {
+    "NFP": 0,
+    "CPI": 0,
+    "GDP": 0,
+    "PMI": 0,
+    "CB_rate": 0,
+    "Inflation": 0,
+    "Sentiment": 0
+  }
+}
