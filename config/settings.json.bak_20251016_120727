@@ -1,0 +1,19 @@
+{
+  "mode": "AUTO",
+  "symbols": [
+    "BTCUSD",
+    "XAUUSD",
+    "EURUSD"
+  ],
+  "refresh_seconds": 930,
+  "max_trades_per_day": 20,
+  "intraday": {
+    "require_mtf_agreement": true,
+    "min_rr": 1.5,
+    "fee_pct": 0.0001,
+    "slippage_pct": 0.0002,
+    "fee_per_lot_usd": 2.5,
+    "slippage_points": 2,
+    "dry_run": true
+  }
+}
