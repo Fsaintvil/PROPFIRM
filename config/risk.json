@@ -1,0 +1,7 @@
+{
+  "account_size": 100000,
+  "risk_per_trade": 0.1,
+  "max_lot": 0.1,
+  "max_daily_drawdown": 4.5,
+  "max_total_drawdown": 10
+}
