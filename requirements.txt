@@ -1,0 +1,48 @@
+# Requirements essentiels pour le projet PROPFIRM
+# Version optimisée et nettoyée
+
+# Trading et MT5
+MetaTrader5>=5.0.0; platform_system=="Windows"
+pandas>=1.5.0,<2.0.0
+numpy>=1.20.0,<2.0.0
+
+# Machine Learning Core (versions compatibles)
+scikit-learn>=1.2.0,<1.4.0
+lightgbm>=3.3.0,<4.0.0
+xgboost>=1.6.0,<2.0.0
+
+# IA Avancée (détection dans le code)
+hmmlearn>=0.2.8  # Pour MarketRegimeDetector
+tensorflow>=2.10.0,<3.0.0  # Pour DQN agent
+scikit-optimize>=0.9.0  # Pour optimisation bayésienne
+
+# Analyse technique
+ta>=0.10.0
+# TA-Lib>=0.4.0  # Optionnel - installation complexe
+
+# Visualisation (optionnelle mais utilisée)
+matplotlib>=3.5.0,<4.0.0
+seaborn>=0.11.0,<1.0.0
+plotly>=5.0.0  # Utilisé dans certains modules
+
+# APIs et notifications (essentielles)
+requests>=2.28.0,<3.0.0
+python-telegram-bot>=20.0.0  # Notifications
+
+# Utilitaires essentiels
+schedule>=1.2.0
+python-dotenv>=0.19.0
+loguru>=0.6.0
+
+# Développement et tests
+pytest>=7.0.0
+black>=22.0.0
+flake8>=5.0.0
+
+# Optionnels mais détectés dans le code:
+yfinance>=0.1.87  # Données de marché
+slack-sdk>=3.19.0  # Notifications Slack
+catboost>=1.0.0  # ML alternatif
+torch>=1.13.0  # Deep Learning
+backtrader>=1.9.0  # Backtesting
+ccxt>=2.0.0  # Crypto exchanges

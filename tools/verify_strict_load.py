@@ -20,30 +20,31 @@ MODELS_DIR = ROOT / "MT5_FTMO_IA" / "models"
 def check_one(p: Path):
     print("--", p)
     with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter('always')
+        warnings.simplefilter("always")
         try:
             from MT5_FTMO_IA.scripts import model_io
+
             _ = model_io.load_model(str(p), require_trust=True)
         except Exception as e:
-            print('  Exception during load:', repr(e))
+            print("  Exception during load:", repr(e))
             return False
         if not w:
-            print('  OK: no warnings')
+            print("  OK: no warnings")
             return True
         else:
-            print('  WARNINGS:')
+            print("  WARNINGS:")
             for ww in w:
-                print('   -', type(ww.message).__name__ + ':', ww.message)
+                print("   -", type(ww.message).__name__ + ":", ww.message)
             return False
 
 
 def main():
     if not MODELS_DIR.exists():
-        print('Models dir not found:', MODELS_DIR)
+        print("Models dir not found:", MODELS_DIR)
         return
-    pkls = sorted(MODELS_DIR.glob('*.pkl'))
+    pkls = sorted(MODELS_DIR.glob("*.pkl"))
     if not pkls:
-        print('No pkl files found in', MODELS_DIR)
+        print("No pkl files found in", MODELS_DIR)
         return
     total = 0
     bad = []
@@ -52,12 +53,12 @@ def main():
         ok = check_one(p)
         if not ok:
             bad.append(p)
-    print('\nSummary: {} checked, {} problematic'.format(total, len(bad)))
+    print("\nSummary: {} checked, {} problematic".format(total, len(bad)))
     if bad:
-        print('Problematic files:')
+        print("Problematic files:")
         for p in bad:
-            print(' -', p)
+            print(" -", p)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -74,13 +74,13 @@ def simulate_trading(predictions, y, df, threshold=0.5):
     if num_trades == 0:
         return {
             "threshold": threshold,
-            "total_return": 0,
-            "sharpe": 0,
-            "max_drawdown": 0,
-            "win_rate": 0,
-            "num_trades": 0,
-            "avg_return": 0,
-        }
+                "total_return": 0,
+                    "sharpe": 0,
+                    "max_drawdown": 0,
+                    "win_rate": 0,
+                    "num_trades": 0,
+                    "avg_return": 0,
+                    }
 
     win_rate = np.sum(returns > 0) / num_trades if num_trades > 0 else 0
     avg_return = np.mean(returns[returns != 0]) if num_trades > 0 else 0
@@ -101,13 +101,13 @@ def simulate_trading(predictions, y, df, threshold=0.5):
 
     return {
         "threshold": threshold,
-        "total_return": total_return,
-        "sharpe": sharpe,
-        "max_drawdown": max_drawdown,
-        "win_rate": win_rate,
-        "num_trades": num_trades,
-        "avg_return": avg_return,
-    }
+            "total_return": total_return,
+                "sharpe": sharpe,
+                "max_drawdown": max_drawdown,
+                "win_rate": win_rate,
+                "num_trades": num_trades,
+                "avg_return": avg_return,
+                }
 
 
 def optimize_threshold(model, X, y, df):
@@ -197,22 +197,22 @@ def find_optimal_thresholds(results_df):
     best_return_idx = valid_results["total_return"].idxmax()
     optimal_thresholds["best_return"] = {
         "threshold": valid_results.loc[best_return_idx, "threshold"],
-        "metrics": valid_results.loc[best_return_idx].to_dict(),
-    }
+            "metrics": valid_results.loc[best_return_idx].to_dict(),
+                }
 
     # Meilleur Sharpe
     best_sharpe_idx = valid_results["sharpe"].idxmax()
     optimal_thresholds["best_sharpe"] = {
         "threshold": valid_results.loc[best_sharpe_idx, "threshold"],
-        "metrics": valid_results.loc[best_sharpe_idx].to_dict(),
-    }
+            "metrics": valid_results.loc[best_sharpe_idx].to_dict(),
+                }
 
     # Meilleur win rate
     best_wr_idx = valid_results["win_rate"].idxmax()
     optimal_thresholds["best_winrate"] = {
         "threshold": valid_results.loc[best_wr_idx, "threshold"],
-        "metrics": valid_results.loc[best_wr_idx].to_dict(),
-    }
+            "metrics": valid_results.loc[best_wr_idx].to_dict(),
+                }
 
     # Score composite (return / |max_drawdown| + sharpe)
     valid_results["composite_score"] = (
@@ -223,8 +223,8 @@ def find_optimal_thresholds(results_df):
     best_composite_idx = valid_results["composite_score"].idxmax()
     optimal_thresholds["best_composite"] = {
         "threshold": valid_results.loc[best_composite_idx, "threshold"],
-        "metrics": valid_results.loc[best_composite_idx].to_dict(),
-    }
+            "metrics": valid_results.loc[best_composite_idx].to_dict(),
+                }
 
     return optimal_thresholds
 

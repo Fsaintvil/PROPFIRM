@@ -1,0 +1,101 @@
+{
+  "timestamp": "2025-10-20T08:33:30.942622",
+  "symbols": [
+    "EURUSD",
+    "XAUUSD",
+    "BTCUSD"
+  ],
+  "performance_metrics": {
+    "total_trades": 9,
+    "winning_trades": 5,
+    "current_balance": 10075.0,
+    "max_drawdown": -0.0075,
+    "current_regime": "Bull",
+    "symbols_traded": [
+      "EURUSD",
+      "XAUUSD",
+      "BTCUSD"
+    ],
+    "optimal_threshold": 0.68,
+    "target_win_rate": 0.68,
+    "expected_sharpe": 18.46,
+    "confidence_filter_rejections": 0,
+    "last_balance_update": 9,
+    "peak_balance": 10075.0
+  },
+  "trade_history": [
+    {
+      "timestamp": "2025-10-20T07:37:44.769580",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.16744,
+      "order_id": 328871030
+    },
+    {
+      "timestamp": "2025-10-20T07:37:45.210824",
+      "symbol": "XAUUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 4254.89,
+      "order_id": 328871035
+    },
+    {
+      "timestamp": "2025-10-20T07:53:11.841862",
+      "symbol": "EURUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.16729,
+      "order_id": 328881489
+    },
+    {
+      "timestamp": "2025-10-20T07:53:12.262061",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 4245.22,
+      "order_id": 328881545
+    },
+    {
+      "timestamp": "2025-10-20T08:08:41.792159",
+      "symbol": "EURUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.1666400000000001,
+      "order_id": 328895617
+    },
+    {
+      "timestamp": "2025-10-20T08:08:42.149046",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 4237.96,
+      "order_id": 328895621
+    },
+    {
+      "timestamp": "2025-10-20T08:24:11.823941",
+      "symbol": "EURUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.16617,
+      "order_id": 328906344
+    },
+    {
+      "timestamp": "2025-10-20T08:24:12.230013",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 4238.26,
+      "order_id": 328906350
+    },
+    {
+      "timestamp": "2025-10-20T08:24:12.650194",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 111112.31,
+      "order_id": 328906353
+    }
+  ],
+  "total_runtime": "0:00:00"
+}

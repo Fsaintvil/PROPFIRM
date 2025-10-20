@@ -1,0 +1,45 @@
+{
+  "config": {
+    "confidence_thresholds": {
+      "execute_min": 0.5,
+      "consider_min": 0.6,
+      "warning_max": 0.5
+    },
+    "risk_reward": {
+      "minimum": 1.5,
+      "excellent": 2.5,
+      "exceptional": 3.0
+    },
+    "position_sizing": {
+      "base_risk_pct": 2.0,
+      "max_risk_pct": 3.0,
+      "confidence_multiplier": true
+    },
+    "market_conditions": {
+      "high_volatility_reduce": 0.8,
+      "low_volatility_increase": 1.1,
+      "weekend_avoid": true
+    },
+    "symbols": {
+      "EURUSD": {
+        "enabled": true,
+        "priority": 1
+      },
+      "XAUUSD": {
+        "enabled": true,
+        "priority": 2
+      },
+      "BTCUSD": {
+        "enabled": true,
+        "priority": 3
+      }
+    },
+    "notifications": {
+      "strong_signals": true,
+      "risk_alerts": true,
+      "market_regime_change": true
+    }
+  },
+  "export_date": "2025-10-19T23:00:40.085006",
+  "version": "1.0"
+}

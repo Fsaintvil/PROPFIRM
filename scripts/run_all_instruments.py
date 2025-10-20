@@ -3,8 +3,8 @@
 It looks for CSV files under data/ (top-level). For each CSV it:
 - copies it to data/features_sample.csv (the existing scripts expect
     that path),
-- runs the training script, then the backtest script,
-- collects the produced `artifacts/backtest_report.json` and stores it
+        - runs the training script, then the backtest script,
+            - collects the produced `artifacts/backtest_report.json` and stores it
     under `artifacts/reports/{instrument}.json`.
 
 Finally it writes `artifacts/reports/aggregate.json` with simple

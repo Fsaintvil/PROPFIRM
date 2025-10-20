@@ -45,9 +45,9 @@ def run_cv(horizon: int, n_splits: int = 5):
         dtrain = lgb.Dataset(X_train.values, label=y_train)
         params = {
             "objective": "binary",
-            "metric": "binary_logloss",
-            "verbose": -1,
-        }
+                "metric": "binary_logloss",
+                    "verbose": -1,
+                    }
         model = lgb.train(params, dtrain, num_boost_round=50)
         preds = model.predict(X_val.values)
         pred_labels = (preds > 0.5).astype(int)
@@ -61,15 +61,15 @@ def run_cv(horizon: int, n_splits: int = 5):
     # summary
     summary = {
         "horizon": horizon,
-        "n_splits": n_splits,
-        "mean_accuracy": float(np.mean([r["accuracy"] for r in results]))
+            "n_splits": n_splits,
+                "mean_accuracy": float(np.mean([r["accuracy"] for r in results]))
         if results
         else None,
-        "std_accuracy": float(np.std([r["accuracy"] for r in results]))
+            "std_accuracy": float(np.std([r["accuracy"] for r in results]))
         if results
         else None,
-        "folds": results,
-    }
+            "folds": results,
+                }
     (base / "artifacts" / "cv" / f"h{horizon}_summary.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8"
     )

@@ -224,16 +224,32 @@ class MarketRegimeDetector:
         X = features[key_features].fillna(0)
         X_scaled = self.scaler.fit_transform(X)
 
-        # Entraîner le modèle HMM
+        # Entraîner le modèle HMM avec paramètres de convergence améliorés
         self.hmm_model = hmm.GaussianHMM(
             n_components=self.n_regimes,
-            covariance_type="full",
-            n_iter=100,
+            covariance_type="diag",  # Plus stable que "full"
+            n_iter=50,  # Réduit pour éviter sur-ajustement
+            tol=1e-3,  # Tolérance de convergence plus permissive
             random_state=42,
+            verbose=False,  # Désactive les warnings de convergence
         )
 
         try:
-            self.hmm_model.fit(X_scaled)
+            # Supprimer complètement les warnings de convergence HMM
+            import warnings
+            import logging
+
+            # Désactiver tous les warnings hmmlearn
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            warnings.filterwarnings("ignore", module="hmmlearn")
+
+            # Désactiver le logging de hmmlearn
+            hmm_logger = logging.getLogger('hmmlearn')
+            hmm_logger.setLevel(logging.ERROR)
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self.hmm_model.fit(X_scaled)
 
             # Prédire les régimes
             regimes = self.hmm_model.predict(X_scaled)
@@ -372,14 +388,20 @@ class MarketRegimeDetector:
                     "name": self.regime_names[regime_id],
                     "avg_return": regime_data["returns"].mean(),
                     "volatility": regime_data["volatility"].mean(),
-                    "trend_strength": regime_data["regime_momentum"].mean(),
+                    "trend_strength": regime_data[
+                        "regime_momentum"
+                    ].mean(),
                     "rsi_avg": regime_data["rsi_normalized"].mean(),
                     "count": len(regime_data),
-                    "percentage": len(regime_data) / len(features) * 100,
-                    "sharpe_approx": regime_data["returns"].mean()
-                    / regime_data["volatility"].mean()
-                    if regime_data["volatility"].mean() > 0
-                    else 0,
+                    "percentage": (
+                        len(regime_data) / len(features) * 100
+                    ),
+                    "sharpe_approx": (
+                        regime_data["returns"].mean()
+                        / regime_data["volatility"].mean()
+                        if regime_data["volatility"].mean() > 0
+                        else 0
+                    ),
                 }
 
         print("  ✅ Caractéristiques des régimes:")

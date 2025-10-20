@@ -181,9 +181,9 @@ def generate_performance_plots(df, model, X, y):
         plt.tight_layout()
         plt.savefig(
             plots_dir / "performance_evolution.png",
-            dpi=150,
-            bbox_inches="tight",
-        )
+                dpi=150,
+                    bbox_inches="tight",
+                    )
         plt.close()
 
 

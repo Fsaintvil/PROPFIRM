@@ -15,27 +15,27 @@ def run_experiment(horizon: int, transaction_cost: float, slippage: float):
     # train with horizon
     subprocess.run(
         ["python", "scripts/train_lightgbm.py", "--horizon", str(horizon)],
-        check=True,
-    )
+            check=True,
+                )
     # backtest with cost/slippage
     # use conservative backtest params
     subprocess.run(
         [
             "python",
-            "scripts/backtest_poc.py",
-            "--transaction-cost",
-            str(transaction_cost),
-            "--slippage",
-            str(slippage),
-            "--max-position-size",
-            str(0.1),
-            "--stop-loss",
-            str(0.02),
-            "--take-profit",
-            str(0.04),
-        ],
-        check=True,
-    )
+                "scripts/backtest_poc.py",
+                    "--transaction-cost",
+                    str(transaction_cost),
+                    "--slippage",
+                    str(slippage),
+                    "--max-position-size",
+                    str(0.1),
+                    "--stop-loss",
+                    str(0.02),
+                    "--take-profit",
+                    str(0.04),
+                    ],
+                    check=True,
+                )
     # read artifacts
     metrics = json.loads(
         (base / "artifacts" / "train_metrics.json").read_text()
@@ -45,11 +45,11 @@ def run_experiment(horizon: int, transaction_cost: float, slippage: float):
     )
     return {
         "horizon": horizon,
-        "transaction_cost": transaction_cost,
-        "slippage": slippage,
-        "train_metrics": metrics,
-        "backtest": report,
-    }
+            "transaction_cost": transaction_cost,
+                "slippage": slippage,
+                "train_metrics": metrics,
+                "backtest": report,
+                }
 
 
 def main():

@@ -50,11 +50,11 @@ def main():
         results.append(
             {
                 "threshold": threshold,
-                "accuracy": accuracy,
-                "precision": precision,
-                "recall": recall,
-                "num_predictions": (pred_labels == 1).sum(),
-            }
+                    "accuracy": accuracy,
+                        "precision": precision,
+                        "recall": recall,
+                        "num_predictions": (pred_labels == 1).sum(),
+                        }
         )
 
         print(
@@ -80,18 +80,18 @@ def main():
 
     optimal_result = {
         "recommended_threshold": float(best_threshold),
-        "original_threshold": 0.5,
-        "improvement": {
+            "original_threshold": 0.5,
+                "improvement": {
             "accuracy": float(
                 results_df.loc[best_idx, "accuracy"]
                 - results_df[results_df["threshold"] == 0.5]["accuracy"].iloc[
                     0
                 ]
             ),
-            "f1_score": float(results_df.loc[best_idx, "f1"]),
-        },
-        "all_results": results_df.to_dict("records"),
-    }
+                "f1_score": float(results_df.loc[best_idx, "f1"]),
+                    },
+                    "all_results": results_df.to_dict("records"),
+                }
 
     with open(opt_dir / "quick_optimization.json", "w") as f:
         json.dump(optimal_result, f, indent=2)

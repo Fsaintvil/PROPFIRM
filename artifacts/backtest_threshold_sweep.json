@@ -1,0 +1,72 @@
+[
+  {
+    "threshold": 0.5,
+    "trades": 255,
+    "wins": 179,
+    "net_pnl": 27.570097261483212,
+    "max_drawdown": 1.1873922198299702
+  },
+  {
+    "threshold": 0.55,
+    "trades": 255,
+    "wins": 179,
+    "net_pnl": 27.570097261483212,
+    "max_drawdown": 1.1873922198299702
+  },
+  {
+    "threshold": 0.6,
+    "trades": 252,
+    "wins": 177,
+    "net_pnl": 27.513815745247314,
+    "max_drawdown": 1.3242069640683485
+  },
+  {
+    "threshold": 0.65,
+    "trades": 250,
+    "wins": 175,
+    "net_pnl": 26.898220593228835,
+    "max_drawdown": 1.3242069640683485
+  },
+  {
+    "threshold": 0.7,
+    "trades": 230,
+    "wins": 161,
+    "net_pnl": 24.820872597954853,
+    "max_drawdown": 1.3242069640683485
+  },
+  {
+    "threshold": 0.75,
+    "trades": 207,
+    "wins": 147,
+    "net_pnl": 23.84389945320389,
+    "max_drawdown": 1.3242069640683485
+  },
+  {
+    "threshold": 0.8,
+    "trades": 175,
+    "wins": 128,
+    "net_pnl": 22.43464865001785,
+    "max_drawdown": 1.3242069640683485
+  },
+  {
+    "threshold": 0.85,
+    "trades": 148,
+    "wins": 105,
+    "net_pnl": 17.88368178608699,
+    "max_drawdown": 1.0829711031799292
+  },
+  {
+    "threshold": 0.8999999999999999,
+    "trades": 97,
+    "wins": 73,
+    "net_pnl": 12.741311700373936,
+    "max_drawdown": 0.918988686535263
+  },
+  {
+    "threshold": 0.95,
+    "trades": 0,
+    "wins": 0,
+    "net_pnl": 0.0,
+    "max_drawdown": 0.0
+  }
+]

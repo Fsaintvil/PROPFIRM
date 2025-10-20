@@ -1,0 +1,57 @@
+{
+  "mt5": {
+  "login": "1511860143",
+    "password": null,
+    "server": "FTMO-Demo",
+    "terminal_path": "C:\\Program Files\\MetaTrader 5\\terminal64.exe",
+    "timeout": 30,
+    "retry_count": 3
+  },
+  "trading": {
+    "symbols": [
+      "EURUSD",
+      "XAUUSD",
+      "BTCUSD"
+    ],
+    "lot_sizes": {
+      "EURUSD": 0.01,
+      "XAUUSD": 0.01,
+      "BTCUSD": 0.01
+    },
+    "max_risk_per_trade": 0.02,
+    "max_trades_per_day": 20,
+    "trading_interval": 930,
+    "confidence_threshold": 0.68,
+    "live_trading": false
+  },
+  "ai": {
+    "enable_meta_learning": true,
+    "enable_reinforcement_learning": true,
+    "enable_regime_detection": true,
+    "enable_portfolio_optimizer": true,
+    "use_gpu": false,
+    "random_seed": 42
+  },
+  "stop_loss": {
+    "eurusd_pips": 0.0005,
+    "xauusd_dollars": 2.0,
+    "btcusd_dollars": 150.0,
+    "volatility_multiplier_max": 0.5,
+    "risk_reward_ratio": 2.0
+  },
+  "logging": {
+    "level": "INFO",
+    "log_dir": "logs",
+    "enable_compression": true,
+    "max_log_files": 10
+  },
+  "notifications": {
+    "telegram_bot_token": null,
+    "telegram_chat_id": null,
+    "slack_webhook_url": null,
+    "email_smtp_server": null,
+    "email_smtp_port": 587,
+    "email_username": null,
+    "email_password": null
+  }
+}

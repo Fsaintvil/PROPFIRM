@@ -139,20 +139,20 @@ def walk_forward_validation(
 
             result = {
                 "fold": fold,
-                "train_start": current_start.strftime("%Y-%m-%d"),
-                "train_end": train_end.strftime("%Y-%m-%d"),
-                "test_start": test_start.strftime("%Y-%m-%d"),
-                "test_end": test_end.strftime("%Y-%m-%d"),
-                "train_samples": len(X_train),
-                "test_samples": len(X_test),
-                "accuracy": accuracy,
-                "f1_score": f1,
-                "auc": auc,
-                "total_return": returns["total_return"],
-                "sharpe": returns["sharpe"],
-                "max_drawdown": returns["max_drawdown"],
-                "win_rate": returns["win_rate"],
-            }
+                    "train_start": current_start.strftime("%Y-%m-%d"),
+                        "train_end": train_end.strftime("%Y-%m-%d"),
+                        "test_start": test_start.strftime("%Y-%m-%d"),
+                        "test_end": test_end.strftime("%Y-%m-%d"),
+                        "train_samples": len(X_train),
+                        "test_samples": len(X_test),
+                        "accuracy": accuracy,
+                        "f1_score": f1,
+                        "auc": auc,
+                        "total_return": returns["total_return"],
+                        "sharpe": returns["sharpe"],
+                        "max_drawdown": returns["max_drawdown"],
+                        "win_rate": returns["win_rate"],
+                        }
 
             results.append(result)
             print(
@@ -181,10 +181,10 @@ def simulate_trading_returns(predictions, X_test, timestamps):
     if len(trading_returns) == 0:
         return {
             "total_return": 0,
-            "sharpe": 0,
-            "max_drawdown": 0,
-            "win_rate": 0,
-        }
+                "sharpe": 0,
+                    "max_drawdown": 0,
+                    "win_rate": 0,
+                    }
 
     # Calculer les métriques
     total_return = np.sum(trading_returns)
@@ -209,10 +209,10 @@ def simulate_trading_returns(predictions, X_test, timestamps):
 
     return {
         "total_return": total_return,
-        "sharpe": sharpe,
-        "max_drawdown": drawdown,
-        "win_rate": win_rate,
-    }
+            "sharpe": sharpe,
+                "max_drawdown": drawdown,
+                "win_rate": win_rate,
+                }
 
 
 def analyze_results(results):
@@ -295,10 +295,10 @@ def create_visualizations(df_results):
     # Évolution du rendement
     axes[0, 1].plot(
         pd.to_datetime(df_results["test_start"]),
-        df_results["total_return"],
-        "o-",
-        color="green",
-    )
+            df_results["total_return"],
+                "o-",
+                color="green",
+                )
     axes[0, 1].set_title("Returns over Time")
     axes[0, 1].set_ylabel("Total Return")
     axes[0, 1].tick_params(axis="x", rotation=45)
@@ -322,9 +322,9 @@ def create_visualizations(df_results):
     plt.tight_layout()
     plt.savefig(
         "artifacts/walk_forward/validation_results.png",
-        dpi=300,
-        bbox_inches="tight",
-    )
+            dpi=300,
+                bbox_inches="tight",
+                )
     print(
         "📊 Graphiques sauvegardés: "
         "artifacts/walk_forward/validation_results.png"

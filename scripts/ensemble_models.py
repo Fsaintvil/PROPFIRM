@@ -39,9 +39,9 @@ def create_ensemble_models():
     models["xgboost"] = XGBClassifier(
         max_depth=4,  # approximativement équivalent num_leaves=15
         learning_rate=0.1,
-        random_state=42,
-        verbosity=0,
-    )
+            random_state=42,
+                verbosity=0,
+                )
 
     # CatBoost si disponible
     if CATBOOST_AVAILABLE:
@@ -67,9 +67,9 @@ def evaluate_individual_models(X, y, models):
 
             results[name] = {
                 "cv_accuracy_mean": cv_scores.mean(),
-                "cv_accuracy_std": cv_scores.std(),
-                "cv_scores": cv_scores.tolist(),
-            }
+                    "cv_accuracy_std": cv_scores.std(),
+                        "cv_scores": cv_scores.tolist(),
+                        }
 
             print(
                 f"    {name}: {cv_scores.mean():.4f} "
@@ -136,9 +136,9 @@ def create_weighted_ensemble(X_train, y_train, models):
             weights[name] = composite_score
             performances[name] = {
                 "accuracy": accuracy,
-                "f1": f1,
-                "composite": composite_score,
-            }
+                    "f1": f1,
+                        "composite": composite_score,
+                        }
 
             print(f"  {name}: Accuracy={accuracy:.4f}, F1={f1:.4f}")
 
@@ -300,10 +300,10 @@ def evaluate_ensemble(ensemble, X_test, y_test):
 
         return {
             "accuracy": accuracy,
-            "f1_score": f1,
-            "predictions": y_pred.tolist(),
-            "probabilities": y_proba.tolist(),
-        }
+                "f1_score": f1,
+                    "predictions": y_pred.tolist(),
+                    "probabilities": y_proba.tolist(),
+                    }
     except Exception as e:
         print(f"Erreur évaluation ensemble: {e}")
         return {"error": str(e)}
@@ -356,11 +356,11 @@ def main():
 
     results = {
         "timestamp": datetime.now().isoformat(),
-        "individual_models": individual_results,
-        "ensemble_performance": performances,
-        "ensemble_evaluation": ensemble_results,
-        "model_weights": getattr(ensemble, "weights", {}),
-    }
+            "individual_models": individual_results,
+                "ensemble_performance": performances,
+                "ensemble_evaluation": ensemble_results,
+                "model_weights": getattr(ensemble, "weights", {}),
+                }
 
     with open("artifacts/ensemble/ensemble_results.json", "w") as f:
         json.dump(results, f, indent=2, default=str)
@@ -371,8 +371,8 @@ def main():
     # Recommandations
     best_individual = max(
         individual_results.items(),
-        key=lambda x: x[1].get("cv_accuracy_mean", 0),
-    )
+            key=lambda x: x[1].get("cv_accuracy_mean", 0),
+                )
     ensemble_acc = ensemble_results.get("accuracy", 0)
     best_individual_acc = best_individual[1].get("cv_accuracy_mean", 0)
 

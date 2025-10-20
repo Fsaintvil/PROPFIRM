@@ -19,8 +19,8 @@ import pickle
 # Imports des modules créés
 from scripts.ensemble_models import (
     create_ensemble_models,
-    create_adaptive_ensemble,
-)
+        create_adaptive_ensemble,
+            )
 from scripts.dynamic_risk_management import DynamicRiskManager
 from scripts.simple_enhanced_features import create_enhanced_features
 
@@ -34,12 +34,12 @@ class SuperTradingBot:
 
     def __init__(
         self,
-        initial_capital=10000,
-        optimal_threshold=0.68,
-        use_enhanced_features=True,
-        use_ensemble=True,
-        use_dynamic_risk=True,
-    ):
+            initial_capital=10000,
+                optimal_threshold=0.68,
+                use_enhanced_features=True,
+                use_ensemble=True,
+                use_dynamic_risk=True,
+                ):
         """
         Args:
             initial_capital: Capital de départ
@@ -88,11 +88,11 @@ class SuperTradingBot:
             print("📊 Utilisation des features basiques (5 features)...")
             basic_features = [
                 "close",
-                "volume",
-                "sma_1T",
-                "ema_15T",
-                "rsi_60T",
-            ]
+                    "volume",
+                        "sma_1T",
+                        "ema_15T",
+                        "rsi_60T",
+                        ]
             return df[basic_features]
 
     def _calculate_feature_importance(self, df):
@@ -128,11 +128,11 @@ class SuperTradingBot:
             # Fallback: retourner les features de base
             basic_features = [
                 "close",
-                "volume",
-                "sma_1T",
-                "ema_15T",
-                "rsi_60T",
-            ]
+                    "volume",
+                        "sma_1T",
+                        "ema_15T",
+                        "rsi_60T",
+                        ]
             available_features = [f for f in basic_features if f in df.columns]
             return pd.Series(1.0, index=available_features)
 
@@ -184,10 +184,10 @@ class SuperTradingBot:
 
             self.training_metrics = {
                 "train_accuracy": train_accuracy,
-                "ensemble_performances": performances,
-                "feature_count": len(X_clean.columns),
-                "training_samples": len(X_clean),
-            }
+                    "ensemble_performances": performances,
+                        "feature_count": len(X_clean.columns),
+                        "training_samples": len(X_clean),
+                        }
 
             print(f"  ✅ Ensemble entraîné - Accuracy: {train_accuracy:.4f}")
 
@@ -207,10 +207,10 @@ class SuperTradingBot:
 
             self.training_metrics = {
                 "train_accuracy": train_accuracy,
-                "model_type": "single_lightgbm",
-                "feature_count": len(X_clean.columns),
-                "training_samples": len(X_clean),
-            }
+                    "model_type": "single_lightgbm",
+                        "feature_count": len(X_clean.columns),
+                        "training_samples": len(X_clean),
+                        }
 
             print(f"  ✅ LightGBM entraîné - Accuracy: {train_accuracy:.4f}")
 
@@ -218,10 +218,10 @@ class SuperTradingBot:
         if self.use_dynamic_risk:
             self.risk_manager = DynamicRiskManager(
                 initial_capital=self.initial_capital,
-                max_risk_per_trade=0.02,
-                max_portfolio_risk=0.06,
-                drawdown_threshold=0.10,
-            )
+                    max_risk_per_trade=0.02,
+                        max_portfolio_risk=0.06,
+                        drawdown_threshold=0.10,
+                        )
             print("  ⚖️  Gestionnaire de risque initialisé")
 
     def predict(self, features_row):
@@ -248,10 +248,10 @@ class SuperTradingBot:
 
         return {
             "prediction": prediction,
-            "probability": proba,
-            "signal_strength": proba,
-            "threshold_used": self.optimal_threshold,
-        }
+                "probability": proba,
+                    "signal_strength": proba,
+                    "threshold_used": self.optimal_threshold,
+                    }
 
     def calculate_position_size(
         self, signal_result, current_price, stop_loss_price=None
@@ -273,9 +273,9 @@ class SuperTradingBot:
         # Calculer la taille optimale
         sizing_result = self.risk_manager.calculate_optimal_position_size(
             signal_strength=signal_result["signal_strength"],
-            symbol_volatility=symbol_volatility,
-            stop_loss_distance=sl_distance,
-        )
+                symbol_volatility=symbol_volatility,
+                    stop_loss_distance=sl_distance,
+                    )
 
         return sizing_result["recommended_size"]
 
@@ -339,27 +339,27 @@ class SuperTradingBot:
                     # Enregistrer le trade
                     trade = {
                         "entry_time": current_time,
-                        "exit_time": df.index[exit_idx],
-                        "entry_price": entry_price,
-                        "exit_price": exit_price,
-                        "position_size": position_size,
-                        "pnl": pnl,
-                        "pnl_pct": pnl / capital,
-                        "probability": pred_result["probability"],
-                        "signal_strength": pred_result["signal_strength"],
-                    }
+                            "exit_time": df.index[exit_idx],
+                                "entry_price": entry_price,
+                                "exit_price": exit_price,
+                                "position_size": position_size,
+                                "pnl": pnl,
+                                "pnl_pct": pnl / capital,
+                                "probability": pred_result["probability"],
+                                "signal_strength": pred_result["signal_strength"],
+                                }
                     trades.append(trade)
 
                     # Mettre à jour le gestionnaire de risque
                     if self.risk_manager is not None:
                         self.risk_manager.update_trade_result(
                             symbol="TEST",
-                            entry_price=entry_price,
-                            exit_price=exit_price,
-                            size=position_size,
-                            direction=1,
-                            timestamp=current_time,
-                        )
+                                entry_price=entry_price,
+                                    exit_price=exit_price,
+                                    size=position_size,
+                                    direction=1,
+                                    timestamp=current_time,
+                                    )
 
                 equity_curve.append(capital)
 
@@ -395,18 +395,18 @@ class SuperTradingBot:
 
             self.backtest_results = {
                 "total_return": total_return,
-                "final_capital": capital,
-                "n_trades": n_trades,
-                "win_rate": win_rate,
-                "sharpe_ratio": sharpe,
-                "max_drawdown": max_drawdown,
-                "avg_trade_pnl": trades_df["pnl"].mean()
+                    "final_capital": capital,
+                        "n_trades": n_trades,
+                        "win_rate": win_rate,
+                        "sharpe_ratio": sharpe,
+                        "max_drawdown": max_drawdown,
+                        "avg_trade_pnl": trades_df["pnl"].mean()
                 if n_trades > 0
                 else 0,
-                "best_trade": trades_df["pnl"].max() if n_trades > 0 else 0,
-                "worst_trade": trades_df["pnl"].min() if n_trades > 0 else 0,
-                "trades_details": trades,
-            }
+                    "best_trade": trades_df["pnl"].max() if n_trades > 0 else 0,
+                        "worst_trade": trades_df["pnl"].min() if n_trades > 0 else 0,
+                        "trades_details": trades,
+                        }
 
             print(f"  📈 Retour total: {total_return:.2%}")
             print(f"  🎯 Trades: {n_trades} (Win rate: {win_rate:.1%})")
@@ -421,17 +421,17 @@ class SuperTradingBot:
         """Sauvegarder le modèle complet"""
         model_data = {
             "ensemble_model": self.ensemble_model,
-            "risk_manager": self.risk_manager,
-            "feature_columns": self.feature_columns,
-            "optimal_threshold": self.optimal_threshold,
-            "training_metrics": self.training_metrics,
-            "backtest_results": self.backtest_results,
-            "config": {
+                "risk_manager": self.risk_manager,
+                    "feature_columns": self.feature_columns,
+                    "optimal_threshold": self.optimal_threshold,
+                    "training_metrics": self.training_metrics,
+                    "backtest_results": self.backtest_results,
+                    "config": {
                 "use_enhanced_features": self.use_enhanced_features,
-                "use_ensemble": self.use_ensemble,
-                "use_dynamic_risk": self.use_dynamic_risk,
-            },
-        }
+                    "use_ensemble": self.use_ensemble,
+                        "use_dynamic_risk": self.use_dynamic_risk,
+                        },
+                        }
 
         with open(filepath, "wb") as f:
             pickle.dump(model_data, f)
@@ -442,15 +442,15 @@ class SuperTradingBot:
         """Générer un rapport complet"""
         report = {
             "timestamp": datetime.now().isoformat(),
-            "model_config": {
+                "model_config": {
                 "enhanced_features": self.use_enhanced_features,
-                "ensemble_models": self.use_ensemble,
-                "dynamic_risk": self.use_dynamic_risk,
-                "optimal_threshold": self.optimal_threshold,
-            },
-            "training_metrics": self.training_metrics,
-            "backtest_results": self.backtest_results,
-        }
+                    "ensemble_models": self.use_ensemble,
+                        "dynamic_risk": self.use_dynamic_risk,
+                        "optimal_threshold": self.optimal_threshold,
+                        },
+                        "training_metrics": self.training_metrics,
+                    "backtest_results": self.backtest_results,
+                    }
 
         return report
 
@@ -472,11 +472,11 @@ def main():
         # Créer le super bot avec toutes les améliorations
         super_bot = SuperTradingBot(
             initial_capital=10000,
-            optimal_threshold=0.68,  # Seuil optimisé trouvé précédemment
+                optimal_threshold=0.68,  # Seuil optimisé trouvé précédemment
             use_enhanced_features=True,
-            use_ensemble=True,
-            use_dynamic_risk=True,
-        )
+                use_ensemble=True,
+                    use_dynamic_risk=True,
+                    )
 
         # Entraîner
         super_bot.train_model(df)

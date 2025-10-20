@@ -1,0 +1,22 @@
+{
+  "version": "2.0",
+  "created": "2025-10-19T11:58:43.620133",
+  "mode": "auto_trading",
+  "deployment": "automated",
+  "schedule": {
+    "monday_start": "00:05 Europe/Prague",
+    "order_interval": "930 seconds",
+    "friday_close": "22:00 Europe/Prague"
+  },
+  "systems": {
+    "portfolio_optimizer": true,
+    "regime_detection": true,
+    "risk_management": true,
+    "automated_deployment": true
+  },
+  "performance_target": {
+    "sharpe_ratio": 1.651,
+    "win_rate": "55%+",
+    "max_drawdown": "12%"
+  }
+}

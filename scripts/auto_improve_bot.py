@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
-from sklearn.metrics import accuracy_score
+# accuracy_score was used previously; now we score by financial metric
 
 
 def time_series_cv_scores(X, y, params, num_boost_round=50, n_splits=5):
@@ -32,9 +32,24 @@ def time_series_cv_scores(X, y, params, num_boost_round=50, n_splits=5):
         dtrain = lgb.Dataset(X_train.values, label=y_train)
         model = lgb.train(params, dtrain, num_boost_round=num_boost_round)
         preds = model.predict(X_val.values)
-        pred_labels = (preds > 0.5).astype(int)
-        acc = float(accuracy_score(y_val, pred_labels))
-        scores.append(acc)
+        # compute simple trading returns from preds on validation fold
+        try:
+            close = X_val["close"].values
+            next_close = np.roll(close, -1)
+            returns = (next_close - close) / (close + 1e-9)
+            pos = (preds > 0.5).astype(int)
+            strat = np.where(pos == 1, returns, 0.0)[:-1]
+            if len(strat) == 0:
+                fold_sharpe = 0.0
+            else:
+                fold_sharpe = float(
+                    np.nanmean(strat) / (np.nanstd(strat) + 1e-9)
+                    * np.sqrt(252 * 24)
+                )
+        except Exception:
+            # fallback to 0 if we cannot compute financial metric
+            fold_sharpe = 0.0
+        scores.append(fold_sharpe)
     return scores
 
 
@@ -56,11 +71,11 @@ def run_grid_search(horizons, grid, num_boost_round=50):
         for params in grid:
             lgb_params = {
                 "objective": "binary",
-                "metric": "binary_logloss",
-                "verbose": -1,
-                "num_leaves": params["num_leaves"],
-                "learning_rate": params["learning_rate"],
-            }
+                    "metric": "binary_logloss",
+                        "verbose": -1,
+                        "num_leaves": params["num_leaves"],
+                        "learning_rate": params["learning_rate"],
+                        }
             scores = time_series_cv_scores(
                 X, y, lgb_params, num_boost_round=num_boost_round
             )
@@ -68,11 +83,11 @@ def run_grid_search(horizons, grid, num_boost_round=50):
             std_score = float(np.std(scores)) if scores else None
             r = {
                 "horizon": horizon,
-                "params": params,
-                "mean_accuracy": mean_score,
-                "std_accuracy": std_score,
-                "scores": scores,
-            }
+                    "params": params,
+                        "mean_accuracy": mean_score,
+                        "std_accuracy": std_score,
+                        "scores": scores,
+                        }
             results.append(r)
     return results
 
@@ -91,11 +106,11 @@ def retrain_and_backtest(best_item):
     dtrain = lgb.Dataset(X.values, label=y)
     lgb_params = {
         "objective": "binary",
-        "metric": "binary_logloss",
-        "verbose": -1,
-        "num_leaves": params["num_leaves"],
-        "learning_rate": params["learning_rate"],
-    }
+            "metric": "binary_logloss",
+                "verbose": -1,
+                "num_leaves": params["num_leaves"],
+                "learning_rate": params["learning_rate"],
+                }
     model = lgb.train(lgb_params, dtrain, num_boost_round=100)
     art = base / "artifacts" / "auto_improve"
     art.mkdir(parents=True, exist_ok=True)
@@ -106,20 +121,20 @@ def retrain_and_backtest(best_item):
     subprocess.run(
         [
             "python",
-            "scripts/backtest_poc.py",
-            "--transaction-cost",
-            "0.0001",
-            "--slippage",
-            "0.0002",
-            "--max-position-size",
-            "0.1",
-            "--stop-loss",
-            "0.02",
-            "--take-profit",
-            "0.04",
-        ],
-        check=True,
-    )
+                "scripts/backtest_poc.py",
+                    "--transaction-cost",
+                    "0.0001",
+                    "--slippage",
+                    "0.0002",
+                    "--max-position-size",
+                    "0.1",
+                    "--stop-loss",
+                    "0.02",
+                    "--take-profit",
+                    "0.04",
+                    ],
+                    check=True,
+                )
     # copy backtest report
     bt = base / "artifacts" / "backtest_report.json"
     if bt.exists():
@@ -134,9 +149,9 @@ def main():
     # small grid
     grid = [
         {"num_leaves": 15, "learning_rate": 0.1},
-        {"num_leaves": 31, "learning_rate": 0.05},
-        {"num_leaves": 63, "learning_rate": 0.01},
-    ]
+            {"num_leaves": 31, "learning_rate": 0.05},
+                {"num_leaves": 63, "learning_rate": 0.01},
+                ]
     results = run_grid_search(horizons, grid, num_boost_round=50)
     out = Path.cwd() / "artifacts" / "auto_improve"
     out.mkdir(parents=True, exist_ok=True)

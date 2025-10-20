@@ -79,12 +79,12 @@ def collect_live_features(symbol, timeframe_minutes=5, lookback_hours=24):
         # Récupérer les données OHLCV
         timeframe_map = {
             1: mt5.TIMEFRAME_M1,
-            5: mt5.TIMEFRAME_M5,
-            15: mt5.TIMEFRAME_M15,
-            30: mt5.TIMEFRAME_M30,
-            60: mt5.TIMEFRAME_H1,
-            240: mt5.TIMEFRAME_H4,
-        }
+                5: mt5.TIMEFRAME_M5,
+                    15: mt5.TIMEFRAME_M15,
+                    30: mt5.TIMEFRAME_M30,
+                    60: mt5.TIMEFRAME_H1,
+                    240: mt5.TIMEFRAME_H4,
+                    }
 
         tf = timeframe_map.get(timeframe_minutes, mt5.TIMEFRAME_M5)
         rates = mt5.copy_rates_range(symbol, tf, start_time, end_time)

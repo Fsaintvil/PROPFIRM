@@ -15,7 +15,7 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
-def test_data_loading():
+def run_data_loading():
     """Test chargement des données"""
     print("🔍 Test chargement données...")
 
@@ -53,7 +53,7 @@ def test_data_loading():
         return None
 
 
-def test_meta_learning(data):
+def run_meta_learning(data):
     """Test Meta-Learning System"""
     print("\n🧠 Test Meta-Learning...")
 
@@ -77,10 +77,10 @@ def test_meta_learning(data):
             # Simuler une réponse de l'ensemble
             result = {
                 "retrained": True,
-                "ensemble_size": 3,
-                "selected_features": list(test_features.columns[:10]),
-                "accuracy": 0.52,
-            }
+                    "ensemble_size": 3,
+                        "selected_features": list(test_features.columns[:10]),
+                        "accuracy": 0.52,
+                        }
 
             print(
                 f"✅ Meta-Learning test réussi: {result['accuracy']*100:.1f}% "
@@ -96,14 +96,14 @@ def test_meta_learning(data):
         return None
 
 
-def test_reinforcement_learning(data):
+def run_reinforcement_learning(data):
     """Test Reinforcement Learning"""
     print("\n🎯 Test Reinforcement Learning...")
 
     try:
         from reinforcement_learning_agent import (
             ReinforcementLearningTradingSystem,
-        )
+                )
 
         ReinforcementLearningTradingSystem(use_dqn=True)
         print("✅ Système RL créé")
@@ -116,8 +116,8 @@ def test_reinforcement_learning(data):
             result = {
                 "total_return": 0.128,  # 12.8%
                 "win_rate": 0.43,
-                "episodes_trained": 10,
-            }
+                    "episodes_trained": 10,
+                        }
 
             print(f"✅ RL test réussi: {result['win_rate']*100:.1f}% win rate")
             return result
@@ -130,7 +130,7 @@ def test_reinforcement_learning(data):
         return None
 
 
-def test_portfolio_optimizer(data):
+def run_portfolio_optimizer(data):
     """Test Portfolio Optimizer"""
     print("\n📊 Test Portfolio Optimizer...")
 
@@ -178,7 +178,7 @@ def test_portfolio_optimizer(data):
         return None
 
 
-def test_regime_detection(data):
+def run_regime_detection(data):
     """Test Market Regime Detection"""
     print("\n🎭 Test Market Regime Detection...")
 
@@ -214,7 +214,7 @@ def test_regime_detection(data):
         return None
 
 
-def test_live_trading():
+def run_live_trading():
     """Test Live Trading Engine"""
     print("\n⚡ Test Live Trading Engine...")
 
@@ -240,7 +240,7 @@ def test_live_trading():
         return None
 
 
-def test_monitoring():
+def run_monitoring():
     """Test Advanced Monitoring"""
     print("\n🛡️ Test Advanced Monitoring...")
 
@@ -250,9 +250,9 @@ def test_monitoring():
         monitoring_system = AdvancedMonitoringSystem(
             alert_thresholds={
                 "max_drawdown": -0.15,
-                "consecutive_losses": 5,
-                "min_sharpe_ratio": 0.5,
-            }
+                    "consecutive_losses": 5,
+                        "min_sharpe_ratio": 0.5,
+                        }
         )
         print("✅ Système Monitoring créé")
 
@@ -261,15 +261,15 @@ def test_monitoring():
 
         test_data = {
             "trades": [{"result": 1, "pnl": 100} for _ in range(5)],
-            "model_accuracy": 0.6,
-        }
+                "model_accuracy": 0.6,
+                    }
 
         monitoring_system.run_monitoring_cycle(test_data)
 
         result = {
             "alerts_generated": len(monitoring_system.alert_history),
-            "status": "active",
-        }
+                "status": "active",
+                    }
 
         print(
             f"✅ Monitoring test réussi: {result['alerts_generated']} "
@@ -290,33 +290,33 @@ def run_comprehensive_test():
     results = {}
 
     # 1. Test données
-    data = test_data_loading()
+    data = run_data_loading()
     if data is None:
         print("❌ Échec test données - Arrêt")
         return
 
     # 2. Test Meta-Learning
-    ml_result = test_meta_learning(data)
+    ml_result = run_meta_learning(data)
     results["meta_learning"] = ml_result
 
     # 3. Test RL
-    rl_result = test_reinforcement_learning(data)
+    rl_result = run_reinforcement_learning(data)
     results["reinforcement_learning"] = rl_result
 
     # 4. Test Portfolio
-    portfolio_result = test_portfolio_optimizer(data)
+    portfolio_result = run_portfolio_optimizer(data)
     results["portfolio"] = portfolio_result
 
     # 5. Test Regime Detection
-    regime_result = test_regime_detection(data)
+    regime_result = run_regime_detection(data)
     results["regime_detection"] = regime_result
 
     # 6. Test Live Trading
-    live_result = test_live_trading()
+    live_result = run_live_trading()
     results["live_trading"] = live_result
 
     # 7. Test Monitoring
-    monitoring_result = test_monitoring()
+    monitoring_result = run_monitoring()
     results["monitoring"] = monitoring_result
 
     # Résumé final

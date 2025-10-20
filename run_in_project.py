@@ -22,7 +22,7 @@ def main():
 
     # Insert repo root and MT5_FTMO_IA package path at front of sys.path
     repo_root = Path(__file__).resolve().parent
-    mt5_pkg = repo_root / 'MT5_FTMO_IA'
+    mt5_pkg = repo_root / "MT5_FTMO_IA"
     sys.path.insert(0, str(repo_root))
     sys.path.insert(0, str(mt5_pkg))
 
@@ -30,7 +30,7 @@ def main():
     sys.argv = [module_name] + sys.argv[2:]
 
     try:
-        runpy.run_module(module_name, run_name='__main__', alter_sys=True)
+        runpy.run_module(module_name, run_name="__main__", alter_sys=True)
     except Exception:
         # Print full traceback for debugging and re-raise
         import traceback
@@ -39,5 +39,5 @@ def main():
         raise
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

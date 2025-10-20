@@ -1,0 +1,55 @@
+{
+  "timestamp": "2025-10-20T16:38:32.142747",
+  "symbols": [
+    "EURUSD",
+    "XAUUSD",
+    "BTCUSD"
+  ],
+  "mt5_available": null,
+  "health_check": true,
+  "signals": {
+    "EURUSD": {
+      "combined_signal": "hold",
+      "confidence": 0.0,
+      "meta_learning": {
+        "prediction": 0.6317566462307509,
+        "action": "buy",
+        "confidence": 0.2635132924615018
+      },
+      "regime_detection": {
+        "regime": "Regime_0",
+        "action": "hold",
+        "confidence": 0.5
+      }
+    },
+    "XAUUSD": {
+      "combined_signal": "hold",
+      "confidence": 0.0,
+      "meta_learning": {
+        "prediction": 0.07430361015784255,
+        "action": "sell",
+        "confidence": 0.8513927796843149
+      },
+      "regime_detection": {
+        "regime": "Regime_0",
+        "action": "hold",
+        "confidence": 0.5
+      }
+    },
+    "BTCUSD": {
+      "combined_signal": "hold",
+      "confidence": 0.0,
+      "meta_learning": {
+        "prediction": 0.07430361015784255,
+        "action": "sell",
+        "confidence": 0.8513927796843149
+      },
+      "regime_detection": {
+        "regime": "Regime_0",
+        "action": "hold",
+        "confidence": 0.5
+      }
+    }
+  },
+  "notes": []
+}

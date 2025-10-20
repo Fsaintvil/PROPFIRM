@@ -85,10 +85,10 @@ def quick_test_improvements():
 
     results["base_model"] = {
         "accuracy": accuracy_score(y_test, pred_base),
-        "f1_score": f1_score(y_test, pred_base, average="weighted"),
-        "threshold": 0.5,
-        "features_count": len(X_clean.columns),
-    }
+            "f1_score": f1_score(y_test, pred_base, average="weighted"),
+                "threshold": 0.5,
+                "features_count": len(X_clean.columns),
+                }
 
     # Test 2: Seuil optimisé (0.68)
     print("2️⃣  Modèle avec seuil optimisé (0.68)...")
@@ -96,10 +96,10 @@ def quick_test_improvements():
 
     results["optimized_threshold"] = {
         "accuracy": accuracy_score(y_test, pred_optimized),
-        "f1_score": f1_score(y_test, pred_optimized, average="weighted"),
-        "threshold": 0.68,
-        "features_count": len(X_clean.columns),
-    }
+            "f1_score": f1_score(y_test, pred_optimized, average="weighted"),
+                "threshold": 0.68,
+                "features_count": len(X_clean.columns),
+                }
 
     # Test 3: Simulation de backtest simple
     print("3️⃣  Backtest simplifié...")
@@ -128,10 +128,10 @@ def quick_test_improvements():
 
         return {
             "final_capital": capital,
-            "total_return": total_return,
-            "trades": trades,
-            "win_rate": win_rate,
-        }
+                "total_return": total_return,
+                    "trades": trades,
+                    "win_rate": win_rate,
+                    }
 
     # Backtest avec seuil de base
     prices_test = df["close"].iloc[split_idx:split_idx + len(X_test)]
@@ -223,21 +223,21 @@ def quick_test_improvements():
 
     final_report = {
         "timestamp": datetime.now().isoformat(),
-        "test_results": results,
-        "improvements": {
+            "test_results": results,
+                "improvements": {
             "accuracy_improvement_pct": acc_improvement,
-            "return_improvement_pct": return_improvement,
-            "enhanced_features_used": use_enhanced,
-            "optimal_threshold_used": 0.68,
-        },
-        "recommendations": {
+                "return_improvement_pct": return_improvement,
+                    "enhanced_features_used": use_enhanced,
+                    "optimal_threshold_used": 0.68,
+                    },
+                    "recommendations": {
             "use_enhanced_features": use_enhanced
             and opt["accuracy"] > base["accuracy"],
-            "use_optimal_threshold": backtest_o["total_return"]
+                "use_optimal_threshold": backtest_o["total_return"]
             > backtest_b["total_return"],
-            "strategy_profitable": backtest_o["win_rate"] > 0.5,
-        },
-    }
+                "strategy_profitable": backtest_o["win_rate"] > 0.5,
+                    },
+                    }
 
     with open("artifacts/quick_test/improvement_test_results.json", "w") as f:
         json.dump(final_report, f, indent=2, default=str)

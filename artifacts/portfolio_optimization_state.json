@@ -1,0 +1,103 @@
+{
+  "timestamp": "2025-10-19T09:50:17.252561",
+  "assets": [
+    {
+      "name": "BASE_ASSET",
+      "mean_return": 0.002516951075482744,
+      "volatility": 0.057310440411591064,
+      "sharpe_ratio": 0.04253301804368374
+    },
+    {
+      "name": "SYNTH_1",
+      "mean_return": 0.007783671542329686,
+      "volatility": 0.08279431333278894,
+      "sharpe_ratio": 0.0930535703822726
+    },
+    {
+      "name": "SYNTH_2",
+      "mean_return": 0.0033441980911171013,
+      "volatility": 0.06843399490635887,
+      "sharpe_ratio": 0.04770776594614169
+    },
+    {
+      "name": "SYNTH_3",
+      "mean_return": 0.0014795147758121792,
+      "volatility": 0.05402961869401786,
+      "sharpe_ratio": 0.02591448413464602
+    },
+    {
+      "name": "SYNTH_4",
+      "mean_return": 0.0033994264648958697,
+      "volatility": 0.0688470820908544,
+      "sharpe_ratio": 0.04822370512594063
+    },
+    {
+      "name": "SYNTH_5",
+      "mean_return": 0.00025846011254307443,
+      "volatility": 0.07572908374654164,
+      "sharpe_ratio": 0.002364943880443739
+    }
+  ],
+  "current_weights": [
+    0.252155945896841,
+    0.13144668549003588,
+    0.1289802956501313,
+    0.17436387775841916,
+    0.18799383485354138,
+    0.12505936035103124
+  ],
+  "optimization_history": [
+    {
+      "objective": "sharpe",
+      "weights": {
+        "BASE_ASSET": 0.28029999187566756,
+        "SYNTH_1": 0.4829343579357457,
+        "SYNTH_2": 7.44355830717259e-17,
+        "SYNTH_3": 1.7452683032080767e-16,
+        "SYNTH_4": 0.23676565018858683,
+        "SYNTH_5": 0.0
+      },
+      "expected_return": 1.3444821976918546,
+      "volatility": 0.8020903092484083,
+      "sharpe_ratio": 1.6512881185822443,
+      "timestamp": "2025-10-19T09:50:17.170697"
+    },
+    {
+      "objective": "min_variance",
+      "weights": {
+        "BASE_ASSET": 0.3890059567445785,
+        "SYNTH_1": 0.05754461630682898,
+        "SYNTH_2": 0.0,
+        "SYNTH_3": 0.3416377523514907,
+        "SYNTH_4": 0.2118116745971019,
+        "SYNTH_5": 0.0
+      },
+      "expected_return": 0.6914721664821689,
+      "volatility": 0.6069178315688792,
+      "sharpe_ratio": 1.1063642087206715,
+      "timestamp": "2025-10-19T09:50:17.190622"
+    },
+    {
+      "objective": "risk_parity",
+      "weights": {
+        "BASE_ASSET": 0.252155945896841,
+        "SYNTH_1": 0.13144668549003588,
+        "SYNTH_2": 0.1289802956501313,
+        "SYNTH_3": 0.17436387775841916,
+        "SYNTH_4": 0.18799383485354138,
+        "SYNTH_5": 0.12505936035103124
+      },
+      "expected_return": 0.7755972638434988,
+      "volatility": 0.6652641851309059,
+      "sharpe_ratio": 1.135785272575312,
+      "timestamp": "2025-10-19T09:50:17.210834"
+    }
+  ],
+  "parameters": {
+    "risk_free_rate": 0.02,
+    "rebalance_frequency": "monthly",
+    "min_weight": 0.0,
+    "max_weight": 0.5,
+    "max_correlation": 0.8
+  }
+}

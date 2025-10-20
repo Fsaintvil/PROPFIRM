@@ -45,26 +45,26 @@ def main():
     # Créer configuration rapide
     quick_config = {
         "version": "2.0",
-        "created": datetime.now().isoformat(),
-        "mode": "auto_trading",
-        "deployment": "automated",
-        "schedule": {
+            "created": datetime.now().isoformat(),
+                "mode": "auto_trading",
+                "deployment": "automated",
+                "schedule": {
             "monday_start": "00:05 Europe/Prague",
-            "order_interval": "930 seconds",
-            "friday_close": "22:00 Europe/Prague",
-        },
-        "systems": {
+                "order_interval": "930 seconds",
+                    "friday_close": "22:00 Europe/Prague",
+                    },
+                    "systems": {
             "portfolio_optimizer": True,
-            "regime_detection": True,
-            "risk_management": True,
-            "automated_deployment": True,
-        },
-        "performance_target": {
+                "regime_detection": True,
+                    "risk_management": True,
+                    "automated_deployment": True,
+                    },
+                    "performance_target": {
             "sharpe_ratio": 1.651,
-            "win_rate": "55%+",
-            "max_drawdown": "12%",
-        },
-    }
+                "win_rate": "55%+",
+                    "max_drawdown": "12%",
+                    },
+                    }
 
     # Sauvegarder config
     Path("control").mkdir(exist_ok=True)

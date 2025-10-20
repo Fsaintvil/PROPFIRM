@@ -89,10 +89,12 @@ class MultiAssetPortfolioOptimizer:
                 "returns": returns,
                 "mean_return": returns.mean(),
                 "volatility": returns.std(),
-                "sharpe_ratio": (returns.mean() - self.risk_free_rate / 252)
-                / returns.std()
-                if returns.std() > 0
-                else 0,
+                "sharpe_ratio": (
+                    (returns.mean() - self.risk_free_rate / 252)
+                    / returns.std()
+                    if returns.std() > 0
+                    else 0
+                ),
             }
         )
 
@@ -458,8 +460,7 @@ class MultiAssetPortfolioOptimizer:
                 {"type": "eq", "fun": lambda w: np.sum(w) - 1},
                 {
                     "type": "eq",
-                    "fun": lambda w: np.dot(w, expected_returns)
-                    - target_return,
+                    "fun": lambda w: np.dot(w, expected_returns) - target_return,
                 },
             ]
 

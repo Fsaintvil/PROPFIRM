@@ -1,0 +1,12 @@
+{
+  "date": "2025-10-14",
+  "total_trades": 4,
+  "wins": 4,
+  "losses": 0,
+  "win_rate_pct": 100.0,
+  "pnl": 30.6,
+  "max_drawdown": 0.0,
+  "profit_factor": Infinity,
+  "avg_profit": 7.65,
+  "sharpe_proxy": 2.85
+}

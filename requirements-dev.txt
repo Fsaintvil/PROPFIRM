@@ -1,0 +1,44 @@
+# Requirements pour l'environnement de développement
+# Hérite de requirements.txt + outils de développement
+
+-r requirements.txt
+
+# Outils de développement et debugging
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+black>=22.0.0
+flake8>=5.0.0
+mypy>=1.0.0
+pre-commit>=2.20.0
+isort>=5.10.0
+
+# Documentation
+sphinx>=5.0.0
+sphinx-rtd-theme>=1.0.0
+
+# Profiling et performance
+py-spy>=0.3.0
+memory-profiler>=0.60.0
+line-profiler>=4.0.0
+
+# Jupyter pour analyse
+jupyter>=1.0.0
+notebook>=6.5.0
+ipywidgets>=8.0.0
+
+# Packages optionnels pour fonctionnalités avancées
+tensorflow>=2.10.0,<3.0.0
+torch>=1.13.0,<2.0.0
+plotly>=5.0.0
+yfinance>=0.1.87
+python-telegram-bot>=20.0.0
+slack-sdk>=3.19.0
+hmmlearn>=0.2.8
+catboost>=1.0.0
+ccxt>=2.0.0
+backtrader>=1.9.0
+
+# Outils CI/CD
+tox>=4.0.0
+coverage>=7.0.0

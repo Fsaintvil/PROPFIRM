@@ -164,7 +164,7 @@ def get_safe_path(base_path: str, relative_path: str) -> str:
 
 # Données de fallback pour les tests
 FALLBACK_SAMPLE_DATA = pd.DataFrame({
-    'timestamp': pd.date_range('2024-01-01', periods=100, freq='H'),
+    'timestamp': pd.date_range('2024-01-01', periods=100, freq='h'),
     'open': 1.1000 + 0.001 * pd.Series(range(100)).cumsum(),
     'high': 1.1000 + 0.001 * pd.Series(range(100)).cumsum() + 0.0005,
     'low': 1.1000 + 0.001 * pd.Series(range(100)).cumsum() - 0.0005,

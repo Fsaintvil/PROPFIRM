@@ -8,3 +8,7 @@
   - `model_realtime.pkl`
   - `model_realtime_intraday.pkl`
   - `model_realtime_intraday_20251016_110711.pkl`
+
+## 2025-10-20 - Mise à jour identifiant production
+- MT5_LOGIN mis à jour pour la production: 1511860143
+- Fichiers impactés: `.env`, `config/mt5_credentials.env`, `config/unified_config_example.json`

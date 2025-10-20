@@ -36,8 +36,8 @@ class PerformanceValidator:
             # Chercher fichiers de données existants
             data_files = [
                 "data/sample_data.csv",
-                "MT5_FTMO_IA/data/sample_data.csv",
-            ]
+                    "MT5_FTMO_IA/data/sample_data.csv",
+                        ]
 
             for file_path in data_files:
                 if Path(file_path).exists():
@@ -63,12 +63,12 @@ class PerformanceValidator:
             data = pd.DataFrame(
                 {
                     "close": prices,
-                    "high": prices + np.random.uniform(0, 0.0005, 1000),
-                    "low": prices - np.random.uniform(0, 0.0005, 1000),
-                    "volume": np.random.randint(100, 1000, 1000),
-                },
-                index=dates,
-            )
+                        "high": prices + np.random.uniform(0, 0.0005, 1000),
+                            "low": prices - np.random.uniform(0, 0.0005, 1000),
+                            "volume": np.random.randint(100, 1000, 1000),
+                            },
+                            index=dates,
+                        )
 
             return data
 
@@ -117,10 +117,10 @@ class PerformanceValidator:
 
             return {
                 "accuracy": accuracy,
-                "correct_predictions": correct_predictions,
-                "total_predictions": total_predictions,
-                "sample_size": len(test_data),
-            }
+                    "correct_predictions": correct_predictions,
+                        "total_predictions": total_predictions,
+                        "sample_size": len(test_data),
+                        }
 
         except Exception as e:
             return {"accuracy": 0.0, "error": str(e)}
@@ -178,11 +178,11 @@ class PerformanceValidator:
                     trades.append(
                         {
                             "action": signal["action"],
-                            "entry": entry_price,
-                            "exit": exit_price,
-                            "pnl": pnl,
-                            "confidence": signal["confidence"],
-                        }
+                                "entry": entry_price,
+                                    "exit": exit_price,
+                                    "pnl": pnl,
+                                    "confidence": signal["confidence"],
+                                    }
                     )
 
             if len(trades) == 0:
@@ -202,11 +202,11 @@ class PerformanceValidator:
 
             return {
                 "sharpe_ratio": sharpe,
-                "total_return": total_return,
-                "win_rate": win_rate,
-                "total_trades": len(trades),
-                "final_capital": capital,
-                "equity_curve": equity_curve[-10:],  # Derniers points
+                    "total_return": total_return,
+                        "win_rate": win_rate,
+                        "total_trades": len(trades),
+                        "final_capital": capital,
+                        "equity_curve": equity_curve[-10:],  # Derniers points
             }
 
         except Exception as e:
@@ -309,20 +309,20 @@ class PerformanceValidator:
 
         validation_report = {
             "timestamp": datetime.now().isoformat(),
-            "validation_type": "real_performance_vs_claims",
-            "results": self.results,
-            "summary": {
+                "validation_type": "real_performance_vs_claims",
+                    "results": self.results,
+                    "summary": {
                 "signal_accuracy": self.results.get("signal_accuracy", {}).get(
                     "accuracy", 0
                 ),
-                "backtest_sharpe": self.results.get("backtest", {}).get(
-                    "sharpe_ratio", 0
+                    "backtest_sharpe": self.results.get("backtest", {}).get(
+                        "sharpe_ratio", 0
                 ),
-                "backtest_win_rate": self.results.get("backtest", {}).get(
-                    "win_rate", 0
+                    "backtest_win_rate": self.results.get("backtest", {}).get(
+                        "win_rate", 0
                 ),
-            },
-        }
+                    },
+                        }
 
         # Sauvegarder
         report_dir = Path("artifacts/validation")

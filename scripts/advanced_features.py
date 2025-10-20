@@ -261,14 +261,14 @@ class AdvancedFeatureEngineer:
         # Directional Movement
         dm_plus = np.where(
             (high - high.shift(1)) > (low.shift(1) - low),
-            np.maximum(high - high.shift(1), 0),
-            0,
-        )
+                np.maximum(high - high.shift(1), 0),
+                    0,
+                    )
         dm_minus = np.where(
             (low.shift(1) - low) > (high - high.shift(1)),
-            np.maximum(low.shift(1) - low, 0),
-            0,
-        )
+                np.maximum(low.shift(1) - low, 0),
+                    0,
+                    )
 
         # ADX approximation
         dm_plus_sum = pd.Series(dm_plus).rolling(14).sum()
@@ -308,9 +308,9 @@ class AdvancedFeatureEngineer:
         # Classification en régimes
         return np.where(
             momentum_signal > 0.02,
-            1,  # Strong uptrend
+                1,  # Strong uptrend
             np.where(momentum_signal < -0.02, -1, 0),
-        )  # Strong downtrend / Sideways
+                )  # Strong downtrend / Sideways
 
     def _correlation_with_market(self, df, market_data):
         """Corrélation avec données de marché"""
@@ -565,10 +565,10 @@ def main():
         # Essayer différents chemins pour les données
         data_paths = [
             "../data/features_enhanced.csv",
-            "../data/features_sample.csv",
-            "data/features_enhanced.csv",
-            "data/features_sample.csv",
-        ]
+                "../data/features_sample.csv",
+                    "data/features_enhanced.csv",
+                    "data/features_sample.csv",
+                    ]
 
         df = None
         for path in data_paths:

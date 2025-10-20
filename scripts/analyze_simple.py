@@ -75,9 +75,9 @@ def analyze_feature_importance(model, X):
     feature_importance = pd.DataFrame(
         {
             "feature": X.columns,
-            "importance_gain": importance_gain,
-            "importance_split": importance_split,
-        }
+                "importance_gain": importance_gain,
+                    "importance_split": importance_split,
+                    }
     ).sort_values("importance_gain", ascending=False)
 
     # Sauvegarder
@@ -177,9 +177,9 @@ def generate_performance_plots(df, model, X, y):
         plt.tight_layout()
         plt.savefig(
             plots_dir / "performance_evolution.png",
-            dpi=150,
-            bbox_inches="tight",
-        )
+                dpi=150,
+                    bbox_inches="tight",
+                    )
         plt.close()
 
     # 4. Distribution des erreurs
@@ -202,19 +202,19 @@ def generate_detailed_metrics(y, predictions, pred_labels):
     """Génère des métriques détaillées"""
     from sklearn.metrics import (
         accuracy_score,
-        precision_score,
-        recall_score,
-        f1_score,
-        roc_auc_score,
-    )
+            precision_score,
+                recall_score,
+                f1_score,
+                roc_auc_score,
+                )
 
     metrics = {
         "accuracy": accuracy_score(y, pred_labels),
-        "precision": precision_score(y, pred_labels),
-        "recall": recall_score(y, pred_labels),
-        "f1_score": f1_score(y, pred_labels),
-        "roc_auc": roc_auc_score(y, predictions),
-    }
+            "precision": precision_score(y, pred_labels),
+                "recall": recall_score(y, pred_labels),
+                "f1_score": f1_score(y, pred_labels),
+                "roc_auc": roc_auc_score(y, predictions),
+                }
 
     return metrics
 
@@ -243,7 +243,8 @@ def generate_report(best_config, backtest_report, feature_importance, metrics):
 **Accuracy moyenne:** {best_config['mean_accuracy']:.4f} ± {best_config['std_accuracy']:.4f}
 
 **Scores par fold:**
-{chr(10).join([f"- Fold {i+1}: {score:.4f}" for i, score in enumerate(best_config['scores'])])}
+{chr(10).join([f"- Fold {i+1}: {score:.4f}" for i,
+    score in enumerate(best_config['scores'])])}
 
 ## Métriques détaillées
 

@@ -20,6 +20,7 @@ def check_one(p: Path):
         warnings.simplefilter("always")
         # Import locally so module import ordering remains clean
         from MT5_FTMO_IA.scripts import model_io
+
         _ = model_io.load_model(str(p), require_trust=True)
         if not w:
             print("  OK: no warnings")
@@ -51,5 +52,5 @@ def main():
             print(" -", p)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

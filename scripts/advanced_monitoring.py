@@ -184,11 +184,13 @@ class AdvancedMonitoringSystem:
                     degradation_report["issues"].append(
                         {
                             "type": "win_rate_decline",
-                            "severity": "high"
-                            if win_rate_decline > 0.2
-                            else "medium",
+                            "severity": (
+                                "high" if win_rate_decline > 0.2 else "medium"
+                            ),
                             "value": win_rate_decline,
-                            "description": f"Win rate: -{decline_pct:.1f}%",
+                            "description": (
+                                f"Win rate: -{decline_pct:.1f}%"
+                            ),
                         }
                     )
                     degradation_report["recommendations"].append(
@@ -216,11 +218,13 @@ class AdvancedMonitoringSystem:
                     degradation_report["issues"].append(
                         {
                             "type": "consecutive_losses",
-                            "severity": "critical"
-                            if max_consecutive > 8
-                            else "high",
+                            "severity": (
+                                "critical" if max_consecutive > 8 else "high"
+                            ),
                             "value": max_consecutive,
-                            "description": f"{max_consecutive} pertes suite",
+                            "description": (
+                                f"{max_consecutive} pertes suite"
+                            ),
                         }
                     )
                     degradation_report["recommendations"].append(
@@ -333,7 +337,9 @@ class AdvancedMonitoringSystem:
                 "accuracy_decline": accuracy_decline,
                 "current_accuracy": current_accuracy,
                 "baseline_accuracy": baseline_accuracy,
-                "recommendation": self.get_drift_recommendation(severity),
+                "recommendation": self.get_drift_recommendation(
+                    severity
+                ),
             }
 
             if drift_result["drift_detected"]:
@@ -549,14 +555,14 @@ class AdvancedMonitoringSystem:
             emergency_report = {
                 "timestamp": datetime.now().isoformat(),
                 "current_metrics": self.current_metrics,
-                "recent_alerts": self.alert_history[
-                    -10:
-                ],  # 10 dernières alertes
+                "recent_alerts": self.alert_history[-10:],  # 10 dernières alertes
                 "risk_events": self.risk_events,
                 "emergency_stop_reason": "Arrêt automatique déclenché",
                 "system_state": {
                     "monitoring_active": self.monitoring_active,
-                    "emergency_stop_triggered": self.emergency_stop_triggered,
+                    "emergency_stop_triggered": (
+                        self.emergency_stop_triggered
+                    ),
                 },
             }
 
@@ -712,7 +718,7 @@ class AdvancedMonitoringSystem:
                      border-radius: 8px; margin-bottom: 20px; }
             .metrics { display: grid;
                       grid-template-columns: repeat(auto-fit,
-                      minmax(200px, 1fr));
+                          minmax(200px, 1fr));
                       gap: 15px; margin-bottom: 20px; }
             .metric { background: white; padding: 15px; border-radius: 8px;
                      box-shadow: 0 2px 4px rgba(0,0,0,0.1); }

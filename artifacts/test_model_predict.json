@@ -1,0 +1,10 @@
+{
+  "model": "artifacts\\auto_improve\\best_lightgbm_large.txt",
+  "input_shape": [
+    1,
+    5
+  ],
+  "prediction": [
+    0.11354895028203692
+  ]
+}

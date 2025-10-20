@@ -1,0 +1,2 @@
+# workspace-level kill switch (marker file)
+# presence blocks live sends for tools that resolve to repository root/control/kill_switch

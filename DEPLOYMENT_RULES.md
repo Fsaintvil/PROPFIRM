@@ -6,6 +6,9 @@ Ce fichier formalise la règle opérationnelle :
 - Ne jamais exécuter d'installation ou lancer les scripts depuis la racine
   `PROPFIRM` ou en mélangeant des fichiers entre `PROPFIRM` et
   `MT5_FTMO_IA`.
+ - Pour les analyses multi-timeframe (MTF), la convergence des signaux doit
+   toujours se faire sur le timeframe `M5` (c'est la référence opérationnelle
+   pour les décisions basées sur la fusion de plusieurs timeframes).
 
 Pourquoi ?
 - Prévention des erreurs d'import et des chemins relatifs cassés.

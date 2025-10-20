@@ -9,11 +9,12 @@ if ROOT not in sys.path:
 
 
 def run():
-    m = import_module('MT5_FTMO_IA.scripts._execute_recommendations_live')
+    m = import_module("MT5_FTMO_IA.scripts._execute_recommendations_live")
     import sys as _sys
-    _sys.argv = ['', '--auth-token', 'DRY-TOKEN', '--simulate']
+
+    _sys.argv = ["", "--auth-token", "DRY-TOKEN", "--simulate"]
     m.main()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()

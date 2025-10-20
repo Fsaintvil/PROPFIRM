@@ -1,8 +1,8 @@
 """POC training script for LightGBM using MTF features.
 
 This script is minimal: it loads a CSV `data/features_sample.csv` if present,
-or synthesizes data for a smoke run. It trains a small LightGBM model and
-saves metrics to `artifacts/train_metrics.json`.
+    or synthesizes data for a smoke run. It trains a small LightGBM model and
+        saves metrics to `artifacts/train_metrics.json`.
 """
 from __future__ import annotations
 
@@ -59,10 +59,10 @@ def train(df: pd.DataFrame):
     params = {"objective": "binary", "metric": "binary_logloss", "verbose": -1}
     model = lgb.train(
         params,
-        dtrain,
-        num_boost_round=50,
-        valid_sets=[dval],
-    )
+            dtrain,
+                num_boost_round=50,
+                valid_sets=[dval],
+                )
     # simple metric
     preds = model.predict(X_val)
     acc = ((preds > 0.5) == y_val).mean()
@@ -73,10 +73,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--horizon",
-        type=int,
-        default=5,
-        help="horizon in ticks to build label",
-    )
+            type=int,
+                default=5,
+                help="horizon in ticks to build label",
+                )
     args = parser.parse_args()
     base = Path.cwd()
     path = base / "data" / "features_sample.csv"

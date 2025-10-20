@@ -75,9 +75,9 @@ class SimplifiedTradingRobot:
         self.positions = {}
         self.performance = {
             "daily_pnl": 0.0,
-            "trades_today": 0,
-            "total_trades": 0,
-        }
+                "trades_today": 0,
+                    "total_trades": 0,
+                    }
 
         # Instruments FTMO
         self.instruments = ["EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD"]
@@ -107,9 +107,9 @@ class SimplifiedTradingRobot:
 
         logging.basicConfig(
             level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s",
-            handlers=[logging.FileHandler(log_file), logging.StreamHandler()],
-        )
+                format="%(asctime)s - %(levelname)s - %(message)s",
+                    handlers=[logging.FileHandler(log_file), logging.StreamHandler()],
+                    )
         self.logger = logging.getLogger(__name__)
 
     def setup_directories(self):
@@ -160,7 +160,7 @@ class SimplifiedTradingRobot:
             # Fallback: fichiers existants
             data_files = [
                 "data/sample_data.csv",
-            ]
+                    ]
 
             for file_path in data_files:
                 if Path(file_path).exists():
@@ -217,11 +217,11 @@ class SimplifiedTradingRobot:
 
             return {
                 "action": action,
-                "confidence": confidence,
-                "ma_short": ma_short,
-                "ma_long": ma_long,
-                "rsi": rsi,
-            }
+                    "confidence": confidence,
+                        "ma_short": ma_short,
+                        "ma_long": ma_long,
+                        "rsi": rsi,
+                        }
 
         except Exception as e:
             self.logger.error(f"Erreur signal: {e}")
@@ -272,12 +272,12 @@ class SimplifiedTradingRobot:
             ):
                 self.positions[symbol] = {
                     "action": signal["action"],
-                    "entry_price": current_price,
-                    "lot_size": lot_size,
-                    "sl": sl,
-                    "tp": tp,
-                    "time": datetime.now().isoformat(),
-                }
+                        "entry_price": current_price,
+                            "lot_size": lot_size,
+                            "sl": sl,
+                            "tp": tp,
+                            "time": datetime.now().isoformat(),
+                            }
 
                 self.performance["trades_today"] += 1
                 self.performance["total_trades"] += 1
@@ -305,15 +305,15 @@ class SimplifiedTradingRobot:
 
                 request = {
                     "action": mt5.TRADE_ACTION_DEAL,
-                    "symbol": symbol,
-                    "volume": lot_size,
-                    "type": order_type,
-                    "price": price,
-                    "sl": sl,
-                    "tp": tp,
-                    "magic": 123456,
-                    "comment": "Simplified Robot v3.0",
-                }
+                        "symbol": symbol,
+                            "volume": lot_size,
+                            "type": order_type,
+                            "price": price,
+                            "sl": sl,
+                            "tp": tp,
+                            "magic": 123456,
+                            "comment": "Simplified Robot v3.0",
+                            }
 
                 result = mt5.order_send(request)
                 return result and result.retcode == mt5.TRADE_RETCODE_DONE
@@ -451,10 +451,10 @@ class SimplifiedTradingRobot:
         """Sauvegarder état actuel"""
         state = {
             "timestamp": datetime.now().isoformat(),
-            "performance": self.performance,
-            "positions_count": len(self.positions),
-            "is_running": self.is_running,
-        }
+                "performance": self.performance,
+                    "positions_count": len(self.positions),
+                    "is_running": self.is_running,
+                    }
 
         state_file = Path("data/simplified_robot/current_state.json")
         with open(state_file, "w") as f:
