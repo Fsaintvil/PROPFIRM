@@ -163,7 +163,7 @@ def make_enhanced_decision(self, symbol, data, signals):
 
 ### Validation
 1. **Backtest** sur 6 mois de données
-2. **Paper trading** 2 semaines
+2. ~~Paper trading 2 semaines~~ (retiré, politique 100% live). Remplacer par un live progressif sur taille minimale avec garde-fous.
 3. **Live progressif** avec montants réduits
 
 ### Monitoring

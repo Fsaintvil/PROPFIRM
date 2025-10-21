@@ -2,6 +2,14 @@
 
 **Système de trading automatisé avec IA et gestion de risque avancée**
 
+## 🧭 Politique d’exploitation: 100% live — pas de mode paper
+
+- Trading uniquement en temps réel via MT5. Aucun mode paper/dry-run/simulation en production.
+- Les artefacts `paper_trades.*` et outils dry_run ont été supprimés et ne doivent pas être réintroduits.
+- Pour l’analyse de performance, utilisez les journaux réels (`logs/trades.json[l]`) et `tools/performance_aggregator.py`.
+- Les contributions (PR) doivent respecter cette politique; tout fallback de simulation est refusé.
+- Les anciennes mentions de « mode mock/paper » dans des scripts ou docs sont obsolètes et en cours de nettoyage.
+
 ## 🚀 Démarrage Rapide
 
 ### Installation

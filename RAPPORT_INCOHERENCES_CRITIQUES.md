@@ -114,12 +114,13 @@ Seul `requirements.txt` existe, manque:
 ## 🔥 PROBLÈME 5: DONNÉES CORROMPUES/INCOHÉRENTES
 **Sévérité**: ⚠️ **MAJEUR**
 
-### A. Paper Trades Incohérents
+### A. (Historique) Artefacts de simulation obsolètes
+> Note: Les exemples ci-dessous faisaient référence à `data/paper_trades.json` du mode simulation. Ce mode est supprimé (100% live). Les analyses doivent désormais s'appuyer sur `logs/trades.json[l]` et l'agrégateur de performance.
 ```json
-// data/paper_trades.json
-{"symbol": "XAUUSD", "side": "buy", "price": 1.0015}  // Prix FOREX pour Or!
-{"symbol": "BTCUSD", "price": 1.0015}  // Prix FOREX pour Bitcoin!
-{"symbol": "EURUSD", "price": null, "sl": null}  // Valeurs nulles
+// Exemple historique (obsolète)
+{"symbol": "XAUUSD", "side": "buy", "price": 1.0015}
+{"symbol": "BTCUSD", "price": 1.0015}
+{"symbol": "EURUSD", "price": null, "sl": null}
 ```
 
 ### B. Formats Mixtes dans trades.json
@@ -213,7 +214,7 @@ config/
 ### Phase 1: Correction Urgente (1-2h)
 1. **Corriger erreur `symbol` dans live_trading_engine.py**
 2. **Nettoyer architecture advanced_decision_engine**
-3. **Valider et nettoyer data/paper_trades.json**
+3. **Valider et nettoyer les données live** (`logs/trades.json[l]`) et utiliser `tools/performance_aggregator.py` pour toute analyse de performance
 
 ### Phase 2: Stabilisation (2-4h)  
 4. **Créer requirements-dev.txt et env.template**
