@@ -165,6 +165,20 @@ else:
         print(f"🔴 Erreur systèmes inattendue: {e}")
         print("🔄 Mode minimal activé")
 
+# Import MTF pipeline (convergence 15m) avec fallback
+try:
+    from src.pipeline.mtf_features import (
+        build_live_mtf_from_m1,
+        compute_mtf_convergence,
+    )
+    from src.pipeline.fundamentals import (
+        load_fundamentals_csv,
+        compute_fundamental_confluence,
+    )
+    MTF_AVAILABLE = True
+except Exception:
+    MTF_AVAILABLE = False
+
 
 class LiveTradingEngine:
     """Moteur de trading live avec tous les systèmes intégrés"""
@@ -386,6 +400,9 @@ class LiveTradingEngine:
         print(f"  📈 Symboles: {', '.join(self.symbols)}")
         print(f"  💰 Lots: {self.lot_sizes}")
         print(f"  🛡️  Risque max: {max_risk_per_trade*100:.1f}%")
+
+        # Préparer support MTF/fondamentaux (chargement lazy)
+        self._fundamentals_map = None
 
     def is_market_open(self, symbol):
         """Vérifier si le marché est ouvert pour un symbole"""
@@ -1743,10 +1760,9 @@ class LiveTradingEngine:
             return False
 
         if not MT5_AVAILABLE:
-            # Simulation
-            return self.simulate_trade(
-                action, symbol, lot_size, stop_loss, take_profit
-            )
+            # Mode 100% live: ne pas simuler
+            self.logger.error("MT5 indisponible – exécution annulée (simulation interdite)")
+            return False
 
         try:
             # Les validations complètes ont déjà été faites par validate_signal_quality
@@ -1882,49 +1898,7 @@ class LiveTradingEngine:
             self.logger.error(f"Erreur exécution trade {symbol}: {e}")
             return False
 
-    def simulate_trade(
-        self, action, symbol, lot_size, stop_loss=None, take_profit=None
-    ):
-        """Simuler un trade (mode sans MT5)"""
-        try:
-            # Prix de simulation
-            symbol_has_data = (
-                symbol in self.live_data
-                and self.live_data[symbol] is not None
-                and len(self.live_data[symbol]) > 0
-            )
-
-            if symbol_has_data:
-                current_price = self.live_data[symbol]["close"].iloc[-1]
-            else:
-                current_price = 1.0  # Prix par défaut
-
-            # Simuler l'exécution
-            trade_info = {
-                "timestamp": datetime.now(),
-                "symbol": symbol,
-                "action": action,
-                "volume": lot_size,
-                "price": current_price,
-                "order_id": f"SIM_{len(self.trade_history)+1}",
-                "stop_loss": stop_loss,
-                "take_profit": take_profit,
-                "simulated": True,
-            }
-
-            self.trade_history.append(trade_info)
-            self.performance_metrics["total_trades"] += 1
-
-            self.logger.info(
-                f"✅ Trade simulé: {action} {symbol} {lot_size} lots"
-                f" à {current_price}"
-            )
-
-            return True
-
-        except Exception as e:
-            self.logger.error(f"Erreur simulation trade {symbol}: {e}")
-            return False
+    # simulate_trade supprimé: le mode simulation est interdit (100% live)
 
     # LIGNE 547-589 : Checks de risque simplistes
     def risk_check(self, action, signals, symbol="UNKNOWN"):
@@ -2091,6 +2065,201 @@ class LiveTradingEngine:
                         signals = self.get_ai_signals(symbol_data, symbol)
                         action = signals["combined_signal"]
                         confidence = signals["confidence"]
+
+                        # 3.b Convergence MTF 15m (optionnel, non-intrusif)
+                        try:
+                            from config.trading_config import TradingConfig as _TC
+                            if MTF_AVAILABLE and getattr(_TC, 'USE_MTF_CONVERGENCE', True):
+                                # Charger les fondamentaux une seule fois
+                                if self._fundamentals_map is None:
+                                    try:
+                                        from pathlib import Path as _P
+                                        funda_dir = _P("data/fundamentals")
+                                        if funda_dir.exists():
+                                            self._fundamentals_map = load_fundamentals_csv(funda_dir)
+                                        else:
+                                            self._fundamentals_map = {}
+                                    except Exception as _e:
+                                        self._fundamentals_map = {}
+
+                                o15, tech_mtf, funda_mtf = build_live_mtf_from_m1(
+                                    symbol_data, self._fundamentals_map
+                                )
+                                if tech_mtf is not None and len(tech_mtf) > 0:
+                                    mtf_action, mtf_conf, mtf_agree = compute_mtf_convergence(tech_mtf)
+                                    signals["mtf_convergence"] = {
+                                        "action": mtf_action,
+                                        "confidence": mtf_conf,
+                                        "agreement": mtf_agree,
+                                    }
+                                    # mémoriser un bref résumé pour affichage périodique
+                                    try:
+                                        self.last_mtf_summary = {
+                                            'action': mtf_action,
+                                            'confidence': mtf_conf,
+                                            'agreement': mtf_agree,
+                                            'symbol': symbol,
+                                        }
+                                    except Exception:
+                                        pass
+
+                                    # Fusion simple: si AI neutre/faible et MTF fort => utiliser MTF
+                                    if (
+                                        mtf_action in ("buy", "sell")
+                                        and mtf_conf > max(0.55, self.confidence_threshold)
+                                        and confidence < self.confidence_threshold
+                                    ):
+                                        action = mtf_action
+                                        confidence = max(confidence, mtf_conf)
+                                        self.logger.info(
+                                            "🧭 MTF pris en compte: %s conf=%.3f (agree=%s)",
+                                            mtf_action,
+                                            mtf_conf,
+                                            str(mtf_agree),
+                                        )
+                                    # Sinon, si concordance avec AI, booster légèrement la confiance
+                                    elif (
+                                        mtf_action == action and action in ("buy", "sell")
+                                    ):
+                                        confidence = float(min(1.0, confidence + 0.1))
+                                        self.logger.info(
+                                            f"🧭 MTF concordant: boost conf -> {confidence:.3f}"
+                                        )
+
+                                # 3.c Confluence fondamentale (optionnelle)
+                                try:
+                                    if (
+                                        getattr(_TC, 'USE_FUNDAMENTAL_CONFLUENCE', True)
+                                        and funda_mtf is not None
+                                        and len(funda_mtf) > 0
+                                    ):
+                                        fconf = compute_fundamental_confluence(funda_mtf)
+                                        signals["fundamental_confluence"] = fconf
+
+                                        # Appliquer un léger boost si biais aligné
+                                        max_boost = float(getattr(_TC, 'FUNDAMENTAL_BOOST_MAX', 0.07))
+                                        bias = fconf.get('bias', 'neutral')
+                                        fscore = float(fconf.get('score', 0.0))
+
+                                        aligned = (
+                                            (bias == 'bull' and action == 'buy') or
+                                            (bias == 'bear' and action == 'sell')
+                                        )
+                                        if aligned and action in ("buy", "sell"):
+                                            boost = min(max_boost, fscore * max_boost)
+                                            old_conf = confidence
+                                            confidence = float(min(1.0, confidence + boost))
+                                            self.logger.info(
+                                                (
+                                                    "🧮 Confluence fondamentale alignée "
+                                                    "(%s, score=%.2f): +%.3f -> conf=%.3f"
+                                                ),
+                                                bias, fscore, boost, confidence
+                                            )
+                                except Exception as _fe:
+                                    self.logger.debug(f"Fundamental confluence indisponible: {_fe}")
+
+                                # 3.d Extension technique prudente (EMA/BB/ATR/MACD hist)
+                                try:
+                                    if (
+                                        getattr(_TC, 'USE_EXTENDED_MTF_TECH', False)
+                                        and tech_mtf is not None
+                                        and len(tech_mtf) > 0
+                                    ):
+                                        # Lis légèrement quelques signaux techniques complémentaires
+                                        last = tech_mtf.iloc[-1]
+                                        ema_ok = 0.0
+                                        bb_ok = 0.0
+                                        atr_ok = 0.0
+                                        macd_hist_ok = 0.0
+
+                                        for lbl in ("1D", "4H", "1H", "30T", "15T", "5T"):
+                                            try:
+                                                ema = float(last.get(f"tech_{lbl}_ema20", np.nan))
+                                                close = (
+                                                    float(o15.iloc[-1]['close'])
+                                                    if len(o15) else np.nan
+                                                )
+                                                if np.isfinite(ema) and np.isfinite(close):
+                                                    ema_ok += 1.0 if close > ema else -0.5
+                                            except Exception:
+                                                pass
+                                            try:
+                                                bb_h = float(
+                                                    last.get(
+                                                        f"tech_{lbl}_bb_high", np.nan
+                                                    )
+                                                )
+                                                bb_l = float(
+                                                    last.get(
+                                                        f"tech_{lbl}_bb_low", np.nan
+                                                    )
+                                                )
+                                                close = (
+                                                    float(o15.iloc[-1]['close'])
+                                                    if len(o15) else np.nan
+                                                )
+                                                if (
+                                                    np.isfinite(bb_h) and np.isfinite(bb_l)
+                                                    and np.isfinite(close) and bb_h > bb_l
+                                                ):
+                                                    pos = (close - bb_l) / (bb_h - bb_l)
+                                                    # proche des bords = momentum
+                                                    bb_ok += (pos - 0.5) * 0.5
+                                            except Exception:
+                                                pass
+                                            try:
+                                                atr = float(last.get(f"tech_{lbl}_atr14", np.nan))
+                                                if np.isfinite(atr) and atr > 0:
+                                                    atr_ok += 0.1  # présence/info seulement
+                                            except Exception:
+                                                pass
+                                            try:
+                                                macd_hist = float(
+                                                    last.get(
+                                                        f"tech_{lbl}_macd_hist", np.nan
+                                                    )
+                                                )
+                                                if np.isfinite(macd_hist):
+                                                    macd_hist_ok += np.sign(macd_hist) * 0.2
+                                            except Exception:
+                                                pass
+
+                                        ext_score = (
+                                            ema_ok * 0.05 + bb_ok * 0.1 +
+                                            atr_ok * 0.02 + macd_hist_ok * 0.1
+                                        )
+                                        # Clip et appliquer boost modeste
+                                        if 'np' in globals():
+                                            ext_boost = float(
+                                                np.clip(ext_score, -0.05, 0.08)
+                                            )
+                                        else:
+                                            ext_boost = float(
+                                                max(min(ext_score, 0.08), -0.05)
+                                            )
+                                        if action == 'buy' and ext_boost > 0:
+                                            confidence = float(min(1.0, confidence + ext_boost))
+                                            self.logger.info(
+                                                (
+                                                    "🧩 Extension MTF technique: "
+                                                    "+%.3f -> conf=%.3f"
+                                                ),
+                                                ext_boost, confidence
+                                            )
+                                        elif action == 'sell' and ext_boost > 0:
+                                            confidence = float(min(1.0, confidence + ext_boost))
+                                            self.logger.info(
+                                                (
+                                                    "🧩 Extension MTF technique: "
+                                                    "+%.3f -> conf=%.3f"
+                                                ),
+                                                ext_boost, confidence
+                                            )
+                                except Exception as _te:
+                                    self.logger.debug(f"Extended MTF tech indisponible: {_te}")
+                        except Exception as _e:
+                            self.logger.debug(f"MTF convergence indisponible: {_e}")
 
                         # Mettre à jour live_data pour usage ultérieur (volatilité, etc.)
                         try:
@@ -2658,6 +2827,20 @@ class LiveTradingEngine:
             except Exception as _agg_err:
                 # Best-effort, ne bloque pas
                 self.logger.debug(f"Perf aggregator indisponible: {_agg_err}")
+
+            # Résumé MTF (si mémorisé)
+            try:
+                if getattr(self, 'last_mtf_summary', None):
+                    mtf = self.last_mtf_summary
+                    self.logger.info(
+                        "  🧭 MTF: %s | conf=%.2f | agree=%s | symbol=%s",
+                        mtf.get('action', 'hold').upper(),
+                        float(mtf.get('confidence', 0.0)),
+                        str(mtf.get('agreement', 0)),
+                        mtf.get('symbol', ''),
+                    )
+            except Exception:
+                pass
 
         except Exception as e:
             self.logger.error(f"Erreur log résumé: {e}")

@@ -12,13 +12,9 @@ TOTAL_MAX_LOSS_PCT = 10.0
 RISK_PER_TRADE_PCT = 2.0
 MIN_RR = 2.0
 
-# MTF thresholds
-MTF_PAPER_THRESHOLD = 75
-# Default MTF threshold used at runtime (percentage)
+# MTF thresholds (pour le live uniquement)
+# Seuil par défaut utilisé à l'exécution (en pourcentage)
 MTF_THRESHOLD = 50.0
-MTF_PAPER_THRESHOLD = 75
-# Backwards-compatible alias
-MTF_REAL_THRESHOLD = MTF_PAPER_THRESHOLD
 
 # Backtest policy
 BACKTEST_YEARS = 7
@@ -56,5 +52,6 @@ INSTRUMENT_CONFIG = {
 DATAFIRM_MTF_WEIGHT = 0.4
 DATAFIRM_BASE_WEIGHT = 0.6
 
-# Persistence
-TRADES_CSV = BASE_DIR / "data" / "paper_trades.csv"
+# Persistence (live uniquement)
+# CSV obsolète (paper_trades.csv) supprimé.
+# Utiliser les logs JSONL sous logs/ pour l'agrégation de performance.

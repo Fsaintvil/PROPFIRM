@@ -37,7 +37,7 @@ def load_data():
 def resample_df(df, minutes):
     if minutes == 1:
         return df.copy()
-    rule = f'{minutes}T'
+    rule = f'{minutes}min'
     # For close take last, for volume sum, for indicators take last
     agg = {
         'close': 'last',

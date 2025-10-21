@@ -67,6 +67,20 @@ class TradingConfig:
     )
     POSITION_SIZE_FACTOR = float(os.getenv('POSITION_SIZE_FACTOR', '0.00001'))
 
+    # === FONCTIONNALITÉS OPTIONNELLES ===
+    # Activer la convergence MTF (15m) en live (1=on, 0=off)
+    USE_MTF_CONVERGENCE = os.getenv('USE_MTF', '1').strip() not in ('0', 'false', 'False')
+    # Activer l’usage des fondamentaux (1=on, 0=off)
+    USE_FUNDAMENTAL_CONFLUENCE = (
+        os.getenv('USE_FUNDAMENTAL', '1').strip() not in ('0', 'false', 'False')
+    )
+    # Boost max accordé par la confluence fondamentale (0..0.2 conseillé)
+    FUNDAMENTAL_BOOST_MAX = float(os.getenv('FUNDAMENTAL_BOOST_MAX', '0.07'))
+    # Activer l’extension technique MTF (EMA/BB/ATR/MACD_hist)
+    USE_EXTENDED_MTF_TECH = (
+        os.getenv('USE_EXT_MTF_TECH', '1').strip() not in ('0', 'false', 'False')
+    )
+
     @classmethod
     def get_adaptive_threshold_range(cls) -> tuple:
         """Retourne la plage de seuils adaptatifs"""

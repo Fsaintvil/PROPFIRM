@@ -7,7 +7,7 @@ from src.pipeline.fundamentals import build_7_fundamentals
 
 def test_mtf_alignment_and_no_nans():
     # Fabrique un index 15m court
-    idx = pd.date_range("2020-01-01", periods=200, freq="15T")
+    idx = pd.date_range("2020-01-01", periods=200, freq="15min")
     df = pd.DataFrame({
         "open": np.random.rand(len(idx)) * 100 + 1000,
         "high": np.random.rand(len(idx)) * 100 + 1000,
@@ -24,7 +24,7 @@ def test_mtf_alignment_and_no_nans():
 
 
 def test_fundamentals_merge():
-    idx = pd.date_range("2020-01-01", periods=100, freq="15T")
+    idx = pd.date_range("2020-01-01", periods=100, freq="15min")
     # Série mensuelle simulée
     dates = pd.date_range("2019-12-01", periods=4, freq="MS")
     fundas = {

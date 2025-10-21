@@ -45,7 +45,7 @@ def test_atr_vwap_resample():
     # For volume=1, VWAP equals the mean of the close series
     expected = float(df["close"].mean())
     assert abs(float(v.iloc[-1]) - expected) < 1e-12
-    r = resample_ohlcv(df, "5T")
+    r = resample_ohlcv(df, "5min")
     assert "open" in r.columns
 
 
