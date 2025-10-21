@@ -40,9 +40,9 @@ Recommandation: souvent tests ponctuels, déplacer ou archiver.
 ---
 
 ## 4) Scripts préfixés par `_` (variantes, exemples, potentiellement obsolètes)
-(Extraits — revoir individuellement)
+ (Extraits — revoir individuellement)
 - `scripts/_send_three_live_orders.py`
-- `scripts/_send_three_paper_trades.py`
+<!-- script papier supprimé dans la politique 100% live -->
 - `scripts/_send_three_with_mt5_ticks.py`
 - `scripts/_send_real_order.py`
 - `scripts/_send_multiple_orders.py`
@@ -57,7 +57,7 @@ Recommandation: souvent tests ponctuels, déplacer ou archiver.
 - `scripts/_live_execute_best.py`
 
 Recommandation: classer en 3 groupes:
-- Keep: `*_live_execute_best.py`, `_dry_run_live.py`, `guarded` scripts utilisés par CI or main.
+- Keep: `*_live_execute_best.py`, `guarded` scripts utilisés par CI or main. Note: `_dry_run_live.py` supprimé (100% live).
 - Archive: variants redondants / anciennes façons de faire -> `archive/scripts/`.
 - Delete: scripts stale/duplicates.
 
