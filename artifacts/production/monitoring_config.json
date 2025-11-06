@@ -1,6 +1,0 @@
-{
-  "monitoring_window_hours": 24,
-  "log_predictions": true,
-  "log_trades": true,
-  "alert_on_drawdown_pct": 0.05
-}

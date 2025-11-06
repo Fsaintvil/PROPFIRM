@@ -1,8 +1,0 @@
-{
-  "features_sample": {
-    "total_return": 32.78207375568857,
-    "avg_return_per_tick": 0.008105454188245905,
-    "win_rate": 0.3434343434343434,
-    "sharpe_annualized": 108.01191149881667
-  }
-}
