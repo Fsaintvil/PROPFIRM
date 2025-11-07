@@ -1,8 +1,14 @@
 import importlib.machinery
 import importlib.util
 from pathlib import Path
+import pytest
 base = Path(__file__).resolve().parent
 mod_path = base / 'MT5_FTMO_IA' / 'ai_trader_ftmo_7indicators.py'
+if not mod_path.exists():
+    pytest.skip(
+        "MT5 helper module missing; skipping integration test.",
+        allow_module_level=True,
+    )
 loader = importlib.machinery.SourceFileLoader('ai_trader', str(mod_path))
 spec = importlib.util.spec_from_loader(loader.name, loader)
 mod = importlib.util.module_from_spec(spec)

@@ -83,3 +83,17 @@ archive/
 # Allow explicit addition of files in logs and models if needed
 !logs/README.md
 !models/README.md
+# Project temporary and artifact folders (do not commit large test artifacts)
+/tmp/
+tmp/
+tmp_*
+tmp/**
+/artifacts/
+artifacts/
+/tools_dup/
+tmp/lgb_install_*
+tmp/lgb_wheels_*
+*.whl
+
+# Local test/output directories
+.local_results/
