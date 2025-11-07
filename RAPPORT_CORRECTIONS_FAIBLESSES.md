@@ -12,7 +12,7 @@
 ## 🔧 Corrections Implementées
 
 ### 1. ✅ Configuration Centralisée
-**Problème initial:** Valeurs codées en dur dispersées dans tout le code (0.68, 930s, 60s, etc.)
+**Problème initial:** Valeurs codées en dur dispersées dans tout le code (0.5, 930s, 60s, etc.)
 
 **Solution appliquée:**
 - **Fichier créé:** `config/trading_config.py` 
@@ -24,7 +24,7 @@
 
 **Paramètres centralisés:**
 ```python
-DEFAULT_CONFIDENCE_THRESHOLD = 0.68    # Seuil de confiance optimal
+DEFAULT_CONFIDENCE_THRESHOLD = 0.5    # Seuil de confiance optimal
 TRADING_INTERVAL_SECONDS = 930         # Intervalle de trading
 CLEANUP_CYCLE_INTERVAL = 20           # Cycles de nettoyage
 MIN_SLEEP_SECONDS = 60                 # Délai minimum de sommeil
@@ -82,7 +82,7 @@ def _initialize_mt5():
 **Exemples de corrections:**
 ```python
 # AVANT
-if confidence > 0.68:  # Valeur codée en dur
+if confidence > 0.5:  # Valeur codée en dur
     
 # APRÈS  
 if confidence > self.confidence_threshold:  # Valeur configurée
@@ -171,7 +171,7 @@ time.sleep(self.min_sleep_seconds)  # Délai configurable
 ```
 🔧 VALIDATION DES CORRECTIONS
 ========================================
-✅ Configuration centralisée OK - Seuil: 0.68
+✅ Configuration centralisée OK - Seuil: 0.50
 ✅ Import retry système OK  
 ✅ from config.trading_config import TradingConfig...
 ✅ self.confidence_threshold = TradingConfig.DEFAULT_...

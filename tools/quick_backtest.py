@@ -19,7 +19,7 @@ except Exception as e:
 # Config
 DATA_FILE = Path('data') / 'features_sample.csv'
 REPORT_FILE = Path('artifacts') / 'backtest_quick_report.json'
-THRESHOLD = 0.68
+THRESHOLD = 0.50
 HOLD_BARS = 5  # horizon de sortie
 
 print('Loading data...', DATA_FILE)

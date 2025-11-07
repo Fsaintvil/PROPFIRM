@@ -359,7 +359,7 @@ class PerformanceTracker:
         
         # Seuil de confiance adaptatif
         conf_perf = analysis.get('confidence_performance', {})
-        optimal_confidence = 0.68  # valeur par défaut
+        optimal_confidence = 0.50  # valeur par défaut
         
         if conf_perf:
             # Trouver seuil avec meilleur ratio risk/reward

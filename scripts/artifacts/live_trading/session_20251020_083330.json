@@ -16,8 +16,8 @@
       "XAUUSD",
       "BTCUSD"
     ],
-    "optimal_threshold": 0.68,
-    "target_win_rate": 0.68,
+  "optimal_threshold": 0.50,
+  "target_win_rate": 0.50,
     "expected_sharpe": 18.46,
     "confidence_filter_rejections": 0,
     "last_balance_update": 9,

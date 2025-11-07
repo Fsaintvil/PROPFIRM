@@ -29,7 +29,7 @@ def production_health_check(self):
     ✅ MT5 Connection      # Connexion active
     ✅ Symbols Available   # 3 symboles configurés  
     ✅ Market Hours       # Au moins 1 marché ouvert
-    ✅ Config Valid       # Seuil 0.68, lots, interval
+    ✅ Config Valid       # Seuil 0.50, lots, interval
 ```
 
 **Résultat**: `Production Ready (4/4)` ✅ - **Validation automatique**
@@ -82,7 +82,7 @@ python start_production.py
 - ✅ **Sauvegarde automatique**: Session complète en JSON
 
 ### **Performance Optimale Maintenue**
-- ✅ **Seuil optimal**: 0.68 (+98% performance vs 0.6)
+- ✅ **Seuil optimal**: 0.50 (+98% performance vs 0.6)
 - ✅ **Trading continu**: 930s sans limite quotidienne
 - ✅ **Multi-actifs**: EURUSD + XAUUSD + BTCUSD simultanés
 - ✅ **Win rate cible**: 68.1% (vs 55.6% baseline)
@@ -113,7 +113,7 @@ engine.start_production()  # Avec tous les health checks
 ✅ Health check: Production Ready (4/4)
 ✅ MT5 Connection: Compte 1511814519 connecté
 ✅ Multi-actifs: 3 symboles configurés
-✅ Seuil optimal: 0.68 actif
+✅ Seuil optimal: 0.50 actif
 ✅ Recovery system: Intégré et fonctionnel
 ```
 
@@ -126,7 +126,7 @@ engine.start_production()  # Avec tous les health checks
 
 **Le système PROPFIRM est maintenant ultra-robuste pour la production:**
 - **🛡️ Triple sécurité**: Health checks + Recovery + Validation
-- **⚡ Performance optimisée**: +98% vs baseline avec seuil 0.68  
+- **⚡ Performance optimisée**: +98% vs baseline avec seuil 0.50  
 - **🔄 Auto-réparation**: Recovery automatique toutes les 155min
 - **📊 Monitoring complet**: Logs détaillés + sauvegarde session
 

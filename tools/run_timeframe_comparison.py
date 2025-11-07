@@ -66,7 +66,7 @@ def prepare_X(df, model):
     return X
 
 
-def simulate(df, model, threshold=0.68, horizon=15):
+def simulate(df, model, threshold=0.50, horizon=15):
     X = prepare_X(df, model)
     preds = model.predict(X.values)
     # simulation: when pred > threshold enter long at next bar close,
@@ -122,7 +122,7 @@ def main():
     results = {}
     for minutes in [1, 5, 15]:
         df_r = resample_df(df, minutes)
-        res = simulate(df_r, model, threshold=0.68, horizon=horizon)
+        res = simulate(df_r, model, threshold=0.50, horizon=horizon)
         res['rows'] = len(df_r)
         results[f'{minutes}min'] = res
         print(f'{minutes}min ->', res)

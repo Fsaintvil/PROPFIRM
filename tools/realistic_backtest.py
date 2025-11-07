@@ -81,7 +81,7 @@ trades = []
 
 for idx, pred in enumerate(preds):
     i = inputs[idx][0]
-    if pred <= 0.68:
+    if pred <= 0.50:
         equity_curve.append(capital)
         continue
 

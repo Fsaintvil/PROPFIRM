@@ -47,7 +47,7 @@ python scripts/trading_decision_config.py
 - ✅ **Analyse multi-critères** : Technique + Momentum + Régime de marché
 - ✅ **Scoring avancé** : Combinaison intelligente des signaux
 - ✅ **Risk/Reward automatique** : Calcul SL/TP adaptatifs basés sur ATR
-- ✅ **Seuil optimisé** : 0.68 de confiance minimum (+98% performance)
+- ✅ **Seuil optimisé** : 0.50 de confiance minimum (+98% performance)
 - ✅ **Interface claire** : Tableaux visuels avec recommandations colorées
 
 ### ⚙️ **Trading Decision Config**
@@ -96,7 +96,7 @@ python scripts/trading_decision_config.py
 ## 📊 INTERPRÉTATION DES SIGNAUX
 
 ### 🟢 **SIGNAUX D'EXÉCUTION**
-- **Confiance ≥ 0.68** (seuil optimisé)
+- **Confiance ≥ 0.50** (seuil optimisé)
 - **Risk/Reward ≥ 1.5**
 - **Consensus des signaux techniques**
 - **Régime de marché favorable**
@@ -128,7 +128,7 @@ Configuration principale des seuils de décision :
 ```json
 {
   "confidence_thresholds": {
-    "execute_min": 0.68,    // Seuil optimisé
+    "execute_min": 0.50,    // Seuil optimisé
     "consider_min": 0.60,   // Seuil de considération  
     "warning_max": 0.50     // Seuil d'alerte
   },
@@ -149,8 +149,8 @@ Vous pouvez ajuster selon votre profil de risque :
 - Risk/Reward minimum : 2.0
 - Risque par trade : 1.5%
 
-#### **Profil Équilibré** (recommandé)
-- Confiance minimum : 0.68
+-#### **Profil Équilibré** (recommandé)
+- Confiance minimum : 0.50
 - Risk/Reward minimum : 1.5  
 - Risque par trade : 2.0%
 
@@ -285,7 +285,7 @@ python scripts/quick_decision.py --monitor
 
 ### 🚀 **GAINS DE PERFORMANCE**
 - ⏱️ **Temps de décision** : 5 minutes → 30 secondes
-- 🎯 **Précision des signaux** : +98% avec seuil 0.68 optimisé  
+- 🎯 **Précision des signaux** : +98% avec seuil 0.50 optimisé  
 - 📊 **Couverture d'analyse** : 1 symbole → 3 symboles simultanés
 - 🔄 **Fréquence de monitoring** : Manuel → Automatique continu
 

@@ -62,7 +62,7 @@ class QuickDecisionHelper:
             # Configuration par défaut
             return {
                 "confidence_thresholds": {
-                    "execute_min": 0.68,
+                    "execute_min": 0.50,
                         "consider_min": 0.60,
                             "warning_max": 0.50
                 },
@@ -153,7 +153,7 @@ class QuickDecisionHelper:
             print("⏳ Attendre une meilleure opportunité")
         elif conf >= 0.75 and rr >= 2.0:
             print("🚀 EXCELLENT signal - Considérer l'exécution")
-        elif conf >= 0.68 and rr >= 1.5:
+        elif conf >= 0.50 and rr >= 1.5:
             print("✅ BON signal - Exécution recommandée")
         elif conf >= 0.60:
             print("🤔 Signal modéré - Surveiller de près")

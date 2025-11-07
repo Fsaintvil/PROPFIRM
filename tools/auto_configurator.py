@@ -81,7 +81,7 @@ def suggest_production_config() -> Dict[str, Any]:
     lots = _default_lots(symbols)
 
     # 3) Seuil de confiance
-    threshold = _read_selected_threshold() or 0.68
+    threshold = _read_selected_threshold() or 0.5
 
     # 4) Intervalle recommandé (défaut 10 min)
     interval_seconds = int(os.getenv("TRADING_INTERVAL", "600"))

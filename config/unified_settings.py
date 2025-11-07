@@ -46,7 +46,7 @@ class TradingConfig:
     max_risk_per_trade: float = 0.02
     max_trades_per_day: int = 20
     trading_interval: int = 930  # secondes
-    confidence_threshold: float = 0.68
+    confidence_threshold: float = 0.50
     live_trading: bool = False  # Mode simulation par défaut
 
 
@@ -136,7 +136,7 @@ class UnifiedConfig:
             max_risk_per_trade=float(os.getenv("MAX_RISK_PER_TRADE", "2.0")) / 100,
             max_trades_per_day=int(os.getenv("MAX_TRADES_PER_DAY", "20")),
             trading_interval=int(os.getenv("TRADING_INTERVAL", "930")),
-            confidence_threshold=float(os.getenv("CONFIDENCE_THRESHOLD", "0.68")),
+            confidence_threshold=float(os.getenv("CONFIDENCE_THRESHOLD", "0.50")),
             live_trading=os.getenv("LIVE_TRADING", "false").lower() == "true"
         )
     

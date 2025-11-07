@@ -122,7 +122,12 @@ class ForceOneTradeLive(LiveTradingEngine):
 
 def parse_args():
     ap = argparse.ArgumentParser(description="Force 1 trade RÉEL par instrument")
-    ap.add_argument("--symbols", default="EURUSD,XAUUSD,BTCUSD", help="Liste de symboles séparés par des virgules")
+    ap.add_argument(
+        "--symbols",
+        default=("BTCUSD,EURUSD,XAUUSD,USDJPY,ETHUSD,USDCAD,AUDNZD,"
+                 "EURJPY,GBPCHF,NZDJPY,EURAUD,GBPUSD"),
+        help="Liste de symboles séparés par des virgules"
+    )
     ap.add_argument("--action", choices=["buy", "sell", "alternate"], default="alternate", help="Action à exécuter")
     ap.add_argument("--lot", type=float, default=0.01, help="Taille de lot par trade")
     ap.add_argument("--deviation", type=int, default=50, help="Déviation MT5 (points/pips selon broker)")

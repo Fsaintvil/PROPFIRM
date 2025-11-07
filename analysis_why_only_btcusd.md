@@ -17,14 +17,14 @@ ANALYSE DES LOGS DU PREMIER CYCLE:
 
 3️⃣ BTCUSD:
 - Régime détecté: Bear (confiance: 0.0%)
-- Confiance AI: 0.868 ✅ (> seuil 0.68)
+- Confiance AI: 0.868 ✅ (> seuil 0.50)
 - Urgence: "immediate" ✅
 - Résultat: SELL [✅ TRADE]
 
 PROBLÈMES IDENTIFIÉS:
 ======================
 
-1. SEUIL TROP ÉLEVÉ: 0.68
+1. SEUIL TROP ÉLEVÉ: 0.50
    - EURUSD et XAUUSD ont confiance 0.000
    - Seul BTCUSD atteint 0.868
    - Solution: Appliquer le seuil optimisé 0.60

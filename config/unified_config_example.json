@@ -21,7 +21,7 @@
     "max_risk_per_trade": 0.02,
     "max_trades_per_day": 20,
     "trading_interval": 930,
-    "confidence_threshold": 0.68,
+  "confidence_threshold": 0.50,
     "live_trading": false
   },
   "ai": {

@@ -228,13 +228,13 @@ def run_compare_performance():
             # Test système de base
             base_result = base_system(test_data)
             results['base_system']['decisions'] += 1
-            if base_result['confidence'] > 0.68:
+            if base_result['confidence'] > 0.50:
                 results['base_system']['confident_decisions'] += 1
 
             # Test système amélioré
             enhanced_result = enhanced_system(test_data)
             results['enhanced_system']['decisions'] += 1
-            if enhanced_result['confidence'] > enhanced_result.get('adaptive_threshold', 0.68):
+            if enhanced_result['confidence'] > enhanced_result.get('adaptive_threshold', 0.50):
                 results['enhanced_system']['confident_decisions'] += 1
 
         # Calcul et affichage résultats

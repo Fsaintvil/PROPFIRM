@@ -66,7 +66,8 @@ def parse_args() -> argparse.Namespace:
         description="Lance la production PROPFIRM avec contrôles avancés"
     )
     parser.add_argument(
-        "--symbols", type=str, default="EURUSD,XAUUSD,BTCUSD",
+        "--symbols", type=str,
+        default="BTCUSD,EURUSD,XAUUSD,USDJPY,ETHUSD,USDCAD,AUDNZD,EURJPY,GBPCHF,NZDJPY,EURAUD,GBPUSD",
         help="Liste des symboles, séparés par des virgules"
     )
     parser.add_argument(

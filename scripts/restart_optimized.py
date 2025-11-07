@@ -49,14 +49,14 @@ def restart_with_optimized_params():
     # 3. Créer un log de redémarrage
     restart_log = Path("logs") / f"restart_optimized_{int(time.time())}.log"
     with open(restart_log, 'w') as f:
-        f.write(f"ROBOT RESTART WITH OPTIMIZED PARAMETERS\n")
+        f.write("ROBOT RESTART WITH OPTIMIZED PARAMETERS\n")
         f.write(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-        f.write(f"Confidence Threshold: 0.60 (was 0.68)\n")
+        f.write(f"Confidence Threshold: 0.60 (was 0.50)\n")
         f.write(f"Trading Interval: 600s (was 930s)\n")
-        f.write(f"Expected improvements:\n")
-        f.write(f"- Higher execution rate (8.6% → 15-20%)\n")
-        f.write(f"- More trading opportunities\n")
-        f.write(f"- Better EURUSD/XAUUSD signal quality\n")
+        f.write("Expected improvements:\n")
+        f.write("- Higher execution rate (8.6% → 15-20%)\n")
+        f.write("- More trading opportunities\n")
+        f.write("- Better EURUSD/XAUUSD signal quality\n")
     
     print(f"📝 Log de redémarrage: {restart_log}")
     
@@ -72,10 +72,10 @@ if __name__ == "__main__":
         print("🎯 Le robot doit maintenant être relancé manuellement:")
         print("   python scripts/live_trading_engine.py")
         print("\n📊 Attendez-vous à voir:")
-        print("   • Seuil: 0.60 (au lieu de 0.68)")
+        print("   • Seuil: 0.60 (au lieu de 0.50)")
         print("   • Intervalle: 600s (au lieu de 930s)")
         print("   • Plus de trades EURUSD/XAUUSD")
-        
+
     except Exception as e:
         print(f"❌ Erreur: {e}")
         sys.exit(1)

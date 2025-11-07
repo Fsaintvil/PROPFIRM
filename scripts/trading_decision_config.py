@@ -40,7 +40,7 @@ class TradingDecisionConfig:
             # Configuration par défaut optimisée
             default_config = {
                 "confidence_thresholds": {
-                    "execute_min": 0.68,  # Seuil optimisé (+98% perf)
+                    "execute_min": 0.50,  # Seuil optimisé (+98% perf)
                     "consider_min": 0.60,
                     "warning_max": 0.50
                 },

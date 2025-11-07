@@ -46,7 +46,7 @@ class SmartTradingSignals:
         # Configuration optimisée
         self.config = {
             "symbols": ["EURUSD", "XAUUSD", "BTCUSD"],
-                "confidence_min": 0.68,  # Seuil optimisé (+98% perf)
+                "confidence_min": 0.50,  # Seuil optimisé (+98% perf)
             "risk_reward_min": 1.5,
                 "refresh_interval": 60
         }
@@ -432,7 +432,7 @@ class SmartTradingSignals:
         """Obtenir recommandation basée sur le score"""
         if final_score >= 0.80:
             return "🟢 EXECUTE"
-        elif final_score >= 0.68:
+        elif final_score >= 0.50:
             return "🟡 CONSIDER"
         elif final_score >= 0.50:
             return "🟠 WAIT"

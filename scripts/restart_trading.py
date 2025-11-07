@@ -53,7 +53,7 @@ def restart_trading_now():
     
     print("\n🚀 TRADING RELANCÉ AVEC SUCCÈS")
     print("🎯 Toutes les améliorations sont actives:")
-    print("   • Seuil optimisé: 0.60 (vs 0.68)")
+    print("   • Seuil optimisé: 0.60 (vs 0.50)")
     print("   • Intervalle réduit: 600s (vs 930s)")
     print("   • Validation des signaux: ACTIVE")
     print("   • Stop loss dynamique: ACTIVE")

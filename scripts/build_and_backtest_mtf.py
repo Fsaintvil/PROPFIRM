@@ -18,7 +18,11 @@ def run(cmd: list[str]):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--symbols", default="EURUSD,XAUUSD,BTCUSD")
+    ap.add_argument(
+        "--symbols",
+        default=("BTCUSD,EURUSD,XAUUSD,USDJPY,ETHUSD,USDCAD,AUDNZD,"
+                 "EURJPY,GBPCHF,NZDJPY,EURAUD,GBPUSD")
+    )
     args = ap.parse_args()
     symbols = [s.strip().upper() for s in args.symbols.split(",") if s.strip()]
 

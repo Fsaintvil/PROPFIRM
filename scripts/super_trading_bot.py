@@ -4,7 +4,7 @@ Script intégré utilisant toutes les améliorations du robot de trading:
 
 1. Features avancées (50 features vs 5)
 2. Ensemble de modèles (LightGBM + XGBoost + CatBoost)
-3. Seuil optimal (0.68)
+3. Seuil optimal (0.50)
 4. Gestion dynamique du risque
 5. Backtesting avancé
 """
@@ -34,8 +34,8 @@ class SuperTradingBot:
 
     def __init__(
         self,
-            initial_capital=10000,
-                optimal_threshold=0.68,
+                initial_capital=10000,
+                optimal_threshold=0.50,
                 use_enhanced_features=True,
                 use_ensemble=True,
                 use_dynamic_risk=True,
@@ -43,7 +43,7 @@ class SuperTradingBot:
         """
         Args:
             initial_capital: Capital de départ
-            optimal_threshold: Seuil optimal trouvé (0.68)
+            optimal_threshold: Seuil optimal trouvé (0.50)
             use_enhanced_features: Utiliser les 50 features avancées
             use_ensemble: Utiliser l'ensemble de modèles
             use_dynamic_risk: Utiliser la gestion dynamique du risque
@@ -472,7 +472,7 @@ def main():
         # Créer le super bot avec toutes les améliorations
         super_bot = SuperTradingBot(
             initial_capital=10000,
-                optimal_threshold=0.68,  # Seuil optimisé trouvé précédemment
+                optimal_threshold=0.50,  # Seuil optimisé trouvé précédemment
             use_enhanced_features=True,
                 use_ensemble=True,
                     use_dynamic_risk=True,

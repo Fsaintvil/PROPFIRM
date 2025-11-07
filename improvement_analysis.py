@@ -87,7 +87,7 @@ def analyze_configuration():
     # Seuil optimal trop élevé
     config_issues.append({
         'parameter': 'Seuil optimal',
-        'current_value': '0.68',
+        'current_value': '0.50',
         'issue': 'Trop restrictif',
         'evidence': 'Seulement 8.6% des signaux exécutés',
         'recommendation': 'Réduire à 0.55-0.60 pour plus d\'opportunités'
@@ -160,7 +160,7 @@ def generate_improvement_roadmap():
             'priority': 2,
             'action': 'Optimiser les paramètres de trading',
             'details': [
-                'Réduire seuil optimal de 0.68 à 0.60',
+                'Réduire seuil optimal de 0.50 à 0.60',
                 'Réduire intervalle de 930s à 600s',
                 'Ajuster win rate cible à 55%'
             ],

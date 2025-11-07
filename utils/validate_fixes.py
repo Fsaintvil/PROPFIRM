@@ -155,7 +155,7 @@ def validate_hardcoded_values_replaced():
 
         # Rechercher des patterns de valeurs codées en dur communes
         hardcoded_patterns = [
-            ("0.68", "Seuil de confiance"),
+            ("0.5", "Seuil de confiance"),
             ("930", "Intervalle de trading"),
             ("time.sleep(60)", "Délai de sommeil fixe"),
             ("count=20", "Nombre de cycles fixe"),

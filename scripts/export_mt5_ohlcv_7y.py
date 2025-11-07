@@ -77,7 +77,11 @@ def export_symbol_7y_15m(mt5, symbol: str, out_dir: Path) -> Path:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--symbols", default="EURUSD,XAUUSD,BTCUSD")
+    ap.add_argument(
+        "--symbols",
+        default=("BTCUSD,EURUSD,XAUUSD,USDJPY,ETHUSD,USDCAD,AUDNZD,"
+                 "EURJPY,GBPCHF,NZDJPY,EURAUD,GBPUSD")
+    )
     ap.add_argument("--out", default="data/ohlcv")
     args = ap.parse_args()
 

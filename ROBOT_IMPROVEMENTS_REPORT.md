@@ -36,7 +36,7 @@ Le robot de trading a été significativement amélioré selon 5 axes principaux
 - Retry automatique pour les prix de marché
 - Calcul SL/TP avec validation des bornes
 - Optimisation du Meta-Learning avec bornes de prédiction
-- Seuil de décision optimisé (0.68) basé sur les backtests existants
+- Seuil de décision optimisé (0.50) basé sur les backtests existants
 
 **Résultat :** ✅ Temps d'exécution < 10ms, décisions plus précises
 
@@ -92,7 +92,7 @@ Le robot de trading a été significativement amélioré selon 5 axes principaux
 
 ### Performance Trading
 - ✅ Réduction de la latence d'exécution
-- ✅ Meilleure précision des signaux (seuil 0.68)
+- ✅ Meilleure précision des signaux (seuil 0.50)
 - ✅ Gestion optimisée des risques
 
 ## 🔍 Tests de Validation

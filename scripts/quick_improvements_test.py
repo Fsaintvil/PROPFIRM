@@ -90,14 +90,14 @@ def quick_test_improvements():
                 "features_count": len(X_clean.columns),
                 }
 
-    # Test 2: Seuil optimisé (0.68)
-    print("2️⃣  Modèle avec seuil optimisé (0.68)...")
-    pred_optimized = (pred_proba_base >= 0.68).astype(int)
+    # Test 2: Seuil optimisé (0.50)
+    print("2️⃣  Modèle avec seuil optimisé (0.50)...")
+    pred_optimized = (pred_proba_base >= 0.50).astype(int)
 
     results["optimized_threshold"] = {
         "accuracy": accuracy_score(y_test, pred_optimized),
             "f1_score": f1_score(y_test, pred_optimized, average="weighted"),
-                "threshold": 0.68,
+                "threshold": 0.50,
                 "features_count": len(X_clean.columns),
                 }
 
@@ -158,7 +158,7 @@ def quick_test_improvements():
     print(f"  Backtest - Trades: {backtest_b['trades']}")
     print(f"  Backtest - Win Rate: {backtest_b['win_rate']:.1%}")
 
-    print("\n🎯 MODÈLE OPTIMISÉ (seuil 0.68):")
+    print("\n🎯 MODÈLE OPTIMISÉ (seuil 0.50):")
     opt = results["optimized_threshold"]
     print(f"  Accuracy: {opt['accuracy']:.4f}")
     print(f"  F1-Score: {opt['f1_score']:.4f}")
@@ -197,7 +197,7 @@ def quick_test_improvements():
             f"({len(enhanced_df.columns)} vs {len(df.columns)})"
         )
 
-    print("🎯 Seuil optimal: 0.68 vs 0.5 (+36% seuil)")
+    print("🎯 Seuil optimal: 0.50 vs 0.5 (+0% seuil)")
 
     # 7. Recommandations
     print("\n💡 RECOMMANDATIONS:")
@@ -228,7 +228,7 @@ def quick_test_improvements():
             "accuracy_improvement_pct": acc_improvement,
                 "return_improvement_pct": return_improvement,
                     "enhanced_features_used": use_enhanced,
-                    "optimal_threshold_used": 0.68,
+                    "optimal_threshold_used": 0.50,
                     },
                     "recommendations": {
             "use_enhanced_features": use_enhanced

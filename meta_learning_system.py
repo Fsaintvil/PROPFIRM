@@ -11,7 +11,6 @@ Le but est strictement non invasif: ne modifie pas d'autres fichiers
 et ne lance aucune opération réseau.
 """
 
-import os
 from pathlib import Path
 import numpy as np
 
@@ -41,12 +40,45 @@ except Exception:
 
             # Chercher un modèle LightGBM dans artifacts
             art_dir = Path('artifacts') / 'auto_improve'
-            model_paths = list(art_dir.glob('best_lightgbm*.txt')) if art_dir.exists() else []
+            # Exposer le chemin réellement chargé pour vérification opérationnelle
+            self.loaded_model_path = None
+
+            # 1) Prioriser le pointeur de production s'il existe
+            pointer_file = Path('artifacts') / 'production' / 'selected_model_pointer.txt'
+            model_paths = []
+            if pointer_file.exists():
+                try:
+                    src = None
+                    for ln in pointer_file.read_text().splitlines():
+                        if ln.strip().startswith('source:'):
+                            # format attendu: source: ../auto_improve/best_lightgbm.txt
+                            src = ln.split(':', 1)[1].strip()
+                            break
+                    if src:
+                        candidate = (pointer_file.parent / src).resolve()
+                        if candidate.exists():
+                            model_paths = [candidate]
+                except Exception:
+                    # si parsing échoue, retomber sur le glob ci-dessous
+                    model_paths = []
+
+            # 2) Fallback: chercher modèles dans le dossier artifacts/auto_improve
+            if not model_paths and art_dir.exists():
+                candidates = list(art_dir.glob('best_lightgbm*.txt'))
+                # Trier de manière déterministe: préférer le fichier simple (sans 'large')
+                candidates.sort(key=lambda p: ('large' in p.name, p.name))
+                model_paths = candidates
 
             if lgb is not None and model_paths:
-                # Charger le premier modèle disponible
+                # Charger le premier modèle disponible (maintenant déterministe)
                 try:
                     self.booster = lgb.Booster(model_file=str(model_paths[0]))
+                    # garder le chemin chargé pour debug/observabilité
+                    try:
+                        self.loaded_model_path = str(model_paths[0])
+                    except Exception:
+                        self.loaded_model_path = None
+
                     # créer une entrée simple dans model_ensemble
                     self.model_ensemble = [
                         {
@@ -55,6 +87,29 @@ except Exception:
                             'architecture': 'lightgbm_booster_file',
                         }
                     ]
+
+                    # Écrire un statut atomique pour faciliter l'observabilité
+                    try:
+                        status_dir = Path('control')
+                        status_dir.mkdir(parents=True, exist_ok=True)
+                        status_file = status_dir / 'active_model.txt'
+                        tmp_file = status_dir / ('.active_model.tmp')
+                        with open(tmp_file, 'w', encoding='utf-8') as f:
+                            f.write(f"loaded_model_path: {self.loaded_model_path}\n")
+                            f.write(f"timestamp: {__import__('datetime').datetime.utcnow().isoformat()}Z\n")
+                            try:
+                                f.write(f"pid: {__import__('os').getpid()}\n")
+                            except Exception:
+                                pass
+                        # Remplacer atomiquement si possible
+                        try:
+                            tmp_file.replace(status_file)
+                        except Exception:
+                            # fallback simple
+                            tmp_file.rename(status_file)
+                    except Exception:
+                        # Ne pas interrompre la logique si l'écriture échoue
+                        pass
                 except Exception:
                     self.booster = None
             else:

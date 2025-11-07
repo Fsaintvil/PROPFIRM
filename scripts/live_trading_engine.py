@@ -708,6 +708,14 @@ class LiveTradingEngine:
                     "✅ Au moins un composant AI initialisé - "
                     "mode partiel activé"
                 )
+                # Écrire atomiquement le statut du modèle actif depuis le
+                # process long-vivant afin que les watchers externes voient
+                # le bon PID et le modèle chargé (safe / non invasif).
+                try:
+                    self._write_active_model()
+                except Exception as _e:
+                    # Ne pas interrompre l'initialisation si l'écriture échoue
+                    self.logger.debug(f"Écriture active_model échouée: {_e}")
                 return True
 
             # Sinon retry exponential backoff
@@ -747,6 +755,71 @@ class LiveTradingEngine:
         
         self.logger.info("✅ Mode fallback activé - Trading simple maintenu")
         return True
+
+    def _write_active_model(self):
+        """Écrit atomiquement control/active_model.txt avec le modèle chargé,
+        un timestamp UTC et le PID du process courant. Cette méthode est
+        non invasive et ne doit jamais lever d'exception vers l'appelant.
+        """
+        try:
+            model_path = None
+            # Tenter d'obtenir le chemin depuis le meta_learning (implémentations variées)
+            if getattr(self, 'meta_learning', None) is not None:
+                ml = self.meta_learning
+                # Attribut direct exposé par le shim
+                if hasattr(ml, 'loaded_model_path') and ml.loaded_model_path:
+                    model_path = str(ml.loaded_model_path)
+                # Sinon tenter d'extraire depuis model_ensemble
+                elif hasattr(ml, 'model_ensemble') and ml.model_ensemble:
+                    try:
+                        first = ml.model_ensemble[0]
+                        if isinstance(first, dict):
+                            m = first.get('model')
+                        else:
+                            m = first
+                        # tenter d'obtenir un attribut indiquant le path
+                        if hasattr(m, 'file_name'):
+                            model_path = str(m.file_name)
+                        elif hasattr(m, 'model_file'):
+                            model_path = str(m.model_file)
+                        elif hasattr(m, 'save_model'):
+                            # impossible d'inférer sans écrire; skip
+                            model_path = None
+                    except Exception:
+                        model_path = None
+
+            # Fallback déterministe vers artifacts
+            if model_path is None:
+                cand = Path('artifacts') / 'auto_improve' / 'best_lightgbm.txt'
+                if cand.exists():
+                    model_path = str(cand.resolve())
+
+            status_dir = Path('control')
+            status_dir.mkdir(parents=True, exist_ok=True)
+            status_file = status_dir / 'active_model.txt'
+            tmp_file = status_dir / ('.active_model.tmp')
+
+            with open(tmp_file, 'w', encoding='utf-8') as f:
+                f.write(f"loaded_model_path: {model_path or 'None'}\n")
+                f.write(f"timestamp: {datetime.utcnow().isoformat()}Z\n")
+                try:
+                    f.write(f"pid: {os.getpid()}\n")
+                except Exception:
+                    pass
+
+            # Remplacer atomiquement
+            try:
+                tmp_file.replace(status_file)
+            except Exception:
+                tmp_file.rename(status_file)
+
+            self.logger.info(f"🔁 active_model écrit: pid={os.getpid()} model={model_path}")
+        except Exception as e:
+            # Ne jamais remonter l'exception
+            try:
+                self.logger.debug(f"_write_active_model failed: {e}")
+            except Exception:
+                pass
 
     def check_emergency_stop(self):
         """Vérifie si un arrêt d'urgence est actif"""
@@ -1170,8 +1243,26 @@ class LiveTradingEngine:
                                 if (ensemble_pred is not None and
                                         len(ensemble_pred) > 0):
                                     pred_value = float(ensemble_pred[0])
-                                    # Borner les prédictions
+                                    # Borner les prédictions entre 0 et 1
                                     pred_value = max(0.0, min(1.0, pred_value))
+
+                                    # Calculer la confiance meta puis clampper
+                                    raw_meta_conf = abs(pred_value - 0.5) * 2
+                                    # Faible risque: limiter la confiance meta pour éviter
+                                    # des sur-confiances issues de prédictions extrêmes
+                                    META_CONF_CLAMP = 0.3
+                                    meta_conf = min(raw_meta_conf, META_CONF_CLAMP)
+
+                                    # Journaliser si clamp appliqué (info, peu verbeux)
+                                    try:
+                                        if raw_meta_conf != meta_conf:
+                                            self.logger.info(
+                                                "Meta-confidence clamp applied: raw=%.3f clamped=%.3f",
+                                                raw_meta_conf,
+                                                meta_conf,
+                                            )
+                                    except Exception:
+                                        pass
 
                                     signals["meta_learning"] = {
                                         "prediction": pred_value,
@@ -1182,9 +1273,7 @@ class LiveTradingEngine:
                                                 else "hold"
                                             )
                                         ),
-                                        "confidence": (
-                                            abs(pred_value - 0.5) * 2
-                                        ),
+                                        "confidence": meta_conf,
                                     }
                                 else:
                                     self.logger.warning(
@@ -1286,9 +1375,42 @@ class LiveTradingEngine:
 
             # 🧠 NOUVEAU: Appliquer le système de décision avancé
             try:
+                # Diagnostics faibles risques: journaliser l'état compact
+                try:
+                    ml = signals.get('meta_learning') or {}
+                    reg = signals.get('regime_detection') or {}
+                    diag = {
+                        'symbol': symbol,
+                        'combined_signal': signals.get('combined_signal'),
+                        'confidence': signals.get('confidence'),
+                        'meta_prediction': ml.get('prediction'),
+                        'meta_confidence': ml.get('confidence'),
+                        'regime_action': reg.get('action'),
+                        'regime_conf': reg.get('confidence')
+                    }
+                    # Utiliser debug pour ne pas polluer les logs INFO en prod
+                    self.logger.debug("DIAG pre-advanced signals: %s", diag)
+                except Exception:
+                    # Ne jamais échouer pour du logging
+                    pass
+
                 enhanced_signals = self.apply_advanced_decision_engine(
                     symbol, current_data, signals
                 )
+
+                # Journaliser le résultat post-enhancement (compact)
+                try:
+                    post_diag = {
+                        'symbol': symbol,
+                        'final_action': enhanced_signals.get('combined_signal'),
+                        'final_confidence': enhanced_signals.get('confidence'),
+                        'enhanced': enhanced_signals.get('enhanced', False),
+                        'adaptive_threshold': enhanced_signals.get('adaptive_threshold')
+                    }
+                    self.logger.info("DIAG post-advanced: %s", post_diag)
+                except Exception:
+                    pass
+
                 return enhanced_signals
             except Exception as e:
                 self.logger.warning(f"Système avancé indisponible: {e}")

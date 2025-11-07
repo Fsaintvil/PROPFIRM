@@ -28,7 +28,18 @@ class IntensiveProductionEngine(LiveTradingEngine):
 
     def __init__(self):
         super().__init__(
-            symbols=["EURUSD", "XAUUSD", "BTCUSD"],
+            symbols=[  "BTCUSD",
+  "EURUSD",
+  "XAUUSD",
+  "USDJPY",
+  "ETHUSD",
+  "USDCAD",
+  "AUDNZD",
+  "EURJPY",
+  "GBPCHF",
+  "NZDJPY",
+  "EURAUD",
+  "GBPUSD"],
             lot_sizes={"EURUSD": 0.01, "XAUUSD": 0.01, "BTCUSD": 0.01},
             max_risk_per_trade=0.02,
         )
@@ -37,7 +48,7 @@ class IntensiveProductionEngine(LiveTradingEngine):
         self.intensive_mode = True
         self.trading_interval = 300  # 5 minutes au lieu de 15.5
         self.max_daily_trades = None  # Pas de limite
-        self.confidence_threshold = 0.65  # Abaissé de 0.68 à 0.65
+        self.confidence_threshold = 0.65  # Abaissé de 0.50 à 0.65
 
         # Horaires de fermeture aujourd'hui (UTC)
         self.market_close_today = self.calculate_market_close_today()

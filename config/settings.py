@@ -43,7 +43,70 @@ AUTO_EXECUTION = getenv("AUTO_EXECUTION", "false").lower() in (
     "true",
     "yes",
 )
-INSTRUMENTS = getenv("INSTRUMENTS", "EURUSD,XAUUSD,BTCUSD").split(",")
+# Prefer file-based symbols list if provided (operators can place config/symbols_live.json)
+try:
+    from pathlib import Path as _Path
+    _symbols_file = _Path('config') / 'symbols_live.json'
+    if _symbols_file.exists():
+        import json as _json
+        try:
+            _data = _json.loads(_symbols_file.read_text(encoding='utf-8'))
+            if isinstance(_data, list) and len(_data) > 0:
+                INSTRUMENTS = [str(s) for s in _data]
+            elif isinstance(_data, dict) and 'symbols' in _data:
+                INSTRUMENTS = [str(s) for s in _data.get('symbols', [])]
+            else:
+                INSTRUMENTS = getenv("INSTRUMENTS",   "BTCUSD",
+  "EURUSD",
+  "XAUUSD",
+  "USDJPY",
+  "ETHUSD",
+  "USDCAD",
+  "AUDNZD",
+  "EURJPY",
+  "GBPCHF",
+  "NZDJPY",
+  "EURAUD",
+  "GBPUSD").split(",")
+        except Exception:
+            INSTRUMENTS = getenv("INSTRUMENTS",   "BTCUSD",
+  "EURUSD",
+  "XAUUSD",
+  "USDJPY",
+  "ETHUSD",
+  "USDCAD",
+  "AUDNZD",
+  "EURJPY",
+  "GBPCHF",
+  "NZDJPY",
+  "EURAUD",
+  "GBPUSD").split(",")
+    else:
+        INSTRUMENTS = getenv("INSTRUMENTS",   "BTCUSD",
+  "EURUSD",
+  "XAUUSD",
+  "USDJPY",
+  "ETHUSD",
+  "USDCAD",
+  "AUDNZD",
+  "EURJPY",
+  "GBPCHF",
+  "NZDJPY",
+  "EURAUD",
+  "GBPUSD").split(",")
+except Exception:
+    INSTRUMENTS = getenv("INSTRUMENTS",   "BTCUSD",
+  "EURUSD",
+  "XAUUSD",
+  "USDJPY",
+  "ETHUSD",
+  "USDCAD",
+  "AUDNZD",
+  "EURJPY",
+  "GBPCHF",
+  "NZDJPY",
+  "EURAUD",
+  "GBPUSD").split(",")
 
 # Logging
 LOG_DIR = Path(getenv("LOG_DIR", "logs"))

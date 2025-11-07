@@ -74,7 +74,7 @@ trades = []
 
 for idx, pred in enumerate(preds):
     i = inputs[idx][0]
-    if pred <= 0.68:
+    if pred <= 0.50:
         continue
 
     entry_price = numeric_df['close'].iloc[i+1]
