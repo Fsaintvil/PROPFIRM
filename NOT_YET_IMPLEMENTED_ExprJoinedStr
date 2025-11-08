@@ -1,0 +1,318 @@
+2025-11-07 07:53:03 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 07:53:03 | INFO     | ==================================================
+2025-11-07 07:53:03 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 07:53:03 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 07:53:11 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-07 07:53:11 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-07 07:53:11 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-07 07:53:11 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 07:53:11 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 07:53:11 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 07:53:11 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 07:53:11 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 07:53:11 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-07 07:53:11 | INFO     | ✅ Système prêt pour la production
+2025-11-07 07:53:11 | INFO     | --dry-run: arrêt après vérifications, aucun trade exécuté
+2025-11-07 07:53:11 | INFO     | 
+🏁 Arrêt du système de trading
+2025-11-07 07:57:43 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 07:57:43 | INFO     | ==================================================
+2025-11-07 07:57:43 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 07:57:43 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 07:57:50 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-07 07:57:50 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-07 07:57:50 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-07 07:57:50 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 07:57:50 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 07:57:50 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 07:57:50 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 07:57:50 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 07:57:50 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-07 07:57:50 | INFO     | ✅ Système prêt pour la production
+2025-11-07 07:57:50 | INFO     | --yes détecté: confirmation ignorée
+2025-11-07 07:57:50 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-07 07:57:50 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-07 07:57:50 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-07 07:57:50 | INFO     | --------------------------------------------------
+2025-11-07 07:58:06 | ERROR    | 
+❌ Échec du démarrage/production
+2025-11-07 07:58:06 | INFO     | 
+🏁 Arrêt du système de trading
+2025-11-07 08:05:09 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 08:05:09 | INFO     | ==================================================
+2025-11-07 08:05:09 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:05:09 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 08:05:10 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-07 08:05:10 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-07 08:05:10 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-07 08:05:10 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:05:10 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:05:10 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:05:10 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:05:10 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:05:10 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-07 08:05:10 | INFO     | ✅ Système prêt pour la production
+2025-11-07 08:05:10 | INFO     | --yes détecté: confirmation ignorée
+2025-11-07 08:05:10 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-07 08:05:10 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-07 08:05:10 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-07 08:05:10 | INFO     | --------------------------------------------------
+2025-11-07 08:05:20 | ERROR    | 
+❌ Échec du démarrage/production
+2025-11-07 08:05:20 | INFO     | 
+🏁 Arrêt du système de trading
+2025-11-07 08:08:20 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 08:08:20 | INFO     | ==================================================
+2025-11-07 08:08:20 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:08:20 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 08:08:21 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-07 08:08:21 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-07 08:08:21 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-07 08:08:21 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:08:21 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:08:21 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:08:21 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:08:21 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:08:21 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-07 08:08:21 | INFO     | ✅ Système prêt pour la production
+2025-11-07 08:08:21 | INFO     | --yes détecté: confirmation ignorée
+2025-11-07 08:08:21 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-07 08:08:21 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-07 08:08:21 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-07 08:08:21 | INFO     | --------------------------------------------------
+2025-11-07 08:08:26 | ERROR    | 
+❌ Échec du démarrage/production
+2025-11-07 08:08:26 | INFO     | 
+🏁 Arrêt du système de trading
+2025-11-07 08:10:37 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 08:10:37 | INFO     | ==================================================
+2025-11-07 08:10:37 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:10:37 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 08:10:38 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-07 08:10:38 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-07 08:10:38 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-07 08:10:38 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:10:38 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:10:38 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:10:38 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:10:38 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 08:10:38 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-07 08:10:38 | INFO     | ✅ Système prêt pour la production
+2025-11-07 08:10:38 | INFO     | --yes détecté: confirmation ignorée
+2025-11-07 08:10:38 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-07 08:10:38 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-07 08:10:38 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-07 08:10:38 | INFO     | --------------------------------------------------
+2025-11-07 08:10:42 | INFO     | 
+✅ Session de trading terminée
+2025-11-07 08:10:42 | INFO     | 
+🏁 Arrêt du système de trading
+2025-11-07 09:23:10 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 09:23:10 | INFO     | ==================================================
+2025-11-07 09:23:10 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 09:23:10 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 09:23:11 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-07 09:23:11 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-07 09:23:11 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-07 09:23:11 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 09:23:11 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 09:23:11 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 09:23:11 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 09:23:11 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 09:23:11 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-07 09:23:11 | INFO     | ✅ Système prêt pour la production
+2025-11-07 09:23:11 | INFO     | --yes détecté: confirmation ignorée
+2025-11-07 09:23:11 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-07 09:23:11 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-07 09:23:11 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-07 09:23:11 | INFO     | --------------------------------------------------
+2025-11-07 09:23:15 | INFO     | 
+✅ Session de trading terminée
+2025-11-07 09:23:15 | INFO     | 
+🏁 Arrêt du système de trading
+2025-11-07 09:53:14 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 09:53:14 | INFO     | ==================================================
+2025-11-07 09:53:14 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 09:53:14 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 09:53:36 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-07 09:53:36 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-07 09:53:36 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-07 09:53:36 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 09:53:36 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 09:53:36 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 09:53:36 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 09:53:36 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 09:53:36 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-07 09:53:36 | INFO     | ✅ Système prêt pour la production
+2025-11-07 09:53:36 | INFO     | --yes détecté: confirmation ignorée
+2025-11-07 09:53:36 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-07 09:53:36 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-07 09:53:36 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-07 09:53:36 | INFO     | --------------------------------------------------
+2025-11-07 09:53:49 | INFO     | 
+✅ Session de trading terminée
+2025-11-07 09:53:49 | INFO     | 
+🏁 Arrêt du système de trading
+2025-11-07 10:01:27 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 10:01:27 | INFO     | ==================================================
+2025-11-07 10:01:27 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:01:27 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 10:01:36 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-07 10:01:36 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-07 10:01:36 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-07 10:01:36 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:01:36 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:01:36 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:01:36 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:01:36 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:01:36 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-07 10:01:36 | INFO     | ✅ Système prêt pour la production
+2025-11-07 10:01:36 | INFO     | --yes détecté: confirmation ignorée
+2025-11-07 10:01:36 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-07 10:01:36 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-07 10:01:36 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-07 10:01:36 | INFO     | --------------------------------------------------
+2025-11-07 10:01:42 | INFO     | 
+✅ Session de trading terminée
+2025-11-07 10:01:42 | INFO     | 
+🏁 Arrêt du système de trading
+2025-11-07 10:17:53 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 10:17:53 | INFO     | ==================================================
+2025-11-07 10:17:53 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:17:53 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 10:18:16 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-07 10:18:16 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-07 10:18:16 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-07 10:18:16 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:18:16 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:18:16 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:18:16 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:18:16 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:18:16 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-07 10:18:16 | INFO     | ✅ Système prêt pour la production
+2025-11-07 10:18:16 | INFO     | --yes détecté: confirmation ignorée
+2025-11-07 10:18:16 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-07 10:18:16 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-07 10:18:16 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-07 10:18:16 | INFO     | --------------------------------------------------
+2025-11-07 10:18:21 | INFO     | 
+✅ Session de trading terminée
+2025-11-07 10:18:21 | INFO     | 
+🏁 Arrêt du système de trading
+2025-11-07 10:25:18 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 10:25:18 | INFO     | ==================================================
+2025-11-07 10:25:18 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:25:18 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 10:25:28 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-07 10:25:28 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-07 10:25:28 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-07 10:25:28 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:25:28 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:25:28 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:25:28 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:25:28 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:25:28 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-07 10:25:28 | INFO     | ✅ Système prêt pour la production
+2025-11-07 10:25:28 | INFO     | --yes détecté: confirmation ignorée
+2025-11-07 10:25:28 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-07 10:25:28 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-07 10:25:28 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-07 10:25:28 | INFO     | --------------------------------------------------
+2025-11-07 10:25:29 | INFO     | 
+✅ Session de trading terminée
+2025-11-07 10:25:29 | INFO     | 
+🏁 Arrêt du système de trading
+2025-11-07 10:43:37 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 10:43:37 | INFO     | ==================================================
+2025-11-07 10:43:37 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:43:37 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 10:43:37 | ERROR    | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:43:37 | INFO     | 
+🏁 Arrêt du système de trading
+2025-11-07 10:44:32 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 10:44:32 | INFO     | ==================================================
+2025-11-07 10:44:32 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:44:32 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 10:44:32 | ERROR    | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:44:32 | INFO     | 
+🏁 Arrêt du système de trading
+2025-11-07 10:46:07 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 10:46:07 | INFO     | ==================================================
+2025-11-07 10:46:07 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:46:07 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 10:46:13 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-07 10:46:13 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-07 10:46:13 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-07 10:46:13 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:46:13 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:46:13 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:46:13 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:46:13 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 10:46:13 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-07 10:46:13 | INFO     | ✅ Système prêt pour la production
+2025-11-07 10:46:13 | INFO     | --yes détecté: confirmation ignorée
+2025-11-07 10:46:13 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-07 10:46:13 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-07 10:46:13 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-07 10:46:13 | INFO     | --------------------------------------------------
+2025-11-07 10:46:18 | INFO     | 
+✅ Session de trading terminée
+2025-11-07 10:46:18 | INFO     | 
+🏁 Arrêt du système de trading
+2025-11-07 11:28:56 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-07 11:28:56 | INFO     | ==================================================
+2025-11-07 11:28:56 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 11:28:56 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-07 11:29:01 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-07 11:29:01 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-07 11:29:01 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-07 11:29:01 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 11:29:01 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 11:29:01 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 11:29:01 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 11:29:01 | INFO     | NOT_YET_IMPLEMENTED_ExprJoinedStr
+2025-11-07 11:29:01 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-07 11:29:01 | INFO     | ✅ Système prêt pour la production
+2025-11-07 11:29:14 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-07 11:29:14 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-07 11:29:14 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-07 11:29:14 | INFO     | --------------------------------------------------
+2025-11-07 11:30:13 | INFO     | 
+✅ Session de trading terminée
+2025-11-07 11:30:13 | INFO     | 
+🏁 Arrêt du système de trading

@@ -1,3 +1,9 @@
+# migration: try import safe sender (fail-open)
+try:
+    from src.utils.mt5_safe import send_order as _mt5_send_safe
+except Exception:
+    _mt5_send_safe = None
+
 #!/usr/bin/env python3
 """
 Système de Trading Live en Temps Réel.
@@ -808,7 +814,7 @@ class LiveTradingEngine:
                             if send_order is not None:
                                 result = send_order(request, logger=self.logger, mt5_module=mt5)
                             else:
-                                result = mt5.order_send(request)
+                                result = _mt5_send_safe(request)
                             # Log result safely without very long inline f-strings
                             self.logger.info(
                                 "SEND_AT_MARKET_TRANSITION (raw) %s: %s",
@@ -1251,7 +1257,7 @@ class LiveTradingEngine:
                     if send_order is not None:
                         result = send_order(request, logger=self.logger, mt5_module=mt5)
                     else:
-                        result = mt5.order_send(request)
+                        result = _mt5_send_safe(request)
 
                     if result.retcode == mt5.TRADE_RETCODE_DONE:
                         closed_count += 1
@@ -2828,7 +2834,7 @@ class LiveTradingEngine:
                 if send_order is not None:
                     result = send_order(request, logger=self.logger, mt5_module=mt5)
                 else:
-                    result = mt5.order_send(request)
+                    result = _mt5_send_safe(request)
                 if result is None:
                     # récupérer dernier err si possible
                     try:
@@ -3903,7 +3909,7 @@ class LiveTradingEngine:
             if send_order is not None:
                 result = send_order(request, logger=self.logger, mt5_module=mt5)
             else:
-                result = mt5.order_send(request)
+                result = _mt5_send_safe(request)
 
             if result.retcode == mt5.TRADE_RETCODE_DONE:
                 self.logger.info("TODO_NOT_IMPLEMENTED")

@@ -1,0 +1,3 @@
+loaded_model_path: C:\Users\saint\Documents\PROPFIRM\artifacts\auto_improve\best_lightgbm.txt
+timestamp: 2025-11-06T23:48:24.171263Z
+pid: 10936

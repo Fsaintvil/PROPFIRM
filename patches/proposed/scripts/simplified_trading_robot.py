@@ -1,3 +1,9 @@
+# migration: try import safe sender (fail-open)
+try:
+    from src.utils.mt5_safe import send_order as _mt5_send_safe
+except Exception:
+    _mt5_send_safe = None
+
 #!/usr/bin/env python3
 """
 SIMPLIFIED TRADING ROBOT - VERSION OPTIMISÉE ET RÉALISTE
@@ -323,7 +329,7 @@ class SimplifiedTradingRobot:
                 if send_order is not None:
                     result = send_order(request, logger=self.logger, mt5_module=mt5)
                 else:
-                    result = mt5.order_send(request)
+                    result = _mt5_send_safe(request)
 
                 return result and getattr(result, "retcode", None) == mt5.TRADE_RETCODE_DONE
             else:
