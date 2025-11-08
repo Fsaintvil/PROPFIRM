@@ -97,3 +97,4 @@ tmp/lgb_wheels_*
 
 # Local test/output directories
 .local_results/
+config/mt5_credentials.env
