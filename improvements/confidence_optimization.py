@@ -10,7 +10,9 @@ Behaviour:
 - If insufficient data (len < 3) returns base_threshold unchanged.
 - Otherwise computes an EWMA of recent PnL and maps volatility->threshold.
 """
+
 from __future__ import annotations
+
 
 def suggest_adaptive_threshold(recent_profits, base_threshold: float) -> float:
     """Return a safe adjusted threshold.
@@ -35,11 +37,15 @@ def suggest_adaptive_threshold(recent_profits, base_threshold: float) -> float:
             sq_mean = alpha * (p * p) + (1 - alpha) * sq_mean
 
         variance = max(0.0, sq_mean - mean * mean)
-        vol = variance ** 0.5
+        vol = variance**0.5
 
         # Map volatility to threshold adjustment: more volatility => increase threshold
         # Scale vol into a conservative factor
-        factor = min(3.0, max(0.0, vol / (abs(mean) + 1e-6))) if abs(mean) > 1e-9 else min(3.0, vol / 1e-3)
+        factor = (
+            min(3.0, max(0.0, vol / (abs(mean) + 1e-6)))
+            if abs(mean) > 1e-9
+            else min(3.0, vol / 1e-3)
+        )
 
         # Proposed threshold nudged upward with factor but capped
         proposed = float(base_threshold) + 0.05 * min(1.0, factor / 3.0)
@@ -49,9 +55,9 @@ def suggest_adaptive_threshold(recent_profits, base_threshold: float) -> float:
         return proposed
     except Exception:
         return float(base_threshold)
-#!/usr/bin/env python3
-"""
-🎯 AMÉLIORATION: OPTIMISATION SEUILS DE CONFIANCE
+
+
+"""🎯 AMÉLIORATION: OPTIMISATION SEUILS DE CONFIANCE
 Système d'optimisation adaptative des seuils selon les conditions de marché
 """
 
@@ -147,7 +153,9 @@ class ConfidenceThresholdOptimizer:
             )
 
             new_threshold = self.current_threshold + (direction * adjustment)
-            new_threshold = np.clip(new_threshold, self.min_threshold, self.max_threshold)
+            new_threshold = np.clip(
+                new_threshold, self.min_threshold, self.max_threshold
+            )
 
             print("PLACEHOLDER_NOT_IMPLEMENTED — voir backlog (ID:TODO)")
             self.current_threshold = new_threshold

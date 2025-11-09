@@ -3,8 +3,6 @@ try:
     from src.utils.mt5_safe import send_order as _mt5_send_safe
 except Exception:
     _mt5_send_safe = None
-
-#!/usr/bin/env python3
 """Executeur sûr de trades live (dry-run par défaut).
 
 Usage:
@@ -22,8 +20,6 @@ Il cherche une configuration dans `config/mt5_credentials.env` ou variables d'en
 
 import argparse
 import json
-import os
-import shutil
 import math
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -94,7 +90,6 @@ def is_record_live(obj: dict) -> bool:
     return False
 
 
-
 def build_mt5_request_from_record(t: dict):
     """Build a partial MT5 request dict from a trade record dict.
 
@@ -127,21 +122,21 @@ def validate_mt5_request(req: dict, mt5_module, adjust_if_needed: bool = False):
     Returns (True, None) if OK, or (False, reason) if invalid.
     Uses mt5_module symbol info when available; otherwise performs basic numeric checks.
     """
-    symbol = req.get('symbol')
+    symbol = req.get("symbol")
     if not symbol:
-        return False, 'missing_symbol'
+        return False, "missing_symbol"
 
     # basic numeric checks
     try:
-        vol = float(req.get('volume', 0))
+        vol = float(req.get("volume", 0))
     except Exception:
-        return False, 'invalid_volume'
+        return False, "invalid_volume"
     if vol <= 0:
-        return False, 'nonpositive_volume'
+        return False, "nonpositive_volume"
 
-    price = req.get('price')
-    sl = req.get('sl')
-    tp = req.get('tp')
+    price = req.get("price")
+    sl = req.get("sl")
+    tp = req.get("tp")
 
     # defaults / placeholders
     point = None
@@ -156,23 +151,26 @@ def validate_mt5_request(req: dict, mt5_module, adjust_if_needed: bool = False):
         try:
             si = mt5_module.symbol_info(symbol)
             if si is None:
-                return False, 'symbol_unknown'
+                return False, "symbol_unknown"
             # prefer explicit point attribute
-            point = getattr(si, 'point', None)
-            digits = getattr(si, 'digits', None)
+            point = getattr(si, "point", None)
+            digits = getattr(si, "digits", None)
             if point is None and digits is not None:
                 try:
                     point = float(10) ** (-int(digits))
                 except Exception:
                     point = None
             # minimal stop level (in points)
-            min_stop_level = (
-                getattr(si, 'trade_stops_level', None)
-                or getattr(si, 'trade_stop_level', None)
+            min_stop_level = getattr(si, "trade_stops_level", None) or getattr(
+                si, "trade_stop_level", None
             )
             # volume constraints
-            vol_min = getattr(si, 'volume_min', None) or getattr(si, 'volume_minimum', None)
-            vol_step = getattr(si, 'volume_step', None) or getattr(si, 'volume_step_size', None)
+            vol_min = getattr(si, "volume_min", None) or getattr(
+                si, "volume_minimum", None
+            )
+            vol_step = getattr(si, "volume_step", None) or getattr(
+                si, "volume_step_size", None
+            )
         except Exception:
             si = None
 
@@ -189,7 +187,7 @@ def validate_mt5_request(req: dict, mt5_module, adjust_if_needed: bool = False):
     # volume min/step checks
     try:
         if vol < float(vol_min) - 1e-12:
-            return False, f'volume_below_min (vol={vol} min={vol_min})'
+            return False, f"volume_below_min (vol={vol} min={vol_min})"
     except Exception:
         # if conversion fails, ignore and proceed
         pass
@@ -201,10 +199,16 @@ def validate_mt5_request(req: dict, mt5_module, adjust_if_needed: bool = False):
         # compute number of steps from base
         steps = (vol - base) / step
         if steps < -1e-9:
-            return False, f'volume_below_min (vol={vol} min={vol_min})'
+            return False, f"volume_below_min (vol={vol} min={vol_min})"
         # allow small floating rounding
-        if not math.isclose(round(steps), steps, rel_tol=1e-6, abs_tol=1e-9) and steps > 1e-9:
-            return False, f'volume_step_mismatch (vol={vol} min={vol_min} step={vol_step})'
+        if (
+            not math.isclose(round(steps), steps, rel_tol=1e-6, abs_tol=1e-9)
+            and steps > 1e-9
+        ):
+            return (
+                False,
+                f"volume_step_mismatch (vol={vol} min={vol_min} step={vol_step})",
+            )
     except Exception:
         # ignore step enforcement if numeric retrieval fails
         pass
@@ -226,80 +230,77 @@ def validate_mt5_request(req: dict, mt5_module, adjust_if_needed: bool = False):
         try:
             tick = mt5_module.symbol_info_tick(symbol)
             if tick is not None:
-                market_price = getattr(tick, 'ask', None) or getattr(tick, 'bid', None)
+                market_price = getattr(tick, "ask", None) or getattr(tick, "bid", None)
         except Exception:
             market_price = None
 
     effective_price = price if price is not None else market_price
     if effective_price is None:
-        return False, 'no_price_available'
+        return False, "no_price_available"
 
     # numeric distances
     try:
         d_sl = abs(float(effective_price) - float(sl)) if sl is not None else None
         d_tp = abs(float(effective_price) - float(tp)) if tp is not None else None
     except Exception:
-        return False, 'non_numeric_sl_tp'
+        return False, "non_numeric_sl_tp"
 
     min_dist = float(min_stop_level) * float(point)
 
     # infer side early for adjustment logic
-    type_hint = req.get('type') or req.get('type_hint')
+    type_hint = req.get("type") or req.get("type_hint")
     side = None
     if isinstance(type_hint, str):
-        side = 'buy' if str(type_hint).lower().startswith('b') else 'sell'
+        side = "buy" if str(type_hint).lower().startswith("b") else "sell"
 
     adjustments = []
     if d_sl is not None and d_sl + 1e-12 < min_dist:
         if adjust_if_needed:
             # compute conservative adjusted sl based on side inference
-            if side == 'buy':
+            if side == "buy":
                 new_sl = float(effective_price) - float(min_dist)
-            elif side == 'sell':
+            elif side == "sell":
                 new_sl = float(effective_price) + float(min_dist)
             else:
                 new_sl = float(effective_price) - float(min_dist)
             new_sl = _round_price(new_sl, point, digits)
-            req['sl'] = new_sl
-            adjustments.append(f'adjusted_sl->{new_sl}')
+            req["sl"] = new_sl
+            adjustments.append(f"adjusted_sl->{new_sl}")
         else:
-            return False, f'sl_too_close (dist={d_sl} min={min_dist})'
+            return False, f"sl_too_close (dist={d_sl} min={min_dist})"
     if d_tp is not None and d_tp + 1e-12 < min_dist:
         if adjust_if_needed:
-            if side == 'buy':
+            if side == "buy":
                 new_tp = float(effective_price) + float(min_dist)
-            elif side == 'sell':
+            elif side == "sell":
                 new_tp = float(effective_price) - float(min_dist)
             else:
                 new_tp = float(effective_price) + float(min_dist)
             new_tp = _round_price(new_tp, point, digits)
-            req['tp'] = new_tp
-            adjustments.append(f'adjusted_tp->{new_tp}')
+            req["tp"] = new_tp
+            adjustments.append(f"adjusted_tp->{new_tp}")
         else:
-            return False, f'tp_too_close (dist={d_tp} min={min_dist})'
+            return False, f"tp_too_close (dist={d_tp} min={min_dist})"
 
-    if side == 'buy':
+    if side == "buy":
         if sl is not None and float(sl) >= float(effective_price):
-            return False, 'sl_not_below_price_for_buy'
+            return False, "sl_not_below_price_for_buy"
         if tp is not None and float(tp) <= float(effective_price):
-            return False, 'tp_not_above_price_for_buy'
-    if side == 'sell':
+            return False, "tp_not_above_price_for_buy"
+    if side == "sell":
         if sl is not None and float(sl) <= float(effective_price):
-            return False, 'sl_not_above_price_for_sell'
+            return False, "sl_not_above_price_for_sell"
         if tp is not None and float(tp) >= float(effective_price):
-            return False, 'tp_not_below_price_for_sell'
+            return False, "tp_not_below_price_for_sell"
 
     if adjustments:
-        return True, ','.join(adjustments)
+        return True, ",".join(adjustments)
     return True, None
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        description=(
-            "Executeur sûr de trades live "
-            "(dry-run par défaut)"
-        )
+        description=("Executeur sûr de trades live " "(dry-run par défaut)")
     )
     parser.add_argument(
         "--file",
@@ -330,7 +331,6 @@ def main(argv=None):
             "Cherchez dans artifacts/live_training/trades_*.ndjson"
         )
         return 1
-        return 1
 
     print(f"Fichiers détectés: {len(trade_files)}")
     for p in trade_files:
@@ -349,14 +349,18 @@ def main(argv=None):
     print(f"DRY-RUN: {len(summary.get('files', []))} fichiers analysés")
 
     # enforce live-only policy: check non_live counts
-    total_non_live = sum(f.get('non_live_count', 0) for f in summary.get('files', []))
+    total_non_live = sum(f.get("non_live_count", 0) for f in summary.get("files", []))
     if ENFORCE_LIVE_ONLY and total_non_live > 0:
-        print("ERROR: la politique du projet exige uniquement des enregistrements live.")
+        print(
+            "ERROR: la politique du projet exige uniquement des enregistrements live."
+        )
         print(f"Total non-live détectés: {total_non_live}")
-        for f in summary.get('files', []):
-            nn = f.get('non_live_count', 0)
+        for f in summary.get("files", []):
+            nn = f.get("non_live_count", 0)
             if nn:
-                print(f" - {f.get('path')}: non_live={nn} / total={f.get('total_lines')}")
+                print(
+                    f" - {f.get('path')}: non_live={nn} / total={f.get('total_lines')}"
+                )
         print(
             "Corrigez ou filtrez les fichiers pour ne contenir que des enregistrements "
             "live avant d'utiliser --apply."
@@ -400,11 +404,15 @@ def main(argv=None):
     if args.send_real:
         # final textual confirmation required for destructive action
         try:
-            final = input("Tapez exactement 'APPLY LIVE' pour confirmer l'envoi réel: ").strip()
+            final = input(
+                "Tapez exactement 'APPLY LIVE' pour confirmer l'envoi réel: "
+            ).strip()
         except EOFError:
             final = ""
         if final.upper() != "APPLY LIVE":
-            print("Abandon: confirmation textuelle non reçue. Aucun envoi réel effectué.")
+            print(
+                "Abandon: confirmation textuelle non reçue. Aucun envoi réel effectué."
+            )
             return 5
 
         # perform real send via MT5 API
@@ -418,7 +426,9 @@ def main(argv=None):
 
     # write apply report
     apply_log = LOG_DIR / (
-        "execute_live_trades_apply_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".json"
+        "execute_live_trades_apply_"
+        + datetime.now().strftime("%Y%m%d_%H%M%S")
+        + ".json"
     )
     with open(apply_log, "w", encoding="utf-8") as f:
         json.dump(

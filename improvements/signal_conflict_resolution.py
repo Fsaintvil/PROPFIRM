@@ -9,7 +9,9 @@ The function will prefer actions with higher confidence and apply a small
 tie-breaker deterministic rule. It never escalates confidence beyond 0.85 and
 defaults to 'hold' if ambiguity persists.
 """
+
 from __future__ import annotations
+
 
 def resolve_signals(base_signals: dict) -> dict:
     """Resolve potential conflicts and return an updated signals dict.
@@ -78,6 +80,8 @@ def resolve_signals(base_signals: dict) -> dict:
         return sig
     except Exception:
         return base_signals
+
+
 """
 🧠 AMÉLIORATION: GESTION SIGNAUX CONTRADICTOIRES
 Système avancé pour gérer les conflits entre différents modèles
@@ -281,7 +285,7 @@ def create_test_signals() -> List[Signal]:
     """Créer signaux de test"""
     return [
         Signal("regime_detection", "buy", 0.75, SignalStrength.STRONG, "H1", {}),
-    Signal("meta_learning", "buy", 0.5, SignalStrength.MODERATE, "M15", {}),
+        Signal("meta_learning", "buy", 0.5, SignalStrength.MODERATE, "M15", {}),
         Signal("rl_agent", "sell", 0.55, SignalStrength.WEAK, "M5", {}),
         Signal("technical_indicators", "buy", 0.72, SignalStrength.STRONG, "H1", {}),
     ]
