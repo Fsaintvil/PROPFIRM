@@ -1,4 +1,5 @@
 """
+# ruff: noqa: E402
 Close all currently open positions safely:
 - Iterate mt5.positions_get()
 - For each position build a close request (opposite type)

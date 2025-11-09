@@ -1,9 +1,3 @@
-# Merged preview for prefix: auto
-# Generated from 4 files
-
-################################################################################
-# FROM: scripts\auto_deployment_system.py
-################################################################################
 #!/usr/bin/env python3
 """
 AUTOMATED DEPLOYMENT SYSTEM - ENHANCED ULTIMATE TRADING ROBOT

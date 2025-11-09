@@ -1,3 +1,4 @@
+# ruff: noqa: E402,F821
 # migration: try import safe sender (fail-open)
 try:
     from src.utils.mt5_safe import send_order as _mt5_send_safe
