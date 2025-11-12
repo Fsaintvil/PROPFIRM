@@ -1,0 +1,402 @@
+{"mode": "live", "symbol": "XAUUSD", "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURJPY", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_order_sender:68343dbd", "type_hint": "sell"}
+{"mode": "live", "symbol": "BTCUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_order_sender:b8766054", "type_hint": "buy"}
+{"mode": "live", "symbol": "ETHUSD", "action": "buy", "volume": 0.01, "sl": 3809.63, "tp": 3902.17, "comment": "periodic_all"}
+{"mode": "live", "symbol": "ETHUSD", "action": "buy", "volume": 0.01, "sl": 3809.63, "tp": 3902.17, "comment": "periodic_all"}
+{"mode": "live", "symbol": "ETHUSD", "action": "buy", "volume": 0.01, "sl": 3809.63, "tp": 3902.17, "comment": "periodic_all"}
+{"mode": "live", "symbol": "ETHUSD", "action": "buy", "volume": 0.01, "sl": 3809.63, "tp": 3902.17, "comment": "periodic_all"}
+{"mode": "live", "symbol": "EURAUD", "action": "sell", "volume": 0.01, "deviation": 20, "magic": 100010}
+{"mode": "live", "symbol": "GBPCHF", "action": "buy", "volume": 0.01, "deviation": 20, "magic": 100007}
+{"mode": "live", "symbol": "USDCAD", "action": "sell", "volume": 0.01, "deviation": 20, "magic": 100004}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "volume": 0.01, "deviation": 20, "magic": 100003}
+{"mode": "live", "symbol": "USDCAD", "side": "flat", "price": 1.00009, "volume": null, "sl": 0.99358, "tp": 1.01312}
+{"mode": "live", "symbol": "USDCAD", "side": "flat", "price": 1.00057, "volume": null, "sl": 1.00027, "tp": 1.00118}
+{"mode": "live", "symbol": "ETHUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_order_sender:68343dbd", "type_hint": "sell"}
+{"mode": "live", "symbol": "BTCUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_order_sender:b8766054", "type_hint": "buy"}
+{"mode": "live", "symbol": "ETHUSD", "volume": 0.01, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURUSD", "volume": 0.01, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "volume": 0.01, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "US500.cash", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 111180.11, "volume": 0.01, "sl": 111230.11, "tp": null, "comment": "retry_dynamic_sl", "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "EURJPY", "price": 177.291, "volume": 0.01, "sl": 178.041, "tp": null, "comment": "retry_dynamic_sl", "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "US500.cash", "price": 6901.56, "volume": 0.01, "sl": 6910.56, "tp": null, "comment": "retry_dynamic_sl", "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "GBPCHF", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "price": null, "volume": 0.01, "sl": 50556.42, "tp": 50558.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "volume": 0.01, "sl": 50556.42, "tp": 50558.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "price": null, "volume": 0.01, "sl": 3909.93, "tp": 3911.93, "comment": "periodic_all"}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "volume": 0.01, "sl": 3909.93, "tp": 3911.93, "comment": "periodic_all"}
+{"mode": "live", "symbol": "US500.cash", "action": "buy", "volume": 0.01, "sl": 6881.29, "tp": 6883.29, "comment": "periodic_all"}
+{"mode": "live", "symbol": "ETHUSD", "action": "buy", "price": null, "volume": 0.01, "sl": 4100.6, "tp": 4102.6, "comment": "periodic_all"}
+{"mode": "live", "symbol": "ETHUSD", "action": "buy", "volume": 0.01, "sl": 4100.6, "tp": 4102.6, "comment": "periodic_all"}
+{"mode": "live", "symbol": "GBPCHF", "action": "buy", "price": null, "volume": 0.01, "sl": 1.05223, "tp": 1.05423, "comment": "periodic_all"}
+{"mode": "live", "symbol": "GBPCHF", "action": "buy", "volume": 0.01, "sl": 1.05223, "tp": 1.05423, "comment": "periodic_all"}
+{"mode": "live", "symbol": "USDCAD", "action": "buy", "price": null, "volume": 0.01, "sl": 1.39304, "tp": 1.39504, "comment": "periodic_all"}
+{"mode": "live", "symbol": "USDCAD", "action": "buy", "volume": 0.01, "sl": 1.39304, "tp": 1.39504, "comment": "periodic_all"}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "price": null, "volume": 0.01, "sl": 3962.95, "tp": 3964.95, "comment": "periodic_all"}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "volume": 0.01, "sl": 3962.95, "tp": 3964.95, "comment": "periodic_all"}
+{"mode": "live", "symbol": "ETHUSD", "action": "buy", "price": null, "volume": 0.01, "sl": 4100.6, "tp": 4102.6, "comment": "periodic_all"}
+{"mode": "live", "symbol": "ETHUSD", "action": "buy", "volume": 0.01, "sl": 4100.6, "tp": 4102.6, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "volume": 0.01, "sl": 50538.42, "tp": 50540.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "price": null, "volume": 0.01, "sl": 50553.42, "tp": 50555.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "USDCAD", "action": "buy", "price": null, "volume": 0.01, "sl": 1.39342, "tp": 1.39542, "comment": "periodic_all"}
+{"mode": "live", "symbol": "USDCAD", "action": "buy", "volume": 0.01, "sl": 1.39342, "tp": 1.39542, "comment": "periodic_all"}
+{"mode": "live", "symbol": "EURAUD", "action": "buy", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_all"}
+{"mode": "live", "symbol": "EURAUD", "action": "buy", "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "volume": 0.01, "sl": 50679.42, "tp": 50681.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "price": null, "volume": 0.01, "sl": 50632.42, "tp": 50634.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "AUDNZD", "action": "buy", "price": null, "volume": 0.01, "sl": 1.13779, "tp": 1.13979, "comment": "periodic_all"}
+{"mode": "live", "symbol": "AUDNZD", "action": "buy", "volume": 0.01, "sl": 1.13779, "tp": 1.13979, "comment": "periodic_all"}
+{"mode": "live", "symbol": "GBPCHF", "action": "buy", "price": null, "volume": 0.01, "sl": 1.05251, "tp": 1.05451, "comment": "periodic_all"}
+{"mode": "live", "symbol": "GBPCHF", "action": "buy", "volume": 0.01, "sl": 1.05251, "tp": 1.05451, "comment": "periodic_all"}
+{"mode": "live", "symbol": "US500.cash", "action": "buy", "volume": 0.01, "sl": 6880.99, "tp": 6882.99, "comment": "periodic_all"}
+{"mode": "live", "symbol": "US500.cash", "action": "buy", "price": null, "volume": 0.01, "sl": 6881.29, "tp": 6883.29, "comment": "periodic_all"}
+{"mode": "live", "symbol": "EURAUD", "action": "buy", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_all"}
+{"mode": "live", "symbol": "EURAUD", "action": "buy", "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "price": null, "volume": 0.01, "sl": 50666.42, "tp": 50668.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "AUDNZD", "action": "buy", "price": null, "volume": 0.01, "sl": 1.13777, "tp": 1.13977, "comment": "periodic_all"}
+{"mode": "live", "symbol": "AUDNZD", "action": "buy", "volume": 0.01, "sl": 1.13777, "tp": 1.13977, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "price": null, "volume": 0.01, "sl": 50649.42, "tp": 50651.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "volume": 0.01, "sl": 50649.42, "tp": 50651.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "AUDNZD", "action": "buy", "price": null, "volume": 0.01, "sl": 1.13801, "tp": 1.14001, "comment": "periodic_all"}
+{"mode": "live", "symbol": "AUDNZD", "action": "buy", "volume": 0.01, "sl": 1.13801, "tp": 1.14001, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "volume": 0.01, "sl": 50638.7, "tp": 50640.7, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "price": null, "volume": 0.01, "sl": 50643.7, "tp": 50645.7, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "price": null, "volume": 0.01, "sl": 50640.7, "tp": 50642.7, "comment": "periodic_all"}
+{"mode": "live", "symbol": "NZDJPY", "action": "buy", "price": null, "volume": 0.01, "sl": 87.842, "tp": 88.042, "comment": "periodic_all"}
+{"mode": "live", "symbol": "NZDJPY", "action": "buy", "volume": 0.01, "sl": 87.842, "tp": 88.042, "comment": "periodic_all"}
+{"mode": "live", "symbol": "US500.cash", "action": "buy", "volume": 0.01, "sl": 6880.99, "tp": 6882.99, "comment": "periodic_all"}
+{"mode": "live", "symbol": "US500.cash", "action": "buy", "price": null, "volume": 0.01, "sl": 6881.29, "tp": 6883.29, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "price": null, "volume": 0.01, "sl": 51331.42, "tp": 51333.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "volume": 0.01, "sl": 51331.42, "tp": 51333.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "USDCAD", "action": "buy", "price": null, "volume": 0.01, "sl": 1.31674, "tp": 1.47152, "comment": "periodic_all"}
+{"mode": "live", "symbol": "USDCAD", "action": "buy", "volume": 0.01, "sl": 1.31674, "tp": 1.47152, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "price": null, "volume": 0.01, "sl": 51331.42, "tp": 51333.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "volume": 0.01, "sl": 51331.42, "tp": 51333.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "USDCAD", "action": "buy", "price": null, "volume": 0.01, "sl": 1.31728, "tp": 1.47206, "comment": "periodic_all"}
+{"mode": "live", "symbol": "USDCAD", "action": "buy", "volume": 0.01, "sl": 1.31728, "tp": 1.47206, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "action": "buy", "price": null, "volume": 0.01, "sl": 51323.42, "tp": 51325.42, "comment": "periodic_all"}
+{"mode": "live", "symbol": "USDCAD", "action": "buy", "price": null, "volume": 0.01, "sl": 1.31728, "tp": 1.47206, "comment": "periodic_all"}
+{"mode": "live", "symbol": "USDCAD", "action": "buy", "volume": 0.01, "sl": 1.31728, "tp": 1.47206, "comment": "periodic_all"}
+{"mode": "live", "symbol": "US500.cash", "price": 6850.53, "volume": 0.01, "sl": 6847.73, "tp": 6882.99, "comment": "retry_dynamic_sl", "type_hint": "buy", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "US500.cash", "price": 6850.53, "volume": 0.01, "sl": 6847.73, "tp": 6883.29, "comment": "retry_dynamic_sl", "type_hint": "buy", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "AUDNZD", "action": "buy", "volume": 0.01, "sl": 1.1387, "tp": 1.1407, "comment": "periodic_all"}
+{"mode": "live", "symbol": "USDCAD", "action": "buy", "volume": 0.01, "sl": 1.39304, "tp": 1.39504, "comment": "periodic_all"}
+{"mode": "live", "symbol": "USDCAD", "action": "buy", "price": null, "volume": 0.01, "sl": 1.39304, "tp": 1.39504, "comment": "periodic_all"}
+{"mode": "live", "symbol": "USDCAD", "action": "buy", "volume": 0.01, "sl": 1.39304, "tp": 1.39504, "comment": "periodic_all"}
+{"mode": "live", "symbol": "NZDJPY", "action": "buy", "price": null, "volume": 0.01, "sl": 87.875, "tp": 88.075, "comment": "periodic_all"}
+{"mode": "live", "symbol": "NZDJPY", "action": "buy", "volume": 0.01, "sl": 87.875, "tp": 88.075, "comment": "periodic_all"}
+{"mode": "live", "symbol": "BTCUSD", "side": "flat", "price": 109297.2, "sl": 110936.658, "tp": 106018.284}
+{"mode": "live", "symbol": "BTCUSD", "side": "flat", "price": 109280.04, "sl": 110919.2406, "tp": 106001.6388}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "volume": 0.01, "sl": 3962.95, "tp": 3964.95, "comment": "periodic_all"}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "price": null, "volume": 0.01, "sl": 3963.69, "tp": 3965.69, "comment": "periodic_all"}
+{"mode": "live", "symbol": "BTCUSD", "side": "flat", "price": 109297.2, "sl": 109707.06450000001, "tp": 108477.47099999999}
+{"mode": "live", "symbol": "BTCUSD", "side": "flat", "price": 109280.04, "sl": 109689.84015, "tp": 108460.43969999999}
+{"mode": "live", "symbol": "BTCUSD", "side": "flat", "price": 1.0003906072752213, "sl": 1.0041423036376107, "tp": 0.9928878036376106}
+{"mode": "live", "symbol": "BTCUSD", "side": "flat", "price": 0.999142451358684, "sl": 1.002889225679342, "tp": 0.991648725679342}
+{"mode": "live", "symbol": "BTCUSD", "side": "flat", "price": 109253.5, "sl": 109663.200625, "tp": 108434.09875}
+{"mode": "live", "symbol": "BTCUSD", "side": "flat", "price": 109264.09, "sl": 109673.8303375, "tp": 108444.609325}
+{"mode": "live", "symbol": "BTCUSD", "side": "flat", "price": 109329.22, "sl": 109739.20457500001, "tp": 108509.25085000001}
+{"mode": "live", "symbol": "BTCUSD", "side": "flat", "price": 109334.05, "sl": 109744.05268749999, "tp": 108514.04462500001}
+{"mode": "live", "symbol": "BTCUSD", "side": "flat", "price": 0.9996509460479654, "sl": 1.0033994730239826, "tp": 0.9921534730239827}
+{"mode": "live", "symbol": "BTCUSD", "side": "flat", "price": 0.9991118905216236, "sl": 1.0028584452608118, "tp": 0.9916184452608119}
+{"mode": "live", "symbol": "BTCUSD", "action": 1, "price": 110635.93, "volume": 0.01, "sl": 110636.43, "tp": 110635.98, "comment": "execute_live_trades_safe", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "BTCUSD", "action": 1, "price": 110635.87, "volume": 0.01, "sl": 110636.37, "tp": 110635.92, "comment": "execute_live_trades_safe", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "EURAUD", "action": 1, "price": 1.76414, "volume": 0.01, "sl": 1.76514, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "EURAUD", "action": 1, "price": 1.7639399999999998, "volume": 0.01, "sl": 1.76294, "tp": 1.76689, "comment": "periodic_all", "type": 0, "type_hint": "buy", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "EURUSD", "action": 1, "price": 0.9998076824967017, "volume": 0.01, "sl": 1.000808, "tp": 0.99986, "comment": "execute_live_trades_safe", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "EURUSD", "action": 1, "price": 0.9991336939144524, "volume": 0.01, "sl": 1.000134, "tp": 0.99908, "comment": "execute_live_trades_safe", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "JP225.cash", "action": 1, "price": 51222.83, "volume": 0.01, "sl": 51223.33, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "JP225.cash", "action": 1, "price": 51144.83, "volume": 0.01, "sl": 51145.33, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "US500.cash", "action": 1, "price": 6908.06, "volume": 0.01, "sl": 6908.56, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "US500.cash", "action": 1, "price": 6906.47, "volume": 0.01, "sl": 6906.97, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "AUDNZD", "action": 1, "price": 1.1406100000000001, "volume": 0.01, "sl": 1.14161, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "AUDNZD", "action": 1, "price": 1.1403699999999999, "volume": 0.01, "sl": 1.14137, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "ETHUSD", "action": 1, "price": 3978.12, "volume": 0.01, "sl": 3978.62, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "ETHUSD", "action": 1, "price": 4020.31, "volume": 0.01, "sl": 4015.31, "tp": 4020.36, "comment": "periodic_all", "type": 0, "type_hint": "buy", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "EURUSD", "action": 1, "price": 0.9998076824967017, "volume": 0.01, "sl": 1.000808, "tp": 0.99986, "comment": "execute_live_trades_safe", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "EURUSD", "action": 1, "price": 0.9991336939144524, "volume": 0.01, "sl": 1.000134, "tp": 0.99908, "comment": "execute_live_trades_safe", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "JP225.cash", "action": 1, "price": 51222.83, "volume": 0.01, "sl": 51223.33, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "JP225.cash", "action": 1, "price": 51144.83, "volume": 0.01, "sl": 51145.33, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "US500.cash", "action": 1, "price": 6908.06, "volume": 0.01, "sl": 6908.56, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "US500.cash", "action": 1, "price": 6906.47, "volume": 0.01, "sl": 6906.97, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "XAUUSD", "action": 1, "price": 4088.795, "volume": 0.01, "sl": 4089.345, "tp": 4088.74, "comment": "execute_live_trades_safe", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "XAUUSD", "action": 1, "price": 4089.825, "volume": 0.01, "sl": 4090.375, "tp": 4089.77, "comment": "execute_live_trades_safe", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "BTCUSD", "action": 1, "price": 110635.93, "volume": 0.01, "sl": 110636.93, "tp": 110635.705, "comment": "execute_live_trades_safe", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "BTCUSD", "action": 1, "price": 110635.87, "volume": 0.01, "sl": 110636.87, "tp": 110635.645, "comment": "execute_live_trades_safe", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "EURUSD", "action": 1, "price": 0.9998076824967017, "volume": 0.01, "sl": 1.00180832, "tp": 0.99957225, "comment": "execute_live_trades_safe", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "EURUSD", "action": 1, "price": 0.9991336939144524, "volume": 0.01, "sl": 1.00113431, "tp": 0.99889207, "comment": "execute_live_trades_safe", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "NZDJPY", "action": 1, "price": 88.134, "volume": 0.01, "sl": 88.234, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "NZDJPY", "action": 1, "price": 88.012, "volume": 0.01, "sl": 88.112, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "US500.cash", "action": 1, "price": 6908.06, "volume": 0.01, "sl": 6908.56, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "US500.cash", "action": 1, "price": 6906.47, "volume": 0.01, "sl": 6906.97, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "US500.cash", "action": 1, "price": 6908.06, "volume": 0.01, "sl": 6908.56, "tp": null, "comment": "canary_all", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "XAUUSD", "action": 1, "price": 4089.4, "volume": 0.01, "sl": 4089.9, "tp": 4089.35, "comment": "execute_live_trades_safe", "type": 1, "type_hint": "sell", "deviation": 20, "magic": 0}
+{"mode": "live", "symbol": "EURAUD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "US500.cash", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "US500.cash", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "action": "buy", "price": 3855.9, "volume": 0.01, "sl": 3809.6292, "tp": 3902.1708, "comment": "periodic_all"}
+{"mode": "live", "symbol": "ETHUSD", "action": "buy", "price": 3855.9, "volume": 0.01, "sl": 3809.6292, "tp": 3902.1708, "comment": "periodic_all"}
+{"mode": "live", "symbol": "ETHUSD", "action": "buy", "price": 3855.9, "volume": 0.01, "sl": 3809.6292, "tp": 3902.1708, "comment": "periodic_all"}
+{"mode": "live", "symbol": "ETHUSD", "action": "buy", "price": 3855.9, "volume": 0.01, "sl": 3809.6292, "tp": 3902.1708, "comment": "periodic_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51293.17, "volume": 0.01, "sl": 51293.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51293.17, "volume": 0.01, "sl": 51293.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51293.17, "volume": 0.01, "sl": 51293.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51293.17, "volume": 0.01, "sl": 51293.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51293.17, "volume": 0.01, "sl": 51293.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51293.17, "volume": 0.01, "sl": 51293.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": 3323.02, "volume": 0.01, "sl": 3323.07, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": 3323.02, "volume": 0.01, "sl": 3323.07, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURJPY", "price": 176.412, "volume": 0.01, "sl": 176.417, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURJPY", "price": 176.412, "volume": 0.01, "sl": 176.417, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURUSD", "price": 1.14834, "volume": 0.01, "sl": 1.14839, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURUSD", "price": 1.14834, "volume": 0.01, "sl": 1.14839, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "US500.cash", "price": 6773.83, "volume": 0.01, "sl": 6773.88, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "US500.cash", "price": 6773.83, "volume": 0.01, "sl": 6773.88, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51208.17, "volume": 0.01, "sl": 51208.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51208.17, "volume": 0.01, "sl": 51208.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "side": "flat", "price": 1.00009, "volume": null, "sl": 0.99358, "tp": 1.01312}
+{"mode": "live", "symbol": "USDCAD", "side": "flat", "price": 1.00057, "volume": null, "sl": 1.00027, "tp": 1.00118}
+{"mode": "live", "symbol": "ETHUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_order_sender:68343dbd", "type_hint": "sell"}
+{"mode": "live", "symbol": "BTCUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_order_sender:b8766054", "type_hint": "buy"}
+{"mode": "live", "symbol": "USDCAD", "side": "flat", "price": 1.00009, "volume": null, "sl": 0.99358, "tp": 1.01312}
+{"mode": "live", "symbol": "USDCAD", "side": "flat", "price": 1.00057, "volume": null, "sl": 1.00027, "tp": 1.00118}
+{"mode": "live", "symbol": "ETHUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_order_sender:68343dbd", "type_hint": "sell"}
+{"mode": "live", "symbol": "BTCUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_order_sender:b8766054", "type_hint": "buy"}
+{"mode": "live", "symbol": "USDCAD", "side": "flat", "price": 1.00009, "volume": null, "sl": 0.99358, "tp": 1.01312}
+{"mode": "live", "symbol": "USDCAD", "side": "flat", "price": 1.00057, "volume": null, "sl": 1.00027, "tp": 1.00118}
+{"mode": "live", "symbol": "ETHUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_order_sender:68343dbd", "type_hint": "sell"}
+{"mode": "live", "symbol": "BTCUSD", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "periodic_order_sender:b8766054", "type_hint": "buy"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURUSD", "price": 1.14834, "volume": 0.01, "sl": 1.14839, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURUSD", "price": 1.14834, "volume": 0.01, "sl": 1.14839, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURUSD", "price": 1.14834, "volume": 0.01, "sl": 1.14839, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURUSD", "price": 1.14834, "volume": 0.01, "sl": 1.14839, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURJPY", "price": 176.412, "volume": 0.01, "sl": 176.417, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURJPY", "price": 176.412, "volume": 0.01, "sl": 176.417, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": 3323.02, "volume": 0.01, "sl": 3323.07, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": 3323.02, "volume": 0.01, "sl": 3323.07, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURJPY", "price": 176.412, "volume": 0.01, "sl": 176.417, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURJPY", "price": 176.412, "volume": 0.01, "sl": 176.417, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURUSD", "price": 1.14834, "volume": 0.01, "sl": 1.14839, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURUSD", "price": 1.14834, "volume": 0.01, "sl": 1.14839, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51208.17, "volume": 0.01, "sl": 51208.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51208.17, "volume": 0.01, "sl": 51208.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "US500.cash", "price": 6773.83, "volume": 0.01, "sl": 6773.88, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "US500.cash", "price": 6773.83, "volume": 0.01, "sl": 6773.88, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": 3323.02, "volume": 0.01, "sl": 3323.07, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": 3323.02, "volume": 0.01, "sl": 3323.07, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURJPY", "price": 176.412, "volume": 0.01, "sl": 176.417, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURJPY", "price": 176.412, "volume": 0.01, "sl": 176.417, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "US500.cash", "price": 6773.83, "volume": 0.01, "sl": 6773.88, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "US500.cash", "price": 6773.83, "volume": 0.01, "sl": 6773.88, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": 3323.02, "volume": 0.01, "sl": 3323.07, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": 3323.02, "volume": 0.01, "sl": 3323.07, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURUSD", "price": 1.14834, "volume": 0.01, "sl": 1.14839, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURUSD", "price": 1.14834, "volume": 0.01, "sl": 1.14839, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51208.17, "volume": 0.01, "sl": 51208.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51208.17, "volume": 0.01, "sl": 51208.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": 3323.02, "volume": 0.01, "sl": 3323.07, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": 3323.02, "volume": 0.01, "sl": 3323.07, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURJPY", "price": 176.412, "volume": 0.01, "sl": 176.417, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURJPY", "price": 176.412, "volume": 0.01, "sl": 176.417, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51208.17, "volume": 0.01, "sl": 51208.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51208.17, "volume": 0.01, "sl": 51208.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "US500.cash", "price": 6773.83, "volume": 0.01, "sl": 6773.88, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "US500.cash", "price": 6773.83, "volume": 0.01, "sl": 6773.88, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "side": "buy", "price": null, "volume": 0.01, "sl": 100000.0, "tp": 110000.0, "comment": "manual send"}
+{"mode": "live", "symbol": "BTCUSD", "side": "buy", "price": null, "volume": 0.01, "sl": 100000.0, "tp": 110000.0, "comment": "manual send"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "side": "buy", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "auto_manual_test"}
+{"mode": "live", "symbol": "BTCUSD", "side": "buy", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "auto_manual_test"}
+{"mode": "live", "symbol": "BTCUSD", "side": "buy", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "auto_manual_test"}
+{"mode": "live", "symbol": "BTCUSD", "side": "buy", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "auto_manual_test"}
+{"mode": "live", "symbol": "BTCUSD", "side": "buy", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "auto_manual_test"}
+{"mode": "live", "symbol": "BTCUSD", "side": "buy", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "auto_manual_test"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51208.17, "volume": 0.01, "sl": 51208.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51208.17, "volume": 0.01, "sl": 51208.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "price": 100757.6, "volume": 0.01, "sl": 100757.65, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": 3323.02, "volume": 0.01, "sl": 3323.07, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "ETHUSD", "price": 3323.02, "volume": 0.01, "sl": 3323.07, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "XAUUSD", "price": 3951.57, "volume": 0.01, "sl": 3951.62, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "USDCAD", "price": 1.40942, "volume": 0.01, "sl": 1.40947, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "AUDNZD", "price": 1.14748, "volume": 0.01, "sl": 1.14753, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "US500.cash", "price": 6773.83, "volume": 0.01, "sl": 6773.88, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "US500.cash", "price": 6773.83, "volume": 0.01, "sl": 6773.88, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "NZDJPY", "price": 86.885, "volume": 0.01, "sl": 86.89, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51208.17, "volume": 0.01, "sl": 51208.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "JP225.cash", "price": 51208.17, "volume": 0.01, "sl": 51208.22, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "GBPCHF", "price": 1.05435, "volume": 0.01, "sl": 1.0544, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURUSD", "price": 1.14834, "volume": 0.01, "sl": 1.14839, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURUSD", "price": 1.14834, "volume": 0.01, "sl": 1.14839, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURJPY", "price": 176.412, "volume": 0.01, "sl": 176.417, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURJPY", "price": 176.412, "volume": 0.01, "sl": 176.417, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "EURAUD", "price": 1.76974, "volume": 0.01, "sl": 1.76979, "tp": null, "comment": "canary_all"}
+{"mode": "live", "symbol": "BTCUSD", "side": "buy", "price": null, "volume": 0.01, "sl": null, "tp": null, "comment": "auto_manual_test"}
+{"mode": "live", "symbol": "BTCUSD", "side": "buy", "price": null, "volume": 0.01, "sl": 100000.0, "tp": 110000.0, "comment": "manual send"}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "volume": 0.01, "sl": 3963.15, "tp": 3965.15, "comment": "retry_from_excess"}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "price": null, "volume": 0.01, "sl": 3963.64, "tp": 3965.64, "comment": "retry_from_excess"}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "volume": 0.01, "sl": 3963.15, "tp": 3965.15, "comment": "retry_from_excess"}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "price": null, "volume": 0.01, "sl": 3963.64, "tp": 3965.64, "comment": "retry_from_excess"}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "volume": 0.01, "sl": 3963.15, "tp": 3965.15, "comment": "retry_from_excess"}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "price": null, "volume": 0.01, "sl": 3963.64, "tp": 3965.64, "comment": "retry_from_excess"}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "volume": 0.01, "sl": 3963.15, "tp": 3965.15, "comment": "retry_from_excess"}
+{"mode": "live", "symbol": "XAUUSD", "action": "buy", "price": null, "volume": 0.01, "sl": 3963.64, "tp": 3965.64, "comment": "retry_from_excess"}
+{"mode": "live", "symbol": "BTCUSD", "action": "sell", "volume": 0.01}
+{"mode": "live", "symbol": "BTCUSD", "action": "buy", "volume": 0.01}
+{"mode": "live", "symbol": "BTCUSD", "action": "sell", "volume": 0.01}
+{"mode": "live", "symbol": "BTCUSD", "action": "buy", "volume": 0.01}
+{"mode": "live", "symbol": "BTCUSD", "action": "sell", "volume": 0.01}
+{"mode": "live", "symbol": "BTCUSD", "action": "buy", "volume": 0.01}
+{"mode": "live", "symbol": "BTCUSD", "action": "sell", "volume": 0.01}
+{"mode": "live", "symbol": "BTCUSD", "action": "buy", "volume": 0.01}

@@ -1,0 +1,13 @@
+=== FORCE-START RUN: 12/11/2025 07:28:26
+Moved lock: C:\Users\saint\Documents\PROPFIRM\control\production.lock -> C:\Users\saint\Documents\PROPFIRM\artifacts\backup_before_force_start_20251112_072826\production.lock
+No disable file at C:\Users\saint\Documents\PROPFIRM\control\disable_trading
+Will start: echo PROD | python .\\start_production.py -> artifacts\live_trading\production_live_20251112_072826.out.log / artifacts\live_trading\production_live_20251112_072826.err.log
+No python process found; cmd starter pid: 27748
+Wrote PID file (starter): C:\Users\saint\Documents\PROPFIRM\artifacts\live_trading\production_live_20251112_072826.pid
+NO_PY_PROCS_RUNNING
+--- OUT LOG PATH ---
+OUT_LOG_NOT_FOUND
+--- ERR LOG PATH ---
+ERR_LOG_NOT_FOUND
+--- TAIL ERR (200) ---
+

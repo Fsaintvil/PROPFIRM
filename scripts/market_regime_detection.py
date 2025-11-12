@@ -286,24 +286,42 @@ class MarketRegimeDetector:
         ]
 
         X = features[cluster_features].fillna(0)
+        # If there are no samples, return safe empty structures as expected by tests
+        if X.shape[0] == 0:
+            regimes = np.array([], dtype=int)
+            regime_probs = np.empty((0, self.n_regimes))
+            return regimes, regime_probs, X.values
+
         X_scaled = self.scaler.fit_transform(X)
 
+        # Ensure n_clusters is not larger than number of samples
+        n_samples = X_scaled.shape[0]
+        n_clusters = min(self.n_regimes, max(1, n_samples))
+
         # K-Means clustering
-        kmeans = KMeans(n_clusters=self.n_regimes, random_state=42, n_init=10)
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
         regimes = kmeans.fit_predict(X_scaled)
 
         # Créer des probabilités approximatives
         distances = kmeans.transform(X_scaled)
         # Convertir distances en probabilités (plus proche = plus probable)
-        regime_probs = np.exp(-distances) / np.exp(-distances).sum(
-            axis=1, keepdims=True
-        )
+        expd = np.exp(-distances)
+        regime_probs = expd / expd.sum(axis=1, keepdims=True)
 
         # Créer une matrice de transition approximative
         self.transition_matrix = self._estimate_transition_matrix(regimes)
 
-        silhouette_sc = silhouette_score(X_scaled, regimes)
-        print(f"  ✅ K-Means complété - Silhouette score: {silhouette_sc:.3f}")
+        # Silhouette score only when there is more than one label and enough samples
+        unique_labels = len(np.unique(regimes))
+        if 1 < unique_labels < n_samples:
+            try:
+                silhouette_sc = silhouette_score(X_scaled, regimes)
+                print(f"  ✅ K-Means complété - Silhouette score: {silhouette_sc:.3f}")
+            except Exception:
+                # Non-fatal: continue without silhouette
+                pass
+        else:
+            print("  ✅ K-Means complété - silhouette skipped (insufficient label variety)")
 
         return regimes, regime_probs, X_scaled
 
@@ -424,6 +442,19 @@ class MarketRegimeDetector:
         """
         print("🔍 DÉTECTION COMPLÈTE DES RÉGIMES")
         print("=" * 40)
+
+        # Early exit for empty inputs: return safe, empty structures
+        if df is None or len(df) == 0:
+            import numpy as _np
+
+            empty_features = pd.DataFrame(index=pd.DatetimeIndex([]))
+            return {
+                "regimes": _np.array([], dtype=int),
+                "probabilities": _np.empty((0, self.n_regimes)),
+                "features": empty_features,
+                "current_regime": None,
+                "regime_characteristics": {},
+            }
 
         # 1. Extraire les features
         features = self.extract_regime_features(df)

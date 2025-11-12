@@ -1,0 +1,17 @@
+{
+  "total_replacements": 9,
+  "files": {
+    "scripts\\live_trading_engine.py": {
+      "replacements": 4
+    },
+    "scripts\\migrate_order_send_to_safe.py": {
+      "replacements": 3
+    },
+    "scripts\\simplified_trading_robot.py": {
+      "replacements": 1
+    },
+    "src\\utils\\mt5_safe.py": {
+      "replacements": 1
+    }
+  }
+}

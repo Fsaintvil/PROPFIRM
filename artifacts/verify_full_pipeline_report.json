@@ -1,0 +1,122 @@
+{
+  "backtests_intraday_normalized": {
+    "BTCUSD_H1.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\BTCUSD_H1.csv.gz",
+      "n_rows": 683,
+      "start": "2025-09-15 07:00:00",
+      "end": "2025-10-15 06:00:00"
+    },
+    "BTCUSD_H4.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\BTCUSD_H4.csv.gz",
+      "n_rows": 175,
+      "start": "2025-09-15 08:00:00",
+      "end": "2025-10-15 04:00:00"
+    },
+    "BTCUSD_M15.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\BTCUSD_M15.csv.gz",
+      "n_rows": 2729,
+      "start": "2025-09-15 07:00:00",
+      "end": "2025-10-15 06:45:00"
+    },
+    "BTCUSD_M30.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\BTCUSD_M30.csv.gz",
+      "n_rows": 1365,
+      "start": "2025-09-15 07:00:00",
+      "end": "2025-10-15 06:30:00"
+    },
+    "BTCUSD_M5.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\BTCUSD_M5.csv.gz",
+      "n_rows": 8126,
+      "start": "2025-09-15 06:50:00",
+      "end": "2025-10-15 06:45:00"
+    },
+    "EURUSD_H1.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\EURUSD_H1.csv.gz",
+      "n_rows": 528,
+      "start": "2025-09-15 07:00:00",
+      "end": "2025-10-15 06:00:00"
+    },
+    "EURUSD_H4.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\EURUSD_H4.csv.gz",
+      "n_rows": 132,
+      "start": "2025-09-15 08:00:00",
+      "end": "2025-10-15 04:00:00"
+    },
+    "EURUSD_M15.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\EURUSD_M15.csv.gz",
+      "n_rows": 2112,
+      "start": "2025-09-15 07:00:00",
+      "end": "2025-10-15 06:45:00"
+    },
+    "EURUSD_M30.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\EURUSD_M30.csv.gz",
+      "n_rows": 1056,
+      "start": "2025-09-15 07:00:00",
+      "end": "2025-10-15 06:30:00"
+    },
+    "EURUSD_M5.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\EURUSD_M5.csv.gz",
+      "n_rows": 6291,
+      "start": "2025-09-15 06:50:00",
+      "end": "2025-10-15 06:45:00"
+    },
+    "XAUUSD_H1.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\XAUUSD_H1.csv.gz",
+      "n_rows": 506,
+      "start": "2025-09-15 07:00:00",
+      "end": "2025-10-15 06:00:00"
+    },
+    "XAUUSD_H4.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\XAUUSD_H4.csv.gz",
+      "n_rows": 132,
+      "start": "2025-09-15 08:00:00",
+      "end": "2025-10-15 04:00:00"
+    },
+    "XAUUSD_M15.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\XAUUSD_M15.csv.gz",
+      "n_rows": 2024,
+      "start": "2025-09-15 07:00:00",
+      "end": "2025-10-15 06:45:00"
+    },
+    "XAUUSD_M30.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\XAUUSD_M30.csv.gz",
+      "n_rows": 1012,
+      "start": "2025-09-15 07:00:00",
+      "end": "2025-10-15 06:30:00"
+    },
+    "XAUUSD_M5.csv.gz": {
+      "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\backtests\\intraday\\normalized\\XAUUSD_M5.csv.gz",
+      "n_rows": 6006,
+      "start": "2025-09-15 06:50:00",
+      "end": "2025-10-15 06:45:00"
+    }
+  },
+  "features_sample": {
+    "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\data\\features_sample.csv",
+    "n_rows": 496,
+    "start": "2025-01-01 00:04:00",
+    "end": "2025-01-01 08:19:00",
+    "columns": [
+      "close",
+      "volume",
+      "sma_1T",
+      "ema_15T",
+      "rsi_60T"
+    ]
+  },
+  "model_check": {
+    "model_path": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\auto_improve\\best_lightgbm.txt",
+    "n_predictions": 496,
+    "total_return_on_features_sample": 70.80650734574884,
+    "win_rate_on_features_sample": 0.3393939393939394,
+    "sharpe_approx_on_features_sample": 16.637414178803336,
+    "preds_mean": 0.5261892961915934,
+    "preds_std": 0.3170834653405056
+  },
+  "artifacts_backtest_report": {
+    "total_return": 0.268489511698045,
+    "avg_return_per_tick": 0.00048235146988549787,
+    "win_rate": 0.3090909090909091,
+    "sharpe_annualized": 153.99202890015528
+  }
+}

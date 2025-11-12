@@ -1,0 +1,31 @@
+total_attempts=156
+closed_count=0
+invalid_request_count=156
+remaining_positions=6
+
+Sample not-closed (first 12):
+ticket=344136419 symbol=EURUSD volume=0,01
+  retcode=10013 comment='Invalid request' attempts=3 volume_sent=0,01
+ticket=344144669 symbol=EURUSD volume=0,01
+  retcode=10013 comment='Invalid request' attempts=3 volume_sent=0,01
+ticket=344145783 symbol=EURUSD volume=0,01
+  retcode=10013 comment='Invalid request' attempts=3 volume_sent=0,01
+ticket=344166591 symbol=USDCAD volume=0,01
+  retcode=10013 comment='Invalid request' attempts=3 volume_sent=0,01
+ticket=344190345 symbol=EURUSD volume=0,01
+  retcode=10013 comment='Invalid request' attempts=3 volume_sent=0,01
+ticket=344203154 symbol=EURUSD volume=0,01
+  retcode=10013 comment='Invalid request' attempts=3 volume_sent=0,01
+ticket=344205082 symbol=USDCAD volume=0,01
+  retcode=10013 comment='Invalid request' attempts=3 volume_sent=0,01
+ticket=344214885 symbol=EURUSD volume=0,02
+  retcode=10013 comment='Invalid request' attempts=3 volume_sent=0,02
+ticket=344214895 symbol=USDCAD volume=0,02
+  retcode=10013 comment='Invalid request' attempts=3 volume_sent=0,02
+ticket=344215860 symbol=USDCAD volume=0,01
+  retcode=10013 comment='Invalid request' attempts=3 volume_sent=0,01
+ticket=344224990 symbol=EURUSD volume=0,02
+  retcode=10013 comment='Invalid request' attempts=3 volume_sent=0,02
+ticket=344226167 symbol=USDCAD volume=0,01
+  retcode=10013 comment='Invalid request' attempts=3 volume_sent=0,01
+

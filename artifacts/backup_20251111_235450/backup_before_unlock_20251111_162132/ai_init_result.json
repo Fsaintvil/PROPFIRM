@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-11-10T11:31:18.849895",
+  "initialized": true,
+  "components": {
+    "meta_learning": true,
+    "rl_agent": true,
+    "portfolio_optimizer": true,
+    "regime_detector": true
+  },
+  "errors": []
+}

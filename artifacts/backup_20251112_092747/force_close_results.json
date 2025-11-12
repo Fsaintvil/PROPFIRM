@@ -1,0 +1,1086 @@
+{
+  "timestamp": "2025-11-11T18:58:22Z",
+  "records": [
+    {
+      "ticket": 346293839,
+      "symbol": "BTCUSD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346293839,
+        "symbol": "BTCUSD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 103369.72,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315100,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346293841,
+      "symbol": "ETHUSD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346293841,
+        "symbol": "ETHUSD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 3468.44,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315105,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346293845,
+      "symbol": "XAUUSD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346293845,
+        "symbol": "XAUUSD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 4114.3,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315107,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346293848,
+      "symbol": "USDCAD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346293848,
+        "symbol": "USDCAD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 1.40069,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315111,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346293852,
+      "symbol": "AUDNZD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346293852,
+        "symbol": "AUDNZD",
+        "volume": 0.01,
+        "type": 1,
+        "price": 1.15378,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315113,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346293854,
+      "symbol": "EURJPY",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346293854,
+        "symbol": "EURJPY",
+        "volume": 0.01,
+        "type": 1,
+        "price": 178.65,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315115,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346293859,
+      "symbol": "GBPCHF",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346293859,
+        "symbol": "GBPCHF",
+        "volume": 0.01,
+        "type": 1,
+        "price": 1.0541,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315120,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346293865,
+      "symbol": "NZDJPY",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346293865,
+        "symbol": "NZDJPY",
+        "volume": 0.01,
+        "type": 1,
+        "price": 87.217,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315125,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346293871,
+      "symbol": "EURUSD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346293871,
+        "symbol": "EURUSD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 1.1593499999999999,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315131,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346293877,
+      "symbol": "EURAUD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346293877,
+        "symbol": "EURAUD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 1.77508,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315134,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346293881,
+      "symbol": "US500.cash",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346293881,
+        "symbol": "US500.cash",
+        "volume": 0.01,
+        "type": 1,
+        "price": 6851.96,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315143,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346293884,
+      "symbol": "JP225.cash",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346293884,
+        "symbol": "JP225.cash",
+        "volume": 0.01,
+        "type": 1,
+        "price": 51140.83,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315149,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346297390,
+      "symbol": "BTCUSD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346297390,
+        "symbol": "BTCUSD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 103369.16,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315152,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346297394,
+      "symbol": "ETHUSD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346297394,
+        "symbol": "ETHUSD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 3468.44,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315158,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346297397,
+      "symbol": "XAUUSD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346297397,
+        "symbol": "XAUUSD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 4114.35,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315161,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346297398,
+      "symbol": "USDCAD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346297398,
+        "symbol": "USDCAD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 1.40069,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315167,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346297400,
+      "symbol": "AUDNZD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346297400,
+        "symbol": "AUDNZD",
+        "volume": 0.01,
+        "type": 1,
+        "price": 1.15378,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315179,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346297401,
+      "symbol": "EURJPY",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346297401,
+        "symbol": "EURJPY",
+        "volume": 0.01,
+        "type": 1,
+        "price": 178.647,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315182,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346297402,
+      "symbol": "GBPCHF",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346297402,
+        "symbol": "GBPCHF",
+        "volume": 0.01,
+        "type": 1,
+        "price": 1.05401,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315188,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346297403,
+      "symbol": "NZDJPY",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346297403,
+        "symbol": "NZDJPY",
+        "volume": 0.01,
+        "type": 1,
+        "price": 87.219,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315190,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346297404,
+      "symbol": "EURUSD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346297404,
+        "symbol": "EURUSD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 1.15934,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315191,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346297406,
+      "symbol": "EURAUD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346297406,
+        "symbol": "EURAUD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 1.77511,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315192,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346297408,
+      "symbol": "US500.cash",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346297408,
+        "symbol": "US500.cash",
+        "volume": 0.01,
+        "type": 1,
+        "price": 6852.16,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315194,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346297410,
+      "symbol": "JP225.cash",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346297410,
+        "symbol": "JP225.cash",
+        "volume": 0.01,
+        "type": 1,
+        "price": 51145.83,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315196,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346312803,
+      "symbol": "BTCUSD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346312803,
+        "symbol": "BTCUSD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 103369.49,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315204,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346312811,
+      "symbol": "ETHUSD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346312811,
+        "symbol": "ETHUSD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 3469.14,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315207,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346312812,
+      "symbol": "XAUUSD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346312812,
+        "symbol": "XAUUSD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 4114.38,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315210,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346312813,
+      "symbol": "USDCAD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346312813,
+        "symbol": "USDCAD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 1.40068,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315213,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346312815,
+      "symbol": "AUDNZD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346312815,
+        "symbol": "AUDNZD",
+        "volume": 0.01,
+        "type": 1,
+        "price": 1.15374,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315215,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346312818,
+      "symbol": "EURJPY",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346312818,
+        "symbol": "EURJPY",
+        "volume": 0.01,
+        "type": 1,
+        "price": 178.641,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315217,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346312819,
+      "symbol": "GBPCHF",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346312819,
+        "symbol": "GBPCHF",
+        "volume": 0.01,
+        "type": 1,
+        "price": 1.05406,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315219,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346312820,
+      "symbol": "NZDJPY",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346312820,
+        "symbol": "NZDJPY",
+        "volume": 0.01,
+        "type": 1,
+        "price": 87.219,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315220,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346312821,
+      "symbol": "EURUSD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346312821,
+        "symbol": "EURUSD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 1.15931,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315222,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346312824,
+      "symbol": "EURAUD",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346312824,
+        "symbol": "EURAUD",
+        "volume": 0.01,
+        "type": 0,
+        "price": 1.77508,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315224,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346312826,
+      "symbol": "US500.cash",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346312826,
+        "symbol": "US500.cash",
+        "volume": 0.01,
+        "type": 1,
+        "price": 6852.16,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315225,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    },
+    {
+      "ticket": 346312828,
+      "symbol": "JP225.cash",
+      "volume_requested": 0.01,
+      "volume_sent": 0.01,
+      "request": {
+        "action": 1,
+        "position": 346312828,
+        "symbol": "JP225.cash",
+        "volume": 0.01,
+        "type": 1,
+        "price": 51145.83,
+        "deviation": 200,
+        "magic": 0,
+        "comment": "force_close_now"
+      },
+      "order_send": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 346315228,
+        "volume": 0.01,
+        "price": 0.0,
+        "comment": "Request executed"
+      },
+      "last_error": [
+        1,
+        "Success"
+      ],
+      "still_open": false
+    }
+  ],
+  "remaining_positions": 0
+}

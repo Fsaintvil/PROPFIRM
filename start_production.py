@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--symbols", type=str,
-        default="BTCUSD,EURUSD,XAUUSD,USDJPY,ETHUSD,USDCAD,AUDNZD,EURJPY,GBPCHF,NZDJPY,EURAUD,GBPUSD",
+        default="BTCUSD, ETHUSD, XAUUSD, USDCAD, AUDNZD, EURJPY, GBPCHF, NZDJPY, EURUSD, EURAUD, US500.cash, JP225.cash",
         help="Liste des symboles, séparés par des virgules"
     )
     parser.add_argument(
@@ -114,6 +114,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--auto", action="store_true",
         help="Configure automatiquement symboles/lots/flags/threshold"
+    )
+    parser.add_argument(
+        "--auto-confirm", action="store_true",
+        help=("Bypass le prompt interactif uniquement si la variable d'environnement "
+              "CONFIRM_PRODUCTION == 'I_CONFIRM_ALLOW_MT5_SEND'. Utiliser avec précaution")
     )
     return parser.parse_args()
 
@@ -315,7 +320,17 @@ def main():
             return 0 if health_ok else 4
 
         # 5. Confirmation utilisateur (sécurisée)
-        if not args.yes:
+        # Priorité: --auto-confirm (vérifie strictement CONFIRM_PRODUCTION),
+        # puis --yes (bypass non stricte), sinon prompt interactif.
+        if args.auto_confirm:
+            env_token = os.environ.get("CONFIRM_PRODUCTION", "")
+            if env_token == "I_CONFIRM_ALLOW_MT5_SEND":
+                logger.info("--auto-confirm détecté et token valide: démarrage autorisé")
+            else:
+                logger.error("--auto-confirm demandé mais CONFIRM_PRODUCTION absent/invalide")
+                remove_lock(lock_path, logger)
+                return 6
+        elif not args.yes:
             print()  # newline pour la question
             print("⚠️ MODE LIVE - Trading réel activé")
             print("Tapez 'PROD' pour confirmer le démarrage en production")
@@ -335,6 +350,40 @@ def main():
         logger.info("📊 Monitoring actif - logs/ (launcher & moteur)")
         logger.info("⏹️ Arrêt: Ctrl+C")
         logger.info("-" * 50)
+
+        # Optional: initialize an external AIManager if available and attach to engine
+        try:
+            try:
+                from ai_init import AIManager
+            except Exception:
+                from scripts.ai_init import AIManager
+
+            logger.info("🧠 Initialisation de l'AI Manager externe...")
+            ai = AIManager()
+            # Informational logs if available
+            try:
+                n_meta = len(getattr(ai, 'meta', {}).get('model_ensemble', []))
+            except Exception:
+                try:
+                    n_meta = len(getattr(ai, 'meta').model_ensemble)
+                except Exception:
+                    n_meta = 0
+            logger.info(f"✅ AIManager initialisé (meta models={n_meta})")
+
+            # Attach to engine where possible (non-invasive)
+            try:
+                setattr(engine, 'ai_manager', ai)
+                # compatibility helpers
+                if hasattr(ai, 'meta'):
+                    setattr(engine, 'meta_learning', getattr(ai, 'meta'))
+                if hasattr(ai, 'rl'):
+                    setattr(engine, 'rl_agent', getattr(ai, 'rl'))
+                if hasattr(ai, 'portfolio'):
+                    setattr(engine, 'portfolio_optimizer', getattr(ai, 'portfolio'))
+            except Exception:
+                logger.debug('Impossible d attacher AIManager à l engine (non critique)')
+        except Exception as e:
+            logger.warning(f"AIManager non disponible ou échec init: {e}")
 
         success = engine.start_production()
 

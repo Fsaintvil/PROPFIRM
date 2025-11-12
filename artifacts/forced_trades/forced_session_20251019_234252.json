@@ -1,0 +1,115 @@
+{
+  "timestamp": "2025-10-19T23:42:52.311157",
+  "type": "forced_trades",
+  "target_trades": 9,
+  "executed_trades": 6,
+  "total_trades_in_history": 9,
+  "trade_history": [
+    {
+      "timestamp": "2025-10-19T23:42:41.877534",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.16644,
+      "order_id": 328650458,
+      "forced": true,
+      "simulated": false
+    },
+    {
+      "timestamp": "2025-10-19T23:42:43.004035",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.0,
+      "order_id": "SIM_2",
+      "forced": false,
+      "simulated": true
+    },
+    {
+      "timestamp": "2025-10-19T23:42:44.212017",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 108679.0,
+      "order_id": 328650460,
+      "forced": true,
+      "simulated": false
+    },
+    {
+      "timestamp": "2025-10-19T23:42:45.415646",
+      "symbol": "EURUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.16598,
+      "order_id": 328650462,
+      "forced": true,
+      "simulated": false
+    },
+    {
+      "timestamp": "2025-10-19T23:42:46.550292",
+      "symbol": "XAUUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.0,
+      "order_id": "SIM_5",
+      "forced": false,
+      "simulated": true
+    },
+    {
+      "timestamp": "2025-10-19T23:42:47.748601",
+      "symbol": "BTCUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 108674.97,
+      "order_id": 328650463,
+      "forced": true,
+      "simulated": false
+    },
+    {
+      "timestamp": "2025-10-19T23:42:48.957647",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.16644,
+      "order_id": 328650465,
+      "forced": true,
+      "simulated": false
+    },
+    {
+      "timestamp": "2025-10-19T23:42:50.098066",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.0,
+      "order_id": "SIM_8",
+      "forced": false,
+      "simulated": true
+    },
+    {
+      "timestamp": "2025-10-19T23:42:51.292173",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 108675.97,
+      "order_id": 328650468,
+      "forced": true,
+      "simulated": false
+    }
+  ],
+  "performance_metrics": {
+    "total_trades": 9,
+    "winning_trades": 0,
+    "current_balance": 10000.0,
+    "max_drawdown": 0.0,
+    "current_regime": "Unknown",
+    "symbols_traded": [
+      "EURUSD",
+      "XAUUSD",
+      "BTCUSD"
+    ],
+  "optimal_threshold": 0.50,
+  "target_win_rate": 0.50,
+    "expected_sharpe": 18.46,
+    "confidence_filter_rejections": 0
+  }
+}

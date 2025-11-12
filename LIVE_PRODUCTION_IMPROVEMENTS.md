@@ -111,7 +111,7 @@ engine.start_production()  # Avec tous les health checks
 ```bash
 ✅ Import moteur: OK avec améliorations
 ✅ Health check: Production Ready (4/4)
-✅ MT5 Connection: Compte 1511814519 connecté
+✅ MT5 Connection: Compte 1512027373 connecté
 ✅ Multi-actifs: 3 symboles configurés
 ✅ Seuil optimal: 0.50 actif
 ✅ Recovery system: Intégré et fonctionnel

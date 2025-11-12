@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-16"?>
+
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+
+  <RegistrationInfo>
+
+    <Date>2025-11-10T00:00:00</Date>
+
+    <Author>PROPFIRM\run_active_monitor</Author>
+
+    <Description>Run the PROPFIRM active monitor (calls tools\run_active_monitor.ps1 every 930s).</Description>
+
+    <URI>\PROPFIRM_RunActiveMonitor</URI>
+
+  </RegistrationInfo>
+
+  <Principals>
+
+    <Principal id="Author">
+
+      <UserId>S-1-5-21-695917052-2651577891-119978033-1001</UserId>
+
+      <LogonType>InteractiveToken</LogonType>
+
+    </Principal>
+
+  </Principals>
+
+  <Settings>
+
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+
+    <StartWhenAvailable>true</StartWhenAvailable>
+
+    <IdleSettings>
+
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+
+      <RestartOnIdle>false</RestartOnIdle>
+
+    </IdleSettings>
+
+    <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>
+
+  </Settings>
+
+  <Triggers>
+
+    <CalendarTrigger>
+
+      <StartBoundary>2025-11-10T00:00:00</StartBoundary>
+
+      <Repetition>
+
+        <Interval>PT15M30S</Interval>
+
+        <Duration>P1D</Duration>
+
+      </Repetition>
+
+      <ScheduleByDay>
+
+        <DaysInterval>1</DaysInterval>
+
+      </ScheduleByDay>
+
+    </CalendarTrigger>
+
+  </Triggers>
+
+  <Actions Context="Author">
+
+    <Exec>
+
+      <Command>powershell.exe</Command>
+
+      <Arguments>-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "C:\Users\saint\Documents\PROPFIRM\tools\run_active_monitor.ps1"</Arguments>
+
+      <WorkingDirectory>C:\Users\saint\Documents\PROPFIRM\tools</WorkingDirectory>
+
+    </Exec>
+
+  </Actions>
+
+</Task>

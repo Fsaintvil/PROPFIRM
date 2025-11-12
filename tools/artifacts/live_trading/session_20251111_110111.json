@@ -1,0 +1,119 @@
+{
+  "timestamp": "2025-11-11T11:01:11.741536",
+  "symbols": [
+    "BTCUSD",
+    "ETHUSD",
+    "XAUUSD",
+    "USDCAD",
+    "AUDNZD",
+    "EURJPY",
+    "GBPCHF",
+    "NZDJPY",
+    "EURUSD",
+    "EURAUD",
+    "US500.cash",
+    "JP225.cash"
+  ],
+  "performance_metrics": {
+    "total_trades": 9,
+    "winning_trades": 3,
+    "current_balance": 9975.0,
+    "max_drawdown": -0.0025,
+    "current_regime": "Bull",
+    "symbols_traded": [
+      "BTCUSD",
+      "ETHUSD",
+      "XAUUSD",
+      "USDCAD",
+      "AUDNZD",
+      "EURJPY",
+      "GBPCHF",
+      "NZDJPY",
+      "EURUSD",
+      "EURAUD",
+      "US500.cash",
+      "JP225.cash"
+    ],
+    "optimal_threshold": 0.5,
+    "target_win_rate": 0.5,
+    "expected_sharpe": 18.46,
+    "confidence_filter_rejections": 0,
+    "last_balance_update": 9,
+    "peak_balance": 10000
+  },
+  "trade_history": [
+    {
+      "timestamp": "2025-11-11T10:55:38.699353",
+      "symbol": "BTCUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 104930.33,
+      "order_id": 345815989
+    },
+    {
+      "timestamp": "2025-11-11T10:55:39.067295",
+      "symbol": "ETHUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 3555.26,
+      "order_id": 345815992
+    },
+    {
+      "timestamp": "2025-11-11T10:55:39.603281",
+      "symbol": "USDCAD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.40336,
+      "order_id": 345815997
+    },
+    {
+      "timestamp": "2025-11-11T10:55:39.988733",
+      "symbol": "AUDNZD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.15516,
+      "order_id": 345816001
+    },
+    {
+      "timestamp": "2025-11-11T10:55:40.370865",
+      "symbol": "EURJPY",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 178.507,
+      "order_id": 345816005
+    },
+    {
+      "timestamp": "2025-11-11T10:55:40.771368",
+      "symbol": "GBPCHF",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.05464,
+      "order_id": 345816007
+    },
+    {
+      "timestamp": "2025-11-11T10:55:41.439446",
+      "symbol": "EURAUD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.77444,
+      "order_id": 345816014
+    },
+    {
+      "timestamp": "2025-11-11T10:55:41.835951",
+      "symbol": "US500.cash",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 6818.23,
+      "order_id": 345816015
+    },
+    {
+      "timestamp": "2025-11-11T10:55:42.204800",
+      "symbol": "JP225.cash",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 50953.17,
+      "order_id": 345816016
+    }
+  ],
+  "total_runtime": "0:00:00"
+}

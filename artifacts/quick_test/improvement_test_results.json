@@ -1,0 +1,40 @@
+{
+  "timestamp": "2025-10-19T08:42:11.891092",
+  "test_results": {
+    "base_model": {
+      "accuracy": 0.55,
+      "f1_score": 0.5344000000000001,
+      "threshold": 0.5,
+      "features_count": 15
+    },
+    "optimized_threshold": {
+      "accuracy": 0.59,
+      "f1_score": 0.5390824389668593,
+    "threshold": 0.50,
+      "features_count": 15
+    },
+    "backtest_base": {
+      "final_capital": 10068.70226262791,
+      "total_return": 0.006870226262791039,
+      "trades": 27,
+      "win_rate": 0.5555555555555556
+    },
+    "backtest_optimized": {
+      "final_capital": 10136.196340800303,
+      "total_return": 0.0136196340800303,
+      "trades": 13,
+      "win_rate": 0.7692307692307693
+    }
+  },
+  "improvements": {
+    "accuracy_improvement_pct": 7.272727272727258,
+    "return_improvement_pct": 98.24127670534155,
+    "enhanced_features_used": true,
+  "optimal_threshold_used": 0.50
+  },
+  "recommendations": {
+    "use_enhanced_features": true,
+    "use_optimal_threshold": "True",
+    "strategy_profitable": true
+  }
+}

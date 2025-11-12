@@ -1,0 +1,410 @@
+[
+  {
+    "ticket": 345688531,
+    "symbol": "USDCAD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:23:32.152778Z"
+  },
+  {
+    "ticket": 345688533,
+    "symbol": "AUDNZD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:24:07.644586Z"
+  },
+  {
+    "ticket": 345688538,
+    "symbol": "GBPCHF",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:24:43.153023Z"
+  },
+  {
+    "ticket": 345688542,
+    "symbol": "EURUSD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:25:18.651429Z"
+  },
+  {
+    "ticket": 345688551,
+    "symbol": "US500.cash",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:25:54.159461Z"
+  },
+  {
+    "ticket": 345691134,
+    "symbol": "XAUUSD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:26:29.642808Z"
+  },
+  {
+    "ticket": 345691135,
+    "symbol": "USDCAD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:27:05.175016Z"
+  },
+  {
+    "ticket": 345691136,
+    "symbol": "AUDNZD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:27:40.673923Z"
+  },
+  {
+    "ticket": 345691140,
+    "symbol": "GBPCHF",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:28:16.185983Z"
+  },
+  {
+    "ticket": 345691142,
+    "symbol": "EURUSD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:28:51.694699Z"
+  },
+  {
+    "ticket": 345691144,
+    "symbol": "EURAUD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:29:27.183057Z"
+  },
+  {
+    "ticket": 345691145,
+    "symbol": "US500.cash",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:30:02.723692Z"
+  },
+  {
+    "ticket": 345701012,
+    "symbol": "GBPCHF",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:30:48.004148Z"
+  },
+  {
+    "ticket": 345701015,
+    "symbol": "EURUSD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:31:36.737724Z"
+  },
+  {
+    "ticket": 345701019,
+    "symbol": "EURAUD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:32:25.845637Z"
+  },
+  {
+    "ticket": 345701021,
+    "symbol": "US500.cash",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:33:02.145117Z"
+  },
+  {
+    "ticket": 345703220,
+    "symbol": "AUDNZD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:33:37.638089Z"
+  },
+  {
+    "ticket": 345703227,
+    "symbol": "GBPCHF",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:34:13.158871Z"
+  },
+  {
+    "ticket": 345703237,
+    "symbol": "US500.cash",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:34:48.645460Z"
+  },
+  {
+    "ticket": 345718069,
+    "symbol": "AUDNZD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:35:24.152039Z"
+  },
+  {
+    "ticket": 345718073,
+    "symbol": "GBPCHF",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:35:59.648221Z"
+  },
+  {
+    "ticket": 345718079,
+    "symbol": "US500.cash",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:36:35.144539Z"
+  },
+  {
+    "ticket": 345718080,
+    "symbol": "JP225.cash",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:37:10.641988Z"
+  },
+  {
+    "ticket": 345720115,
+    "symbol": "ETHUSD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:37:46.160315Z"
+  },
+  {
+    "ticket": 345720132,
+    "symbol": "AUDNZD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:38:21.644751Z"
+  },
+  {
+    "ticket": 345720138,
+    "symbol": "GBPCHF",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:38:57.128036Z"
+  },
+  {
+    "ticket": 345720143,
+    "symbol": "US500.cash",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:39:32.626825Z"
+  },
+  {
+    "ticket": 345731746,
+    "symbol": "USDCAD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:40:08.233665Z"
+  },
+  {
+    "ticket": 345731749,
+    "symbol": "AUDNZD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:40:43.768763Z"
+  },
+  {
+    "ticket": 345731753,
+    "symbol": "GBPCHF",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:41:19.322934Z"
+  },
+  {
+    "ticket": 345731764,
+    "symbol": "US500.cash",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:41:54.822162Z"
+  },
+  {
+    "ticket": 345734818,
+    "symbol": "USDCAD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:42:30.309270Z"
+  },
+  {
+    "ticket": 345734821,
+    "symbol": "AUDNZD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:43:05.830900Z"
+  },
+  {
+    "ticket": 345734824,
+    "symbol": "GBPCHF",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:43:41.349581Z"
+  },
+  {
+    "ticket": 345734833,
+    "symbol": "EURUSD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:44:16.855402Z"
+  },
+  {
+    "ticket": 345734836,
+    "symbol": "US500.cash",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:44:52.350136Z"
+  },
+  {
+    "ticket": 345734840,
+    "symbol": "JP225.cash",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:45:27.865960Z"
+  },
+  {
+    "ticket": 345751769,
+    "symbol": "ETHUSD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:46:03.353499Z"
+  },
+  {
+    "ticket": 345751800,
+    "symbol": "XAUUSD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:46:38.854066Z"
+  },
+  {
+    "ticket": 345751909,
+    "symbol": "EURJPY",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:47:14.346244Z"
+  },
+  {
+    "ticket": 345751910,
+    "symbol": "GBPCHF",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:47:49.860220Z"
+  },
+  {
+    "ticket": 345751911,
+    "symbol": "NZDJPY",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:48:25.372205Z"
+  },
+  {
+    "ticket": 345751912,
+    "symbol": "EURUSD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:49:00.873173Z"
+  },
+  {
+    "ticket": 345751914,
+    "symbol": "EURAUD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:49:36.345825Z"
+  },
+  {
+    "ticket": 345751915,
+    "symbol": "US500.cash",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:50:11.847650Z"
+  },
+  {
+    "ticket": 345754784,
+    "symbol": "USDCAD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:50:47.340130Z"
+  },
+  {
+    "ticket": 345754789,
+    "symbol": "EURJPY",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:51:22.854257Z"
+  },
+  {
+    "ticket": 345754792,
+    "symbol": "GBPCHF",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:51:58.342285Z"
+  },
+  {
+    "ticket": 345754795,
+    "symbol": "EURUSD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:52:33.839885Z"
+  },
+  {
+    "ticket": 345754800,
+    "symbol": "EURAUD",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:53:09.345450Z"
+  },
+  {
+    "ticket": 345754804,
+    "symbol": "US500.cash",
+    "volume": 0.01,
+    "result_retcode": 10009,
+    "result_comment": "Request executed",
+    "timestamp": "2025-11-11T08:53:44.869871Z"
+  }
+]

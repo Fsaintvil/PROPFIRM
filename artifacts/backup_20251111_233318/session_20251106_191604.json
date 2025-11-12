@@ -1,0 +1,44 @@
+{
+  "timestamp": "2025-11-06T19:16:04.432995",
+  "symbols": [
+    "BTCUSD",
+    "EURUSD",
+    "XAUUSD",
+    "USDJPY",
+    "ETHUSD",
+    "USDCAD",
+    "AUDNZD",
+    "EURJPY",
+    "GBPCHF",
+    "NZDJPY",
+    "EURAUD",
+    "GBPUSD"
+  ],
+  "performance_metrics": {
+    "total_trades": 0,
+    "winning_trades": 0,
+    "current_balance": 10000.0,
+    "max_drawdown": 0.0,
+    "current_regime": "Regime_0",
+    "symbols_traded": [
+      "BTCUSD",
+      "EURUSD",
+      "XAUUSD",
+      "USDJPY",
+      "ETHUSD",
+      "USDCAD",
+      "AUDNZD",
+      "EURJPY",
+      "GBPCHF",
+      "NZDJPY",
+      "EURAUD",
+      "GBPUSD"
+    ],
+    "optimal_threshold": 0.68,
+    "target_win_rate": 0.68,
+    "expected_sharpe": 18.46,
+    "confidence_filter_rejections": 0
+  },
+  "trade_history": [],
+  "total_runtime": "0:00:00"
+}

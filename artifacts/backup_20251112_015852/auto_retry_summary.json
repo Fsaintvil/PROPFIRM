@@ -1,0 +1,191 @@
+[
+  {
+    "timestamp": "20251108T191414Z",
+    "returncode": 0,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T191414Z_1.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T205516Z",
+    "returncode": 0,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T205516Z_1.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T210027Z",
+    "returncode": 0,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T210027Z_2.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T210538Z",
+    "returncode": 0,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T210538Z_3.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T211049Z",
+    "returncode": 0,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T211049Z_4.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T211600Z",
+    "returncode": 0,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T211600Z_5.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T212111Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T212111Z_6.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T212611Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T212611Z_7.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T213111Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T213111Z_8.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T213612Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T213612Z_9.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T214112Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T214112Z_10.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T214612Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T214612Z_11.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T215112Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T215112Z_12.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T215612Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T215612Z_13.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T220113Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T220113Z_14.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T220613Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T220613Z_15.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T221113Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T221113Z_16.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T221613Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T221613Z_17.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T222113Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T222113Z_18.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T222614Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T222614Z_19.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T223114Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T223114Z_20.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T223614Z",
+    "returncode": 2,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T223614Z_21.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T224114Z",
+    "returncode": 1,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T224114Z_22.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T224615Z",
+    "returncode": 1,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T224615Z_23.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T225115Z",
+    "returncode": 1,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T225115Z_24.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T225516Z",
+    "returncode": 1,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T225516Z_25.log",
+    "remaining_positions": 14,
+    "records": 14
+  },
+  {
+    "timestamp": "20251108T225516Z",
+    "returncode": 1,
+    "log": "artifacts\\live_trading\\auto_retry_20251108T225516Z_26.log",
+    "remaining_positions": 14,
+    "records": 14
+  }
+]

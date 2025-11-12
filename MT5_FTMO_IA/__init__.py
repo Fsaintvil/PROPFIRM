@@ -1,87 +1,73 @@
-"""Compatibility shim package for legacy imports of `MT5_FTMO_IA`.
+"""Compatibility shim for legacy imports of package ``MT5_FTMO_IA``.
 
-This module makes it easy to run the repository even when other code
-imports `MT5_FTMO_IA.*`. The shim adjusts the package search path
-so that subpackages like `MT5_FTMO_IA.scripts` and
-`MT5_FTMO_IA.tools` can resolve to top-level `scripts/` and
-`tools/` directories in this repository.
+This shim is intentionally conservative and minimal. Its goals:
 
-The shim is intentionally conservative:
-- it does not modify source files elsewhere,
-- it only adjusts `__path__` entries when the expected target
-  directories exist, and
-- it exposes `__shim_info__` for diagnostics.
+- Allow legacy imports such as ``MT5_FTMO_IA.scripts.foo`` to resolve
+    to top-level ``scripts/`` and ``tools/`` directories while the
+    repository migrates to a canonical package layout.
+- Expose a small diagnostic object ``__shim_info__`` for tests and
+    operators to inspect.
+- Avoid modifying other source files or changing behaviour beyond
+    adjusting package search paths.
 
-This is a low-risk compatibility layer intended as a short-term
-measure to keep tests and scripts working while a planned migration
-is prepared.
+Implementation notes:
+- We compute a short list of candidate directories and set ``__path__``
+    to the subset that actually exists. This makes subimports like
+    ``MT5_FTMO_IA.scripts`` resolve via the filesystem.
+- A one-time ``UserWarning`` is emitted on first import to remind
+    maintainers this is a temporary compatibility shim.
 """
+
 from __future__ import annotations
 
-import os
 from pathlib import Path
-from typing import List
+import sys
+import warnings
+from typing import List, Dict, Any
 
-# repo root is the parent directory of this package dir
-_ROOT = Path(__file__).resolve().parents[1]
+# Determine the repository root as the parent directory of this package
+_REPO_ROOT = Path(__file__).resolve().parents[1]
 
-# Candidate locations that we want Python to search for subpackages
-# when someone imports `MT5_FTMO_IA.scripts.*` or `MT5_FTMO_IA.tools.*`.
+# Candidate lookup locations (ordered). Keep conservative and explicit.
 _CANDIDATES: List[str] = [
-    str(_ROOT),  # allow import discovery against repo root
-    str(_ROOT / "scripts"),
-    str(_ROOT / "tools"),
-    str(_ROOT / "MT5_FTMO_IA"),
+        str(_REPO_ROOT),
+        str(_REPO_ROOT / "scripts"),
+        str(_REPO_ROOT / "tools"),
+        str(_REPO_ROOT / "MT5_FTMO_IA"),
 ]
 
-# Replace __path__ with the subset of candidate directories that exist.
+# Only include candidates that exist on disk. This avoids adding
+# non-existent entries to the import machinery.
 __path__: List[str] = [p for p in _CANDIDATES if Path(p).exists()]
 
-# Provide a small diagnostic object that callers / tests can inspect.
-__shim_info__ = {
-    "shim_active": True,
-    "repo_root": str(_ROOT),
-    "candidates": _CANDIDATES,
-    "resolved_path": list(__path__),
+# Diagnostic information usable by tests and CI.
+__shim_info__: Dict[str, Any] = {
+        "shim_active": True,
+        "repo_root": str(_REPO_ROOT),
+        "candidates": _CANDIDATES,
+        "resolved_path": list(__path__),
 }
 
 
 def shim_summary() -> str:
-    """Return a short human readable summary of what the shim configured."""
-    lines = [f"MT5_FTMO_IA shim active (repo_root={_ROOT})"]
-    lines.append("Resolved __path__ entries:")
-    for p in __path__:
-        lines.append(f" - {p}")
-    return "\n".join(lines)
+        """Return a short human-readable summary of what the shim configured."""
+        lines = [f"MT5_FTMO_IA shim active (repo_root={_REPO_ROOT})"]
+        lines.append("Resolved __path__ entries:")
+        for p in __path__:
+                lines.append(f" - {p}")
+        return "\n".join(lines)
 
 
 __all__ = ["__shim_info__", "shim_summary"]
-"""Compatibility shim package for legacy imports named `MT5_FTMO_IA`.
 
-This package provides lightweight namespace packages that forward
-subpackages (notably `scripts`, `models`, `control`, `data`) to
-top-level folders in the repository so existing imports like
-`MT5_FTMO_IA.scripts.mt5_connector` continue to work while the
-repository migrates to a canonical layout.
-
-This shim is intentionally minimal and non-invasive. It emits a
-single informational note when first imported to remind operators
-that this is a compatibility shim.
-"""
-from pathlib import Path
-import sys
-import warnings
-
-__all__ = ["scripts", "models", "control", "data"]
-
-# Best-effort repo root detection: two levels up from this file
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-
-# Small, one-time informational message (avoid spamming during tests)
-if not getattr(sys.modules.get(__name__), "_MT5_SHIM_WARNED", False):
+# Emit a one-time informational warning to aid operators and reviewers.
+_WARN_FLAG = "_mt5_ftmo_ia_shim_warned"
+if not getattr(sys.modules.get(__name__), _WARN_FLAG, False):
     warnings.warn(
-        "MT5_FTMO_IA compatibility shim is active. Prefer migrating imports to the canonical layout.",
+        "MT5_FTMO_IA compatibility shim is active. Prefer migrating imports to the "
+        "canonical layout.",
         UserWarning,
     )
-    # mark warned
-    setattr(sys.modules[__name__], "_MT5_SHIM_WARNED", True)
+    # mark warned on the module object
+    if __name__ in sys.modules:
+        setattr(sys.modules[__name__], _WARN_FLAG, True)

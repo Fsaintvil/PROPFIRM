@@ -1,0 +1,71 @@
+{
+  "timestamp": "2025-11-10T12:45:22.851740",
+  "symbols": [
+    "BTCUSD",
+    "ETHUSD",
+    "XAUUSD",
+    "USDCAD",
+    "AUDNZD",
+    "EURJPY",
+    "GBPCHF",
+    "NZDJPY",
+    "EURUSD",
+    "EURAUD",
+    "US500.cash",
+    "JP225.cash"
+  ],
+  "performance_metrics": {
+    "total_trades": 3,
+    "winning_trades": 3,
+    "current_balance": 10150.0,
+    "max_drawdown": 0.0,
+    "current_regime": "Sideways",
+    "symbols_traded": [
+      "BTCUSD",
+      "ETHUSD",
+      "XAUUSD",
+      "USDCAD",
+      "AUDNZD",
+      "EURJPY",
+      "GBPCHF",
+      "NZDJPY",
+      "EURUSD",
+      "EURAUD",
+      "US500.cash",
+      "JP225.cash"
+    ],
+    "optimal_threshold": 0.5,
+    "target_win_rate": 0.5,
+    "expected_sharpe": 18.46,
+    "confidence_filter_rejections": 0,
+    "last_balance_update": 3,
+    "peak_balance": 10150.0
+  },
+  "trade_history": [
+    {
+      "timestamp": "2025-11-10T12:37:36.427538",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 106150.68,
+      "order_id": 344980788
+    },
+    {
+      "timestamp": "2025-11-10T12:37:37.102494",
+      "symbol": "USDCAD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.40175,
+      "order_id": 344980802
+    },
+    {
+      "timestamp": "2025-11-10T12:37:38.223852",
+      "symbol": "EURAUD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.76963,
+      "order_id": 344980811
+    }
+  ],
+  "total_runtime": "0:00:00"
+}

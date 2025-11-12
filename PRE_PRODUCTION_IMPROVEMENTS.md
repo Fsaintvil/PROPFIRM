@@ -99,3 +99,13 @@ python scripts/live_trading_engine.py
 ```
 
 **Le système est maintenant optimisé pour la production avec +98% de performance attendue !** 🎉
+
+---
+
+### Note opérationnelle - Passage en LIVE
+
+Méthode standardisée pour l'activation LIVE : MTF M15, backtests 7 ans, envois toutes les 930s,
+auto-close 31 minutes, confirmations `control/apply_live.confirm` et `control/apply_live.auto.confirm`,
+et `ALLOW_MT5_SEND=1` requis. Les envois sont persistés dans `artifacts/live_trading/`.
+
+Entrée ajoutée le : 2025-11-10

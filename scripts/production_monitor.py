@@ -9,6 +9,7 @@ import json
 import os
 from datetime import datetime
 import subprocess
+from pathlib import Path
 
 
 def check_trading_status():
@@ -43,8 +44,11 @@ def check_trading_status():
 def get_latest_trades():
     """Récupérer les derniers trades"""
     try:
-        trades_file = r"c:\Users\saint\Documents\PROPFIRM\logs\trades.json"
-        if not os.path.exists(trades_file):
+        # Determine repository root relative to this script and use repo-relative logs
+        project_root = Path(__file__).resolve().parents[1]
+        logs_dir = project_root / 'logs'
+        trades_file = logs_dir / 'trades.json'
+        if not trades_file.exists():
             return []
 
         with open(trades_file, 'r') as f:
@@ -69,7 +73,12 @@ def get_latest_trades():
 def get_latest_log_entries():
     """Récupérer les dernières entrées de log"""
     try:
-        logs_dir = r"c:\Users\saint\Documents\PROPFIRM\logs"
+        # Use repo-relative logs directory
+        project_root = Path(__file__).resolve().parents[1]
+        logs_dir = project_root / 'logs'
+        if not logs_dir.exists():
+            return []
+
         log_files = [
             f for f in os.listdir(logs_dir)
             if f.startswith('live_trading_202510')
@@ -78,7 +87,7 @@ def get_latest_log_entries():
         if not log_files:
             return []
 
-        latest_log = os.path.join(logs_dir, sorted(log_files)[-1])
+        latest_log = logs_dir / sorted(log_files)[-1]
 
         with open(latest_log, 'r', encoding='utf-8') as f:
             lines = f.readlines()

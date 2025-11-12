@@ -17,6 +17,8 @@ import os
 import time
 import sys
 import logging
+import csv
+import traceback
 from datetime import datetime, timedelta
 from pathlib import Path
 import pytz
@@ -39,13 +41,15 @@ except ImportError:
 
     # Fallback vers valeurs par défaut
     class TradingConfig:
-        TRADING_INTERVAL_SECONDS = 600
+        TRADING_INTERVAL_SECONDS = 930
         CLEANUP_CYCLE_INTERVAL = 20
         LOG_SUMMARY_INTERVAL = 5
         MIN_SLEEP_SECONDS = 60
         MAX_HISTORY_TRADES = 1000
         MAX_MARKET_DATA_BARS = 300
         DEFAULT_CONFIDENCE_THRESHOLD = 0.60
+        # Par défaut: auto-close positions après X minutes si SL/TP inchangés
+        AUTO_CLOSE_MINUTES = 30
 
 # Fallback robuste pour utils.robust_retry si non disponible
 try:
@@ -148,22 +152,34 @@ if os.getenv("LIVE_ENGINE_LIGHT_MODE", "0") == "1":
     SYSTEMS_AVAILABLE = False
     print("⚙️  Mode light: import des systèmes IA différé/skippé")
 else:
+    # Prefer explicit imports from the scripts/ package to avoid root module
+    # name collisions (there are shim/duplicate files at repo root).
     try:
-        from meta_learning_system import MetaLearningTradingSystem
-        from reinforcement_learning_agent import ReinforcementLearningTradingSystem
-        from multi_asset_portfolio import MultiAssetPortfolioOptimizer
-        from market_regime_detection import MarketRegimeDetector
+        from scripts.meta_learning_system import MetaLearningTradingSystem
+        from scripts.reinforcement_learning_agent import ReinforcementLearningTradingSystem
+        from scripts.multi_asset_portfolio import MultiAssetPortfolioOptimizer
+        from scripts.market_regime_detection import MarketRegimeDetector
 
         SYSTEMS_AVAILABLE = True
-        print("✅ Systèmes de trading IA chargés avec succès")
-    except ImportError as e:
-        SYSTEMS_AVAILABLE = False
-        print(f"⚠️  Systèmes non disponibles: {e}")
-        print("🔄 Mode minimal activé - fonctions de base uniquement")
-    except Exception as e:
-        SYSTEMS_AVAILABLE = False
-        print(f"🔴 Erreur systèmes inattendue: {e}")
-        print("🔄 Mode minimal activé")
+        print("✅ Systèmes de trading IA (scripts/) chargés avec succès")
+    except Exception:
+        # Fallback: try importing from repository root modules (shim files)
+        try:
+            from meta_learning_system import MetaLearningTradingSystem
+            from reinforcement_learning_agent import ReinforcementLearningTradingSystem
+            from multi_asset_portfolio import MultiAssetPortfolioOptimizer
+            from market_regime_detection import MarketRegimeDetector
+
+            SYSTEMS_AVAILABLE = True
+            print("✅ Systèmes de trading IA (root) chargés avec succès")
+        except ImportError as e:
+            SYSTEMS_AVAILABLE = False
+            print(f"⚠️  Systèmes non disponibles: {e}")
+            print("🔄 Mode minimal activé - fonctions de base uniquement")
+        except Exception as e:
+            SYSTEMS_AVAILABLE = False
+            print(f"🔴 Erreur systèmes inattendue: {e}")
+            print("🔄 Mode minimal activé")
 
 # Import MTF pipeline (convergence 15m) avec fallback
 try:
@@ -332,9 +348,14 @@ class LiveTradingEngine:
         self.recent_trades_performance = []  # 20 derniers trades
         self.symbol_performance = {}  # Performance par symbole
         self.confidence_accuracy_tracker = {}  # Précision par niveau confiance
+        # Liste de suivi des positions ouvertes pour auto-close
+        # Chaque entrée: {ticket, symbol, open_time, sl, tp, auto_close_at, closed}
+        self.position_watchlist = []
+        # Durée par défaut avant auto-close (minutes)
+        self.auto_close_minutes = getattr(TradingConfig, 'AUTO_CLOSE_MINUTES', 30)
 
-    # Configuration de trading en continu (sans limite quotidienne)
-    # Utiliser la valeur de TradingConfig déjà chargée plus haut
+        # Configuration de trading en continu (sans limite quotidienne)
+        # Utiliser la valeur de TradingConfig déjà chargée plus haut
         self.trade_count_today = 0  # Compteur pour statistiques seulement
         self.max_daily_trades = None  # Pas de limite - trading continu
         self.last_reset_date = None
@@ -2014,6 +2035,13 @@ class LiveTradingEngine:
                 f"✅ Ordre exécuté: {action} {symbol} {lot_size} lots à {price}"
             )
 
+            # Enregistrer la position dans la watchlist pour auto-close
+            try:
+                # Register asynchronously but attempt immediate discovery
+                self._register_position_watchlist(result, symbol, lot_size, request.get('sl'), request.get('tp'), price)
+            except Exception as _reg_e:
+                self.logger.debug(f"Impossible d'enregistrer position dans watchlist: {_reg_e}")
+
             return True
 
         except Exception as e:
@@ -2541,6 +2569,12 @@ class LiveTradingEngine:
                 if cycle_count % self.log_summary_interval == 0:
                     self.log_performance_summary()
 
+                # Vérifier la watchlist d'auto-close à chaque cycle (best-effort)
+                try:
+                    self.enforce_auto_close()
+                except Exception:
+                    pass
+
                 # 8. Attendre selon l'intervalle configuré
                 cycle_duration = time.time() - cycle_start
                 sleep_time = max(
@@ -2841,29 +2875,733 @@ class LiveTradingEngine:
         except Exception as e:
             self.logger.warning(f"Erreur mise à jour gestion des risques: {e}")
 
+    def _register_position_watchlist(self, order_result, symbol, lot_size, sl, tp, entry_price):
+        """Enregistrer une position récemment ouverte dans la watchlist pour auto-close.
+
+        Tentative best-effort pour retrouver le ticket sur MT5 et sauvegarder un audit.
+        """
+        try:
+            audit_dir = Path('artifacts') / 'live_trading'
+            audit_dir.mkdir(parents=True, exist_ok=True)
+
+            ticket = None
+            # tenter de retrouver la position ouverte
+            if MT5_AVAILABLE:
+                attempts = 6
+                delay = 0.5
+                for _ in range(attempts):
+                    try:
+                        positions = mt5.positions_get() or []
+                        for p in positions:
+                            try:
+                                if getattr(p, 'symbol', None) == symbol and abs(float(getattr(p, 'volume', 0.0)) - float(lot_size)) < 1e-6:
+                                    ticket = int(getattr(p, 'ticket', 0))
+                                    break
+                            except Exception:
+                                continue
+                        if ticket is not None:
+                            break
+                    except Exception:
+                        pass
+                    time.sleep(delay)
+
+            entry = {
+                'registered_at': datetime.utcnow().isoformat() + 'Z',
+                'order_id': getattr(order_result, 'order', None),
+                'ticket': ticket,
+                'symbol': symbol,
+                'volume': float(lot_size),
+                'entry_price': float(entry_price) if entry_price is not None else None,
+                'sl': float(sl) if sl is not None else None,
+                'tp': float(tp) if tp is not None else None,
+                'auto_close_at': (datetime.utcnow() + timedelta(minutes=self.auto_close_minutes)).isoformat() + 'Z',
+                'closed': False,
+            }
+
+            # Append to in-memory watchlist
+            self.position_watchlist.append(entry)
+
+            # Write audit line
+            try:
+                fn = audit_dir / 'mt5_watchlist.jsonl'
+                with open(fn, 'a', encoding='utf-8') as _f:
+                    _f.write(json.dumps(entry, default=str) + '\n')
+            except Exception:
+                pass
+
+            self.logger.info(f"🔖 Position enregistrée dans watchlist: {symbol} ticket={ticket} order={entry['order_id']}")
+            return True
+        except Exception as e:
+            try:
+                self.logger.debug(f"Erreur _register_position_watchlist: {e}")
+            except Exception:
+                pass
+            return False
+
+    def enforce_auto_close(self):
+        """Vérifier la watchlist et fermer les positions arrivées à échéance si SL/TP inchangés.
+
+        Cette méthode est idempotente et best-effort; toute action est auditée.
+        """
+        if not MT5_AVAILABLE:
+            return
+
+        audit_dir = Path('artifacts') / 'live_trading'
+        audit_dir.mkdir(parents=True, exist_ok=True)
+
+        # Snapshot current positions for post-run reconciliation
+        try:
+            if MT5_AVAILABLE:
+                try:
+                    current_positions = mt5.positions_get() or []
+                    serializable = []
+                    for p in current_positions:
+                        try:
+                            serializable.append({
+                                'ticket': int(getattr(p, 'ticket', None)),
+                                'symbol': getattr(p, 'symbol', None),
+                                'volume': float(getattr(p, 'volume', 0.0)),
+                                'sl': getattr(p, 'sl', None),
+                                'tp': getattr(p, 'tp', None),
+                                'open_time': getattr(p, 'time', None),
+                            })
+                        except Exception:
+                            continue
+
+                    fn_snapshot = audit_dir / 'current_positions_post_autoclose.json'
+                    try:
+                        with open(fn_snapshot, 'w', encoding='utf-8') as _sf:
+                            json.dump({'ts': datetime.utcnow().isoformat() + 'Z', 'positions': serializable}, _sf, default=str)
+                        try:
+                            self.logger.info(f"Positions snapshot écrit: {str(fn_snapshot)}")
+                        except Exception:
+                            pass
+                    except Exception as e:
+                        try:
+                            tb = traceback.format_exc()
+                            self.logger.warning(f"Impossible d'écrire snapshot positions: {e} | traceback: {tb}")
+                        except Exception:
+                            pass
+                except Exception as e:
+                    try:
+                        self.logger.warning(f"Erreur récupération positions MT5 pour snapshot: {e}")
+                    except Exception:
+                        pass
+        except Exception:
+            # non critique
+            pass
+
+        now = datetime.utcnow()
+        for entry in list(self.position_watchlist):
+            try:
+                if entry.get('closed'):
+                    continue
+
+                # comparer l'heure
+                auto_close_at = None
+                try:
+                    auto_close_at = datetime.fromisoformat(entry.get('auto_close_at').replace('Z', ''))
+                except Exception:
+                    auto_close_at = None
+
+                # Log basic diagnostics for this entry
+                try:
+                    self.logger.info(
+                        f"Watchlist check: ticket={entry.get('ticket')} symbol={entry.get('symbol')} auto_close_at={auto_close_at} now={now.isoformat()}"
+                    )
+                except Exception:
+                    pass
+
+                if auto_close_at is None or now < auto_close_at:
+                    try:
+                        self.logger.debug(f"Auto-close not due yet for ticket {entry.get('ticket')} (auto_close_at={auto_close_at})")
+                    except Exception:
+                        pass
+                    continue
+
+                ticket = entry.get('ticket')
+                symbol = entry.get('symbol')
+
+                # tenter de rafraîchir le ticket si absent
+                if ticket is None:
+                    try:
+                        positions = mt5.positions_get() or []
+                        for p in positions:
+                            if getattr(p, 'symbol', None) == symbol and abs(float(getattr(p, 'volume', 0.0)) - float(entry.get('volume', 0.0))) < 1e-6:
+                                ticket = int(getattr(p, 'ticket', 0))
+                                entry['ticket'] = ticket
+                                break
+                    except Exception:
+                        pass
+
+                if ticket is None:
+                    # position non trouvée: marquer closed pour éviter bouclage
+                    try:
+                        self.logger.info(f"Auto-close: ticket absent and position not found for symbol {symbol} - marking entry closed")
+                    except Exception:
+                        pass
+                    entry['closed'] = True
+                    # Write audit record for missing position for traceability
+                    try:
+                        rec_missing = {
+                            'ticket': entry.get('ticket'),
+                            'symbol': symbol,
+                            'status': 'position_missing',
+                            'note': 'ticket absent during enforcement',
+                            'ts': datetime.utcnow().isoformat() + 'Z',
+                        }
+                        fn_missing = audit_dir / 'mt5_auto_close_audit.jsonl'
+                        try:
+                            with open(fn_missing, 'a', encoding='utf-8') as _mf:
+                                _mf.write(json.dumps(rec_missing, default=str) + '\n')
+                            try:
+                                self.logger.info(f"Audit auto-close (position_missing) écrit: {str(fn_missing)}")
+                            except Exception:
+                                pass
+                        except Exception as e:
+                            try:
+                                tb = traceback.format_exc()
+                                self.logger.warning(f"Impossible d'écrire audit position_missing: {e} | traceback: {tb}")
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+                    continue
+
+                # récupérer la position active
+                positions = mt5.positions_get() or []
+                pos = None
+                for p in positions:
+                    try:
+                        if int(getattr(p, 'ticket', 0)) == int(ticket):
+                            pos = p
+                            break
+                    except Exception:
+                        continue
+
+                if pos is None:
+                    try:
+                        self.logger.info(f"Auto-close: active position not found for ticket={ticket} symbol={symbol} - marking entry closed")
+                    except Exception:
+                        pass
+                    entry['closed'] = True
+                    # Audit: active position not found
+                    try:
+                        rec_missing = {
+                            'ticket': ticket,
+                            'symbol': symbol,
+                            'status': 'position_missing',
+                            'note': 'active position not found during enforcement',
+                            'ts': datetime.utcnow().isoformat() + 'Z',
+                        }
+                        fn_missing = audit_dir / 'mt5_auto_close_audit.jsonl'
+                        try:
+                            with open(fn_missing, 'a', encoding='utf-8') as _mf:
+                                _mf.write(json.dumps(rec_missing, default=str) + '\n')
+                            try:
+                                self.logger.info(f"Audit auto-close (position_missing) écrit: {str(fn_missing)}")
+                            except Exception:
+                                pass
+                        except Exception as e:
+                            try:
+                                tb = traceback.format_exc()
+                                self.logger.warning(f"Impossible d'écrire audit position_missing: {e} | traceback: {tb}")
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
+                    continue
+
+                # Vérifier que SL/TP sont inchangés
+                current_sl = getattr(pos, 'sl', None)
+                current_tp = getattr(pos, 'tp', None)
+                desired_sl = entry.get('sl')
+                desired_tp = entry.get('tp')
+
+                sl_unchanged = ( (current_sl == desired_sl) or (current_sl is None and desired_sl is None) )
+                tp_unchanged = ( (current_tp == desired_tp) or (current_tp is None and desired_tp is None) )
+
+                if not (sl_unchanged and tp_unchanged):
+                    # SL/TP were changed — do not auto-close
+                    entry['closed'] = True
+                    self.logger.info(f"Auto-close skipped: SL/TP changed for ticket {ticket}")
+                    continue
+
+                # Construire la requête de fermeture
+                pos_type = int(getattr(pos, 'type', 0))
+                if pos_type == getattr(mt5, 'POSITION_TYPE_BUY', getattr(mt5, 'ORDER_TYPE_BUY', 0)):
+                    close_type = getattr(mt5, 'ORDER_TYPE_SELL', None)
+                    price = None
+                    try:
+                        price = mt5.symbol_info_tick(symbol).bid
+                    except Exception:
+                        price = None
+                else:
+                    close_type = getattr(mt5, 'ORDER_TYPE_BUY', None)
+                    price = None
+                    try:
+                        price = mt5.symbol_info_tick(symbol).ask
+                    except Exception:
+                        price = None
+
+                request = {
+                    'action': mt5.TRADE_ACTION_DEAL,
+                    'symbol': symbol,
+                    'volume': float(getattr(pos, 'volume', 0.0)),
+                    'type': close_type,
+                    'position': int(ticket),
+                    'price': float(price) if price is not None else None,
+                    'deviation': 20,
+                    'type_filling': mt5.ORDER_FILLING_IOC,
+                }
+
+                # Envoyer l'ordre de fermeture
+                try:
+                    # Log the request we are about to send for traceability
+                    try:
+                        self.logger.info(f"Auto-close: sending order_send for ticket={ticket} symbol={symbol}")
+                        self.logger.debug("Auto-close request: %s", json.dumps(request, default=str))
+                    except Exception:
+                        pass
+
+                    result = mt5.order_send(request)
+                    # Log result minimal info to aid debugging
+                    try:
+                        self.logger.info(
+                            f"Auto-close: order_send returned for ticket={ticket} retcode={getattr(result, 'retcode', None)} comment={getattr(result, 'comment', None)}"
+                        )
+                    except Exception:
+                        pass
+                except Exception as e:
+                    entry.setdefault('audit', []).append({'error': str(e), 'ts': datetime.utcnow().isoformat() + 'Z'})
+                    try:
+                        tb = traceback.format_exc()
+                        self.logger.warning(f"Erreur envoi auto-close ticket {ticket}: {e} | traceback: {tb}")
+                    except Exception:
+                        try:
+                            print(f"Erreur envoi auto-close ticket {ticket}: {e}")
+                            print(traceback.format_exc())
+                        except Exception:
+                            pass
+                    continue
+
+                rec = {
+                    'ticket': ticket,
+                    'symbol': symbol,
+                    'volume': float(getattr(pos, 'volume', 0.0)),
+                    'result_retcode': getattr(result, 'retcode', None),
+                    'result_comment': getattr(result, 'comment', None),
+                    'requested_at': datetime.utcnow().isoformat() + 'Z',
+                }
+
+                # enregistrer audit
+                try:
+                    fn = audit_dir / 'mt5_auto_close_audit.jsonl'
+                    # Instrumentation: log target path and record to write
+                    try:
+                        self.logger.info(f"Attempting to write auto-close audit to: {str(fn)}")
+                    except Exception:
+                        pass
+
+                    try:
+                        # Log the exact JSON being written at debug level
+                        try:
+                            self.logger.debug("Auto-close audit record: %s", json.dumps(rec, default=str))
+                        except Exception:
+                            pass
+
+                        with open(fn, 'a', encoding='utf-8') as _f:
+                            _f.write(json.dumps(rec, default=str) + '\n')
+
+                        # Log success to make writes observable in controller logs
+                        try:
+                            self.logger.info(f"Audit auto-close écrit: {str(fn)}")
+                        except Exception:
+                            pass
+                    except Exception as e:
+                        # On failure, log full traceback to help debugging
+                        try:
+                            tb = traceback.format_exc()
+                            self.logger.warning(
+                                f"Impossible d'écrire mt5_auto_close_audit.jsonl: {e} | traceback: {tb}"
+                            )
+                        except Exception:
+                            # Best-effort: if logging fails, print to stderr
+                            try:
+                                print(f"Impossible d'écrire audit: {e}")
+                                print(traceback.format_exc())
+                            except Exception:
+                                pass
+                except Exception as e:
+                    # Fallback: if outer exception occurs, ensure it is logged
+                    try:
+                        tb = traceback.format_exc()
+                        self.logger.warning(
+                            f"Erreur inattendue lors de l'audit auto-close: {e} | traceback: {tb}"
+                        )
+                    except Exception:
+                        try:
+                            print(f"Erreur inattendue lors de l'audit auto-close: {e}")
+                            print(traceback.format_exc())
+                        except Exception:
+                            pass
+
+                if getattr(result, 'retcode', None) == getattr(mt5, 'TRADE_RETCODE_DONE', 10009):
+                    entry['closed'] = True
+                    self.logger.info(f"🔒 Auto-closed position {ticket} symbol {symbol}")
+                else:
+                    entry.setdefault('audit', []).append({'result': rec})
+                    self.logger.warning(f"Échec auto-close {ticket}: {getattr(result, 'comment', None)}")
+
+            except Exception as e:
+                try:
+                    self.logger.debug(f"Erreur enforce_auto_close entry: {e}")
+                except Exception:
+                    pass
+                continue
+
     def _update_position_stop_loss(self, ticket, new_sl):
         """Met à jour le stop loss d'une position spécifique"""
+        # Implémentation améliorée:
+        # - Vérifie existence de la position
+        # - Tente plusieurs essais avec backoff exponentiel
+        # - Enregistre un audit détaillé dans artifacts/live_trading/ pour traçabilité
+        audit_dir = Path('artifacts') / 'live_trading'
         try:
-            # Créer la requête de modification
-            request = {
-                "action": mt5.TRADE_ACTION_SLTP,
-                "position": ticket,
-                "sl": new_sl,
-            }
-            
-            # Envoyer la requête
-            result = mt5.order_send(request)
-            
-            if result.retcode == mt5.TRADE_RETCODE_DONE:
-                self.logger.info(f"✅ Stop loss mis à jour: position {ticket} → SL {new_sl:.5f}")
-                return True
-            else:
-                self.logger.warning(f"❌ Échec mise à jour SL position {ticket}: {result.comment}")
+            audit_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
+
+        audit_record = {
+            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'ticket': int(ticket) if ticket is not None else None,
+            'proposed_sl': float(new_sl) if new_sl is not None else None,
+            'attempts': []
+        }
+
+        # 1) vérifier existence position
+        try:
+            positions = mt5.positions_get() if MT5_AVAILABLE else []
+            pos_exists = False
+            if positions:
+                for p in positions:
+                    try:
+                        if int(getattr(p, 'ticket', 0)) == int(ticket):
+                            pos_exists = True
+                            break
+                    except Exception:
+                        continue
+            if not pos_exists:
+                self.logger.warning(
+                    f"⚠️ Position {ticket} introuvable - modification SL ignorée"
+                )
+                audit_record['final_status'] = 'position_missing'
+                # Enregistrer audit minimal
+                try:
+                    fn = audit_dir / 'mt5_update_audit.jsonl'
+                    with open(fn, 'a', encoding='utf-8') as _f:
+                        _f.write(json.dumps(audit_record, default=str) + '\n')
+                except Exception:
+                    pass
                 return False
-                
         except Exception as e:
-            self.logger.error(f"Erreur mise à jour stop loss position {ticket}: {e}")
+            self.logger.warning(f"Erreur vérification position {ticket} avant update: {e}")
+            audit_record['final_status'] = 'positions_check_failed'
+            try:
+                fn = audit_dir / 'mt5_update_audit.jsonl'
+                with open(fn, 'a', encoding='utf-8') as _f:
+                    _f.write(json.dumps(audit_record, default=str) + '\n')
+            except Exception:
+                pass
             return False
+
+        # 2) préparer la requête (position présente)
+        request = {
+            'action': mt5.TRADE_ACTION_SLTP,
+            'position': int(ticket),
+            'sl': float(new_sl),
+        }
+
+        # 3) retry loop avec backoff
+        max_attempts = 5
+        delay = 0.5
+        success = False
+        last_result = None
+        for attempt in range(1, max_attempts + 1):
+            try:
+                result = mt5.order_send(request)
+                last_result = result
+                attempt_record = {
+                    'attempt': attempt,
+                    'timestamp': datetime.utcnow().isoformat() + 'Z',
+                    'retcode': getattr(result, 'retcode', None),
+                    'comment': getattr(result, 'comment', None)
+                }
+                audit_record['attempts'].append(attempt_record)
+
+                if result is None:
+                    self.logger.warning(f"❌ Résultat ordre null pour position {ticket} (attempt {attempt})")
+                else:
+                    if getattr(result, 'retcode', None) == mt5.TRADE_RETCODE_DONE:
+                        self.logger.info(f"✅ Stop loss mis à jour: position {ticket} → SL {new_sl:.5f} (attempt {attempt})")
+                        success = True
+                        audit_record['final_status'] = 'success'
+                        break
+                    else:
+                        # retcode non ok, log et decide retry selon commentaire
+                        comment = getattr(result, 'comment', None)
+                        self.logger.warning(
+                            f"❌ Échec mise à jour SL position {ticket}: {comment} (retcode={getattr(result,'retcode',None)})"
+                        )
+                        # si erreur non récupérable, continuer les retries pour robustesse
+                # backoff avant prochaine tentative
+            except Exception as e:
+                audit_record['attempts'].append({'attempt': attempt, 'error': str(e), 'timestamp': datetime.utcnow().isoformat() + 'Z'})
+                self.logger.warning(f"Erreur order_send attempt {attempt} for {ticket}: {e}")
+
+            # Exponential backoff
+            try:
+                time.sleep(delay)
+            except Exception:
+                pass
+            delay *= 2
+
+        # 4) finaliser audit
+        if not success:
+            audit_record['final_status'] = audit_record.get('final_status', 'failed')
+            # tenter d'extraire info du dernier_result
+            if last_result is not None:
+                try:
+                    audit_record['last_retcode'] = getattr(last_result, 'retcode', None)
+                    audit_record['last_comment'] = getattr(last_result, 'comment', None)
+                except Exception:
+                    pass
+
+        try:
+            fn = audit_dir / 'mt5_update_audit.jsonl'
+            with open(fn, 'a', encoding='utf-8') as _f:
+                _f.write(json.dumps(audit_record, default=str) + '\n')
+        except Exception:
+            # Ne jamais échouer pour l'audit
+            pass
+
+        return bool(success)
+
+    def monitor_and_apply_retries(self, apply_files=None, interval_s=10, cycles=20):
+        """Surveille les fichiers apply et applique les updates lorsque la position apparaît.
+
+        - apply_files: liste de chemins vers les fichiers mt5_apply_*.json; si None, scanne artifacts/live_trading/
+        - interval_s: intervalle entre vérifications
+        - cycles: nombre d'itérations
+        Produits: écrit un fichier résumé JSON et CSV dans artifacts/live_trading/
+        """
+        audit_dir = Path('artifacts') / 'live_trading'
+        audit_dir.mkdir(parents=True, exist_ok=True)
+
+        # découvrir les fichiers si non fournis
+        if not apply_files:
+            files = list((Path('artifacts') / 'live_trading').glob('mt5_apply_*.json'))
+        else:
+            files = [Path(p) for p in apply_files]
+
+        summary = {
+            'started_at': datetime.utcnow().isoformat() + 'Z',
+            'cycles': cycles,
+            'interval_s': interval_s,
+            'actions': [],
+        }
+
+        for cycle in range(1, cycles + 1):
+            self.logger.info(
+                f"Surveillance cycle {cycle}/{cycles}: "
+                f"vérification des fichiers apply ({len(files)} fichiers)"
+            )
+            # recharger fichiers (au cas où nouveaux fichiers apparaissent)
+            if not apply_files:
+                files = list((Path('artifacts') / 'live_trading').glob('mt5_apply_*.json'))
+
+            for f in files:
+                try:
+                    data = json.loads(f.read_text(encoding='utf-8'))
+                except Exception as e:
+                    self.logger.warning(f"Impossible de lire {f}: {e}")
+                    continue
+
+                for entry in data:
+                    ticket = entry.get('ticket') or entry.get('position')
+                    proposed_sl = entry.get('proposed_sl') or entry.get('sl')
+                    action_record = {
+                        'file': str(f), 'ticket': ticket, 'proposed_sl': proposed_sl,
+                        'cycle': cycle, 'timestamp': datetime.utcnow().isoformat() + 'Z',
+                        'position_found': False, 'applied': False
+                    }
+
+                    # vérifier position
+                    try:
+                        positions = mt5.positions_get() if MT5_AVAILABLE else []
+                        pos_exists = False
+                        if positions:
+                            for p in positions:
+                                try:
+                                    if int(getattr(p, 'ticket', 0)) == int(ticket):
+                                        pos_exists = True
+                                        break
+                                except Exception:
+                                    continue
+                        action_record['position_found'] = bool(pos_exists)
+                        if pos_exists and proposed_sl is not None:
+                            ok = self._update_position_stop_loss(ticket, proposed_sl)
+                            action_record['applied'] = bool(ok)
+                    except Exception as e:
+                        action_record['error'] = str(e)
+
+                    summary['actions'].append(action_record)
+
+            # écrire résumé intermédiaire
+            try:
+                ts = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+                summary_fn = audit_dir / f'mt5_live_actions_summary_{ts}.json'
+                summary_fn.write_text(json.dumps(summary, default=str, indent=2), encoding='utf-8')
+                # CSV
+                csv_fn = audit_dir / f'mt5_live_actions_summary_{ts}.csv'
+                with open(csv_fn, 'w', encoding='utf-8', newline='') as _csvf:
+                    writer = csv.writer(_csvf)
+                    header = [
+                        'file', 'ticket', 'proposed_sl', 'cycle', 'timestamp',
+                        'position_found', 'applied', 'error'
+                    ]
+                    writer.writerow(header)
+                    for a in summary['actions']:
+                        row = [
+                            a.get('file'), a.get('ticket'), a.get('proposed_sl'),
+                            a.get('cycle'), a.get('timestamp'), a.get('position_found'),
+                            a.get('applied'), a.get('error')
+                        ]
+                        writer.writerow(row)
+            except Exception as e:
+                self.logger.warning(f"Impossible d'écrire le résumé de surveillance: {e}")
+
+            if cycle < cycles:
+                try:
+                    time.sleep(interval_s)
+                except Exception:
+                    pass
+
+        summary['finished_at'] = datetime.utcnow().isoformat() + 'Z'
+        # écrire résumé final
+        try:
+            ts = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+            summary_fn = audit_dir / f'mt5_live_actions_summary_{ts}.json'
+            summary_fn.write_text(json.dumps(summary, default=str, indent=2), encoding='utf-8')
+        except Exception:
+            pass
+
+        return summary
+
+    def close_positive_positions_gradual(self, duration_minutes=30, min_profit=0.0, deviation=20):
+        """Ferme progressivement les positions avec profit > min_profit sur la durée indiquée.
+
+        - duration_minutes: temps total en minutes pour fermer toutes les positions ciblées
+        - min_profit: seuil minimal de profit (ex: 0.0 pour toute position profitable)
+        - deviation: tolérance de prix en points pour l'ordre de marché
+        """
+        audit_dir = Path('artifacts') / 'live_trading'
+        audit_dir.mkdir(parents=True, exist_ok=True)
+        close_audit = []
+
+        try:
+            positions = mt5.positions_get() if MT5_AVAILABLE else []
+        except Exception as e:
+            self.logger.warning(f"Impossible d'interroger les positions pour fermeture: {e}")
+            return {'closed': 0, 'error': str(e)}
+
+        positive = []
+        for p in positions or []:
+            try:
+                if float(getattr(p, 'profit', 0.0)) > float(min_profit):
+                    positive.append(p)
+            except Exception:
+                continue
+
+        total = len(positive)
+        if total == 0:
+            self.logger.info("Aucune position profitable à fermer selon le seuil donné.")
+            return {'closed': 0}
+
+        interval = max(0.5, (duration_minutes * 60) / total)
+        closed_count = 0
+
+        for idx, pos in enumerate(positive, start=1):
+            try:
+                symbol = pos.symbol
+                vol = float(getattr(pos, 'volume', 0.0))
+                pos_ticket = int(getattr(pos, 'ticket', 0))
+                pos_type = int(getattr(pos, 'type', 0))
+
+                # Choisir le type inverse pour fermer
+                if pos_type == mt5.POSITION_TYPE_BUY:
+                    close_type = mt5.ORDER_TYPE_SELL
+                    price = mt5.symbol_info_tick(symbol).bid
+                else:
+                    close_type = mt5.ORDER_TYPE_BUY
+                    price = mt5.symbol_info_tick(symbol).ask
+
+                request = {
+                    'action': mt5.TRADE_ACTION_DEAL,
+                    'symbol': symbol,
+                    'volume': vol,
+                    'type': close_type,
+                    'position': pos_ticket,
+                    'price': float(price) if price is not None else None,
+                    'deviation': int(deviation),
+                    'type_filling': mt5.ORDER_FILLING_IOC,
+                }
+
+                result = mt5.order_send(request)
+                rec = {
+                    'ticket': pos_ticket,
+                    'symbol': symbol,
+                    'volume': vol,
+                    'result_retcode': getattr(result, 'retcode', None),
+                    'result_comment': getattr(result, 'comment', None),
+                    'timestamp': datetime.utcnow().isoformat() + 'Z',
+                }
+                close_audit.append(rec)
+                if getattr(result, 'retcode', None) == mt5.TRADE_RETCODE_DONE:
+                    closed_count += 1
+                    self.logger.info(
+                        f"Fermé {idx}/{total}: position {pos_ticket} "
+                        f"symbol {symbol} vol {vol}"
+                    )
+                else:
+                    self.logger.warning(
+                        f"Échec fermeture position {pos_ticket}: "
+                        f"{getattr(result, 'comment', None)}"
+                    )
+            except Exception as e:
+                close_audit.append({'error': str(e), 'ticket': getattr(pos, 'ticket', None)})
+                self.logger.warning(
+                    f"Erreur en fermant position {getattr(pos, 'ticket', None)}: {e}"
+                )
+
+            # attendre avant prochaine fermeture
+            try:
+                time.sleep(interval)
+            except Exception:
+                pass
+
+        # écrire audit de clôture
+        try:
+            fn = audit_dir / (
+                'mt5_close_positive_audit_' +
+                datetime.utcnow().strftime('%Y%m%dT%H%M%SZ') +
+                '.json'
+            )
+            fn.write_text(json.dumps(close_audit, default=str, indent=2), encoding='utf-8')
+        except Exception:
+            pass
+
+        return {'closed': closed_count, 'total': total}
 
     def record_trade_for_learning(self, symbol, action, confidence, signals):
         """🧠 AMÉLIORATION: Enregistrer trade pour apprentissage"""
@@ -2981,6 +3719,56 @@ class LiveTradingEngine:
             if not self.initialize_ai_systems():
                 self.logger.error("❌ Impossible d'initialiser les systèmes AI")
                 return False
+
+            # 2.b Recharger la watchlist depuis le disque au démarrage
+            # Ceci permet de traiter les positions précédemment enregistrées
+            # (cas où le process précédent a écrit la watchlist mais le process
+            # courant n'a pas encore d'entrées en mémoire).
+            try:
+                from pathlib import Path as _Path
+                import json as _json
+
+                _watch_fn = _Path('artifacts') / 'live_trading' / 'mt5_watchlist.jsonl'
+                added = 0
+                if _watch_fn.exists():
+                    with _watch_fn.open('r', encoding='utf-8') as _wf:
+                        for _line in _wf:
+                            try:
+                                _obj = _json.loads(_line)
+                            except Exception:
+                                continue
+                            # n'ajouter que les entrées non-fermées
+                            if _obj.get('closed'):
+                                continue
+                            # éviter duplications basiques (order_id ou ticket)
+                            duplicate = False
+                            for _p in getattr(self, 'position_watchlist', []):
+                                try:
+                                    if (_p.get('order_id') is not None and _p.get('order_id') == _obj.get('order_id')):
+                                        duplicate = True
+                                        break
+                                    if (_p.get('ticket') is not None and _obj.get('ticket') is not None and _p.get('ticket') == _obj.get('ticket')):
+                                        duplicate = True
+                                        break
+                                except Exception:
+                                    continue
+                            if duplicate:
+                                continue
+                            # append
+                            try:
+                                if not hasattr(self, 'position_watchlist'):
+                                    self.position_watchlist = []
+                                self.position_watchlist.append(_obj)
+                                added += 1
+                            except Exception:
+                                continue
+                if added:
+                    self.logger.info(f"🔁 Rechargé {added} entrée(s) de la watchlist depuis disque")
+            except Exception as _re:
+                try:
+                    self.logger.warning(f"Erreur rechargement watchlist au démarrage: {_re}")
+                except Exception:
+                    pass
 
             # 3. Démarrer la boucle de trading
             self.is_running = True

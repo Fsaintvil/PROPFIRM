@@ -1,0 +1,19 @@
+{
+  "created_by": "migration-agent",
+  "created_at": "2025-11-09T19:40:00Z",
+  "symbols": [
+    "EURUSD","GBPUSD","USDJPY","USDCHF","AUDUSD",
+    "USDCAD","NZDUSD","EURJPY","EURGBP","GBPJPY"
+  ],
+  "command": "python .\\start_production.py --symbols EURUSD,GBPUSD,USDJPY,USDCHF,AUDUSD,USDCAD,NZDUSD,EURJPY,EURGBP,GBPJPY --force --yes",
+  "notes": "Plan automatique pour forcer la reprise à l'ouverture du marché Forex. Use tools/monitor_forex_open_and_run.py to trigger.",
+  "risk": "High - only run after human confirmation of account/market state. Ensure MT5 session open and credentials valid."
+}
+{
+  "created_by": "migration-agent",
+  "created_at": "2025-11-09T00:00:00Z",
+  "symbols": ["EURUSD","GBPUSD","USDJPY","USDCHF","USDCAD","AUDUSD","NZDUSD","EURGBP","EURJPY","GBPJPY"],
+  "command": "python .\\tools\\run_production_sequence.py --now-symbols EURUSD,GBPUSD,USDJPY,USDCHF,USDCAD,AUDUSD,NZDUSD,EURGBP,EURJPY,GBPJPY --yes --force",
+  "notes": "Plan automatique pour FORCED LIVE à l'ouverture du marché Forex. Ce plan sera déclenché par `tools/monitor_forex_open_and_run.py` lorsqu'un trigger sera présent ou à l'horaire configuré.",
+  "risk": "FORCE écrasera tout lock existant. Assurez-vous qu'aucun run légitime n'est en cours."
+}

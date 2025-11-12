@@ -1,0 +1,6 @@
+{
+  "source": "artifacts/auto_improve/best_lightgbm_large.txt",
+  "horizon": 15,
+  "params": {"num_leaves": 63, "learning_rate": 0.01, "max_depth": -1, "min_data_in_leaf": 5},
+  "deployed_at": "2025-10-20T00:00:00"
+}

@@ -1,0 +1,18 @@
+=== RESTART STATUS: 12/11/2025 07:19:43
+
+--- PID FILES ---
+production_live_20251112_071106.pid => 13912
+
+production_live_20251112_071922.pid => 1660
+
+production_live_20251112_071939.pid => 20580
+
+
+--- PROCESSES (start_production.py) ---
+19260 | parent:7352 | 11/12/2025 07:09:07 | "C:\Users\saint\AppData\Local\Programs\Python\Python311\python.exe" .\\start_production.py 
+10780 | parent:23536 | 11/12/2025 07:09:32 | "C:\Users\saint\AppData\Local\Programs\Python\Python311\python.exe" .\\start_production.py 
+13912 | parent:10116 | 11/12/2025 07:11:06 | "C:\Users\saint\AppData\Local\Programs\Python\Python311\python.exe" .\\start_production.py 
+
+--- LATEST OUT LOG PATH ---
+C:\Users\saint\Documents\PROPFIRM\artifacts\live_trading\production_live_20251112_071939.out.log
+--- TAIL 200 ---

@@ -1,0 +1,4 @@
+C:\Users\saint\Documents\PROPFIRM\start_production.py
+C:\Users\saint\Documents\PROPFIRM\tools\..\tools\live_run_controller.py
+C:\Users\saint\Documents\PROPFIRM\tools\run_active_monitor.ps1
+C:\Users\saint\Documents\PROPFIRM\tools\run_live_controller_wrapper.cmd

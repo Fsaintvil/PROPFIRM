@@ -1,0 +1,21 @@
+{
+  "timestamp_utc": "20251107T194856Z",
+  "raw_validation_report": {
+    "n": 6600,
+    "n_na": 0,
+    "pct_na": 0.0,
+    "abs_gt_max": 4420,
+    "max_abs": 20454.749098767836,
+    "reason": "many_extreme_returns"
+  },
+  "sample_returns_head": [
+    -0.5500568499164079,
+    0.00011945712150418508,
+    -0.4248550886716742
+  ],
+  "sample_returns_tail": [
+    -2.400134475095075,
+    -0.28234627786896116,
+    -1.9531453303045805
+  ]
+}

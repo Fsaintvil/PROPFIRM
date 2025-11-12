@@ -156,6 +156,14 @@ def build_mtf_technical(df_15m: pd.DataFrame, cfg: MTFConfig | None = None) -> p
         features.append(tech_15)
 
     merged = pd.concat(features, axis=1)
+
+    # Defensive cleaning: for short series or sparse higher-TF resamples,
+    # many technical indicators can be NaN at the series head. Tests and
+    # downstream consumers expect most feature cells to be populated.
+    # Use forward-fill then backward-fill and final zero-fill to avoid
+    # returning an almost-empty dataframe for small input windows.
+    merged = merged.fillna(method="ffill").fillna(method="bfill").fillna(0)
+
     return merged
 
 

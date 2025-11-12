@@ -143,3 +143,13 @@ Toutes les améliorations sont basées sur le code existant et ont été validé
 ---
 *Rapport généré le : 20 octobre 2025*  
 *Status : PRODUCTION READY ✅*
+
+## 🔐 Passage en LIVE - Méthode appliquée
+
+La méthode opérationnelle pour le passage en LIVE a été standardisée :
+- MTF convergence M15, indicateurs techniques + institutionnels, backtest 7 ans.
+- Envois IA toutes les 930s par symbole par défaut, auto-close après 31 minutes si SL/TP non atteints.
+- Verrous, confirmations (`control/apply_live.confirm`, `control/apply_live.auto.confirm`) et `ALLOW_MT5_SEND=1` requis.
+- Persistance des envois dans `artifacts/live_trading/` pour audit.
+
+Entrée ajoutée le : 2025-11-10

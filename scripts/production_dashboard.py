@@ -8,6 +8,7 @@ import time
 import os
 from datetime import datetime
 import psutil
+from pathlib import Path
 
 
 class ProductionDashboard:
@@ -43,7 +44,12 @@ class ProductionDashboard:
     def get_balance_info(self):
         """Récupérer les informations de balance depuis les logs"""
         try:
-            logs_dir = r"c:\Users\saint\Documents\PROPFIRM\logs"
+            # Use repo-relative logs directory
+            project_root = Path(__file__).resolve().parents[1]
+            logs_dir = project_root / 'logs'
+            if not logs_dir.exists():
+                return None
+
             log_files = [
                 f for f in os.listdir(logs_dir)
                 if f.startswith('live_trading_20251020')
@@ -76,8 +82,9 @@ class ProductionDashboard:
     def count_todays_trades(self):
         """Compter les trades d'aujourd'hui"""
         try:
-            trades_file = r"c:\Users\saint\Documents\PROPFIRM\logs\trades.json"
-            if not os.path.exists(trades_file):
+            project_root = Path(__file__).resolve().parents[1]
+            trades_file = project_root / 'logs' / 'trades.json'
+            if not trades_file.exists():
                 return 0
 
             today = datetime.now().strftime('%Y-%m-%d')
@@ -98,7 +105,11 @@ class ProductionDashboard:
     def get_recent_activity(self):
         """Obtenir l'activité récente"""
         try:
-            logs_dir = r"c:\Users\saint\Documents\PROPFIRM\logs"
+            project_root = Path(__file__).resolve().parents[1]
+            logs_dir = project_root / 'logs'
+            if not logs_dir.exists():
+                return []
+
             log_files = [
                 f for f in os.listdir(logs_dir)
                 if f.startswith('live_trading_20251020')
@@ -107,7 +118,7 @@ class ProductionDashboard:
             if not log_files:
                 return []
 
-            latest_log = os.path.join(logs_dir, sorted(log_files)[-1])
+            latest_log = logs_dir / sorted(log_files)[-1]
 
             with open(latest_log, 'r', encoding='utf-8') as f:
                 lines = f.readlines()

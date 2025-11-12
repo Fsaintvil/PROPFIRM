@@ -1,0 +1,147 @@
+{
+  "timestamp": "2025-11-11T20:29:51.415908",
+  "source": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\orders_audit_20251111T202951Z.json",
+  "tickets": [
+    343914680,
+    343923537,
+    343932453,
+    343932455,
+    343932458,
+    343943866,
+    343943875,
+    343943887,
+    343943910,
+    343943919,
+    343943924,
+    343951503,
+    343951512,
+    343951523,
+    343951525,
+    343960421,
+    343960426,
+    343960439,
+    343960444,
+    343960447,
+    343960454,
+    343970041,
+    343970121
+  ],
+  "orders": [
+    {
+      "ticket": 343914680,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343923537,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343932453,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343932455,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343932458,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343943866,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343943875,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343943887,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343943910,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343943919,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343943924,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343951503,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343951512,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343951523,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343951525,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343960421,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343960426,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343960439,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343960444,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343960447,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343960454,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343970041,
+      "found_in_history": false,
+      "found_in_positions": false
+    },
+    {
+      "ticket": 343970121,
+      "found_in_history": false,
+      "found_in_positions": false
+    }
+  ],
+  "errors": []
+}

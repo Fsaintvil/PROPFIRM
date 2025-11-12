@@ -1,0 +1,580 @@
+{
+  "timestamp": "20251110T174032Z",
+  "applied": 14,
+  "results": [
+    {
+      "ticket": 344357268,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 6,
+        "position": 344357268,
+        "sl": 177.442,
+        "tp": 0.0
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          177.442,
+          0.0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344357268,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 344357269,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 6,
+        "position": 344357269,
+        "sl": 1.05977,
+        "tp": 1.05817
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          1.05977,
+          1.05817,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344357269,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 344359374,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 6,
+        "position": 344359374,
+        "sl": 177.443,
+        "tp": 0.0
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          177.443,
+          0.0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344359374,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 344359379,
+      "symbol": "EURAUD",
+      "request": {
+        "action": 6,
+        "position": 344359379,
+        "sl": 1.77956,
+        "tp": 1.7768899999999999
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          1.77956,
+          1.7768899999999999,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344359379,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 344361273,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 6,
+        "position": 344361273,
+        "sl": 177.494,
+        "tp": 0.0
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          177.494,
+          0.0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344361273,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 344361274,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 6,
+        "position": 344361274,
+        "sl": 1.05949,
+        "tp": 1.0579
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          1.05949,
+          1.0579,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344361274,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 344361276,
+      "symbol": "EURAUD",
+      "request": {
+        "action": 6,
+        "position": 344361276,
+        "sl": 1.77982,
+        "tp": 0.0
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          1.77982,
+          0.0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344361276,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 344361278,
+      "symbol": "GBPUSD",
+      "request": {
+        "action": 6,
+        "position": 344361278,
+        "sl": 1.31586,
+        "tp": 1.31389
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          1.31586,
+          1.31389,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344361278,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 344363497,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 6,
+        "position": 344363497,
+        "sl": 177.451,
+        "tp": 177.184
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          177.451,
+          177.184,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344363497,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 344363500,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 6,
+        "position": 344363500,
+        "sl": 1.05921,
+        "tp": 1.0576699999999999
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          1.05921,
+          1.0576699999999999,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344363500,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 344363503,
+      "symbol": "GBPUSD",
+      "request": {
+        "action": 6,
+        "position": 344363503,
+        "sl": 1.31541,
+        "tp": 1.31352
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          1.31541,
+          1.31352,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344363503,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 344365154,
+      "symbol": "USDJPY",
+      "request": {
+        "action": 6,
+        "position": 344365154,
+        "sl": 153.416,
+        "tp": 153.185
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          153.416,
+          153.185,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344365154,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 344365156,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 6,
+        "position": 344365156,
+        "sl": 177.394,
+        "tp": 177.133
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          177.394,
+          177.133,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344365156,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 344365157,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 6,
+        "position": 344365157,
+        "sl": 1.05943,
+        "tp": 1.0578400000000001
+      },
+      "result": {
+        "retcode": 10013,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid request",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "",
+          0.0,
+          0.0,
+          0.0,
+          1.05943,
+          1.0578400000000001,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          344365157,
+          0
+        ]
+      }
+    }
+  ]
+}

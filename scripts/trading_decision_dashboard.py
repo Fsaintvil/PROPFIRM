@@ -28,6 +28,27 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
+
+def _format_confidence_for_log(confidence: float) -> str:
+    try:
+        if confidence is None or (isinstance(confidence, (int, float)) and abs(float(confidence)) < 1e-9):
+            return "Confiance: automatique"
+        return f"Confiance: {float(confidence):.2f}"
+    except Exception:
+        return "Confiance: N/A"
+
+
+def _format_action_for_log(action: str) -> str:
+    try:
+        if action is None:
+            return "N/A"
+        a = str(action).strip()
+        if a.lower() == "hold":
+            return "NO HOLD"
+        return a.upper()
+    except Exception:
+        return str(action)
+
 # Imports avec fallbacks
 try:
     from scripts.live_trading_engine import LiveTradingEngine
@@ -498,9 +519,11 @@ class TradingDecisionDashboard:
                 opp.recommendation == "EXECUTE"
                 and opp.signal_strength == "STRONG"
             ):
+                action_disp = _format_action_for_log(opp.action)
+                conf_disp = _format_confidence_for_log(opp.confidence)
                 message = (
-                    f"🚀 SIGNAL FORT {symbol}: {opp.action.upper()} "
-                    f"conf={opp.confidence:.2f} RR={opp.risk_reward:.1f}"
+                    f"🚀 SIGNAL FORT {symbol}: {action_disp} "
+                    f"({conf_disp}, RR={opp.risk_reward:.1f})"
                 )
                 alert = {
                     "time": datetime.now().isoformat(),
@@ -513,9 +536,10 @@ class TradingDecisionDashboard:
 
             # Alerte pour bon risk/reward
             elif opp.risk_reward > 3.0 and opp.confidence > 0.6:
+                conf_disp = _format_confidence_for_log(opp.confidence)
                 message = (
                     f"💎 EXCELLENT RR {symbol}: {opp.risk_reward:.1f} "
-                    f"conf={opp.confidence:.2f}"
+                    f"({conf_disp})"
                 )
                 alert = {
                     "time": datetime.now().isoformat(),
@@ -573,9 +597,13 @@ class TradingDecisionDashboard:
                 "hold": "⏸️",
             }.get(opp.action, "❓")
 
-            row = (f"{symbol:<8} {action_symbol}{opp.action.upper():<4} "
-                   f"{opp.confidence:.2f}  {opp.risk_reward:.1f}   "
-                   f"{opp.signal_strength:<8} {rec_color}{opp.recommendation}")
+            action_disp = _format_action_for_log(opp.action)
+            conf_disp = _format_confidence_for_log(opp.confidence)
+            row = (
+                f"{symbol:<8} {action_symbol}{action_disp:<6} "
+                f"{conf_disp:<18} {opp.risk_reward:.1f}   "
+                f"{opp.signal_strength:<8} {rec_color}{opp.recommendation}"
+            )
             print(row)
 
             if opp.recommendation == "EXECUTE":
@@ -599,8 +627,8 @@ class TradingDecisionDashboard:
 
         if best_opp:
             symbol, opp = best_opp
-            print(f"🏆 Meilleure opportunité: {symbol} ({opp.action.upper()})")
-            print(f"   Confiance: {opp.confidence:.2f} | R/R: {opp.risk_reward:.1f}")
+            print(f"🏆 Meilleure opportunité: {symbol} ({_format_action_for_log(opp.action)})")
+            print(f"   {_format_confidence_for_log(opp.confidence)} | R/R: {opp.risk_reward:.1f}")
             print(f"   Prix: {opp.entry_price:.5f}")
             print(f"   SL: {opp.stop_loss:.5f} | TP: {opp.take_profit:.5f}")
 

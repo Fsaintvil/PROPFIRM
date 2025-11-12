@@ -1,0 +1,33 @@
+{
+  "timestamp": "2025-10-19T08:51:28.267469",
+  "ensemble_size": 5,
+  "ensemble_info": [
+    {
+      "architecture": "lightgbm_fast",
+      "performance": 0.5220404040404041,
+      "timestamp": "2025-10-19T08:51:28.265875"
+    },
+    {
+      "architecture": "neural_network",
+      "performance": 0.515959595959596,
+      "timestamp": "2025-10-19T08:51:28.265875"
+    },
+    {
+      "architecture": "catboost",
+      "performance": 0.5078585858585859,
+      "timestamp": "2025-10-19T08:51:28.265875"
+    },
+    {
+      "architecture": "lightgbm_deep",
+      "performance": 0.5058989898989898,
+      "timestamp": "2025-10-19T08:51:28.265875"
+    },
+    {
+      "architecture": "xgboost",
+      "performance": 0.5017373737373738,
+      "timestamp": "2025-10-19T08:51:28.265875"
+    }
+  ],
+  "optimization_history": [],
+  "performance_history": []
+}

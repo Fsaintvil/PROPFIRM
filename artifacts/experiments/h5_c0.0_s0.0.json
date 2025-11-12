@@ -1,0 +1,14 @@
+{
+  "horizon": 5,
+  "transaction_cost": 0.0,
+  "slippage": 0.0,
+  "train_metrics": {
+    "accuracy": 0.52
+  },
+  "backtest": {
+    "total_return": 0.33826045681595596,
+    "avg_return_per_tick": 0.0005905282614731846,
+    "win_rate": 0.3434343434343434,
+    "sharpe_annualized": 191.2502694107622
+  }
+}

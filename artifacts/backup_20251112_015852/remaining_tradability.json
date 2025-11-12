@@ -1,0 +1,122 @@
+{
+  "timestamp": "2025-11-08T02:09:56Z",
+  "symbols_checked": [
+    {
+      "symbol": "AUDNZD",
+      "trade_allowed": null,
+      "visible": true,
+      "volume_step": 0.01,
+      "volume_min": 0.01,
+      "digits": 5,
+      "tick": {
+        "bid": 1.15388,
+        "ask": 1.15466
+      },
+      "note": ""
+    },
+    {
+      "symbol": "ETHUSD",
+      "trade_allowed": null,
+      "visible": true,
+      "volume_step": 0.01,
+      "volume_min": 0.01,
+      "digits": 2,
+      "tick": {
+        "bid": 3435.61,
+        "ask": 3436.21
+      },
+      "note": ""
+    },
+    {
+      "symbol": "EURAUD",
+      "trade_allowed": null,
+      "visible": true,
+      "volume_step": 0.01,
+      "volume_min": 0.01,
+      "digits": 5,
+      "tick": {
+        "bid": 1.77993,
+        "ask": 1.78092
+      },
+      "note": ""
+    },
+    {
+      "symbol": "EURUSD",
+      "trade_allowed": null,
+      "visible": true,
+      "volume_step": 0.01,
+      "volume_min": 0.01,
+      "digits": 5,
+      "tick": {
+        "bid": 1.15634,
+        "ask": 1.15646
+      },
+      "note": ""
+    },
+    {
+      "symbol": "GBPCHF",
+      "trade_allowed": null,
+      "visible": true,
+      "volume_step": 0.01,
+      "volume_min": 0.01,
+      "digits": 5,
+      "tick": {
+        "bid": 1.05943,
+        "ask": 1.05983
+      },
+      "note": ""
+    },
+    {
+      "symbol": "GBPUSD",
+      "trade_allowed": null,
+      "visible": true,
+      "volume_step": 0.01,
+      "volume_min": 0.01,
+      "digits": 5,
+      "tick": {
+        "bid": 1.3158699999999999,
+        "ask": 1.31609
+      },
+      "note": ""
+    },
+    {
+      "symbol": "USDCAD",
+      "trade_allowed": null,
+      "visible": true,
+      "volume_step": 0.01,
+      "volume_min": 0.01,
+      "digits": 5,
+      "tick": {
+        "bid": 1.40446,
+        "ask": 1.40472
+      },
+      "note": ""
+    },
+    {
+      "symbol": "USDJPY",
+      "trade_allowed": null,
+      "visible": true,
+      "volume_step": 0.01,
+      "volume_min": 0.01,
+      "digits": 3,
+      "tick": {
+        "bid": 153.412,
+        "ask": 153.435
+      },
+      "note": ""
+    },
+    {
+      "symbol": "XAUUSD",
+      "trade_allowed": null,
+      "visible": true,
+      "volume_step": 0.01,
+      "volume_min": 0.01,
+      "digits": 2,
+      "tick": {
+        "bid": 3999.57,
+        "ask": 3999.88
+      },
+      "note": ""
+    }
+  ]
+}

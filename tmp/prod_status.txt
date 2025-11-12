@@ -1,0 +1,34 @@
+=== STATUS GENERATED: 12/11/2025 07:16:51
+LATEST_BACKUP: C:\Users\saint\Documents\PROPFIRM\artifacts\backup_cleanup_20251112_071103
+
+--- PID FILES ---
+production_live_20251112_071106.pid => 13912
+
+
+--- PROCESSES (start_production.py) ---
+19260 | parent:7352 | 11/12/2025 07:09:07 | "C:\Users\saint\AppData\Local\Programs\Python\Python311\python.exe" .\\start_production.py 
+10780 | parent:23536 | 11/12/2025 07:09:32 | "C:\Users\saint\AppData\Local\Programs\Python\Python311\python.exe" .\\start_production.py 
+13912 | parent:10116 | 11/12/2025 07:11:06 | "C:\Users\saint\AppData\Local\Programs\Python\Python311\python.exe" .\\start_production.py 
+
+--- LATEST OUT LOG PATH ---
+C:\Users\saint\Documents\PROPFIRM\artifacts\live_trading\production_live_20251112_071106.out.log
+--- TAIL 200 ---
+✅ Configuration centralisée chargée
+✅ Variables d'environnement chargées depuis .env
+✅ Credentials MT5 chargés depuis config/mt5_credentials.env
+✅ Configuration unifiée détectée
+✅ Utilitaires I/O sécurisées disponibles
+✅ MT5 connector loaded successfully
+✅ scikit-optimize disponible - optimisation bayésienne activée
+✅ scikit-learn disponible - covariance robuste activée
+✅ hmmlearn disponible - HMM complet activé
+✅ Systèmes de trading IA (scripts/) chargés avec succès
+🔧 Seuil optimisé chargé:  0.5
+🚀 Moteur Trading Live Multi-Actifs initialisé:
+  📈 Symboles: BTCUSD, ETHUSD, XAUUSD, USDCAD, AUDNZD, EURJPY, GBPCHF, NZDJPY, EURUSD, EURAUD, US500.cash, JP225.cash
+  💰 Lots: {'BTCUSD': 0.01, 'ETHUSD': 0.01, 'XAUUSD': 0.01, 'USDCAD': 0.01, 'AUDNZD': 0.01, 'EURJPY': 0.01, 'GBPCHF': 0.01, 'NZDJPY': 0.01, 'EURUSD': 0.01, 'EURAUD': 0.01, 'US500.cash': 0.01, 'JP225.cash': 0.01}
+  🛡️  Risque max: 2.0%
+
+⚠️ MODE LIVE - Trading réel activé
+Tapez 'PROD' pour confirmer le démarrage en production
+▶️ Confirmation: 

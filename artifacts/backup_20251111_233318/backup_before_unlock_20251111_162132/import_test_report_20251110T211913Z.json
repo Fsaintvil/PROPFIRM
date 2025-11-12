@@ -1,0 +1,10 @@
+{
+  "super_trading_bot": {
+    "error": "ModuleNotFoundError(\"No module named 'super_trading_bot'\")",
+    "traceback": "Traceback (most recent call last):\n  File \"<string>\", line 13, in <module>\n    importlib.import_module(m)\n    ~~~~~~~~~~~~~~~~~~~~~~~^^^\n  File \"c:\\Users\\saint\\AppData\\Local\\Programs\\Python\\Python313\\Lib\\importlib\\__init__.py\", line 88, in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<frozen importlib._bootstrap>\", line 1387, in _gcd_import\n  File \"<frozen importlib._bootstrap>\", line 1360, in _find_and_load\n  File \"<frozen importlib._bootstrap>\", line 1324, in _find_and_load_unlocked\nModuleNotFoundError: No module named 'super_trading_bot'\n"
+  },
+  "scripts.live_trading_engine": "OK",
+  "meta_learning_system": "OK",
+  "start_production": "OK",
+  "tools.execute_ai_send_now": "OK"
+}

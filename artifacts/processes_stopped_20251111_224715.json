@@ -1,0 +1,209 @@
+[
+  {
+    "ProcessId": 19736,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T15:14:33.768473+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 27160,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T15:45:33.817667+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 14760,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T16:16:33.592872+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 11856,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T16:47:33.477775+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 33492,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T17:18:33.47129+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 36844,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T17:49:33.575686+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 32896,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T18:20:33.28442+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 26596,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T18:51:33.396395+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 34632,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T19:22:33.318532+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 30288,
+    "Name": "language_server_windows_x64.exe",
+    "CommandLine": "c:\\Users\\saint\\.vscode\\extensions\\codeium.codeium-1.48.2\\dist\\e03af6ebc40b844314d448f947c80b636d093049\\language_server_windows_x64.exe --api_server_url https://server.codeium.com --manager_dir C:\\Users\\saint\\AppData\\Local\\Temp\\0a8869af-1890-4a3a-a514-55f914805a40\\codeium\\manager --enable_chat_web_server --enable_lsp --ide_name vscode --inference_api_server_url https://inference.codeium.com --csrf_token e3c1b153-8e88-4398-ae77-7de10767d3aa --database_dir C:\\Users\\saint\\.codeium\\database\\9c0694567290725d9dcba14ade58e297 --enable_index_service --enable_local_search --search_max_workspace_file_count 5000 --indexed_files_retention_period_days 30 --ls_random_port_timeout_seconds 15 --workspace_id file_c_3A_Users_saint_Documents_PROPFIRM --sentry_telemetry",
+    "CreationDate": "2025-11-11T19:40:19.516621+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 23632,
+    "Name": "language_server_windows_x64.exe",
+    "CommandLine": "c:\\Users\\saint\\.vscode\\extensions\\codeium.codeium-1.48.2\\dist\\e03af6ebc40b844314d448f947c80b636d093049\\language_server_windows_x64.exe --api_server_url https://server.codeium.com --manager_dir C:\\Users\\saint\\AppData\\Local\\Temp\\0a8869af-1890-4a3a-a514-55f914805a40\\codeium\\manager --enable_chat_web_server --enable_lsp --ide_name vscode --inference_api_server_url https://inference.codeium.com --csrf_token e3c1b153-8e88-4398-ae77-7de10767d3aa --database_dir C:\\Users\\saint\\.codeium\\database\\9c0694567290725d9dcba14ade58e297 --enable_index_service --enable_local_search --search_max_workspace_file_count 5000 --indexed_files_retention_period_days 30 --ls_random_port_timeout_seconds 15 --workspace_id file_c_3A_Users_saint_Documents_PROPFIRM --sentry_telemetry --run_child --limit_go_max_procs 4 --random_port --random_port_dir=C:\\Users\\saint\\AppData\\Local\\Temp\\0a8869af-1890-4a3a-a514-55f914805a40\\codeium\\manager/child_random_port_1762886419858057700_1305509010264920045 --manager_lock_file=C:\\Users\\saint\\AppData\\Local\\Temp\\0a8869af-1890-4a3a-a514-55f914805a40\\codeium\\manager/locks/manager.lock --child_lock_file C:\\Users\\saint\\AppData\\Local\\Temp\\0a8869af-1890-4a3a-a514-55f914805a40\\codeium\\manager/locks/child_lock_1762886419858057700_377386613388854577",
+    "CreationDate": "2025-11-11T19:40:19.865613+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 24372,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T19:53:33.482861+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 24816,
+    "Name": "python.exe",
+    "CommandLine": "python C:\\Users\\saint\\Documents\\PROPFIRM\\start_production.py --symbols BTCUSD,ETHUSD,XAUUSD,USDCAD,AUDNZD,EURJPY,GBPCHF,NZDJPY,EURUSD,EURAUD,US500.cash,JP225.cash --force",
+    "CreationDate": "2025-11-11T20:19:09.219432+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 34668,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T20:24:33.37794+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 14248,
+    "Name": "python.exe",
+    "CommandLine": "python C:\\Users\\saint\\Documents\\PROPFIRM\\start_production.py --symbols BTCUSD,ETHUSD,XAUUSD,USDCAD,AUDNZD,EURJPY,GBPCHF,NZDJPY,EURUSD,EURAUD,US500.cash,JP225.cash --force",
+    "CreationDate": "2025-11-11T20:50:09.207093+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 28856,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T20:55:33.40648+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 19184,
+    "Name": "python.exe",
+    "CommandLine": "python C:\\Users\\saint\\Documents\\PROPFIRM\\start_production.py --symbols BTCUSD,ETHUSD,XAUUSD,USDCAD,AUDNZD,EURJPY,GBPCHF,NZDJPY,EURUSD,EURAUD,US500.cash,JP225.cash --force",
+    "CreationDate": "2025-11-11T21:21:09.278246+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 35884,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T21:26:33.301423+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 8596,
+    "Name": "python.exe",
+    "CommandLine": "python C:\\Users\\saint\\Documents\\PROPFIRM\\start_production.py --symbols BTCUSD,ETHUSD,XAUUSD,USDCAD,AUDNZD,EURJPY,GBPCHF,NZDJPY,EURUSD,EURAUD,US500.cash,JP225.cash --force",
+    "CreationDate": "2025-11-11T21:52:10.556543+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 12844,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T21:57:33.360246+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 6404,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T22:13:03.625507+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 23596,
+    "Name": "cmd.exe",
+    "CommandLine": "C:\\Windows\\system32\\cmd.exe  /K \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\run_live_controller_wrapper.cmd\"  ",
+    "CreationDate": "2025-11-11T22:28:33.46429+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  },
+  {
+    "ProcessId": 9364,
+    "Name": "python.exe",
+    "CommandLine": "\"python\"  \"C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\..\\tools\\live_run_controller.py\" ",
+    "CreationDate": "2025-11-11T22:28:33.543897+01:00",
+    "Action": "stop",
+    "Status": "stopped",
+    "ErrorMessage": ""
+  }
+]

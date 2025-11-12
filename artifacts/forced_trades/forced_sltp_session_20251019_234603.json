@@ -1,0 +1,142 @@
+{
+  "timestamp": "2025-10-19T23:46:03.848631",
+  "type": "forced_trades_with_sltp",
+  "target_trades": 9,
+  "executed_trades": 6,
+  "total_trades_in_history": 9,
+  "trade_history": [
+    {
+      "timestamp": "2025-10-19T23:45:44.390233",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.16643,
+      "order_id": 328650665,
+      "stop_loss": 1.16634,
+      "take_profit": 1.16657,
+      "forced": true,
+      "with_sltp": true,
+      "simulated": false
+    },
+    {
+      "timestamp": "2025-10-19T23:45:46.522127",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.0,
+      "order_id": "SIM_2",
+      "stop_loss": null,
+      "take_profit": null,
+      "forced": false,
+      "with_sltp": false,
+      "simulated": true
+    },
+    {
+      "timestamp": "2025-10-19T23:45:48.724586",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 108708.69,
+      "order_id": 328650669,
+      "stop_loss": 108649.69,
+      "take_profit": 108797.19,
+      "forced": true,
+      "with_sltp": true,
+      "simulated": false
+    },
+    {
+      "timestamp": "2025-10-19T23:45:50.942430",
+      "symbol": "EURUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.16598,
+      "order_id": 328650671,
+      "stop_loss": 1.16607,
+      "take_profit": 1.16584,
+      "forced": true,
+      "with_sltp": true,
+      "simulated": false
+    },
+    {
+      "timestamp": "2025-10-19T23:45:53.080784",
+      "symbol": "XAUUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.0,
+      "order_id": "SIM_5",
+      "stop_loss": null,
+      "take_profit": null,
+      "forced": false,
+      "with_sltp": false,
+      "simulated": true
+    },
+    {
+      "timestamp": "2025-10-19T23:45:55.286413",
+      "symbol": "BTCUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 108709.57,
+      "order_id": 328650672,
+      "stop_loss": 108768.59,
+      "take_profit": 108621.05,
+      "forced": true,
+      "with_sltp": true,
+      "simulated": false
+    },
+    {
+      "timestamp": "2025-10-19T23:45:57.500464",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.16643,
+      "order_id": 328650675,
+      "stop_loss": 1.16634,
+      "take_profit": 1.16657,
+      "forced": true,
+      "with_sltp": true,
+      "simulated": false
+    },
+    {
+      "timestamp": "2025-10-19T23:45:59.642572",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.0,
+      "order_id": "SIM_8",
+      "stop_loss": null,
+      "take_profit": null,
+      "forced": false,
+      "with_sltp": false,
+      "simulated": true
+    },
+    {
+      "timestamp": "2025-10-19T23:46:01.845667",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 108712.45,
+      "order_id": 328650681,
+      "stop_loss": 108653.56,
+      "take_profit": 108800.78,
+      "forced": true,
+      "with_sltp": true,
+      "simulated": false
+    }
+  ],
+  "performance_metrics": {
+    "total_trades": 9,
+    "winning_trades": 0,
+    "current_balance": 10000.0,
+    "max_drawdown": 0.0,
+    "current_regime": "Unknown",
+    "symbols_traded": [
+      "EURUSD",
+      "XAUUSD",
+      "BTCUSD"
+    ],
+  "optimal_threshold": 0.50,
+  "target_win_rate": 0.50,
+    "expected_sharpe": 18.46,
+    "confidence_filter_rejections": 0
+  }
+}

@@ -103,7 +103,7 @@ class AdvancedDecisionEngine:
             'base_confidence_threshold': 0.15,
             # Permettre au seuil adaptatif de descendre plus bas en cas
             # d'ajustement conservateur demandé; restera clipé côté max
-            'adaptive_threshold_range': [0.45, 0.85],
+            'adaptive_threshold_range': [0.55, 0.85],
             'pattern_weight': 0.35,
             'sentiment_weight': 0.25,
             'regime_weight': 0.40,

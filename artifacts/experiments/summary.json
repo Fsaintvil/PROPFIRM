@@ -1,0 +1,170 @@
+[
+  {
+    "horizon": 1,
+    "transaction_cost": 0.0,
+    "slippage": 0.0,
+    "train_metrics": {
+      "accuracy": 0.51
+    },
+    "backtest": {
+      "total_return": 0.6190554816076812,
+      "avg_return_per_tick": 0.0009754471188477658,
+      "win_rate": 0.4101010101010101,
+      "sharpe_annualized": 333.1164145690401
+    }
+  },
+  {
+    "horizon": 1,
+    "transaction_cost": 0.0,
+    "slippage": 0.0002,
+    "train_metrics": {
+      "accuracy": 0.51
+    },
+    "backtest": {
+      "total_return": 0.6159233253960827,
+      "avg_return_per_tick": 0.000971527926928574,
+      "win_rate": 0.4101010101010101,
+      "sharpe_annualized": 332.14377033180995
+    }
+  },
+  {
+    "horizon": 1,
+    "transaction_cost": 0.0001,
+    "slippage": 0.0,
+    "train_metrics": {
+      "accuracy": 0.51
+    },
+    "backtest": {
+      "total_return": 0.6174886531672705,
+      "avg_return_per_tick": 0.0009734875228881698,
+      "win_rate": 0.4101010101010101,
+      "sharpe_annualized": 332.63115299260295
+    }
+  },
+  {
+    "horizon": 1,
+    "transaction_cost": 0.0001,
+    "slippage": 0.0002,
+    "train_metrics": {
+      "accuracy": 0.51
+    },
+    "backtest": {
+      "total_return": 0.6143594968717483,
+      "avg_return_per_tick": 0.0009695683309689778,
+      "win_rate": 0.4101010101010101,
+      "sharpe_annualized": 331.6542674615543
+    }
+  },
+  {
+    "horizon": 5,
+    "transaction_cost": 0.0,
+    "slippage": 0.0,
+    "train_metrics": {
+      "accuracy": 0.52
+    },
+    "backtest": {
+      "total_return": 0.33826045681595596,
+      "avg_return_per_tick": 0.0005905282614731846,
+      "win_rate": 0.3434343434343434,
+      "sharpe_annualized": 191.2502694107622
+    }
+  },
+  {
+    "horizon": 5,
+    "transaction_cost": 0.0,
+    "slippage": 0.0002,
+    "train_metrics": {
+      "accuracy": 0.52
+    },
+    "backtest": {
+      "total_return": 0.33622877317424416,
+      "avg_return_per_tick": 0.0005874575544024775,
+      "win_rate": 0.3434343434343434,
+      "sharpe_annualized": 190.23444149263526
+    }
+  },
+  {
+    "horizon": 5,
+    "transaction_cost": 0.0001,
+    "slippage": 0.0,
+    "train_metrics": {
+      "accuracy": 0.52
+    },
+    "backtest": {
+      "total_return": 0.33724423422834504,
+      "avg_return_per_tick": 0.0005889929079378309,
+      "win_rate": 0.3434343434343434,
+      "sharpe_annualized": 190.74268488329358
+    }
+  },
+  {
+    "horizon": 5,
+    "transaction_cost": 0.0001,
+    "slippage": 0.0002,
+    "train_metrics": {
+      "accuracy": 0.52
+    },
+    "backtest": {
+      "total_return": 0.3352140730905828,
+      "avg_return_per_tick": 0.0005859222008671238,
+      "win_rate": 0.3434343434343434,
+      "sharpe_annualized": 189.72554519857513
+    }
+  },
+  {
+    "horizon": 15,
+    "transaction_cost": 0.0,
+    "slippage": 0.0,
+    "train_metrics": {
+      "accuracy": 0.41
+    },
+    "backtest": {
+      "total_return": 0.27024081770964914,
+      "avg_return_per_tick": 0.0004851393486733767,
+      "win_rate": 0.3090909090909091,
+      "sharpe_annualized": 154.91123450241486
+    }
+  },
+  {
+    "horizon": 15,
+    "transaction_cost": 0.0,
+    "slippage": 0.0002,
+    "train_metrics": {
+      "accuracy": 0.41
+    },
+    "backtest": {
+      "total_return": 0.2690730177545997,
+      "avg_return_per_tick": 0.0004832807628147909,
+      "win_rate": 0.3090909090909091,
+      "sharpe_annualized": 154.2987570536706
+    }
+  },
+  {
+    "horizon": 15,
+    "transaction_cost": 0.0001,
+    "slippage": 0.0,
+    "train_metrics": {
+      "accuracy": 0.41
+    },
+    "backtest": {
+      "total_return": 0.26965678638662505,
+      "avg_return_per_tick": 0.0004842100557440837,
+      "win_rate": 0.3090909090909091,
+      "sharpe_annualized": 154.60515968886935
+    }
+  },
+  {
+    "horizon": 15,
+    "transaction_cost": 0.0001,
+    "slippage": 0.0002,
+    "train_metrics": {
+      "accuracy": 0.41
+    },
+    "backtest": {
+      "total_return": 0.268489511698045,
+      "avg_return_per_tick": 0.00048235146988549787,
+      "win_rate": 0.3090909090909091,
+      "sharpe_annualized": 153.99202890015528
+    }
+  }
+]

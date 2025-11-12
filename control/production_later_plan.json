@@ -1,0 +1,9 @@
+{
+  "created_by": "migration-agent",
+  "created_at": "2025-11-09T00:00:00Z",
+  "symbols": ["BTCUSD","ETHUSD"],
+  "command": "python .\\tools\\run_production_sequence.py --now-symbols BTCUSD,ETHUSD --yes",
+  "notes": "Plan sûr créé après vérification: le fichier de lock semble dépourvu de PID. Ne pas forcer sans confirmation opérateur. Reprendre en mode smoke/dry-run avant toute action live.",
+  "recommended_action": "dry-run now, inspect results, then schedule Forex open continuation",
+  "risk": "lockfile present but no PID found — suggest human confirmation before --force live"
+}
