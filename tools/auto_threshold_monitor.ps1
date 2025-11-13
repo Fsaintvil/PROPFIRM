@@ -14,6 +14,20 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# --- Garde-fou singleton: éviter chevauchement de monitor ---
+try {
+    $selfName = 'auto_threshold_monitor.ps1'
+    $running = Get-CimInstance -ClassName Win32_Process -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -and ($_.CommandLine -match [regex]::Escape($selfName)) }
+    if ($null -ne $running) {
+        # Si plus d'une instance (celle-ci incluse), se retirer pour préserver un seul monitor.
+        if (($running | Measure-Object).Count -gt 1) {
+            Write-Warning "[ATM] Une autre instance est détectée, fin immédiate pour préserver le singleton."
+            return
+        }
+    }
+} catch {}
+
 # --- Lecture des performances (supporte plusieurs schémas de clés) ---
 $perf = $null
 if (Test-Path $PerfFile) {
