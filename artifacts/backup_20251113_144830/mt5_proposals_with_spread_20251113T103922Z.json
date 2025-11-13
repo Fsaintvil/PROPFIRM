@@ -1,0 +1,71 @@
+{
+  "timestamp": "20251113T103922Z",
+  "source": "artifacts/live_trading/mt5_apply_retry_targeted_10016_20251113T094745Z.json",
+  "proposals": [
+    {
+      "ticket": 347648862,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648863,
+      "symbol": "XAUUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648865,
+      "symbol": "USDCAD",
+      "entry": 1.39862,
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "spread": 5.999999999994898e-05,
+      "base_delta": 0.00012999999999996348,
+      "minimal_delta": 0.00012999999999996348,
+      "proposal": {
+        "sl": 1.39875,
+        "tp": 1.39836
+      }
+    },
+    {
+      "ticket": 347648868,
+      "symbol": "EURJPY",
+      "entry": 179.64,
+      "point": 0.001,
+      "digits": 3,
+      "trade_stops_level": 0,
+      "spread": 0.012000000000000455,
+      "base_delta": 0.012999999999976808,
+      "minimal_delta": 0.012999999999976808,
+      "proposal": {
+        "sl": 179.627,
+        "tp": 179.666
+      }
+    },
+    {
+      "ticket": 347648877,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648879,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648881,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648883,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648887,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    }
+  ]
+}

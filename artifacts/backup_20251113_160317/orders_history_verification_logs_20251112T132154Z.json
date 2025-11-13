@@ -1,0 +1,921 @@
+{
+  "generated": "2025-11-12T13:21:54.898989Z",
+  "csv_path": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\compliance_orders_20251112T130009Z.csv",
+  "log_files": [
+    "launcher_20251021.log",
+    "launcher_20251022.log",
+    "launcher_20251023.log",
+    "launcher_20251106.log",
+    "launcher_20251107.log",
+    "launcher_20251109.log",
+    "launcher_20251110.log",
+    "launcher_20251111.log",
+    "launcher_20251112.log",
+    "live_trading_20251019_095527.log",
+    "live_trading_20251019_192551.log",
+    "live_trading_20251019_195111.log",
+    "live_trading_20251019_195210.log",
+    "live_trading_20251019_195556.log",
+    "live_trading_20251019_195705.log",
+    "live_trading_20251019_220106.log",
+    "live_trading_20251019_220141.log",
+    "live_trading_20251019_220714.log",
+    "live_trading_20251019_221410.log",
+    "live_trading_20251019_223627.log",
+    "live_trading_20251019_224217.log",
+    "live_trading_20251019_224919.log",
+    "live_trading_20251019_225609.log",
+    "live_trading_20251019_225707.log",
+    "live_trading_20251019_225914.log",
+    "live_trading_20251019_230026.log",
+    "live_trading_20251019_230235.log",
+    "live_trading_20251019_233910.log",
+    "live_trading_20251019_234954.log",
+    "live_trading_20251020.log",
+    "live_trading_20251020_011902.log",
+    "live_trading_20251020_012638.log",
+    "live_trading_20251020_013137.log",
+    "live_trading_20251021.log",
+    "live_trading_20251022.log",
+    "live_trading_20251023.log",
+    "live_trading_20251026.log",
+    "live_trading_20251106.log",
+    "live_trading_20251107.log",
+    "live_trading_20251107_074435.log",
+    "live_trading_20251109.log",
+    "live_trading_20251110.log",
+    "live_trading_20251111.log",
+    "live_trading_20251112.log",
+    "production_launcher.log",
+    "trading_engine.log"
+  ],
+  "results": [
+    {
+      "ticket": "346764084",
+      "order_id": "346850830",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3049,
+          "line": "2025-11-12 11:36:37 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346764084"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3121,
+          "line": "2025-11-12 11:36:40 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:06:37.641232 now=2025-11-12T10:36:40.322310"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3222,
+          "line": "2025-11-12 11:46:41 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346770863"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3307,
+          "line": "2025-11-12 11:47:46 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:06:37.641232 now=2025-11-12T10:47:46.711446"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3311,
+          "line": "2025-11-12 11:47:46 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:16:41.338934 now=2025-11-12T10:47:46.711446"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3340,
+          "line": "2025-11-12 11:50:55 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346772453"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3411,
+          "line": "2025-11-12 11:50:59 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:20:55.683170 now=2025-11-12T10:50:59.222855"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3478,
+          "line": "2025-11-12 11:56:39 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:06:37.641232 now=2025-11-12T10:56:39.570705"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3482,
+          "line": "2025-11-12 11:56:39 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:16:41.338934 now=2025-11-12T10:56:39.570705"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3507,
+          "line": "2025-11-12 12:00:54 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346777196"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3565,
+          "line": "2025-11-12 12:00:57 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:20:55.683170 now=2025-11-12T11:00:57.838536"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3569,
+          "line": "2025-11-12 12:00:57 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:30:54.960372 now=2025-11-12T11:00:57.838536"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3595,
+          "line": "2025-11-12 12:06:37 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346779928"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3654,
+          "line": "2025-11-12 12:06:41 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:06:37.641232 now=2025-11-12T11:06:41.233433"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3655,
+          "line": "2025-11-12 12:06:41 | INFO     | enforce_auto_close   | PID:34368 | Auto-close skipped: SL/TP changed for ticket 346764084"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3665,
+          "line": "2025-11-12 12:06:41 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:16:41.338934 now=2025-11-12T11:06:41.233433"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3672,
+          "line": "2025-11-12 12:06:41 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:36:37.884832 now=2025-11-12T11:06:41.233433"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3699,
+          "line": "2025-11-12 12:10:55 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346782400"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3771,
+          "line": "2025-11-12 12:10:58 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:20:55.683170 now=2025-11-12T11:10:58.863135"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3775,
+          "line": "2025-11-12 12:10:58 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:30:54.960372 now=2025-11-12T11:10:58.863135"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3778,
+          "line": "2025-11-12 12:10:58 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:40:55.415350 now=2025-11-12T11:10:58.863135"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3881,
+          "line": "2025-11-12 12:16:41 | INFO     | _update_position_stop_loss | PID:34368 | ✅ Stop loss mis à jour: position 346764084 → SL 1.40332 (attempt 1)"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3891,
+          "line": "2025-11-12 12:16:42 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:16:41.338934 now=2025-11-12T11:16:42.708083"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3892,
+          "line": "2025-11-12 12:16:42 | INFO     | enforce_auto_close   | PID:34368 | Auto-close skipped: SL/TP changed for ticket 346764084"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3900,
+          "line": "2025-11-12 12:16:42 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:36:37.884832 now=2025-11-12T11:16:42.708083"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3938,
+          "line": "2025-11-12 12:20:57 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346788158"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3998,
+          "line": "2025-11-12 12:21:02 | INFO     | _update_position_stop_loss | PID:34600 | ✅ Stop loss mis à jour: position 346764084 → SL 1.40325 (attempt 1)"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4015,
+          "line": "2025-11-12 12:21:03 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:20:55.683170 now=2025-11-12T11:21:03.455236"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4016,
+          "line": "2025-11-12 12:21:03 | INFO     | enforce_auto_close   | PID:34600 | Auto-close skipped: SL/TP changed for ticket 346764084"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4025,
+          "line": "2025-11-12 12:21:03 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:30:54.960372 now=2025-11-12T11:21:03.455236"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4028,
+          "line": "2025-11-12 12:21:03 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:40:55.415350 now=2025-11-12T11:21:03.455236"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4033,
+          "line": "2025-11-12 12:21:03 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:50:57.363755 now=2025-11-12T11:21:03.455236"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4073,
+          "line": "2025-11-12 12:26:39 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346791844"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4142,
+          "line": "2025-11-12 12:26:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:36:37.884832 now=2025-11-12T11:26:43.367810"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4154,
+          "line": "2025-11-12 12:26:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:56:39.912985 now=2025-11-12T11:26:43.367810"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4193,
+          "line": "2025-11-12 12:30:57 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346795193"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4244,
+          "line": "2025-11-12 12:31:02 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:30:54.960372 now=2025-11-12T11:31:02.362497"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4245,
+          "line": "2025-11-12 12:31:02 | INFO     | enforce_auto_close   | PID:34600 | Auto-close skipped: SL/TP changed for ticket 346764084"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4249,
+          "line": "2025-11-12 12:31:02 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:40:55.415350 now=2025-11-12T11:31:02.362497"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4254,
+          "line": "2025-11-12 12:31:02 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:50:57.363755 now=2025-11-12T11:31:02.362497"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4263,
+          "line": "2025-11-12 12:31:02 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 12:00:57.551089 now=2025-11-12T11:31:02.362497"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4291,
+          "line": "2025-11-12 12:36:39 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346798891"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4344,
+          "line": "2025-11-12 12:36:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:36:37.884832 now=2025-11-12T11:36:43.097842"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4345,
+          "line": "2025-11-12 12:36:43 | INFO     | enforce_auto_close   | PID:34368 | Auto-close skipped: SL/TP changed for ticket 346764084"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4359,
+          "line": "2025-11-12 12:36:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:56:39.912985 now=2025-11-12T11:36:43.097842"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4365,
+          "line": "2025-11-12 12:36:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 12:06:39.743511 now=2025-11-12T11:36:43.097842"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4446,
+          "line": "2025-11-12 12:40:59 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:40:55.415350 now=2025-11-12T11:40:59.964212"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4447,
+          "line": "2025-11-12 12:40:59 | INFO     | enforce_auto_close   | PID:34600 | Auto-close skipped: SL/TP changed for ticket 346764084"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4454,
+          "line": "2025-11-12 12:40:59 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:50:57.363755 now=2025-11-12T11:40:59.964212"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4463,
+          "line": "2025-11-12 12:40:59 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 12:00:57.551089 now=2025-11-12T11:40:59.964212"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4526,
+          "line": "2025-11-12 12:46:40 | INFO     | _update_position_stop_loss | PID:34368 | ✅ Stop loss mis à jour: position 346764084 → SL 1.40309 (attempt 1)"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4568,
+          "line": "2025-11-12 12:46:42 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:56:39.912985 now=2025-11-12T11:46:42.214001"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4574,
+          "line": "2025-11-12 12:46:42 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 12:06:39.743511 now=2025-11-12T11:46:42.214001"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4655,
+          "line": "2025-11-12 12:56:41 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:56:39.912985 now=2025-11-12T11:56:41.055104"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4656,
+          "line": "2025-11-12 12:56:41 | INFO     | enforce_auto_close   | PID:34368 | Auto-close skipped: SL/TP changed for ticket 346764084"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4662,
+          "line": "2025-11-12 12:56:41 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 12:06:39.743511 now=2025-11-12T11:56:41.055104"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4698,
+          "line": "2025-11-12 13:06:39 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346816237"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4758,
+          "line": "2025-11-12 13:06:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 12:06:39.743511 now=2025-11-12T12:06:43.359795"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4759,
+          "line": "2025-11-12 13:06:43 | INFO     | enforce_auto_close   | PID:34368 | Auto-close skipped: SL/TP changed for ticket 346764084"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4773,
+          "line": "2025-11-12 13:06:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 12:36:39.890895 now=2025-11-12T12:06:43.359795"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 5076,
+          "line": "2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:06:37.641232 now=2025-11-12T13:11:25.080702"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 5077,
+          "line": "2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346764084 symbol=USDCAD - marking entry closed"
+        }
+      ]
+    },
+    {
+      "ticket": "346770863",
+      "order_id": "346850832",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3222,
+          "line": "2025-11-12 11:46:41 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346770863"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3882,
+          "line": "2025-11-12 12:16:41 | INFO     | _update_position_stop_loss | PID:34368 | ✅ Stop loss mis à jour: position 346770863 → SL 1.40332 (attempt 1)"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3999,
+          "line": "2025-11-12 12:21:02 | INFO     | _update_position_stop_loss | PID:34600 | ✅ Stop loss mis à jour: position 346770863 → SL 1.40325 (attempt 1)"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4527,
+          "line": "2025-11-12 12:46:41 | INFO     | _update_position_stop_loss | PID:34368 | ✅ Stop loss mis à jour: position 346770863 → SL 1.40309 (attempt 1)"
+        }
+      ]
+    },
+    {
+      "ticket": "346770879",
+      "order_id": "346850836",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3231,
+          "line": "2025-11-12 11:46:42 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: AUDNZD ticket=346770879 order=346770879"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3312,
+          "line": "2025-11-12 11:47:46 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:16:42.276625 now=2025-11-12T10:47:46.711446"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3349,
+          "line": "2025-11-12 11:50:56 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: AUDNZD ticket=346770879 order=346772456"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3412,
+          "line": "2025-11-12 11:50:59 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:20:56.324488 now=2025-11-12T10:50:59.222855"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3483,
+          "line": "2025-11-12 11:56:39 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:16:42.276625 now=2025-11-12T10:56:39.570705"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3516,
+          "line": "2025-11-12 12:00:55 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: AUDNZD ticket=346770879 order=346777200"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3566,
+          "line": "2025-11-12 12:00:57 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:20:56.324488 now=2025-11-12T11:00:57.838536"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3570,
+          "line": "2025-11-12 12:00:57 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:30:55.586292 now=2025-11-12T11:00:57.838536"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3604,
+          "line": "2025-11-12 12:06:38 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: AUDNZD ticket=346770879 order=346779934"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3666,
+          "line": "2025-11-12 12:06:41 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:16:42.276625 now=2025-11-12T11:06:41.233433"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3673,
+          "line": "2025-11-12 12:06:41 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:36:38.503117 now=2025-11-12T11:06:41.233433"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3708,
+          "line": "2025-11-12 12:10:56 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: AUDNZD ticket=346770879 order=346782409"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3772,
+          "line": "2025-11-12 12:10:58 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:20:56.324488 now=2025-11-12T11:10:58.863135"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3776,
+          "line": "2025-11-12 12:10:58 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:30:55.586292 now=2025-11-12T11:10:58.863135"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3779,
+          "line": "2025-11-12 12:10:58 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:40:56.208071 now=2025-11-12T11:10:58.863135"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3893,
+          "line": "2025-11-12 12:16:42 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:16:42.276625 now=2025-11-12T11:16:42.708083"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3894,
+          "line": "2025-11-12 12:16:42 | INFO     | enforce_auto_close   | PID:34368 | Auto-close skipped: SL/TP changed for ticket 346770879"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3901,
+          "line": "2025-11-12 12:16:42 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:36:38.503117 now=2025-11-12T11:16:42.708083"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4017,
+          "line": "2025-11-12 12:21:03 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:20:56.324488 now=2025-11-12T11:21:03.455236"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4018,
+          "line": "2025-11-12 12:21:03 | INFO     | enforce_auto_close   | PID:34600 | Auto-close skipped: SL/TP changed for ticket 346770879"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4026,
+          "line": "2025-11-12 12:21:03 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:30:55.586292 now=2025-11-12T11:21:03.455236"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4029,
+          "line": "2025-11-12 12:21:03 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:40:56.208071 now=2025-11-12T11:21:03.455236"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4143,
+          "line": "2025-11-12 12:26:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:36:38.503117 now=2025-11-12T11:26:43.367810"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4246,
+          "line": "2025-11-12 12:31:02 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:30:55.586292 now=2025-11-12T11:31:02.362497"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4247,
+          "line": "2025-11-12 12:31:02 | INFO     | enforce_auto_close   | PID:34600 | Auto-close skipped: SL/TP changed for ticket 346770879"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4250,
+          "line": "2025-11-12 12:31:02 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:40:56.208071 now=2025-11-12T11:31:02.362497"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4346,
+          "line": "2025-11-12 12:36:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:36:38.503117 now=2025-11-12T11:36:43.097842"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4347,
+          "line": "2025-11-12 12:36:43 | INFO     | enforce_auto_close   | PID:34368 | Auto-close skipped: SL/TP changed for ticket 346770879"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4448,
+          "line": "2025-11-12 12:40:59 | INFO     | enforce_auto_close   | PID:34600 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:40:56.208071 now=2025-11-12T11:40:59.964212"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4449,
+          "line": "2025-11-12 12:40:59 | INFO     | enforce_auto_close   | PID:34600 | Auto-close skipped: SL/TP changed for ticket 346770879"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 5085,
+          "line": "2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:16:42.276625 now=2025-11-12T13:11:25.080702"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 5086,
+          "line": "2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346770879 symbol=AUDNZD - marking entry closed"
+        }
+      ]
+    },
+    {
+      "ticket": "346772453",
+      "order_id": "346850837",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3340,
+          "line": "2025-11-12 11:50:55 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346772453"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3883,
+          "line": "2025-11-12 12:16:41 | INFO     | _update_position_stop_loss | PID:34368 | ✅ Stop loss mis à jour: position 346772453 → SL 1.40332 (attempt 1)"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4000,
+          "line": "2025-11-12 12:21:02 | INFO     | _update_position_stop_loss | PID:34600 | ✅ Stop loss mis à jour: position 346772453 → SL 1.40325 (attempt 1)"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4528,
+          "line": "2025-11-12 12:46:41 | INFO     | _update_position_stop_loss | PID:34368 | ✅ Stop loss mis à jour: position 346772453 → SL 1.40309 (attempt 1)"
+        }
+      ]
+    },
+    {
+      "ticket": "346772456",
+      "order_id": "346850839",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3349,
+          "line": "2025-11-12 11:50:56 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: AUDNZD ticket=346770879 order=346772456"
+        }
+      ]
+    },
+    {
+      "ticket": "346777196",
+      "order_id": "346850840",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3507,
+          "line": "2025-11-12 12:00:54 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346777196"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4529,
+          "line": "2025-11-12 12:46:41 | INFO     | _update_position_stop_loss | PID:34368 | ✅ Stop loss mis à jour: position 346777196 → SL 1.40309 (attempt 1)"
+        }
+      ]
+    },
+    {
+      "ticket": "346777200",
+      "order_id": "346850842",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3516,
+          "line": "2025-11-12 12:00:55 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: AUDNZD ticket=346770879 order=346777200"
+        }
+      ]
+    },
+    {
+      "ticket": "346779928",
+      "order_id": "346850843",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3595,
+          "line": "2025-11-12 12:06:37 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346779928"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4530,
+          "line": "2025-11-12 12:46:41 | INFO     | _update_position_stop_loss | PID:34368 | ✅ Stop loss mis à jour: position 346779928 → SL 1.40309 (attempt 1)"
+        }
+      ]
+    },
+    {
+      "ticket": "346779934",
+      "order_id": "346850845",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3604,
+          "line": "2025-11-12 12:06:38 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: AUDNZD ticket=346770879 order=346779934"
+        }
+      ]
+    },
+    {
+      "ticket": "346782400",
+      "order_id": "346850847",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3699,
+          "line": "2025-11-12 12:10:55 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346782400"
+        }
+      ]
+    },
+    {
+      "ticket": "346782409",
+      "order_id": "346850854",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3708,
+          "line": "2025-11-12 12:10:56 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: AUDNZD ticket=346770879 order=346782409"
+        }
+      ]
+    },
+    {
+      "ticket": "346782424",
+      "order_id": "346850856",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3729,
+          "line": "2025-11-12 12:10:57 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: EURUSD ticket=346761478 order=346782424"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3885,
+          "line": "2025-11-12 12:16:42 | INFO     | _update_position_stop_loss | PID:34368 | ✅ Stop loss mis à jour: position 346782424 → SL 1.15810 (attempt 1)"
+        }
+      ]
+    },
+    {
+      "ticket": "346788158",
+      "order_id": "346850858",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 3938,
+          "line": "2025-11-12 12:20:57 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346788158"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4531,
+          "line": "2025-11-12 12:46:41 | INFO     | _update_position_stop_loss | PID:34368 | ✅ Stop loss mis à jour: position 346788158 → SL 1.40309 (attempt 1)"
+        }
+      ]
+    },
+    {
+      "ticket": "346791844",
+      "order_id": "346850861",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4073,
+          "line": "2025-11-12 12:26:39 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346791844"
+        }
+      ]
+    },
+    {
+      "ticket": "346791880",
+      "order_id": "346850864",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4107,
+          "line": "2025-11-12 12:26:42 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: EURAUD ticket=346791880 order=346791880"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4156,
+          "line": "2025-11-12 12:26:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346791880 symbol=EURAUD auto_close_at=2025-11-12 11:56:42.064708 now=2025-11-12T11:26:43.367810"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4320,
+          "line": "2025-11-12 12:36:41 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: EURAUD ticket=346791880 order=346798923"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4361,
+          "line": "2025-11-12 12:36:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346791880 symbol=EURAUD auto_close_at=2025-11-12 11:56:42.064708 now=2025-11-12T11:36:43.097842"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4366,
+          "line": "2025-11-12 12:36:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346791880 symbol=EURAUD auto_close_at=2025-11-12 12:06:41.961283 now=2025-11-12T11:36:43.097842"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4534,
+          "line": "2025-11-12 12:46:41 | INFO     | _update_position_stop_loss | PID:34368 | ✅ Stop loss mis à jour: position 346791880 → SL 1.77236 (attempt 1)"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4570,
+          "line": "2025-11-12 12:46:42 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346791880 symbol=EURAUD auto_close_at=2025-11-12 11:56:42.064708 now=2025-11-12T11:46:42.214001"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4575,
+          "line": "2025-11-12 12:46:42 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346791880 symbol=EURAUD auto_close_at=2025-11-12 12:06:41.961283 now=2025-11-12T11:46:42.214001"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4658,
+          "line": "2025-11-12 12:56:41 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346791880 symbol=EURAUD auto_close_at=2025-11-12 11:56:42.064708 now=2025-11-12T11:56:41.055104"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4663,
+          "line": "2025-11-12 12:56:41 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346791880 symbol=EURAUD auto_close_at=2025-11-12 12:06:41.961283 now=2025-11-12T11:56:41.055104"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4732,
+          "line": "2025-11-12 13:06:42 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: EURAUD ticket=346791880 order=346816265"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4747,
+          "line": "2025-11-12 13:06:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346791880 symbol=EURAUD auto_close_at=2025-11-12 11:56:42.064708 now=2025-11-12T12:06:43.359795"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4748,
+          "line": "2025-11-12 13:06:43 | INFO     | enforce_auto_close   | PID:34368 | Auto-close skipped: SL/TP changed for ticket 346791880"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4760,
+          "line": "2025-11-12 13:06:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346791880 symbol=EURAUD auto_close_at=2025-11-12 12:06:41.961283 now=2025-11-12T12:06:43.359795"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4761,
+          "line": "2025-11-12 13:06:43 | INFO     | enforce_auto_close   | PID:34368 | Auto-close skipped: SL/TP changed for ticket 346791880"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4775,
+          "line": "2025-11-12 13:06:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346791880 symbol=EURAUD auto_close_at=2025-11-12 12:36:42.600225 now=2025-11-12T12:06:43.359795"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 5142,
+          "line": "2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346791880 symbol=EURAUD auto_close_at=2025-11-12 11:56:42.064708 now=2025-11-12T13:11:25.080702"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 5143,
+          "line": "2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346791880 symbol=EURAUD - marking entry closed"
+        }
+      ]
+    },
+    {
+      "ticket": "346795193",
+      "order_id": "346850865",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4193,
+          "line": "2025-11-12 12:30:57 | INFO     | _register_position_watchlist | PID:34600 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346795193"
+        }
+      ]
+    },
+    {
+      "ticket": "346798891",
+      "order_id": "346850868",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4291,
+          "line": "2025-11-12 12:36:39 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346798891"
+        }
+      ]
+    },
+    {
+      "ticket": "346798923",
+      "order_id": "346850870",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4320,
+          "line": "2025-11-12 12:36:41 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: EURAUD ticket=346791880 order=346798923"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4542,
+          "line": "2025-11-12 12:46:41 | INFO     | _update_position_stop_loss | PID:34368 | ✅ Stop loss mis à jour: position 346798923 → SL 1.77236 (attempt 1)"
+        }
+      ]
+    },
+    {
+      "ticket": "346816237",
+      "order_id": "346850873",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4698,
+          "line": "2025-11-12 13:06:39 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: USDCAD ticket=346764084 order=346816237"
+        }
+      ]
+    },
+    {
+      "ticket": "346816241",
+      "order_id": "346850877",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4711,
+          "line": "2025-11-12 13:06:40 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: EURJPY ticket=346816241 order=346816241"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4774,
+          "line": "2025-11-12 13:06:43 | INFO     | enforce_auto_close   | PID:34368 | Watchlist check: ticket=346816241 symbol=EURJPY auto_close_at=2025-11-12 12:36:40.861854 now=2025-11-12T12:06:43.359795"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 5166,
+          "line": "2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346816241 symbol=EURJPY auto_close_at=2025-11-12 12:36:40.861854 now=2025-11-12T13:11:25.080702"
+        },
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 5167,
+          "line": "2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346816241 symbol=EURJPY - marking entry closed"
+        }
+      ]
+    },
+    {
+      "ticket": "346816265",
+      "order_id": "346850879",
+      "found_in_logs": true,
+      "matches": [
+        {
+          "file": "live_trading_20251112.log",
+          "line_no": 4732,
+          "line": "2025-11-12 13:06:42 | INFO     | _register_position_watchlist | PID:34368 | 🔖 Position enregistrée dans watchlist: EURAUD ticket=346791880 order=346816265"
+        }
+      ]
+    }
+  ]
+}

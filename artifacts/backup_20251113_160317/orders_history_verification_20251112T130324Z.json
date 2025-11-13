@@ -1,0 +1,153 @@
+{
+  "generated": "2025-11-12T13:03:24.360752Z",
+  "csv_path": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\compliance_orders_20251112T130009Z.csv",
+  "results": [
+    {
+      "ticket": "346764084",
+      "order_id": 346850830,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346770863",
+      "order_id": 346850832,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346770879",
+      "order_id": 346850836,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346772453",
+      "order_id": 346850837,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346772456",
+      "order_id": 346850839,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346777196",
+      "order_id": 346850840,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346777200",
+      "order_id": 346850842,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346779928",
+      "order_id": 346850843,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346779934",
+      "order_id": 346850845,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346782400",
+      "order_id": 346850847,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346782409",
+      "order_id": 346850854,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346782424",
+      "order_id": 346850856,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346788158",
+      "order_id": 346850858,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346791844",
+      "order_id": 346850861,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346791880",
+      "order_id": 346850864,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346795193",
+      "order_id": 346850865,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346798891",
+      "order_id": 346850868,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346798923",
+      "order_id": 346850870,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346816237",
+      "order_id": 346850873,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346816241",
+      "order_id": 346850877,
+      "found": false,
+      "matches": [],
+      "error": null
+    },
+    {
+      "ticket": "346816265",
+      "order_id": 346850879,
+      "found": false,
+      "matches": [],
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "timestamp": "2025-11-12T15:05:56Z",
+  "connected": true,
+  "errors": [],
+  "closed": [
+    {
+      "ticket": 346914765,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "requested_price": 1.04595,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol GBPCHF"
+      }
+    },
+    {
+      "ticket": 346923770,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "requested_price": 1.4015900000000001,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol USDCAD"
+      }
+    },
+    {
+      "ticket": 346923781,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "requested_price": 1.04591,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol GBPCHF"
+      }
+    },
+    {
+      "ticket": 346938376,
+      "symbol": "AUDNZD",
+      "volume": 0.01,
+      "requested_price": 1.15493,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol AUDNZD"
+      }
+    },
+    {
+      "ticket": 346938418,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "requested_price": 1.04591,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol GBPCHF"
+      }
+    },
+    {
+      "ticket": 346950486,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "requested_price": 1.04593,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol GBPCHF"
+      }
+    },
+    {
+      "ticket": 346961599,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "requested_price": 1.04613,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol GBPCHF"
+      }
+    },
+    {
+      "ticket": 346984462,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "requested_price": 1.40164,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol USDCAD"
+      }
+    },
+    {
+      "ticket": 347003953,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "requested_price": 1.4016199999999999,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol USDCAD"
+      }
+    },
+    {
+      "ticket": 347021546,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "requested_price": 1.4016199999999999,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol USDCAD"
+      }
+    },
+    {
+      "ticket": 347021556,
+      "symbol": "AUDNZD",
+      "volume": 0.01,
+      "requested_price": 1.15507,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol AUDNZD"
+      }
+    }
+  ],
+  "remaining_positions": 8
+}

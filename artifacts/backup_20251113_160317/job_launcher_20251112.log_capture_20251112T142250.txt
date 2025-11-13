@@ -1,0 +1,200 @@
+2025-11-12 07:09:07 | INFO     | 📅 Date: 2025-11-12 07:09:07
+2025-11-12 07:09:07 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-12 07:09:11 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-12 07:09:11 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-12 07:09:11 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-12 07:09:11 | INFO     |   • Symboles: ['BTCUSD', 'ETHUSD', 'XAUUSD', 'USDCAD', 'AUDNZD', 'EURJPY', 'GBPCHF', 'NZDJPY', 'EURUSD', 'EURAUD', 'US500.cash', 'JP225.cash']
+2025-11-12 07:09:11 | INFO     |   • Lots: {'BTCUSD': 0.01, 'ETHUSD': 0.01, 'XAUUSD': 0.01, 'USDCAD': 0.01, 'AUDNZD': 0.01, 'EURJPY': 0.01, 'GBPCHF': 0.01, 'NZDJPY': 0.01, 'EURUSD': 0.01, 'EURAUD': 0.01, 'US500.cash': 0.01, 'JP225.cash': 0.01}
+2025-11-12 07:09:11 | INFO     |   • Intervalle: 600s
+2025-11-12 07:09:11 | INFO     |   • Seuil: 0.5
+2025-11-12 07:09:11 | INFO     |   • Risk/trade: 2.00%
+2025-11-12 07:09:11 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-12 07:09:11 | INFO     | ✅ Système prêt pour la production
+2025-11-12 07:09:32 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 07:09:32 | INFO     | ==================================================
+2025-11-12 07:09:32 | INFO     | 📅 Date: 2025-11-12 07:09:32
+2025-11-12 07:09:32 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-12 07:09:34 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-12 07:09:34 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-12 07:09:34 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-12 07:09:34 | INFO     |   • Symboles: ['BTCUSD', 'ETHUSD', 'XAUUSD', 'USDCAD', 'AUDNZD', 'EURJPY', 'GBPCHF', 'NZDJPY', 'EURUSD', 'EURAUD', 'US500.cash', 'JP225.cash']
+2025-11-12 07:09:34 | INFO     |   • Lots: {'BTCUSD': 0.01, 'ETHUSD': 0.01, 'XAUUSD': 0.01, 'USDCAD': 0.01, 'AUDNZD': 0.01, 'EURJPY': 0.01, 'GBPCHF': 0.01, 'NZDJPY': 0.01, 'EURUSD': 0.01, 'EURAUD': 0.01, 'US500.cash': 0.01, 'JP225.cash': 0.01}
+2025-11-12 07:09:34 | INFO     |   • Intervalle: 600s
+2025-11-12 07:09:34 | INFO     |   • Seuil: 0.5
+2025-11-12 07:09:34 | INFO     |   • Risk/trade: 2.00%
+2025-11-12 07:09:34 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-12 07:09:34 | INFO     | ✅ Système prêt pour la production
+2025-11-12 07:11:06 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 07:11:06 | INFO     | ==================================================
+2025-11-12 07:11:06 | INFO     | 📅 Date: 2025-11-12 07:11:06
+2025-11-12 07:11:06 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-12 07:11:08 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-12 07:11:08 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-12 07:11:08 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-12 07:11:08 | INFO     |   • Symboles: ['BTCUSD', 'ETHUSD', 'XAUUSD', 'USDCAD', 'AUDNZD', 'EURJPY', 'GBPCHF', 'NZDJPY', 'EURUSD', 'EURAUD', 'US500.cash', 'JP225.cash']
+2025-11-12 07:11:08 | INFO     |   • Lots: {'BTCUSD': 0.01, 'ETHUSD': 0.01, 'XAUUSD': 0.01, 'USDCAD': 0.01, 'AUDNZD': 0.01, 'EURJPY': 0.01, 'GBPCHF': 0.01, 'NZDJPY': 0.01, 'EURUSD': 0.01, 'EURAUD': 0.01, 'US500.cash': 0.01, 'JP225.cash': 0.01}
+2025-11-12 07:11:08 | INFO     |   • Intervalle: 600s
+2025-11-12 07:11:08 | INFO     |   • Seuil: 0.5
+2025-11-12 07:11:08 | INFO     |   • Risk/trade: 2.00%
+2025-11-12 07:11:08 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-12 07:11:08 | INFO     | ✅ Système prêt pour la production
+2025-11-12 07:19:23 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 07:19:23 | INFO     | ==================================================
+2025-11-12 07:19:23 | INFO     | 📅 Date: 2025-11-12 07:19:23
+2025-11-12 07:19:23 | ERROR    | Une production est déjà en cours (lock: control\production.lock) — utilisez --force pour forcer
+2025-11-12 07:19:39 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 07:19:39 | INFO     | ==================================================
+2025-11-12 07:19:39 | INFO     | 📅 Date: 2025-11-12 07:19:39
+2025-11-12 07:19:39 | ERROR    | Une production est déjà en cours (lock: control\production.lock) — utilisez --force pour forcer
+2025-11-12 07:20:13 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 07:20:13 | INFO     | ==================================================
+2025-11-12 07:20:13 | INFO     | 📅 Date: 2025-11-12 07:20:13
+2025-11-12 07:20:13 | ERROR    | Une production est déjà en cours (lock: control\production.lock) — utilisez --force pour forcer
+2025-11-12 07:21:29 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 07:21:29 | INFO     | ==================================================
+2025-11-12 07:21:29 | INFO     | 📅 Date: 2025-11-12 07:21:29
+2025-11-12 07:21:29 | ERROR    | Une production est déjà en cours (lock: control\production.lock) — utilisez --force pour forcer
+2025-11-12 07:34:55 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 07:34:55 | INFO     | ==================================================
+2025-11-12 07:34:55 | INFO     | 📅 Date: 2025-11-12 07:34:55
+2025-11-12 07:34:55 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-12 07:34:58 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-12 07:34:58 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-12 07:34:58 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-12 07:34:58 | INFO     |   • Symboles: ['BTCUSD', 'ETHUSD', 'XAUUSD', 'USDCAD', 'AUDNZD', 'EURJPY', 'GBPCHF', 'NZDJPY', 'EURUSD', 'EURAUD', 'US500.cash', 'JP225.cash']
+2025-11-12 07:34:58 | INFO     |   • Lots: {'BTCUSD': 0.01, 'ETHUSD': 0.01, 'XAUUSD': 0.01, 'USDCAD': 0.01, 'AUDNZD': 0.01, 'EURJPY': 0.01, 'GBPCHF': 0.01, 'NZDJPY': 0.01, 'EURUSD': 0.01, 'EURAUD': 0.01, 'US500.cash': 0.01, 'JP225.cash': 0.01}
+2025-11-12 07:34:58 | INFO     |   • Intervalle: 600s
+2025-11-12 07:34:58 | INFO     |   • Seuil: 0.5
+2025-11-12 07:34:58 | INFO     |   • Risk/trade: 2.00%
+2025-11-12 07:34:58 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-12 07:34:58 | INFO     | ✅ Système prêt pour la production
+2025-11-12 07:35:50 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-12 07:35:50 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-12 07:35:50 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-12 07:35:50 | INFO     | --------------------------------------------------
+2025-11-12 07:35:50 | WARNING  | AIManager non disponible ou échec init: No module named 'scripts.ai_init'
+2025-11-12 08:55:56 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 08:55:56 | INFO     | ==================================================
+2025-11-12 08:55:56 | INFO     | 📅 Date: 2025-11-12 08:55:56
+2025-11-12 08:55:56 | ERROR    | Une production est déjà en cours (lock: control\production.lock) — utilisez --force pour forcer
+2025-11-12 08:56:21 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 08:56:21 | INFO     | ==================================================
+2025-11-12 08:56:21 | INFO     | 📅 Date: 2025-11-12 08:56:21
+2025-11-12 08:56:21 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-12 08:56:35 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-12 08:56:35 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-12 08:56:35 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-12 08:56:35 | INFO     |   • Symboles: ['BTCUSD', 'ETHUSD', 'XAUUSD', 'USDCAD', 'AUDNZD', 'EURJPY', 'GBPCHF', 'NZDJPY', 'EURUSD', 'EURAUD', 'US500.cash', 'JP225.cash']
+2025-11-12 08:56:35 | INFO     |   • Lots: {'BTCUSD': 0.01, 'ETHUSD': 0.01, 'XAUUSD': 0.01, 'USDCAD': 0.01, 'AUDNZD': 0.01, 'EURJPY': 0.01, 'GBPCHF': 0.01, 'NZDJPY': 0.01, 'EURUSD': 0.01, 'EURAUD': 0.01, 'US500.cash': 0.01, 'JP225.cash': 0.01}
+2025-11-12 08:56:35 | INFO     |   • Intervalle: 600s
+2025-11-12 08:56:35 | INFO     |   • Seuil: 0.5
+2025-11-12 08:56:35 | INFO     |   • Risk/trade: 2.00%
+2025-11-12 08:56:35 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-12 08:56:35 | INFO     | ✅ Système prêt pour la production
+2025-11-12 08:56:35 | INFO     | --auto-confirm détecté et token valide: démarrage autorisé
+2025-11-12 08:56:35 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-12 08:56:35 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-12 08:56:35 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-12 08:56:35 | INFO     | --------------------------------------------------
+2025-11-12 08:56:35 | WARNING  | AIManager non disponible ou échec init: No module named 'scripts.ai_init'
+2025-11-12 09:27:53 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 09:27:53 | INFO     | ==================================================
+2025-11-12 09:27:53 | INFO     | 📅 Date: 2025-11-12 09:27:53
+2025-11-12 09:27:53 | ERROR    | Une production est déjà en cours (lock: control\production.lock) — utilisez --force pour forcer
+2025-11-12 09:28:13 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 09:28:13 | INFO     | ==================================================
+2025-11-12 09:28:13 | INFO     | 📅 Date: 2025-11-12 09:28:13
+2025-11-12 09:28:13 | ERROR    | Une production est déjà en cours (lock: control\production.lock) — utilisez --force pour forcer
+2025-11-12 09:39:22 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 09:39:22 | INFO     | ==================================================
+2025-11-12 09:39:22 | INFO     | 📅 Date: 2025-11-12 09:39:22
+2025-11-12 09:39:22 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-12 09:39:24 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-12 09:39:24 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-12 09:39:24 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-12 09:39:24 | INFO     |   • Symboles: ['BTCUSD', 'ETHUSD', 'XAUUSD', 'USDCAD', 'AUDNZD', 'EURJPY', 'GBPCHF', 'NZDJPY', 'EURUSD', 'EURAUD', 'US500.cash', 'JP225.cash']
+2025-11-12 09:39:24 | INFO     |   • Lots: {'BTCUSD': 0.01, 'ETHUSD': 0.01, 'XAUUSD': 0.01, 'USDCAD': 0.01, 'AUDNZD': 0.01, 'EURJPY': 0.01, 'GBPCHF': 0.01, 'NZDJPY': 0.01, 'EURUSD': 0.01, 'EURAUD': 0.01, 'US500.cash': 0.01, 'JP225.cash': 0.01}
+2025-11-12 09:39:24 | INFO     |   • Intervalle: 600s
+2025-11-12 09:39:24 | INFO     |   • Seuil: 0.5
+2025-11-12 09:39:24 | INFO     |   • Risk/trade: 2.00%
+2025-11-12 09:39:24 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-12 09:39:24 | INFO     | ✅ Système prêt pour la production
+2025-11-12 09:39:24 | INFO     | --auto-confirm détecté et token valide: démarrage autorisé
+2025-11-12 09:39:24 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-12 09:39:24 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-12 09:39:24 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-12 09:39:24 | INFO     | --------------------------------------------------
+2025-11-12 09:39:24 | WARNING  | AIManager non disponible ou échec init: No module named 'scripts.ai_init'
+2025-11-12 11:30:36 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 11:30:36 | INFO     | ==================================================
+2025-11-12 11:30:36 | INFO     | 📅 Date: 2025-11-12 11:30:36
+2025-11-12 11:30:36 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-12 11:30:52 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-12 11:30:52 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-12 11:30:52 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-12 11:30:52 | INFO     |   • Symboles: ['BTCUSD', 'ETHUSD', 'XAUUSD', 'USDCAD', 'AUDNZD', 'EURJPY', 'GBPCHF', 'NZDJPY', 'EURUSD', 'EURAUD', 'US500.cash', 'JP225.cash']
+2025-11-12 11:30:52 | INFO     |   • Lots: {'BTCUSD': 0.01, 'ETHUSD': 0.01, 'XAUUSD': 0.01, 'USDCAD': 0.01, 'AUDNZD': 0.01, 'EURJPY': 0.01, 'GBPCHF': 0.01, 'NZDJPY': 0.01, 'EURUSD': 0.01, 'EURAUD': 0.01, 'US500.cash': 0.01, 'JP225.cash': 0.01}
+2025-11-12 11:30:52 | INFO     |   • Intervalle: 600s
+2025-11-12 11:30:52 | INFO     |   • Seuil: 0.5
+2025-11-12 11:30:52 | INFO     |   • Risk/trade: 2.00%
+2025-11-12 11:30:52 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-12 11:30:52 | INFO     | ✅ Système prêt pour la production
+2025-11-12 11:30:52 | INFO     | --auto-confirm détecté et token valide: démarrage autorisé
+2025-11-12 11:30:52 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-12 11:30:52 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-12 11:30:52 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-12 11:30:52 | INFO     | --------------------------------------------------
+2025-11-12 11:30:52 | WARNING  | AIManager non disponible ou échec init: No module named 'scripts.ai_init'
+2025-11-12 14:08:39 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 14:08:39 | INFO     | ==================================================
+2025-11-12 14:08:39 | INFO     | 📅 Date: 2025-11-12 14:08:39
+2025-11-12 14:08:39 | ERROR    | Une production est déjà en cours (lock: control\production.lock) — utilisez --force pour forcer
+2025-11-12 14:09:18 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 14:09:18 | INFO     | ==================================================
+2025-11-12 14:09:18 | INFO     | 📅 Date: 2025-11-12 14:09:18
+2025-11-12 14:09:18 | ERROR    | Une production est déjà en cours (lock: control\production.lock) — utilisez --force pour forcer
+2025-11-12 14:09:59 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 14:09:59 | INFO     | ==================================================
+2025-11-12 14:09:59 | INFO     | 📅 Date: 2025-11-12 14:09:59
+2025-11-12 14:09:59 | ERROR    | Une production est déjà en cours (lock: control\production.lock) — utilisez --force pour forcer
+2025-11-12 14:10:23 | INFO     | 🚀 PROPFIRM - LANCEMENT PRODUCTION
+2025-11-12 14:10:23 | INFO     | ==================================================
+2025-11-12 14:10:23 | INFO     | 📅 Date: 2025-11-12 14:10:23
+2025-11-12 14:10:23 | INFO     | 1️⃣ Chargement du moteur de trading…
+2025-11-12 14:10:52 | INFO     | ✅ Moteur chargé avec améliorations
+2025-11-12 14:10:52 | INFO     | 2️⃣ Initialisation avec configuration…
+2025-11-12 14:10:52 | INFO     | 
+🔎 RÉSUMÉ PRÉFLIGHT
+2025-11-12 14:10:52 | INFO     |   • Symboles: ['BTCUSD', 'ETHUSD', 'XAUUSD', 'USDCAD', 'AUDNZD', 'EURJPY', 'GBPCHF', 'NZDJPY', 'EURUSD', 'EURAUD', 'US500.cash', 'JP225.cash']
+2025-11-12 14:10:52 | INFO     |   • Lots: {'BTCUSD': 0.01, 'ETHUSD': 0.01, 'XAUUSD': 0.01, 'USDCAD': 0.01, 'AUDNZD': 0.01, 'EURJPY': 0.01, 'GBPCHF': 0.01, 'NZDJPY': 0.01, 'EURUSD': 0.01, 'EURAUD': 0.01, 'US500.cash': 0.01, 'JP225.cash': 0.01}
+2025-11-12 14:10:52 | INFO     |   • Intervalle: 600s
+2025-11-12 14:10:52 | INFO     |   • Seuil: 0.5
+2025-11-12 14:10:52 | INFO     |   • Risk/trade: 2.00%
+2025-11-12 14:10:52 | INFO     | 
+🩺 HEALTH CHECKS…
+2025-11-12 14:10:52 | INFO     | ✅ Système prêt pour la production
+2025-11-12 14:10:52 | INFO     | --auto-confirm détecté et token valide: démarrage autorisé
+2025-11-12 14:10:52 | INFO     | 
+🚦 DÉMARRAGE PRODUCTION…
+2025-11-12 14:10:52 | INFO     | 📊 Monitoring actif - logs/ (launcher & moteur)
+2025-11-12 14:10:52 | INFO     | ⏹️ Arrêt: Ctrl+C
+2025-11-12 14:10:52 | INFO     | --------------------------------------------------
+2025-11-12 14:10:52 | WARNING  | AIManager non disponible ou échec init: No module named 'scripts.ai_init'

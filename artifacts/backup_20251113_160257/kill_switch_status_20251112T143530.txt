@@ -1,0 +1,1 @@
+kill-switch check at 2025-11-12T14:35:30.2134051+01:00: no control/disable_trading file found — kill-switch already disabled or absent.

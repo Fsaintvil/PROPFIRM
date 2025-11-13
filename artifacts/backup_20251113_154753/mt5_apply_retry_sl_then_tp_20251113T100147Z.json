@@ -1,0 +1,553 @@
+{
+  "timestamp": "20251113T100147Z",
+  "source": "mt5_apply_retry_targeted_10016_20251113T094745Z.json",
+  "processed": 9,
+  "results": [
+    {
+      "ticket": 347648862,
+      "symbol": "ETHUSD",
+      "sl_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648862,
+          "sl": 3509.12,
+          "tp": 3439.69
+        },
+        "result": {
+          "retcode": 10009,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.01,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Request executed",
+          "request_id": 1941072862,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            3509.12,
+            3439.69,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648862,
+            0
+          ]
+        }
+      },
+      "tp_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648862,
+          "sl": 3509.12,
+          "tp": 3508.97
+        },
+        "result": {
+          "retcode": 10016,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.0,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Invalid stops",
+          "request_id": 0,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            3509.12,
+            3508.97,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648862,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "ticket": 347648863,
+      "symbol": "XAUUSD",
+      "sl_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648863,
+          "sl": 4236.2,
+          "tp": 4320.95
+        },
+        "result": {
+          "retcode": 10016,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.0,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Invalid stops",
+          "request_id": 0,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            4236.2,
+            4320.95,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648863,
+            0
+          ]
+        }
+      },
+      "tp_attempt": {
+        "request": {
+          "sl": 4236.2,
+          "tp": 4236.35
+        },
+        "result": "skipped-sl-not-accepted"
+      }
+    },
+    {
+      "ticket": 347648865,
+      "symbol": "USDCAD",
+      "sl_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648865,
+          "sl": 1.39867,
+          "tp": 1.37065
+        },
+        "result": {
+          "retcode": 10016,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.0,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Invalid stops",
+          "request_id": 0,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            1.39867,
+            1.37065,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648865,
+            0
+          ]
+        }
+      },
+      "tp_attempt": {
+        "request": {
+          "sl": 1.39867,
+          "tp": 1.39852
+        },
+        "result": "skipped-sl-not-accepted"
+      }
+    },
+    {
+      "ticket": 347648868,
+      "symbol": "EURJPY",
+      "sl_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648868,
+          "sl": 179.635,
+          "tp": 183.232
+        },
+        "result": {
+          "retcode": 10016,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.0,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Invalid stops",
+          "request_id": 0,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            179.635,
+            183.232,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648868,
+            0
+          ]
+        }
+      },
+      "tp_attempt": {
+        "request": {
+          "sl": 179.635,
+          "tp": 179.65
+        },
+        "result": "skipped-sl-not-accepted"
+      }
+    },
+    {
+      "ticket": 347648877,
+      "symbol": "NZDJPY",
+      "sl_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648877,
+          "sl": 87.702,
+          "tp": 87.785
+        },
+        "result": {
+          "retcode": 10016,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.0,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Invalid stops",
+          "request_id": 0,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            87.702,
+            87.785,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648877,
+            0
+          ]
+        }
+      },
+      "tp_attempt": {
+        "request": {
+          "sl": 87.702,
+          "tp": 87.717
+        },
+        "result": "skipped-sl-not-accepted"
+      }
+    },
+    {
+      "ticket": 347648879,
+      "symbol": "EURUSD",
+      "sl_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648879,
+          "sl": 1.16289,
+          "tp": 1.1862
+        },
+        "result": {
+          "retcode": 10016,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.0,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Invalid stops",
+          "request_id": 0,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            1.16289,
+            1.1862,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648879,
+            0
+          ]
+        }
+      },
+      "tp_attempt": {
+        "request": {
+          "sl": 1.16289,
+          "tp": 1.16304
+        },
+        "result": "skipped-sl-not-accepted"
+      }
+    },
+    {
+      "ticket": 347648881,
+      "symbol": "EURAUD",
+      "sl_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648881,
+          "sl": 1.76836,
+          "tp": 1.80384
+        },
+        "result": {
+          "retcode": 10016,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.0,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Invalid stops",
+          "request_id": 0,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            1.76836,
+            1.80384,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648881,
+            0
+          ]
+        }
+      },
+      "tp_attempt": {
+        "request": {
+          "sl": 1.76836,
+          "tp": 1.76851
+        },
+        "result": "skipped-sl-not-accepted"
+      }
+    },
+    {
+      "ticket": 347648883,
+      "symbol": "US500.cash",
+      "sl_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648883,
+          "sl": 6845.52,
+          "tp": 6708.56
+        },
+        "result": {
+          "retcode": 10009,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.01,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Request executed",
+          "request_id": 1941072863,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            6845.52,
+            6708.56,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648883,
+            0
+          ]
+        }
+      },
+      "tp_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648883,
+          "sl": 6845.52,
+          "tp": 6845.37
+        },
+        "result": {
+          "retcode": 10016,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.0,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Invalid stops",
+          "request_id": 0,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            6845.52,
+            6845.37,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648883,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "ticket": 347648887,
+      "symbol": "JP225.cash",
+      "sl_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648887,
+          "sl": 50958.88,
+          "tp": 49941.61
+        },
+        "result": {
+          "retcode": 10009,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.01,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Request executed",
+          "request_id": 1941072864,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            50958.88,
+            49941.61,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648887,
+            0
+          ]
+        }
+      },
+      "tp_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648887,
+          "sl": 50958.88,
+          "tp": 50958.73
+        },
+        "result": {
+          "retcode": 10016,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.0,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Invalid stops",
+          "request_id": 0,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            50958.88,
+            50958.73,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648887,
+            0
+          ]
+        }
+      }
+    }
+  ]
+}

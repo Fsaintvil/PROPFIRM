@@ -1,0 +1,196 @@
+{
+  "meta": {
+    "timestamp": "2025-11-11T16:18:36.409748",
+    "symbols": [
+      "BTCUSD",
+      "ETHUSD",
+      "XAUUSD",
+      "USDCAD",
+      "AUDNZD",
+      "EURJPY",
+      "GBPCHF",
+      "NZDJPY",
+      "EURUSD",
+      "EURAUD",
+      "US500.cash",
+      "JP225.cash"
+    ],
+    "env": {
+      "ALLOW_MT5_SEND": "1",
+      "AI_AUTOMATE": "1",
+      "AI_VOLUME": "0.01",
+      "LIVE_ENGINE_LIGHT_MODE": "0",
+      "CONFIRME_DEPLACEMENT": "YES_I_CONFIRM"
+    }
+  },
+  "results": [
+    {
+      "order": 346210287,
+      "retcode": 10009,
+      "request": {
+        "symbol": "BTCUSD",
+        "side": "SELL",
+        "volume": 0.01,
+        "type": "MARKET",
+        "price": 103600.5,
+        "sl": 104636.51,
+        "tp": 101528.49,
+        "comment": "ai_mtf_m15"
+      }
+    },
+    {
+      "order": 346210295,
+      "retcode": 10009,
+      "request": {
+        "symbol": "ETHUSD",
+        "side": "SELL",
+        "volume": 0.01,
+        "type": "MARKET",
+        "price": 3480.96,
+        "sl": 3515.77,
+        "tp": 3411.34,
+        "comment": "ai_mtf_m15"
+      }
+    },
+    {
+      "order": 346210297,
+      "retcode": 10009,
+      "request": {
+        "symbol": "XAUUSD",
+        "side": "SELL",
+        "volume": 0.01,
+        "type": "MARKET",
+        "price": 4112.44,
+        "sl": 4153.56,
+        "tp": 4030.19,
+        "comment": "ai_mtf_m15"
+      }
+    },
+    {
+      "order": 346210298,
+      "retcode": 10009,
+      "request": {
+        "symbol": "USDCAD",
+        "side": "SELL",
+        "volume": 0.01,
+        "type": "MARKET",
+        "price": 1.40051,
+        "sl": 1.41452,
+        "tp": 1.3725,
+        "comment": "ai_mtf_m15"
+      }
+    },
+    {
+      "order": 346210308,
+      "retcode": 10009,
+      "request": {
+        "symbol": "AUDNZD",
+        "side": "SELL",
+        "volume": 0.01,
+        "type": "MARKET",
+        "price": 1.15391,
+        "sl": 1.16545,
+        "tp": 1.13083,
+        "comment": "ai_mtf_m15"
+      }
+    },
+    {
+      "order": 346210309,
+      "retcode": 10009,
+      "request": {
+        "symbol": "EURJPY",
+        "side": "BUY",
+        "volume": 0.01,
+        "type": "MARKET",
+        "price": 178.591,
+        "sl": 176.805,
+        "tp": 182.163,
+        "comment": "ai_mtf_m15"
+      }
+    },
+    {
+      "order": 346210313,
+      "retcode": 10009,
+      "request": {
+        "symbol": "GBPCHF",
+        "side": "BUY",
+        "volume": 0.01,
+        "type": "MARKET",
+        "price": 1.0541,
+        "sl": 1.04356,
+        "tp": 1.07518,
+        "comment": "ai_mtf_m15"
+      }
+    },
+    {
+      "order": 346210316,
+      "retcode": 10009,
+      "request": {
+        "symbol": "NZDJPY",
+        "side": "SELL",
+        "volume": 0.01,
+        "type": "MARKET",
+        "price": 87.118,
+        "sl": 87.989,
+        "tp": 85.376,
+        "comment": "ai_mtf_m15"
+      }
+    },
+    {
+      "order": 346210318,
+      "retcode": 10009,
+      "request": {
+        "symbol": "EURUSD",
+        "side": "BUY",
+        "volume": 0.01,
+        "type": "MARKET",
+        "price": 1.15979,
+        "sl": 1.14819,
+        "tp": 1.18299,
+        "comment": "ai_mtf_m15"
+      }
+    },
+    {
+      "order": 346210324,
+      "retcode": 10009,
+      "request": {
+        "symbol": "EURAUD",
+        "side": "BUY",
+        "volume": 0.01,
+        "type": "MARKET",
+        "price": 1.7764199999999999,
+        "sl": 1.75866,
+        "tp": 1.81195,
+        "comment": "ai_mtf_m15"
+      }
+    },
+    {
+      "order": 346210340,
+      "retcode": 10009,
+      "request": {
+        "symbol": "US500.cash",
+        "side": "BUY",
+        "volume": 0.01,
+        "type": "MARKET",
+        "price": 6819.03,
+        "sl": 6750.84,
+        "tp": 6955.41,
+        "comment": "ai_mtf_m15"
+      }
+    },
+    {
+      "order": 346210376,
+      "retcode": 10009,
+      "request": {
+        "symbol": "JP225.cash",
+        "side": "BUY",
+        "volume": 0.01,
+        "type": "MARKET",
+        "price": 50915.17,
+        "sl": 50406.02,
+        "tp": 51933.47,
+        "comment": "ai_mtf_m15"
+      }
+    }
+  ]
+}

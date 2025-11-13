@@ -42,9 +42,19 @@ if not proposals:
     print('No proposals to apply in file')
     sys.exit(0)
 
+def load_symbol_constraints(path=os.path.join('artifacts', 'live_trading', 'symbol_constraints.json')):
+    try:
+        with open(path, 'r', encoding='utf-8') as fh:
+            return json.load(fh)
+    except Exception:
+        return {}
+
+
 if not mt5.initialize():
     print('MT5 initialize failed:', mt5.last_error())
     sys.exit(5)
+
+SYMBOL_CONSTRAINTS = load_symbol_constraints()
 
 # Automation-safe settings (non-invasive):
 # - AUTO_MODE: 'manual' (default), 'canary', 'staged', 'full'
@@ -75,20 +85,142 @@ def _apply_one(pr):
     symbol = pr['symbol']
     sl = float(pr.get('proposed_sl') or pr.get('sl') or 0)
     tp = float(pr.get('proposed_tp') or pr.get('tp') or 0)
+    # best-effort: fetch live position to determine side (buy/sell) and current prices
+    pos = None
+    try:
+        positions = mt5.positions_get(ticket=ticket)
+        if positions:
+            pos = positions[0]
+    except Exception:
+        pos = None
+
+    # get tick for price reference
+    tick = mt5.symbol_info_tick(symbol)
+    syminfo = mt5.symbol_info(symbol)
+
+    # helper rounding by symbol point/digits
+    def round_by_point(val):
+        try:
+            p = float(syminfo.point) if syminfo and syminfo.point else 0.00001
+            digits = getattr(syminfo, 'digits', None)
+            if digits is not None:
+                return round(val, int(digits))
+            # fallback to point quantization
+            return float(round(val / p) * p)
+        except Exception:
+            return val
+
+    # determine market-side price
+    if pos is not None:
+        side = getattr(pos, 'type', None)  # 0 = buy, 1 = sell
+    else:
+        # fallback: try to infer from proposal
+        side = None
+
+    price_ref = None
+    if tick:
+        price_ref = tick.ask if side == 0 else tick.bid if side == 1 else (tick.bid + tick.ask) / 2.0
+    else:
+        # fallback to position open price or symbol info
+        if pos is not None:
+            price_ref = float(getattr(pos, 'price_open', 0.0))
+        elif syminfo:
+            price_ref = float(syminfo.ask if getattr(syminfo, 'ask', None) else (getattr(syminfo, 'bid', 0.0)))
+        else:
+            price_ref = 0.0
+
+    # fetch min_stop_distance from symbol constraints or symbol_info.trade_stops_level
+    min_stop_distance = None
+    sc = SYMBOL_CONSTRAINTS.get(symbol)
+    if sc and isinstance(sc, dict) and 'min_stop_distance' in sc:
+        min_stop_distance = float(sc['min_stop_distance'])
+    else:
+        try:
+            tsl = getattr(syminfo, 'trade_stops_level', None)
+            point = getattr(syminfo, 'point', None) or 0.00001
+            if tsl is not None:
+                min_stop_distance = float(tsl * point)
+        except Exception:
+            min_stop_distance = None
+
+    # ensure we have a reasonable min_stop_distance
+    if not min_stop_distance or min_stop_distance <= 0:
+        min_stop_distance = 1e-5
+
+    adjusted = {'adjusted_sl': sl, 'adjusted_tp': tp, 'constraint_used': min_stop_distance}
+
+    # enforcement helper
+    try:
+        # SL enforcement
+        if sl and price_ref:
+            if side == 0:
+                # buy: SL must be sufficiently below price_ref
+                dist = price_ref - sl
+                if dist < min_stop_distance:
+                    new_sl = price_ref - (min_stop_distance + (syminfo.point if syminfo else 0.0))
+                    new_sl = round_by_point(new_sl)
+                    adjusted['adjusted_sl'] = float(new_sl)
+            elif side == 1:
+                # sell: SL must be sufficiently above price_ref
+                dist = sl - price_ref
+                if dist < min_stop_distance:
+                    new_sl = price_ref + (min_stop_distance + (syminfo.point if syminfo else 0.0))
+                    new_sl = round_by_point(new_sl)
+                    adjusted['adjusted_sl'] = float(new_sl)
+            else:
+                # unknown side: use absolute distance
+                dist = abs(price_ref - sl)
+                if dist < min_stop_distance:
+                    # push SL away from price_ref
+                    if sl < price_ref:
+                        new_sl = price_ref - (min_stop_distance + (syminfo.point if syminfo else 0.0))
+                    else:
+                        new_sl = price_ref + (min_stop_distance + (syminfo.point if syminfo else 0.0))
+                    adjusted['adjusted_sl'] = float(round_by_point(new_sl))
+
+        # TP enforcement
+        if tp and price_ref:
+            if side == 0:
+                # buy: TP must be sufficiently above price_ref
+                dist = tp - price_ref
+                if dist < min_stop_distance:
+                    new_tp = price_ref + (min_stop_distance + (syminfo.point if syminfo else 0.0))
+                    adjusted['adjusted_tp'] = float(round_by_point(new_tp))
+            elif side == 1:
+                # sell: TP must be sufficiently below price_ref
+                dist = price_ref - tp
+                if dist < min_stop_distance:
+                    new_tp = price_ref - (min_stop_distance + (syminfo.point if syminfo else 0.0))
+                    adjusted['adjusted_tp'] = float(round_by_point(new_tp))
+            else:
+                # unknown side
+                dist = abs(price_ref - tp)
+                if dist < min_stop_distance:
+                    if tp < price_ref:
+                        new_tp = price_ref - (min_stop_distance + (syminfo.point if syminfo else 0.0))
+                    else:
+                        new_tp = price_ref + (min_stop_distance + (syminfo.point if syminfo else 0.0))
+                    adjusted['adjusted_tp'] = float(round_by_point(new_tp))
+    except Exception:
+        # on any error, keep original values
+        adjusted = {'adjusted_sl': sl, 'adjusted_tp': tp, 'constraint_used': min_stop_distance}
+
+    # Build request with adjusted values
     req = {
         'action': mt5.TRADE_ACTION_SLTP,
         'position': ticket,
         'symbol': symbol,
-        'sl': sl,
-        'tp': tp,
+        'sl': adjusted['adjusted_sl'],
+        'tp': adjusted['adjusted_tp'],
     }
-    print(f"Modifying position {ticket} {symbol} -> SL={sl} TP={tp}")
+
+    print(f"Modifying position {ticket} {symbol} -> SL={adjusted['adjusted_sl']} TP={adjusted['adjusted_tp']} (constraint {min_stop_distance})")
     try:
         res = mt5.order_send(req)
         res_obj = res._asdict() if hasattr(res, '_asdict') else str(res)
     except Exception as e:
         res_obj = {'error': str(e)}
-    rec = {'ticket': ticket, 'symbol': symbol, 'request': req, 'result': res_obj}
+    rec = {'ticket': ticket, 'symbol': symbol, 'request': req, 'result': res_obj, 'adjusted': adjusted}
     results.append(rec)
     return rec
 

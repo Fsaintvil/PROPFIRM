@@ -1,0 +1,821 @@
+{
+  "meta": {
+    "timestamp": "2025-11-13T17:20:36.127760",
+    "env_allow_send": "1",
+    "confirmation": true,
+    "force_mode": true,
+    "status": "done",
+    "closed_positions": 101,
+    "total_positions_before": 101
+  },
+  "results": [
+    {
+      "ticket": 347975691,
+      "symbol": "USDCAD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148333
+    },
+    {
+      "ticket": 347975734,
+      "symbol": "EURUSD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148336
+    },
+    {
+      "ticket": 347998251,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148337
+    },
+    {
+      "ticket": 348005163,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148347
+    },
+    {
+      "ticket": 348008124,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148349
+    },
+    {
+      "ticket": 348010632,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148351
+    },
+    {
+      "ticket": 348014444,
+      "symbol": "USDCAD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148353
+    },
+    {
+      "ticket": 348014451,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148354
+    },
+    {
+      "ticket": 348014457,
+      "symbol": "EURUSD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148357
+    },
+    {
+      "ticket": 348015343,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148361
+    },
+    {
+      "ticket": 348017802,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148363
+    },
+    {
+      "ticket": 348020456,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148367
+    },
+    {
+      "ticket": 348022831,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148368
+    },
+    {
+      "ticket": 348022848,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148371
+    },
+    {
+      "ticket": 348025658,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148375
+    },
+    {
+      "ticket": 348028478,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148376
+    },
+    {
+      "ticket": 348032048,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148377
+    },
+    {
+      "ticket": 348032075,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148379
+    },
+    {
+      "ticket": 348035620,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148382
+    },
+    {
+      "ticket": 348035727,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148386
+    },
+    {
+      "ticket": 348042656,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148387
+    },
+    {
+      "ticket": 348042681,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148390
+    },
+    {
+      "ticket": 348045953,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148391
+    },
+    {
+      "ticket": 348046009,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148393
+    },
+    {
+      "ticket": 348049447,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148396
+    },
+    {
+      "ticket": 348051365,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148398
+    },
+    {
+      "ticket": 348051702,
+      "symbol": "USDCAD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148402
+    },
+    {
+      "ticket": 348051704,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148403
+    },
+    {
+      "ticket": 348051708,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148405
+    },
+    {
+      "ticket": 348051715,
+      "symbol": "EURUSD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148416
+    },
+    {
+      "ticket": 348058406,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148438
+    },
+    {
+      "ticket": 348061116,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148442
+    },
+    {
+      "ticket": 348063106,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148443
+    },
+    {
+      "ticket": 348064506,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148445
+    },
+    {
+      "ticket": 348066903,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148447
+    },
+    {
+      "ticket": 348068899,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148452
+    },
+    {
+      "ticket": 348072723,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148454
+    },
+    {
+      "ticket": 348075568,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148456
+    },
+    {
+      "ticket": 348079584,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148460
+    },
+    {
+      "ticket": 348081925,
+      "symbol": "USDCAD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148461
+    },
+    {
+      "ticket": 348081931,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148462
+    },
+    {
+      "ticket": 348081940,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148466
+    },
+    {
+      "ticket": 348081954,
+      "symbol": "EURUSD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148468
+    },
+    {
+      "ticket": 348081957,
+      "symbol": "EURAUD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148469
+    },
+    {
+      "ticket": 348083607,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148471
+    },
+    {
+      "ticket": 348085503,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148473
+    },
+    {
+      "ticket": 348085510,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148474
+    },
+    {
+      "ticket": 348086979,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148477
+    },
+    {
+      "ticket": 348086983,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148479
+    },
+    {
+      "ticket": 348088359,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148483
+    },
+    {
+      "ticket": 348088367,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148486
+    },
+    {
+      "ticket": 348089450,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148490
+    },
+    {
+      "ticket": 348092167,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148492
+    },
+    {
+      "ticket": 348093331,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148496
+    },
+    {
+      "ticket": 348093343,
+      "symbol": "EURUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148499
+    },
+    {
+      "ticket": 348094680,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148501
+    },
+    {
+      "ticket": 348094686,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148504
+    },
+    {
+      "ticket": 348097856,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148508
+    },
+    {
+      "ticket": 348099571,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148510
+    },
+    {
+      "ticket": 348101842,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148513
+    },
+    {
+      "ticket": 348102574,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148517
+    },
+    {
+      "ticket": 348104087,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148522
+    },
+    {
+      "ticket": 348104500,
+      "symbol": "USDCAD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148524
+    },
+    {
+      "ticket": 348104509,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148527
+    },
+    {
+      "ticket": 348104512,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148530
+    },
+    {
+      "ticket": 348104515,
+      "symbol": "EURUSD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148532
+    },
+    {
+      "ticket": 348104519,
+      "symbol": "EURAUD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148537
+    },
+    {
+      "ticket": 348106063,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148539
+    },
+    {
+      "ticket": 348119045,
+      "symbol": "EURUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148545
+    },
+    {
+      "ticket": 348119968,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148563
+    },
+    {
+      "ticket": 348119981,
+      "symbol": "EURUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148579
+    },
+    {
+      "ticket": 348121576,
+      "symbol": "EURUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148589
+    },
+    {
+      "ticket": 348124637,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148598
+    },
+    {
+      "ticket": 348124671,
+      "symbol": "EURUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148601
+    },
+    {
+      "ticket": 348126312,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148604
+    },
+    {
+      "ticket": 348126334,
+      "symbol": "EURUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148611
+    },
+    {
+      "ticket": 348127647,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148614
+    },
+    {
+      "ticket": 348127652,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148616
+    },
+    {
+      "ticket": 348127666,
+      "symbol": "EURUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148619
+    },
+    {
+      "ticket": 348129618,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148621
+    },
+    {
+      "ticket": 348129630,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148623
+    },
+    {
+      "ticket": 348131999,
+      "symbol": "BTCUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148627
+    },
+    {
+      "ticket": 348132009,
+      "symbol": "XAUUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148636
+    },
+    {
+      "ticket": 348132013,
+      "symbol": "USDCAD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148639
+    },
+    {
+      "ticket": 348132016,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148643
+    },
+    {
+      "ticket": 348132023,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148644
+    },
+    {
+      "ticket": 348132032,
+      "symbol": "EURUSD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148647
+    },
+    {
+      "ticket": 348132039,
+      "symbol": "EURAUD",
+      "type": 0,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148651
+    },
+    {
+      "ticket": 348132404,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148655
+    },
+    {
+      "ticket": 348133910,
+      "symbol": "BTCUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148663
+    },
+    {
+      "ticket": 348135405,
+      "symbol": "BTCUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148668
+    },
+    {
+      "ticket": 348135418,
+      "symbol": "XAUUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148671
+    },
+    {
+      "ticket": 348137029,
+      "symbol": "BTCUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148681
+    },
+    {
+      "ticket": 348138444,
+      "symbol": "BTCUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148685
+    },
+    {
+      "ticket": 348141854,
+      "symbol": "XAUUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148688
+    },
+    {
+      "ticket": 348141925,
+      "symbol": "USDCAD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148690
+    },
+    {
+      "ticket": 348143217,
+      "symbol": "ETHUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148693
+    },
+    {
+      "ticket": 348143222,
+      "symbol": "XAUUSD",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148703
+    },
+    {
+      "ticket": 348143231,
+      "symbol": "EURJPY",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148707
+    },
+    {
+      "ticket": 348143236,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148713
+    },
+    {
+      "ticket": 348143243,
+      "symbol": "NZDJPY",
+      "type": 1,
+      "volume": 0.01,
+      "retcode": 10009,
+      "order": 348148717
+    }
+  ]
+}

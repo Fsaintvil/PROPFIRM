@@ -1,0 +1,1537 @@
+{
+  "timestamp": "20251113T095635Z",
+  "source": "mt5_apply_retry_targeted_10016_20251113T094745Z.json",
+  "processed": 9,
+  "results": [
+    {
+      "ticket": 347648862,
+      "symbol": "ETHUSD",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648862,
+            "sl": 3509.2,
+            "tp": 3508.81,
+            "factor": 1.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              3509.2,
+              3508.81,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648862,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648862,
+            "sl": 3509.26,
+            "tp": 3508.68,
+            "factor": 1.5
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              3509.26,
+              3508.68,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648862,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648862,
+            "sl": 3509.33,
+            "tp": 3508.55,
+            "factor": 2.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              3509.33,
+              3508.55,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648862,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648862,
+            "sl": 3509.46,
+            "tp": 3508.29,
+            "factor": 3.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              3509.46,
+              3508.29,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648862,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "ticket": 347648863,
+      "symbol": "XAUUSD",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648863,
+            "sl": 4236.12,
+            "tp": 4236.51,
+            "factor": 1.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              4236.12,
+              4236.51,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648863,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648863,
+            "sl": 4236.06,
+            "tp": 4236.64,
+            "factor": 1.5
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              4236.06,
+              4236.64,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648863,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648863,
+            "sl": 4235.99,
+            "tp": 4236.77,
+            "factor": 2.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              4235.99,
+              4236.77,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648863,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648863,
+            "sl": 4235.86,
+            "tp": 4237.03,
+            "factor": 3.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              4235.86,
+              4237.03,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648863,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "ticket": 347648865,
+      "symbol": "USDCAD",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648865,
+            "sl": 1.39875,
+            "tp": 1.39836,
+            "factor": 1.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              1.39875,
+              1.39836,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648865,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648865,
+            "sl": 1.39881,
+            "tp": 1.39823,
+            "factor": 1.5
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              1.39881,
+              1.39823,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648865,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648865,
+            "sl": 1.39888,
+            "tp": 1.3981,
+            "factor": 2.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              1.39888,
+              1.3981,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648865,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648865,
+            "sl": 1.39901,
+            "tp": 1.39784,
+            "factor": 3.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              1.39901,
+              1.39784,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648865,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "ticket": 347648868,
+      "symbol": "EURJPY",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648868,
+            "sl": 179.627,
+            "tp": 179.666,
+            "factor": 1.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              179.627,
+              179.666,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648868,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648868,
+            "sl": 179.621,
+            "tp": 179.679,
+            "factor": 1.5
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              179.621,
+              179.679,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648868,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648868,
+            "sl": 179.614,
+            "tp": 179.692,
+            "factor": 2.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              179.614,
+              179.692,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648868,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648868,
+            "sl": 179.601,
+            "tp": 179.718,
+            "factor": 3.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              179.601,
+              179.718,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648868,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "ticket": 347648877,
+      "symbol": "NZDJPY",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648877,
+            "sl": 87.694,
+            "tp": 87.733,
+            "factor": 1.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              87.694,
+              87.733,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648877,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648877,
+            "sl": 87.688,
+            "tp": 87.746,
+            "factor": 1.5
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              87.688,
+              87.746,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648877,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648877,
+            "sl": 87.681,
+            "tp": 87.759,
+            "factor": 2.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              87.681,
+              87.759,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648877,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648877,
+            "sl": 87.668,
+            "tp": 87.785,
+            "factor": 3.0
+          },
+          "result": {
+            "retcode": 10009,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.01,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Request executed",
+            "request_id": 1941072861,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              87.668,
+              87.785,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648877,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "ticket": 347648879,
+      "symbol": "EURUSD",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648879,
+            "sl": 1.16281,
+            "tp": 1.1632,
+            "factor": 1.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              1.16281,
+              1.1632,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648879,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648879,
+            "sl": 1.16274,
+            "tp": 1.16333,
+            "factor": 1.5
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              1.16274,
+              1.16333,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648879,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648879,
+            "sl": 1.16268,
+            "tp": 1.16346,
+            "factor": 2.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              1.16268,
+              1.16346,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648879,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648879,
+            "sl": 1.16255,
+            "tp": 1.16372,
+            "factor": 3.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              1.16255,
+              1.16372,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648879,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "ticket": 347648881,
+      "symbol": "EURAUD",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648881,
+            "sl": 1.76828,
+            "tp": 1.76867,
+            "factor": 1.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              1.76828,
+              1.76867,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648881,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648881,
+            "sl": 1.76822,
+            "tp": 1.7688,
+            "factor": 1.5
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              1.76822,
+              1.7688,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648881,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648881,
+            "sl": 1.76815,
+            "tp": 1.76893,
+            "factor": 2.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              1.76815,
+              1.76893,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648881,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648881,
+            "sl": 1.76802,
+            "tp": 1.76919,
+            "factor": 3.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              1.76802,
+              1.76919,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648881,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "ticket": 347648883,
+      "symbol": "US500.cash",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648883,
+            "sl": 6845.6,
+            "tp": 6845.21,
+            "factor": 1.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              6845.6,
+              6845.21,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648883,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648883,
+            "sl": 6845.67,
+            "tp": 6845.08,
+            "factor": 1.5
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              6845.67,
+              6845.08,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648883,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648883,
+            "sl": 6845.73,
+            "tp": 6844.95,
+            "factor": 2.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              6845.73,
+              6844.95,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648883,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648883,
+            "sl": 6845.86,
+            "tp": 6844.69,
+            "factor": 3.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              6845.86,
+              6844.69,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648883,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "ticket": 347648887,
+      "symbol": "JP225.cash",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648887,
+            "sl": 50958.96,
+            "tp": 50958.57,
+            "factor": 1.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              50958.96,
+              50958.57,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648887,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648887,
+            "sl": 50959.02,
+            "tp": 50958.44,
+            "factor": 1.5
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              50959.02,
+              50958.44,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648887,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648887,
+            "sl": 50959.09,
+            "tp": 50958.31,
+            "factor": 2.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              50959.09,
+              50958.31,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648887,
+              0
+            ]
+          }
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648887,
+            "sl": 50959.22,
+            "tp": 50958.05,
+            "factor": 3.0
+          },
+          "result": {
+            "retcode": 10016,
+            "deal": 0,
+            "order": 0,
+            "volume": 0.0,
+            "price": 0.0,
+            "bid": 0.0,
+            "ask": 0.0,
+            "comment": "Invalid stops",
+            "request_id": 0,
+            "retcode_external": 0,
+            "request": [
+              6,
+              0,
+              0,
+              "",
+              0.0,
+              0.0,
+              0.0,
+              50959.22,
+              50958.05,
+              0,
+              0,
+              0,
+              0,
+              0,
+              "",
+              347648887,
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

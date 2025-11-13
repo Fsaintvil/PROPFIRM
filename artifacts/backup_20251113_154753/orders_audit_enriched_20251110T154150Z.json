@@ -1,0 +1,239 @@
+{
+  "timestamp": "2025-11-10T15:41:50.147233",
+  "source": "artifacts\\live_trading\\tmp_orders_for_enrich_20251110T154133Z.json",
+  "tickets": [
+    345147130,
+    345147142,
+    345147157,
+    345147192,
+    345147226,
+    345147236,
+    345147249,
+    345147301,
+    345147312,
+    345147360,
+    345147382,
+    345147391,
+    345160735,
+    345160739,
+    345160745,
+    345160752,
+    345160760,
+    345160763,
+    345160769,
+    345160779,
+    345160784,
+    345160787,
+    345160791,
+    345160796,
+    345201602,
+    345201612,
+    345201622,
+    345201630,
+    345201635,
+    345201643,
+    345201652,
+    345201663,
+    345201676,
+    345201687,
+    345201697,
+    345201702,
+    345231907,
+    345231909,
+    345231910,
+    345231911,
+    345231913,
+    345231918,
+    345231920,
+    345231922,
+    345231933,
+    345231934
+  ],
+  "orders": [
+    {
+      "ticket": 345147130,
+      "found": false
+    },
+    {
+      "ticket": 345147142,
+      "found": false
+    },
+    {
+      "ticket": 345147157,
+      "found": false
+    },
+    {
+      "ticket": 345147192,
+      "found": false
+    },
+    {
+      "ticket": 345147226,
+      "found": false
+    },
+    {
+      "ticket": 345147236,
+      "found": false
+    },
+    {
+      "ticket": 345147249,
+      "found": false
+    },
+    {
+      "ticket": 345147301,
+      "found": false
+    },
+    {
+      "ticket": 345147312,
+      "found": false
+    },
+    {
+      "ticket": 345147360,
+      "found": false
+    },
+    {
+      "ticket": 345147382,
+      "found": false
+    },
+    {
+      "ticket": 345147391,
+      "found": false
+    },
+    {
+      "ticket": 345160735,
+      "found": false
+    },
+    {
+      "ticket": 345160739,
+      "found": false
+    },
+    {
+      "ticket": 345160745,
+      "found": false
+    },
+    {
+      "ticket": 345160752,
+      "found": false
+    },
+    {
+      "ticket": 345160760,
+      "found": false
+    },
+    {
+      "ticket": 345160763,
+      "found": false
+    },
+    {
+      "ticket": 345160769,
+      "found": false
+    },
+    {
+      "ticket": 345160779,
+      "found": false
+    },
+    {
+      "ticket": 345160784,
+      "found": false
+    },
+    {
+      "ticket": 345160787,
+      "found": false
+    },
+    {
+      "ticket": 345160791,
+      "found": false
+    },
+    {
+      "ticket": 345160796,
+      "found": false
+    },
+    {
+      "ticket": 345201602,
+      "found": false
+    },
+    {
+      "ticket": 345201612,
+      "found": false
+    },
+    {
+      "ticket": 345201622,
+      "found": false
+    },
+    {
+      "ticket": 345201630,
+      "found": false
+    },
+    {
+      "ticket": 345201635,
+      "found": false
+    },
+    {
+      "ticket": 345201643,
+      "found": false
+    },
+    {
+      "ticket": 345201652,
+      "found": false
+    },
+    {
+      "ticket": 345201663,
+      "found": false
+    },
+    {
+      "ticket": 345201676,
+      "found": false
+    },
+    {
+      "ticket": 345201687,
+      "found": false
+    },
+    {
+      "ticket": 345201697,
+      "found": false
+    },
+    {
+      "ticket": 345201702,
+      "found": false
+    },
+    {
+      "ticket": 345231907,
+      "found": false
+    },
+    {
+      "ticket": 345231909,
+      "found": false
+    },
+    {
+      "ticket": 345231910,
+      "found": false
+    },
+    {
+      "ticket": 345231911,
+      "found": false
+    },
+    {
+      "ticket": 345231913,
+      "found": false
+    },
+    {
+      "ticket": 345231918,
+      "found": false
+    },
+    {
+      "ticket": 345231920,
+      "found": false
+    },
+    {
+      "ticket": 345231922,
+      "found": false
+    },
+    {
+      "ticket": 345231933,
+      "found": false
+    },
+    {
+      "ticket": 345231934,
+      "found": false
+    }
+  ],
+  "errors": []
+}

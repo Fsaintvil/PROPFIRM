@@ -15,6 +15,17 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process pwsh -Verb
 
 Les scripts situés dans `tools/*.ps1` appellent `tools/ensure_pwsh.ps1` pour valider l'environnement.
 
+## 🔑 Source de vérité runtime et paramètres canoniques
+
+- Source de vérité: `tools/production_env.ps1` exporte les variables d’environnement utilisées en production. C’est la référence officielle pour les paramètres runtime (risque, SL/TP, intervalle, monitoring, etc.).
+- Intervalle canonique: utilisez exclusivement `TRADING_INTERVAL` (en secondes). Le moteur lit d’abord `--interval` (si fourni au lanceur), sinon `TRADING_INTERVAL`. L’ancien alias `TRADE_INTERVAL_SECONDS` est déprécié et n’est plus exporté par défaut.
+- Seuil de confiance: privilégier `--threshold` au lancement (ex: `--threshold 0.70`).
+
+## 🧪 Dry-run réservé QA (pas en production)
+
+- Le lanceur `start_production.py` expose `--dry-run` pour les tests techniques (QA/CI). Ne jamais utiliser ce mode en production.
+- La politique d’exploitation reste « 100% live »; le dry-run sert uniquement à valider la santé du système, les imports, et les chemins critiques sans envoyer d’ordres MT5.
+
 ## 🧭 Politique d’exploitation: 100% live — pas de mode paper
 
 - Trading uniquement en temps réel via MT5. Aucun mode paper/dry-run/simulation en production.

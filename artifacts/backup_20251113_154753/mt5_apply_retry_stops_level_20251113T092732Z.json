@@ -1,0 +1,287 @@
+{
+  "timestamp": "20251113T092732Z",
+  "source_file": "mt5_apply_breakeven_adjusted_20251110T174141Z.json",
+  "processed": 56,
+  "results": [
+    {
+      "ticket": 345231907,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231911,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231913,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231920,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231922,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231934,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231936,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231939,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264818,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264827,
+      "symbol": "XAUUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264831,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264838,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264847,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264851,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264853,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264857,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264863,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264871,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285839,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285845,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285855,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285865,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285866,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285871,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285874,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285877,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285879,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285886,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307552,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307554,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307562,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307568,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307570,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307581,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307589,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307592,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307596,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307649,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307676,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331158,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331160,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331162,
+      "symbol": "XAUUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331166,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331184,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331190,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331209,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341440,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341443,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341451,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341455,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341459,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341463,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341467,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341471,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341476,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341477,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    }
+  ]
+}

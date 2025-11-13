@@ -1,0 +1,16 @@
+{
+  "started_at": "2025-11-12T16:02:22Z",
+  "pause_seconds": 30.0,
+  "connected": true,
+  "errors": [],
+  "env_check": {
+    "ALLOW_MT5_SEND": "1",
+    "AUTO_APPLY": "1",
+    "AUTO_DEPLOY": "1",
+    "AUTO_LEARN": "1",
+    "AUTO_ADAPT": "1",
+    "AUTO_ENRICH": "1"
+  },
+  "attempts": [],
+  "remaining_after": 0
+}

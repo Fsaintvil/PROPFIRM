@@ -1,0 +1,786 @@
+{
+  "timestamp": "2025-11-08T02:11:17Z",
+  "attempts": [
+    {
+      "ticket": 344136419,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344144669,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344145783,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344166591,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344190345,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344203154,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344205082,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344214885,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344214895,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344215860,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344224990,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344226167,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344232639,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344232645,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344233357,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344233384,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344238263,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344239022,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344244475,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344245602,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344258802,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344265341,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344265349,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344266383,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344266384,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344271301,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344271305,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344271761,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344276887,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344277403,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344282566,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344283368,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344293060,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344293630,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344293662,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344293677,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344297654,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344298099,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344298114,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344302308,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344303233,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344303277,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344303297,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344303320,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344311389,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344311403,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344311528,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344312522,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344312548,
+      "symbol": "AUDNZD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344312556,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344312573,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344317833,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344317837,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344318523,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344318536,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344322715,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344327905,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344327917,
+      "symbol": "EURAUD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344328379,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344334506,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344334510,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344334514,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344335066,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344335125,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344335136,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344339682,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344339690,
+      "symbol": "EURAUD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344339692,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344339906,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344339910,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344343953,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344344693,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344344734,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344344743,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345953,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345956,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345958,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345960,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345964,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345965,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345967,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345969,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345971,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345974,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345976,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345979,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345980,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345982,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345984,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345988,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345990,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345992,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345994,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345996,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344345999,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346000,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346004,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346006,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346007,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346010,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346012,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346014,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346015,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346018,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346022,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346023,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346026,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346027,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346030,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346033,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346036,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346037,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346040,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346042,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346043,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346047,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346048,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346049,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346051,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346053,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346058,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346060,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346072,
+      "symbol": "AUDNZD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346080,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346083,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346087,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346088,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346091,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346094,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346097,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346103,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346105,
+      "symbol": "EURAUD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346106,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346109,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346113,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346115,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346118,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346119,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346122,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346126,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346128,
+      "symbol": "EURAUD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346129,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346133,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346137,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346138,
+      "symbol": "XAUUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346140,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346146,
+      "symbol": "EURUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346148,
+      "symbol": "XAUUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346151,
+      "symbol": "ETHUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346154,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344346158,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344348810,
+      "symbol": "USDJPY",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344348813,
+      "symbol": "USDCAD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344348817,
+      "symbol": "AUDNZD",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344348826,
+      "symbol": "GBPCHF",
+      "note": "position_not_found"
+    },
+    {
+      "ticket": 344348834,
+      "symbol": "GBPUSD",
+      "note": "position_not_found"
+    }
+  ],
+  "remaining_positions": 14
+}

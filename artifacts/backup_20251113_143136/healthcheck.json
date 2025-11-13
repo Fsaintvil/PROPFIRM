@@ -1,0 +1,20 @@
+{
+  "timestamp": 1763036669.0855644,
+  "env": {
+    "ALLOW_MT5_SEND": null,
+    "TRADE_INTERVAL_SECONDS": null,
+    "SL_RETRY_MAX": null,
+    "AI_VOLUME": null
+  },
+  "mt5": {
+    "ok": true,
+    "last_error": [
+      1,
+      "Success"
+    ]
+  },
+  "kill_switch": {
+    "disable_trading": false,
+    "emergency_stop": false
+  }
+}

@@ -1,162 +1,146 @@
 #!/usr/bin/env python3
+"""Fermeture directe de toutes les positions MT5 (usage maintenance).
+
+Sécurité:
+ - Fichier `control/apply_live.confirm` == 'APPLY LIVE'
+ - Variable ALLOW_MT5_SEND=1
+Sinon: sortie sans action.
+
+Étapes:
+ 1. Initialise MetaTrader5
+ 2. Récupère toutes les positions
+ 3. Ferme chaque position par envoi d'ordre inverse (TRADE_ACTION_DEAL)
+ 4. Écrit artefact JSON de synthèse
 """
-Script temporaire : ferme toutes les positions via MetaTrader5 directement (fallback)
-Écrit artifacts/live_trading/close_all_positions_result_manual.json
-"""
-import os, json, time
-from pathlib import Path
+import os
+import json
+import time
+from datetime import datetime
 
-# load creds
-creds_path = Path(__file__).parent / "config" / "mt5_credentials.env"
-if creds_path.exists():
-    for line in creds_path.read_text(encoding='utf-8').splitlines():
-        line=line.strip()
-        if not line or line.startswith('#') or '=' not in line:
-            continue
-        k,v = line.split('=',1)
-        os.environ.setdefault(k.strip(), v.strip())
+ROOT = os.path.abspath(os.path.dirname(__file__))
+CTRL = (
+    os.path.join(os.path.dirname(ROOT), 'control')
+    if os.path.basename(ROOT) == 'tools'
+    else os.path.join(ROOT, 'control')
+)
+CONFIRM_FILE = os.path.join(CTRL, 'apply_live.confirm')
+ART_DIR = (
+    os.path.join(os.path.dirname(ROOT), 'artifacts', 'live_trading')
+    if os.path.basename(ROOT) == 'tools'
+    else os.path.join(ROOT, 'artifacts', 'live_trading')
+)
+os.makedirs(ART_DIR, exist_ok=True)
 
-out_dir = Path('artifacts') / 'live_trading'
-out_dir.mkdir(parents=True, exist_ok=True)
-outfile = out_dir / 'close_all_positions_result_manual.json'
-report = {'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()), 'errors': [], 'closed': [], 'remaining_positions': None}
 
-try:
-    import MetaTrader5 as mt5
-except Exception as e:
-    report['errors'].append(f'mt5_import_failed: {e}')
-    print(json.dumps(report, indent=2))
-    raise SystemExit(1)
-
-# initialize
-init_kwargs = {}
-login = os.getenv('MT5_LOGIN') or os.getenv('MT5_ACCOUNT')
-password = os.getenv('MT5_PASSWORD') or os.getenv('MT5_PWD')
-server = os.getenv('MT5_SERVER')
-if login:
+def has_live_confirmation():
+    """Vérifie présence + contenu du fichier de confirmation."""
     try:
-        init_kwargs['login'] = int(login)
+        if not os.path.exists(CONFIRM_FILE):
+            return False
+        with open(CONFIRM_FILE, 'r', encoding='utf-8') as f:
+            return f.read().strip() == 'APPLY LIVE'
     except Exception:
-        init_kwargs['login'] = login
-if password:
-    init_kwargs['password'] = password
-if server:
-    init_kwargs['server'] = server
-
-try:
-    ok = mt5.initialize(**init_kwargs) if init_kwargs else mt5.initialize()
-    if not ok:
-        report['errors'].append('mt5_initialize_failed')
-        Path(outfile).write_text(json.dumps(report, indent=2), encoding='utf-8')
-        raise SystemExit(1)
-except Exception as e:
-    report['errors'].append(f'mt5_initialize_exception: {e}')
-    Path(outfile).write_text(json.dumps(report, indent=2), encoding='utf-8')
-    raise SystemExit(1)
-
-# fetch positions
-try:
-    positions = mt5.positions_get()
-    if positions is None:
-        positions = []
-    else:
-        positions = list(positions)
-except Exception as e:
-    report['errors'].append(f'positions_get_failed: {e}')
-    positions = []
-
-# helper
-def get_price_for_closing(symbol, action):
-    tick = mt5.symbol_info_tick(symbol)
-    if tick is None:
-        return None
-    if action == 'close_buy':
-        return float(tick.bid)
-    return float(tick.ask)
+        return False
 
 
-def adjust_volume(symbol, volume):
+def main():
+    meta = {
+        'timestamp': datetime.utcnow().isoformat(),
+        'env_allow_send': os.getenv('ALLOW_MT5_SEND'),
+        'confirmation': has_live_confirmation(),
+    }
+    results = []
+    out_path = os.path.join(ART_DIR, f'close_all_positions_{int(time.time())}.json')
+
+    force_file = os.path.join(CTRL, 'force_close_all')
+    force_mode = os.path.exists(force_file)
+
+    if (not has_live_confirmation() or os.getenv('ALLOW_MT5_SEND') != '1') and not force_mode:
+        meta['status'] = 'skipped_safety_guard'
+        with open(out_path, 'w', encoding='utf-8') as f:
+            json.dump({'meta': meta, 'results': results}, f, indent=2)
+        print('[CLOSE] Sécurité active -> aucune fermeture exécutée.')
+        print(f'[CLOSE] Rapport: {out_path}')
+        return 0
+    elif force_mode:
+        meta['force_mode'] = True
+        print('[CLOSE] FORCE MODE actif (control/force_close_all) – fermeture sans garde.')
+
     try:
-        info = mt5.symbol_info(symbol)
-        if info is None:
-            return volume
-        step = float(getattr(info,'volume_step',0.01) or 0.01)
-        vmin = float(getattr(info,'volume_min',0.01) or 0.01)
-        steps = int(volume/step)
-        vol_adj = max(vmin, steps*step)
-        if vol_adj<=0:
-            vol_adj = vmin
-        return round(vol_adj,8)
-    except Exception:
-        return volume
-
-for pos in positions:
-    try:
-        ticket = int(getattr(pos,'ticket',0))
-        symbol = getattr(pos,'symbol',None)
-        volume = float(getattr(pos,'volume',0.0))
-        type_pos = int(getattr(pos,'type',0))
-        if type_pos == mt5.ORDER_TYPE_BUY:
-            action='close_buy'
-            order_type = mt5.ORDER_TYPE_SELL
-        else:
-            action='close_sell'
-            order_type = mt5.ORDER_TYPE_BUY
-        price = get_price_for_closing(symbol, action)
-        if price is None:
-            report['errors'].append(f'no_price_for_symbol:{symbol}')
-            continue
-        vol_to_send = adjust_volume(symbol, volume)
-        request = {
-            'action': mt5.TRADE_ACTION_DEAL,
-            'position': ticket,
-            'symbol': symbol,
-            'volume': vol_to_send,
-            'type': order_type,
-            'price': price,
-            'deviation': 50,
-            'magic': 0,
-            'comment': 'tmp_close_all_direct.py'
-        }
-        attempt = 0
-        result = None
-        while attempt < 5:
-            attempt += 1
-            try:
-                result = mt5.order_send(request)
-            except Exception as e:
-                result = {'exception': str(e)}
-            # try to interpret result
-            try:
-                deal = int(getattr(result,'deal',0) or 0)
-            except Exception:
-                deal = 0
-            if deal>0:
-                break
-            time.sleep(0.5+attempt*0.2)
-        try:
-            res_dict = result._asdict()
-        except Exception:
-            try:
-                res_dict = dict(result)
-            except Exception:
-                res_dict = {'raw': str(result)}
-        closed = {'ticket': ticket, 'symbol': symbol, 'volume': volume, 'volume_sent': vol_to_send, 'attempts': attempt, 'order_result': res_dict}
-        report['closed'].append(closed)
+        import MetaTrader5 as mt5
     except Exception as e:
-        report['errors'].append(f'exception:{e}')
+        meta['status'] = 'mt5_import_failed'
+        meta['error'] = str(e)
+        with open(out_path, 'w', encoding='utf-8') as f:
+            json.dump({'meta': meta, 'results': results}, f, indent=2)
+        print('[CLOSE] MetaTrader5 introuvable.')
+        return 2
 
-# final
-try:
-    rem = mt5.positions_get()
-    report['remaining_positions'] = len(rem) if rem is not None else 0
-except Exception:
-    report['remaining_positions'] = None
+    if not mt5.initialize():
+        meta['status'] = 'mt5_initialize_failed'
+        meta['init_last_error'] = mt5.last_error()
+        with open(out_path, 'w', encoding='utf-8') as f:
+            json.dump({'meta': meta, 'results': results}, f, indent=2)
+        print('[CLOSE] mt5.initialize() échec.')
+        return 3
 
-outfile.write_text(json.dumps(report, indent=2), encoding='utf-8')
-print('Wrote', outfile)
+    positions = mt5.positions_get()
+    if not positions:
+        meta['status'] = 'no_positions'
+        mt5.shutdown()
+        with open(out_path, 'w', encoding='utf-8') as f:
+            json.dump({'meta': meta, 'results': results}, f, indent=2)
+        print('[CLOSE] Aucune position ouverte.')
+        print(f'[CLOSE] Rapport: {out_path}')
+        return 0
 
-try:
+    closed = 0
+    for pos in positions:
+        entry = {
+            'ticket': getattr(pos, 'ticket', None),
+            'symbol': getattr(pos, 'symbol', None),
+            'type': getattr(pos, 'type', None),
+            'volume': getattr(pos, 'volume', None),
+        }
+        try:
+            tick = mt5.symbol_info_tick(pos.symbol)
+            if tick is None:
+                entry['error'] = 'tick_unavailable'
+                results.append(entry)
+                continue
+            # type 0 = BUY, type 1 = SELL
+            price = tick.bid if pos.type == 0 else tick.ask
+            order_type = mt5.ORDER_TYPE_SELL if pos.type == 0 else mt5.ORDER_TYPE_BUY
+            close_req = {
+                'action': mt5.TRADE_ACTION_DEAL,
+                'symbol': pos.symbol,
+                'volume': pos.volume,
+                'type': order_type,
+                'position': int(getattr(pos, 'ticket', 0)),
+                'price': price,
+                'deviation': 30,
+                'comment': 'manual_close_all',
+            }
+            res = mt5.order_send(close_req)
+            entry['retcode'] = getattr(res, 'retcode', None)
+            entry['order'] = getattr(res, 'order', None)
+            if getattr(res, 'retcode', None) == mt5.TRADE_RETCODE_DONE:
+                closed += 1
+        except Exception as e:
+            entry['error'] = f'close_failed:{e}'
+        results.append(entry)
+
     mt5.shutdown()
-except Exception:
-    pass
+    meta['status'] = 'done'
+    meta['closed_positions'] = closed
+    meta['total_positions_before'] = len(positions)
+
+    with open(out_path, 'w', encoding='utf-8') as f:
+        json.dump({'meta': meta, 'results': results}, f, indent=2)
+    print(f'[CLOSE] Fermeture terminée: {closed}/{len(positions)} positions')
+    print(f'[CLOSE] Rapport: {out_path}')
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

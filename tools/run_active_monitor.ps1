@@ -2,12 +2,16 @@ Param()
 
 # Ignore Ctrl+C / CancelKeyPress so the monitor won't be interrupted by accidental SIGINT
 try {
-    $cb = [ConsoleCancelEventHandler]{ param($sender, $e) $e.Cancel = $true; Write-Output "[MON] CancelKeyPress suppressed at $(Get-Date)" }
+    $cb = [ConsoleCancelEventHandler]{ param($psSender, $e) $e.Cancel = $true; Write-Output "[MON] CancelKeyPress suppressed at $(Get-Date)" }
     [Console]::add_CancelKeyPress($cb)
 } catch {
     Write-Warning "Could not register CancelKeyPress handler: $_"
 }
 # Robust active monitor: restart live_run_controller wrapper and collect logs for 930s
+# Ajouts:
+#  - Rotation légère de watchdog_status.log (>512KB)
+#  - Journalisation de chaque sample dans watchdog_status.log
+#  - Appel périodique (toutes les 2 minutes) à auto_threshold_monitor.ps1 pour ajustement adaptatif
 $ErrorActionPreference = 'Stop'
 try {
     $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path | Split-Path -Parent
@@ -18,7 +22,7 @@ try {
 $art = Join-Path $scriptRoot 'artifacts\live_trading'
 New-Item -ItemType Directory -Path $art -Force | Out-Null
 
-function Kill-LiveControllerProcesses {
+function Stop-LiveControllerProcesses {
     try {
         $procs = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and $_.CommandLine -match 'live_run_controller.py' }
         if ($procs) {
@@ -41,7 +45,7 @@ function Start-Wrapper {
     Start-Sleep -Seconds 3
 }
 
-function Collect-Snapshot {
+function Get-MonitorSnapshot {
     param($liveLog, $ctrlLog, $ordersAuditBefore)
     $sample = [ordered]@{time = Get-Date; trades = 0; new_audits = @(); errors = @(); lock_exists = Test-Path (Join-Path $scriptRoot 'control\ai_sending.lock')}
     $lines = @()
@@ -62,8 +66,8 @@ function Collect-Snapshot {
 
 # Main
 try {
-    Write-Output "[MON] Kill existing controller processes"
-    Kill-LiveControllerProcesses
+    Write-Output "[MON] Stop existing controller processes"
+    Stop-LiveControllerProcesses
 
     Write-Output "[MON] Start wrapper"
     Start-Wrapper
@@ -80,11 +84,48 @@ try {
     $tradeEvents = @()
     $ordersAuditBefore = Get-ChildItem $art -Filter 'orders_audit_*' -ErrorAction SilentlyContinue | Select-Object Name,LastWriteTime
 
+    $watchdog = Join-Path $art 'watchdog_status.log'
+    $lastThresholdRun = (Get-Date).AddMinutes(-10)  # force exécution rapide au début
     while ((Get-Date) -lt $end) {
-        $res = Collect-Snapshot -liveLog $liveLog -ctrlLog $ctrlLog -ordersAuditBefore $ordersAuditBefore
+    $res = Get-MonitorSnapshot -liveLog $liveLog -ctrlLog $ctrlLog -ordersAuditBefore $ordersAuditBefore
         $sample = $res.sample
         $ordersAuditBefore = $res.auditsNow
         $samples += $sample
+
+        # Rotation si fichier > 512KB
+        try {
+            if (Test-Path $watchdog) {
+                $size = (Get-Item $watchdog).Length
+                if ($size -gt 512KB) {
+                    $stamp = (Get-Date).ToString('yyyyMMdd_HHmmss')
+                    $rot = Join-Path $art "watchdog_status_$stamp.log"
+                    Move-Item -Path $watchdog -Destination $rot -Force
+                    Write-Output "[MON] Rotation watchdog -> $rot"
+                }
+            }
+        } catch { Write-Warning "Rotation error: $_" }
+
+        # Ligne append
+        try {
+            $thr = $env:BASE_CONFIDENCE_THRESHOLD
+            $errCount = 0; if ($sample.errors) { $errCount = ($sample.errors | Where-Object { $_ }).Count }
+            $tradeCount = 0; if ($sample.trades) { $tradeCount = [int]$sample.trades }
+            $line = "$(Get-Date -Format o)|trades=$tradeCount|errors=$errCount|lock=$($sample.lock_exists)|threshold=$thr"
+            Add-Content -Path $watchdog -Value $line -Encoding UTF8
+        } catch { Write-Warning "Append watchdog error: $_" }
+
+        # Appel périodique auto-threshold (2 min cadence)
+        try {
+            if (((Get-Date) - $lastThresholdRun).TotalMinutes -ge 2) {
+                $atm = Join-Path $scriptRoot 'tools\auto_threshold_monitor.ps1'
+                if (Test-Path $atm) {
+                    Write-Output "[MON] Running auto_threshold_monitor.ps1"
+                    pwsh -NoProfile -ExecutionPolicy Bypass -File $atm | ForEach-Object { Write-Output "[ATM] $_" }
+                }
+                $lastThresholdRun = Get-Date
+            }
+        } catch { Write-Warning "auto_threshold_monitor error: $_" }
+
         Start-Sleep -Seconds 15
     }
 

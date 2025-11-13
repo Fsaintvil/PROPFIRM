@@ -66,9 +66,13 @@ def parse_args() -> argparse.Namespace:
         description="Lance la production PROPFIRM avec contrôles avancés"
     )
     parser.add_argument(
-        "--symbols", type=str,
-        default="BTCUSD, ETHUSD, XAUUSD, USDCAD, AUDNZD, EURJPY, GBPCHF, NZDJPY, EURUSD, EURAUD, US500.cash, JP225.cash",
-        help="Liste des symboles, séparés par des virgules"
+        "--symbols",
+        type=str,
+        default=(
+            "BTCUSD, ETHUSD, XAUUSD, USDCAD, AUDNZD, EURJPY, "
+            "GBPCHF, NZDJPY, EURUSD, EURAUD, US500.cash, JP225.cash"
+        ),
+        help="Liste des symboles, séparés par des virgules",
     )
     parser.add_argument(
         "--lots", type=str, default="0.01",
@@ -193,8 +197,10 @@ def main():
 
     # Enforce running from PowerShell (pwsh / Windows PowerShell)
     try:
-        # Common PowerShell environment variables include PSModulePath and PSExecutionPolicyPreference
-        ps_env_present = any(k in os.environ for k in ("PSModulePath", "PSExecutionPolicyPreference"))
+        # Variables d'environnement typiques de PowerShell
+        ps_env_present = any(
+            k in os.environ for k in ("PSModulePath", "PSExecutionPolicyPreference")
+        )
     except Exception:
         ps_env_present = False
 
@@ -272,10 +278,27 @@ def main():
         )
 
         # Overrides non-invasifs
+    # Intervalle: priorité aux arguments, sinon configuration auto,
+    # puis variable d'environnement canonique TRADING_INTERVAL
+    # (compatibilité: TRADE_INTERVAL_SECONDS est déprécié)
         if args.interval is not None:
             engine.trading_interval = int(args.interval)
         elif engine_interval_override is not None:
             engine.trading_interval = int(engine_interval_override)
+        else:
+            env_interval = os.environ.get("TRADING_INTERVAL")
+            if not env_interval:
+                # compat: ancien nom (déprécié)
+                env_interval = os.environ.get("TRADE_INTERVAL_SECONDS")
+                if env_interval:
+                    logger.warning(
+                        "TRADE_INTERVAL_SECONDS déprécié — utilisez TRADING_INTERVAL"
+                    )
+            if env_interval:
+                try:
+                    engine.trading_interval = int(float(env_interval))
+                except Exception:
+                    logger.warning("Intervalle environnement invalide: %s", env_interval)
 
         if args.threshold is not None:
             try:
@@ -356,9 +379,9 @@ def main():
         # Optional: initialize an external AIManager if available and attach to engine
         try:
             try:
-                from ai_init import AIManager
+                from ai_init import AIManager  # type: ignore[import]
             except Exception:
-                from scripts.ai_init import AIManager
+                from scripts.ai_init import AIManager  # type: ignore[import]
 
             logger.info("🧠 Initialisation de l'AI Manager externe...")
             ai = AIManager()

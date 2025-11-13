@@ -1,0 +1,46 @@
+LIVE PREPARE CHECKLIST (X=30, STOPS_MULT=3)
+Generated: 2025-11-10T22:08:14Z
+
+Files produced:
+- subset CSV: artifacts/live_trading/subset_for_live_X30_SM3_20251110T220329Z.csv
+- simulation JSON: artifacts/live_trading/live_simulation_payloads_X30_SM3_20251110T220814Z.json
+- dry-run CSVs: artifacts/live_trading/dry_run_price_and_market_X30_SM3_20251110T220329Z.csv
+               artifacts/live_trading/dry_run_market_only_X30_SM3_20251110T220329Z.csv
+- summary JSON: artifacts/live_trading/dry_run_summary_X30_SM3_20251110T220329Z.json
+
+Pre-conditions (must be satisfied before any live sends):
+1) Confirm you understand this will perform REAL modifications on the broker account.
+2) Set environment variable: ALLOW_MT5_SEND=1 (process-level) before running apply scripts.
+3) Backup: copy the simulation JSON and subset CSV to secure location (already in artifacts/).
+4) Verify MT5 terminal is open and connected and account in .env is correct.
+5) Decide allowed volume override (default used: 0.01 lots). If you want different volumes, edit the subset CSV 'volume' column or provide mapping.
+6) Confirm maximum per-instrument allowed delta and global limits (we recommend per-order stop distance >= trade_stops_level*point and delta >= 30*point).
+
+Suggested safety controls to enable on live run:
+- Run first on a single symbol (e.g., BTCUSD) or a single ticket.
+- Use low volumes (0.01) and limit to max N concurrent modifications (N=5).
+- Keep monitoring terminal open and check Apply result JSON produced by the apply script.
+- Have kill-switch command ready: run `tools/run_close_all_positions.ps1` or use `mt5.positions_get()` to check and close.
+
+How to simulate (no live send):
+- Review the simulation JSON file above. It contains payloads per ticket with market_price and proposed_SL.
+
+How to apply live (manual steps):
+1) Export environment variable in PowerShell (run as normal user):
+   $Env:ALLOW_MT5_SEND = '1'
+2) (Optional) Set other env flags (e.g., AUTO_APPLY=1) as needed.
+3) Use the provided PS wrapper or apply script to run on the subset only. Example wrapper (you must verify path):
+   # Example (DO NOT RUN UNTIL YOU'RE READY):
+   # powershell -File tools\run_apply_sltp_retry_aggressive.ps1 -Subset "artifacts/live_trading/subset_for_live_X30_SM3_20251110T220329Z.csv"
+
+4) After the run, inspect artifacts/live_trading/ for mt5 apply result JSONs (mt5_apply_*.json) and active_monitor_report_*.txt. Verify retcodes and deals.
+
+Rollback (if needed):
+- To close all positions immediately (manual): open MT5 and use the platform 'Close All' or run a scripted close (requires confirmation). Example safe command: tools/run_close_all_positions.ps1 (review first).
+
+Notes & Responsibility:
+- I prepared simulation payloads and a subset CSV. I will not perform any live send unless you explicitly ask.
+- Double-check the subset and volumes before any live execution.
+
+If you want me to run a simulated apply (generate the order payloads that would be sent) for final review, reply: "simuler apply".
+If you approve a live run of the subset now, reply: "appliquer live" and add any constraints (max simultaneous, max volume per ticket).

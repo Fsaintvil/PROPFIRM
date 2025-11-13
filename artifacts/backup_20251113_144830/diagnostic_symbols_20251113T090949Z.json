@@ -1,0 +1,996 @@
+{
+  "timestamp": "20251113T090949Z",
+  "source_enforce": "mt5_enforce_sltp_rr_20251113T081133Z.json",
+  "symbols": {
+    "AUDNZD": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "min_by_level": 0.0,
+      "delta_1_5_3": 0.0001,
+      "delta_2_4": 0.0001333333,
+      "positions": [
+        {
+          "ticket": 347543160,
+          "price_open": 1.16199,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 1.16189,
+            "tp": 1.16219
+          },
+          "proposal_2_4": {
+            "sl": 1.16186,
+            "tp": 1.16226
+          }
+        },
+        {
+          "ticket": 347552860,
+          "price_open": 1.16138,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 1.16128,
+            "tp": 1.16158
+          },
+          "proposal_2_4": {
+            "sl": 1.16125,
+            "tp": 1.16165
+          }
+        },
+        {
+          "ticket": 347567923,
+          "price_open": 1.1604,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 1.1603,
+            "tp": 1.1606
+          },
+          "proposal_2_4": {
+            "sl": 1.16027,
+            "tp": 1.16067
+          }
+        },
+        {
+          "ticket": 347608823,
+          "price_open": 1.15872,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 1.15882,
+            "tp": 1.15852
+          },
+          "proposal_2_4": {
+            "sl": 1.15885,
+            "tp": 1.15845
+          }
+        },
+        {
+          "ticket": 347626665,
+          "price_open": 1.15802,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 1.15812,
+            "tp": 1.15782
+          },
+          "proposal_2_4": {
+            "sl": 1.15815,
+            "tp": 1.15775
+          }
+        }
+      ]
+    },
+    "BTCUSD": {
+      "point": 0.01,
+      "digits": 2,
+      "trade_stops_level": 0,
+      "min_by_level": 0.0,
+      "delta_1_5_3": 0.1,
+      "delta_2_4": 0.1333333333,
+      "positions": [
+        {
+          "ticket": 347552854,
+          "price_open": 103748.2,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 103748.1,
+            "tp": 103748.4
+          },
+          "proposal_2_4": {
+            "sl": 103748.07,
+            "tp": 103748.47
+          }
+        },
+        {
+          "ticket": 347608817,
+          "price_open": 103670.73,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 103670.63,
+            "tp": 103670.93
+          },
+          "proposal_2_4": {
+            "sl": 103670.6,
+            "tp": 103671.0
+          }
+        },
+        {
+          "ticket": 347626646,
+          "price_open": 103558.69,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 103558.59,
+            "tp": 103558.89
+          },
+          "proposal_2_4": {
+            "sl": 103558.56,
+            "tp": 103558.96
+          }
+        }
+      ]
+    },
+    "ETHUSD": {
+      "point": 0.01,
+      "digits": 2,
+      "trade_stops_level": 0,
+      "min_by_level": 0.0,
+      "delta_1_5_3": 0.1,
+      "delta_2_4": 0.1333333333,
+      "positions": [
+        {
+          "ticket": 347567916,
+          "price_open": 3535.81,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 3535.71,
+            "tp": 3536.01
+          },
+          "proposal_2_4": {
+            "sl": 3535.68,
+            "tp": 3536.08
+          }
+        },
+        {
+          "ticket": 347626649,
+          "price_open": 3527.19,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 3527.09,
+            "tp": 3527.39
+          },
+          "proposal_2_4": {
+            "sl": 3527.06,
+            "tp": 3527.46
+          }
+        }
+      ]
+    },
+    "EURAUD": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "min_by_level": 0.0,
+      "delta_1_5_3": 0.0001,
+      "delta_2_4": 0.0001333333,
+      "positions": [
+        {
+          "ticket": 347567939,
+          "price_open": 1.76486,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 1.76496,
+            "tp": 1.76466
+          },
+          "proposal_2_4": {
+            "sl": 1.76499,
+            "tp": 1.76459
+          }
+        },
+        {
+          "ticket": 347608856,
+          "price_open": 1.7655,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 1.7656,
+            "tp": 1.7653
+          },
+          "proposal_2_4": {
+            "sl": 1.76563,
+            "tp": 1.76523
+          }
+        },
+        {
+          "ticket": 347626690,
+          "price_open": 1.76667,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 1.76657,
+            "tp": 1.76687
+          },
+          "proposal_2_4": {
+            "sl": 1.76654,
+            "tp": 1.76694
+          }
+        }
+      ]
+    },
+    "EURJPY": {
+      "point": 0.001,
+      "digits": 3,
+      "trade_stops_level": 0,
+      "min_by_level": 0.0,
+      "delta_1_5_3": 0.01,
+      "delta_2_4": 0.0133333333,
+      "positions": [
+        {
+          "ticket": 347543163,
+          "price_open": 179.469,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 179.459,
+            "tp": 179.489
+          },
+          "proposal_2_4": {
+            "sl": 179.456,
+            "tp": 179.496
+          }
+        },
+        {
+          "ticket": 347552861,
+          "price_open": 179.539,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 179.529,
+            "tp": 179.559
+          },
+          "proposal_2_4": {
+            "sl": 179.526,
+            "tp": 179.566
+          }
+        },
+        {
+          "ticket": 347567925,
+          "price_open": 179.52,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 179.51,
+            "tp": 179.54
+          },
+          "proposal_2_4": {
+            "sl": 179.507,
+            "tp": 179.547
+          }
+        },
+        {
+          "ticket": 347588496,
+          "price_open": 179.701,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 179.691,
+            "tp": 179.721
+          },
+          "proposal_2_4": {
+            "sl": 179.688,
+            "tp": 179.728
+          }
+        },
+        {
+          "ticket": 347608826,
+          "price_open": 179.661,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 179.651,
+            "tp": 179.681
+          },
+          "proposal_2_4": {
+            "sl": 179.648,
+            "tp": 179.688
+          }
+        },
+        {
+          "ticket": 347626669,
+          "price_open": 179.696,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 179.686,
+            "tp": 179.716
+          },
+          "proposal_2_4": {
+            "sl": 179.683,
+            "tp": 179.723
+          }
+        }
+      ]
+    },
+    "EURUSD": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "min_by_level": 0.0,
+      "delta_1_5_3": 0.0001,
+      "delta_2_4": 0.0001333333,
+      "positions": [
+        {
+          "ticket": 347543175,
+          "price_open": 1.15836,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 1.15846,
+            "tp": 1.15816
+          },
+          "proposal_2_4": {
+            "sl": 1.15849,
+            "tp": 1.15809
+          }
+        },
+        {
+          "ticket": 347552867,
+          "price_open": 1.1587,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 1.1586,
+            "tp": 1.1589
+          },
+          "proposal_2_4": {
+            "sl": 1.15857,
+            "tp": 1.15897
+          }
+        },
+        {
+          "ticket": 347567934,
+          "price_open": 1.15994,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 1.15984,
+            "tp": 1.16014
+          },
+          "proposal_2_4": {
+            "sl": 1.15981,
+            "tp": 1.16021
+          }
+        },
+        {
+          "ticket": 347608851,
+          "price_open": 1.16145,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 1.16135,
+            "tp": 1.16165
+          },
+          "proposal_2_4": {
+            "sl": 1.16132,
+            "tp": 1.16172
+          }
+        },
+        {
+          "ticket": 347626682,
+          "price_open": 1.16244,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 1.16234,
+            "tp": 1.16264
+          },
+          "proposal_2_4": {
+            "sl": 1.16231,
+            "tp": 1.16271
+          }
+        }
+      ]
+    },
+    "GBPCHF": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "min_by_level": 0.0,
+      "delta_1_5_3": 0.0001,
+      "delta_2_4": 0.0001333333,
+      "positions": [
+        {
+          "ticket": 347543167,
+          "price_open": 1.04854,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 1.04844,
+            "tp": 1.04874
+          },
+          "proposal_2_4": {
+            "sl": 1.04841,
+            "tp": 1.04881
+          }
+        },
+        {
+          "ticket": 347552865,
+          "price_open": 1.04708,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 1.04718,
+            "tp": 1.04688
+          },
+          "proposal_2_4": {
+            "sl": 1.04721,
+            "tp": 1.04681
+          }
+        },
+        {
+          "ticket": 347567930,
+          "price_open": 1.04739,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 1.04749,
+            "tp": 1.04719
+          },
+          "proposal_2_4": {
+            "sl": 1.04752,
+            "tp": 1.04712
+          }
+        },
+        {
+          "ticket": 347608834,
+          "price_open": 1.04527,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 1.04537,
+            "tp": 1.04507
+          },
+          "proposal_2_4": {
+            "sl": 1.0454,
+            "tp": 1.045
+          }
+        },
+        {
+          "ticket": 347626673,
+          "price_open": 1.04601,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 1.04611,
+            "tp": 1.04581
+          },
+          "proposal_2_4": {
+            "sl": 1.04614,
+            "tp": 1.04574
+          }
+        }
+      ]
+    },
+    "JP225.cash": {
+      "point": 0.01,
+      "digits": 2,
+      "trade_stops_level": 0,
+      "min_by_level": 0.0,
+      "delta_1_5_3": 0.1,
+      "delta_2_4": 0.1333333333,
+      "positions": [
+        {
+          "ticket": 347543186,
+          "price_open": 51243.17,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 51243.07,
+            "tp": 51243.37
+          },
+          "proposal_2_4": {
+            "sl": 51243.04,
+            "tp": 51243.44
+          }
+        },
+        {
+          "ticket": 347552870,
+          "price_open": 51257.17,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 51257.07,
+            "tp": 51257.37
+          },
+          "proposal_2_4": {
+            "sl": 51257.04,
+            "tp": 51257.44
+          }
+        },
+        {
+          "ticket": 347567942,
+          "price_open": 51256.17,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 51256.07,
+            "tp": 51256.37
+          },
+          "proposal_2_4": {
+            "sl": 51256.04,
+            "tp": 51256.44
+          }
+        },
+        {
+          "ticket": 347588542,
+          "price_open": 51205.83,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 51205.93,
+            "tp": 51205.63
+          },
+          "proposal_2_4": {
+            "sl": 51205.96,
+            "tp": 51205.56
+          }
+        },
+        {
+          "ticket": 347608870,
+          "price_open": 51163.83,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 51163.93,
+            "tp": 51163.63
+          },
+          "proposal_2_4": {
+            "sl": 51163.96,
+            "tp": 51163.56
+          }
+        },
+        {
+          "ticket": 347626695,
+          "price_open": 51136.83,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 51136.93,
+            "tp": 51136.63
+          },
+          "proposal_2_4": {
+            "sl": 51136.96,
+            "tp": 51136.56
+          }
+        }
+      ]
+    },
+    "NZDJPY": {
+      "point": 0.001,
+      "digits": 3,
+      "trade_stops_level": 0,
+      "min_by_level": 0.0,
+      "delta_1_5_3": 0.01,
+      "delta_2_4": 0.0133333333,
+      "positions": [
+        {
+          "ticket": 347543172,
+          "price_open": 87.443,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 87.453,
+            "tp": 87.423
+          },
+          "proposal_2_4": {
+            "sl": 87.456,
+            "tp": 87.416
+          }
+        },
+        {
+          "ticket": 347552866,
+          "price_open": 87.558,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 87.548,
+            "tp": 87.578
+          },
+          "proposal_2_4": {
+            "sl": 87.545,
+            "tp": 87.585
+          }
+        },
+        {
+          "ticket": 347567932,
+          "price_open": 87.664,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 87.654,
+            "tp": 87.684
+          },
+          "proposal_2_4": {
+            "sl": 87.651,
+            "tp": 87.691
+          }
+        },
+        {
+          "ticket": 347588514,
+          "price_open": 87.792,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 87.782,
+            "tp": 87.812
+          },
+          "proposal_2_4": {
+            "sl": 87.779,
+            "tp": 87.819
+          }
+        },
+        {
+          "ticket": 347608846,
+          "price_open": 87.817,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 87.807,
+            "tp": 87.837
+          },
+          "proposal_2_4": {
+            "sl": 87.804,
+            "tp": 87.844
+          }
+        },
+        {
+          "ticket": 347626676,
+          "price_open": 87.84,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 87.83,
+            "tp": 87.86
+          },
+          "proposal_2_4": {
+            "sl": 87.827,
+            "tp": 87.867
+          }
+        }
+      ]
+    },
+    "US500.cash": {
+      "point": 0.01,
+      "digits": 2,
+      "trade_stops_level": 0,
+      "min_by_level": 0.0,
+      "delta_1_5_3": 0.1,
+      "delta_2_4": 0.1333333333,
+      "positions": [
+        {
+          "ticket": 347543181,
+          "price_open": 6867.93,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 6867.83,
+            "tp": 6868.13
+          },
+          "proposal_2_4": {
+            "sl": 6867.8,
+            "tp": 6868.2
+          }
+        },
+        {
+          "ticket": 347552869,
+          "price_open": 6866.43,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 6866.33,
+            "tp": 6866.63
+          },
+          "proposal_2_4": {
+            "sl": 6866.3,
+            "tp": 6866.7
+          }
+        },
+        {
+          "ticket": 347567941,
+          "price_open": 6866.23,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 6866.13,
+            "tp": 6866.43
+          },
+          "proposal_2_4": {
+            "sl": 6866.1,
+            "tp": 6866.5
+          }
+        },
+        {
+          "ticket": 347588532,
+          "price_open": 6860.67,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 6860.77,
+            "tp": 6860.47
+          },
+          "proposal_2_4": {
+            "sl": 6860.8,
+            "tp": 6860.4
+          }
+        },
+        {
+          "ticket": 347608860,
+          "price_open": 6857.97,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 6858.07,
+            "tp": 6857.77
+          },
+          "proposal_2_4": {
+            "sl": 6858.1,
+            "tp": 6857.7
+          }
+        },
+        {
+          "ticket": 347626692,
+          "price_open": 6861.77,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 6861.87,
+            "tp": 6861.57
+          },
+          "proposal_2_4": {
+            "sl": 6861.9,
+            "tp": 6861.5
+          }
+        }
+      ]
+    },
+    "USDCAD": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "min_by_level": 0.0,
+      "delta_1_5_3": 0.0001,
+      "delta_2_4": 0.0001333333,
+      "positions": [
+        {
+          "ticket": 347543157,
+          "price_open": 1.40121,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 1.40111,
+            "tp": 1.40141
+          },
+          "proposal_2_4": {
+            "sl": 1.40108,
+            "tp": 1.40148
+          }
+        },
+        {
+          "ticket": 347552858,
+          "price_open": 1.40118,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 1.40108,
+            "tp": 1.40138
+          },
+          "proposal_2_4": {
+            "sl": 1.40105,
+            "tp": 1.40145
+          }
+        },
+        {
+          "ticket": 347567921,
+          "price_open": 1.40015,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 1.40025,
+            "tp": 1.39995
+          },
+          "proposal_2_4": {
+            "sl": 1.40028,
+            "tp": 1.39988
+          }
+        },
+        {
+          "ticket": 347588445,
+          "price_open": 1.3992,
+          "side": 1,
+          "accepted_in_enforce": true,
+          "enforce_retcode": 10009,
+          "proposal_1_5_3": {
+            "sl": 1.3993,
+            "tp": 1.399
+          },
+          "proposal_2_4": {
+            "sl": 1.39933,
+            "tp": 1.39893
+          }
+        },
+        {
+          "ticket": 347608822,
+          "price_open": 1.39901,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 1.39911,
+            "tp": 1.39881
+          },
+          "proposal_2_4": {
+            "sl": 1.39914,
+            "tp": 1.39874
+          }
+        },
+        {
+          "ticket": 347626661,
+          "price_open": 1.39895,
+          "side": 1,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 1.39905,
+            "tp": 1.39875
+          },
+          "proposal_2_4": {
+            "sl": 1.39908,
+            "tp": 1.39868
+          }
+        }
+      ]
+    },
+    "XAUUSD": {
+      "point": 0.01,
+      "digits": 2,
+      "trade_stops_level": 0,
+      "min_by_level": 0.0,
+      "delta_1_5_3": 0.1,
+      "delta_2_4": 0.1333333333,
+      "positions": [
+        {
+          "ticket": 347543154,
+          "price_open": 4206.98,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 4206.88,
+            "tp": 4207.18
+          },
+          "proposal_2_4": {
+            "sl": 4206.85,
+            "tp": 4207.25
+          }
+        },
+        {
+          "ticket": 347552856,
+          "price_open": 4209.56,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 4209.46,
+            "tp": 4209.76
+          },
+          "proposal_2_4": {
+            "sl": 4209.43,
+            "tp": 4209.83
+          }
+        },
+        {
+          "ticket": 347567919,
+          "price_open": 4214.31,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": 10016,
+          "proposal_1_5_3": {
+            "sl": 4214.21,
+            "tp": 4214.51
+          },
+          "proposal_2_4": {
+            "sl": 4214.18,
+            "tp": 4214.58
+          }
+        },
+        {
+          "ticket": 347608821,
+          "price_open": 4238.22,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 4238.12,
+            "tp": 4238.42
+          },
+          "proposal_2_4": {
+            "sl": 4238.09,
+            "tp": 4238.49
+          }
+        },
+        {
+          "ticket": 347626658,
+          "price_open": 4235.17,
+          "side": 0,
+          "accepted_in_enforce": false,
+          "enforce_retcode": null,
+          "proposal_1_5_3": {
+            "sl": 4235.07,
+            "tp": 4235.37
+          },
+          "proposal_2_4": {
+            "sl": 4235.04,
+            "tp": 4235.44
+          }
+        }
+      ]
+    }
+  }
+}

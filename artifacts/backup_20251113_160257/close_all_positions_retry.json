@@ -1,0 +1,65 @@
+{
+  "started_at": "2025-11-12T15:10:30Z",
+  "pause_seconds": 6.0,
+  "connected": true,
+  "errors": [],
+  "attempts": [
+    {
+      "ticket": 346923781,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "price": 1.04589,
+      "result": "None"
+    },
+    {
+      "ticket": 346938418,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "price": 1.04591,
+      "result": "None"
+    },
+    {
+      "ticket": 346950486,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "price": 1.04592,
+      "result": "None"
+    },
+    {
+      "ticket": 346961599,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "price": 1.04588,
+      "result": "None"
+    },
+    {
+      "ticket": 346984462,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price": 1.40123,
+      "result": "None"
+    },
+    {
+      "ticket": 347003953,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price": 1.40123,
+      "result": "None"
+    },
+    {
+      "ticket": 347021546,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price": 1.40117,
+      "result": "None"
+    },
+    {
+      "ticket": 347021556,
+      "symbol": "AUDNZD",
+      "volume": 0.01,
+      "price": 1.15471,
+      "result": "None"
+    }
+  ],
+  "remaining_after": 8
+}

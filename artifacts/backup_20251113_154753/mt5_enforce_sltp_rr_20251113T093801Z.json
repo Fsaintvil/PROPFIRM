@@ -1,0 +1,509 @@
+{
+  "timestamp": "20251113T093801Z",
+  "results": [
+    {
+      "ticket": 347648859,
+      "symbol": "BTCUSD",
+      "request": {
+        "action": 6,
+        "position": 347648859,
+        "symbol": "BTCUSD",
+        "sl": 103081.54,
+        "tp": 102631.54
+      },
+      "result": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.01,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Request executed",
+        "request_id": 1941072846,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "BTCUSD",
+          0.0,
+          0.0,
+          0.0,
+          103081.54,
+          102631.54,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          347648859,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 347648862,
+      "symbol": "ETHUSD",
+      "request": {
+        "action": 6,
+        "position": 347648862,
+        "symbol": "ETHUSD",
+        "sl": 3509.07,
+        "tp": 3509.07
+      },
+      "result": {
+        "retcode": 10016,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid stops",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "ETHUSD",
+          0.0,
+          0.0,
+          0.0,
+          3509.07,
+          3509.07,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          347648862,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 347648863,
+      "symbol": "XAUUSD",
+      "request": {
+        "action": 6,
+        "position": 347648863,
+        "symbol": "XAUUSD",
+        "sl": 4234.25,
+        "tp": 4240.25
+      },
+      "result": {
+        "retcode": 10016,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid stops",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "XAUUSD",
+          0.0,
+          0.0,
+          0.0,
+          4234.25,
+          4240.25,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          347648863,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 347648865,
+      "symbol": "USDCAD",
+      "request": {
+        "action": 6,
+        "position": 347648865,
+        "symbol": "USDCAD",
+        "sl": 1.39912,
+        "tp": 1.39762
+      },
+      "result": {
+        "retcode": 10016,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid stops",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "USDCAD",
+          0.0,
+          0.0,
+          0.0,
+          1.39912,
+          1.39762,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          347648865,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 347648867,
+      "symbol": "AUDNZD",
+      "request": {
+        "action": 6,
+        "position": 347648867,
+        "symbol": "AUDNZD",
+        "sl": 1.15872,
+        "tp": 1.15722
+      },
+      "result": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.01,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Request executed",
+        "request_id": 1941072847,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "AUDNZD",
+          0.0,
+          0.0,
+          0.0,
+          1.15872,
+          1.15722,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          347648867,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 347648868,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 6,
+        "position": 347648868,
+        "symbol": "EURJPY",
+        "sl": 179.639,
+        "tp": 179.641
+      },
+      "result": {
+        "retcode": 10016,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid stops",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "EURJPY",
+          0.0,
+          0.0,
+          0.0,
+          179.639,
+          179.641,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          347648868,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 347648871,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 6,
+        "position": 347648871,
+        "symbol": "GBPCHF",
+        "sl": 1.0463,
+        "tp": 1.0448
+      },
+      "result": {
+        "retcode": 10009,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.01,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Request executed",
+        "request_id": 1941072848,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "GBPCHF",
+          0.0,
+          0.0,
+          0.0,
+          1.0463,
+          1.0448,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          347648871,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 347648877,
+      "symbol": "NZDJPY",
+      "request": {
+        "action": 6,
+        "position": 347648877,
+        "symbol": "NZDJPY",
+        "sl": 87.706,
+        "tp": 87.708
+      },
+      "result": {
+        "retcode": 10016,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid stops",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "NZDJPY",
+          0.0,
+          0.0,
+          0.0,
+          87.706,
+          87.708,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          347648877,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 347648879,
+      "symbol": "EURUSD",
+      "request": {
+        "action": 6,
+        "position": 347648879,
+        "symbol": "EURUSD",
+        "sl": 1.16244,
+        "tp": 1.16394
+      },
+      "result": {
+        "retcode": 10016,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid stops",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "EURUSD",
+          0.0,
+          0.0,
+          0.0,
+          1.16244,
+          1.16394,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          347648879,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 347648881,
+      "symbol": "EURAUD",
+      "request": {
+        "action": 6,
+        "position": 347648881,
+        "symbol": "EURAUD",
+        "sl": 1.76791,
+        "tp": 1.76941
+      },
+      "result": {
+        "retcode": 10016,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid stops",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "EURAUD",
+          0.0,
+          0.0,
+          0.0,
+          1.76791,
+          1.76941,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          347648881,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 347648883,
+      "symbol": "US500.cash",
+      "request": {
+        "action": 6,
+        "position": 347648883,
+        "symbol": "US500.cash",
+        "sl": 6845.47,
+        "tp": 6845.47
+      },
+      "result": {
+        "retcode": 10016,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid stops",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "US500.cash",
+          0.0,
+          0.0,
+          0.0,
+          6845.47,
+          6845.47,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          347648883,
+          0
+        ]
+      }
+    },
+    {
+      "ticket": 347648887,
+      "symbol": "JP225.cash",
+      "request": {
+        "action": 6,
+        "position": 347648887,
+        "symbol": "JP225.cash",
+        "sl": 50958.83,
+        "tp": 50958.83
+      },
+      "result": {
+        "retcode": 10016,
+        "deal": 0,
+        "order": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "bid": 0.0,
+        "ask": 0.0,
+        "comment": "Invalid stops",
+        "request_id": 0,
+        "retcode_external": 0,
+        "request": [
+          6,
+          0,
+          0,
+          "JP225.cash",
+          0.0,
+          0.0,
+          0.0,
+          50958.83,
+          50958.83,
+          0,
+          0,
+          0,
+          0,
+          0,
+          "",
+          347648887,
+          0
+        ]
+      }
+    }
+  ]
+}

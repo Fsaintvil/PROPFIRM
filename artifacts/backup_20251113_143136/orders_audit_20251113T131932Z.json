@@ -1,0 +1,237 @@
+{
+  "timestamp": "2025-11-13T13:19:32.907934",
+  "log_path": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\production_run_latest.log",
+  "count": 23,
+  "entries": [
+    {
+      "line": 91,
+      "type": "sent",
+      "ticket": 343914680,
+      "action": "sell",
+      "symbol": "GBPCHF",
+      "lots": 0.0105,
+      "price": 1.05688,
+      "raw": "14:06:20 | INFO     | Ordre envoy\u251c\u00ae: sell GBPCHF lot=0.010500 price=1.056880 order=343914680"
+    },
+    {
+      "line": 293,
+      "type": "sent",
+      "ticket": 343923537,
+      "action": "sell",
+      "symbol": "BTCUSD",
+      "lots": 0.011025,
+      "price": 99984.13,
+      "raw": "14:16:17 | INFO     | Ordre envoy\u251c\u00ae: sell BTCUSD lot=0.011025 price=99984.130000 order=343923537"
+    },
+    {
+      "line": 519,
+      "type": "sent",
+      "ticket": 343932453,
+      "action": "sell",
+      "symbol": "EURUSD",
+      "lots": 0.011576,
+      "price": 1.15684,
+      "raw": "14:26:17 | INFO     | Ordre envoy\u251c\u00ae: sell EURUSD lot=0.011576 price=1.156840 order=343932453"
+    },
+    {
+      "line": 525,
+      "type": "sent",
+      "ticket": 343932455,
+      "action": "sell",
+      "symbol": "XAUUSD",
+      "lots": 0.011576,
+      "price": 3998.51,
+      "raw": "14:26:17 | INFO     | Ordre envoy\u251c\u00ae: sell XAUUSD lot=0.011576 price=3998.510000 order=343932455"
+    },
+    {
+      "line": 537,
+      "type": "sent",
+      "ticket": 343932458,
+      "action": "sell",
+      "symbol": "USDCAD",
+      "lots": 0.011576,
+      "price": 1.40944,
+      "raw": "14:26:18 | INFO     | Ordre envoy\u251c\u00ae: sell USDCAD lot=0.011576 price=1.409440 order=343932458"
+    },
+    {
+      "line": 753,
+      "type": "sent",
+      "ticket": 343943866,
+      "action": "sell",
+      "symbol": "EURUSD",
+      "lots": 0.011576,
+      "price": 1.15651,
+      "raw": "14:36:17 | INFO     | Ordre envoy\u251c\u00ae: sell EURUSD lot=0.011576 price=1.156510 order=343943866"
+    },
+    {
+      "line": 760,
+      "type": "sent",
+      "ticket": 343943875,
+      "action": "sell",
+      "symbol": "XAUUSD",
+      "lots": 0.012155,
+      "price": 3995.48,
+      "raw": "14:36:17 | INFO     | Ordre envoy\u251c\u00ae: sell XAUUSD lot=0.012155 price=3995.480000 order=343943875"
+    },
+    {
+      "line": 771,
+      "type": "sent",
+      "ticket": 343943887,
+      "action": "sell",
+      "symbol": "USDCAD",
+      "lots": 0.012155,
+      "price": 1.40758,
+      "raw": "14:36:18 | INFO     | Ordre envoy\u251c\u00ae: sell USDCAD lot=0.012155 price=1.407580 order=343943887"
+    },
+    {
+      "line": 786,
+      "type": "sent",
+      "ticket": 343943910,
+      "action": "sell",
+      "symbol": "NZDJPY",
+      "lots": 0.012155,
+      "price": 86.162,
+      "raw": "14:36:18 | INFO     | Ordre envoy\u251c\u00ae: sell NZDJPY lot=0.012155 price=86.162000 order=343943910"
+    },
+    {
+      "line": 792,
+      "type": "sent",
+      "ticket": 343943919,
+      "action": "sell",
+      "symbol": "EURAUD",
+      "lots": 0.012155,
+      "price": 1.78257,
+      "raw": "14:36:19 | INFO     | Ordre envoy\u251c\u00ae: sell EURAUD lot=0.012155 price=1.782570 order=343943919"
+    },
+    {
+      "line": 799,
+      "type": "sent",
+      "ticket": 343943924,
+      "action": "sell",
+      "symbol": "GBPUSD",
+      "lots": 0.012155,
+      "price": 1.31269,
+      "raw": "14:36:19 | INFO     | Ordre envoy\u251c\u00ae: sell GBPUSD lot=0.012155 price=1.312690 order=343943924"
+    },
+    {
+      "line": 1002,
+      "type": "sent",
+      "ticket": 343951503,
+      "action": "sell",
+      "symbol": "XAUUSD",
+      "lots": 0.012155,
+      "price": 3994.27,
+      "raw": "14:46:17 | INFO     | Ordre envoy\u251c\u00ae: sell XAUUSD lot=0.012155 price=3994.270000 order=343951503"
+    },
+    {
+      "line": 1013,
+      "type": "sent",
+      "ticket": 343951512,
+      "action": "sell",
+      "symbol": "USDCAD",
+      "lots": 0.012763,
+      "price": 1.40602,
+      "raw": "14:46:19 | INFO     | Ordre envoy\u251c\u00ae: sell USDCAD lot=0.012763 price=1.406020 order=343951512"
+    },
+    {
+      "line": 1026,
+      "type": "sent",
+      "ticket": 343951523,
+      "action": "sell",
+      "symbol": "NZDJPY",
+      "lots": 0.012763,
+      "price": 86.2,
+      "raw": "14:46:19 | INFO     | Ordre envoy\u251c\u00ae: sell NZDJPY lot=0.012763 price=86.200000 order=343951523"
+    },
+    {
+      "line": 1033,
+      "type": "sent",
+      "ticket": 343951525,
+      "action": "sell",
+      "symbol": "EURAUD",
+      "lots": 0.012763,
+      "price": 1.78282,
+      "raw": "14:46:20 | INFO     | Ordre envoy\u251c\u00ae: sell EURAUD lot=0.012763 price=1.782820 order=343951525"
+    },
+    {
+      "line": 1252,
+      "type": "sent",
+      "ticket": 343960421,
+      "action": "sell",
+      "symbol": "EURUSD",
+      "lots": 0.012763,
+      "price": 1.15669,
+      "raw": "14:56:17 | INFO     | Ordre envoy\u251c\u00ae: sell EURUSD lot=0.012763 price=1.156690 order=343960421"
+    },
+    {
+      "line": 1258,
+      "type": "sent",
+      "ticket": 343960426,
+      "action": "sell",
+      "symbol": "XAUUSD",
+      "lots": 0.012763,
+      "price": 3998.97,
+      "raw": "14:56:17 | INFO     | Ordre envoy\u251c\u00ae: sell XAUUSD lot=0.012763 price=3998.970000 order=343960426"
+    },
+    {
+      "line": 1270,
+      "type": "sent",
+      "ticket": 343960439,
+      "action": "sell",
+      "symbol": "USDCAD",
+      "lots": 0.013401,
+      "price": 1.40663,
+      "raw": "14:56:18 | INFO     | Ordre envoy\u251c\u00ae: sell USDCAD lot=0.013401 price=1.406630 order=343960439"
+    },
+    {
+      "line": 1278,
+      "type": "sent",
+      "ticket": 343960444,
+      "action": "sell",
+      "symbol": "EURJPY",
+      "lots": 0.013401,
+      "price": 177.368,
+      "raw": "14:56:18 | INFO     | Ordre envoy\u251c\u00ae: sell EURJPY lot=0.013401 price=177.368000 order=343960444"
+    },
+    {
+      "line": 1286,
+      "type": "sent",
+      "ticket": 343960447,
+      "action": "sell",
+      "symbol": "NZDJPY",
+      "lots": 0.013401,
+      "price": 86.235,
+      "raw": "14:56:19 | INFO     | Ordre envoy\u251c\u00ae: sell NZDJPY lot=0.013401 price=86.235000 order=343960447"
+    },
+    {
+      "line": 1295,
+      "type": "sent",
+      "ticket": 343960454,
+      "action": "sell",
+      "symbol": "GBPUSD",
+      "lots": 0.013401,
+      "price": 1.31272,
+      "raw": "14:56:19 | INFO     | Ordre envoy\u251c\u00ae: sell GBPUSD lot=0.013401 price=1.312720 order=343960454"
+    },
+    {
+      "line": 1311,
+      "type": "sent",
+      "ticket": 343970041,
+      "action": "sell",
+      "symbol": "EURUSD",
+      "lots": 0.013401,
+      "price": 1.15708,
+      "raw": "15:06:17 | INFO     | Ordre envoy\u251c\u00ae: sell EURUSD lot=0.013401 price=1.157080 order=343970041"
+    },
+    {
+      "line": 1515,
+      "type": "sent",
+      "ticket": 343970121,
+      "action": "sell",
+      "symbol": "USDCAD",
+      "lots": 0.014071,
+      "price": 1.40687,
+      "raw": "15:06:18 | INFO     | Ordre envoy\u251c\u00ae: sell USDCAD lot=0.014071 price=1.406870 order=343970121"
+    }
+  ]
+}

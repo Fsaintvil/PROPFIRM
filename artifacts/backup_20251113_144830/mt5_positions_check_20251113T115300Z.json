@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "timestamp": "20251113T125243Z",
+    "queried": [
+      "347648868",
+      "347648865",
+      "347648867"
+    ]
+  },
+  "results": [
+    {
+      "ticket": 347648868,
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648865,
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648867,
+      "error": "position_not_found"
+    }
+  ]
+}

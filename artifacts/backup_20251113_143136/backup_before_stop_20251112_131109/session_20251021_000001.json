@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-10-21T00:00:01.107274",
+  "symbols": [
+    "EURUSD",
+    "XAUUSD",
+    "BTCUSD"
+  ],
+  "performance_metrics": {
+    "total_trades": 0,
+    "winning_trades": 0,
+    "current_balance": 10000.0,
+    "max_drawdown": 0.0,
+    "current_regime": "Unknown",
+    "symbols_traded": [
+      "EURUSD",
+      "XAUUSD",
+      "BTCUSD"
+    ],
+    "optimal_threshold": 0.68,
+    "target_win_rate": 0.68,
+    "expected_sharpe": 18.46,
+    "confidence_filter_rejections": 0
+  },
+  "trade_history": [],
+  "total_runtime": "0:00:00"
+}

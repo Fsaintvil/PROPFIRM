@@ -1,10 +1,10 @@
 {
-  "timestamp": 1763036669.0855644,
+  "timestamp": 1763046205.2198105,
   "env": {
-    "ALLOW_MT5_SEND": null,
-    "TRADE_INTERVAL_SECONDS": null,
-    "SL_RETRY_MAX": null,
-    "AI_VOLUME": null
+    "ALLOW_MT5_SEND": "1",
+    "TRADE_INTERVAL_SECONDS": "120",
+    "SL_RETRY_MAX": "10",
+    "AI_VOLUME": "0.01"
   },
   "mt5": {
     "ok": true,

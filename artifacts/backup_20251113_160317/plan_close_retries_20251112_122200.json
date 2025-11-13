@@ -1,0 +1,80 @@
+{
+  "generated_at": "2025-11-12T12:22:00Z",
+  "summary": {
+    "mt5_positions_count": 25,
+    "closed_attempts_count": 51,
+    "tickets_to_close_count": 25,
+    "tickets_tried_but_not_found_count": 51
+  },
+  "mt5_positions": [
+    {"ticket": 346764084, "symbol": "USDCAD", "volume": 0.01, "price_open": 1.40193},
+    {"ticket": 346770863, "symbol": "USDCAD", "volume": 0.01, "price_open": 1.40201},
+    {"ticket": 346770879, "symbol": "AUDNZD", "volume": 0.01, "price_open": 1.15487},
+    {"ticket": 346772453, "symbol": "USDCAD", "volume": 0.01, "price_open": 1.40199},
+    {"ticket": 346772456, "symbol": "AUDNZD", "volume": 0.01, "price_open": 1.15494},
+    {"ticket": 346777196, "symbol": "USDCAD", "volume": 0.01, "price_open": 1.40173},
+    {"ticket": 346777200, "symbol": "AUDNZD", "volume": 0.01, "price_open": 1.15478},
+    {"ticket": 346779928, "symbol": "USDCAD", "volume": 0.01, "price_open": 1.40174},
+    {"ticket": 346779934, "symbol": "AUDNZD", "volume": 0.01, "price_open": 1.15479},
+    {"ticket": 346779939, "symbol": "GBPCHF", "volume": 0.01, "price_open": 1.04898},
+    {"ticket": 346782400, "symbol": "USDCAD", "volume": 0.01, "price_open": 1.40164},
+    {"ticket": 346782409, "symbol": "AUDNZD", "volume": 0.01, "price_open": 1.15476},
+    {"ticket": 346782424, "symbol": "EURUSD", "volume": 0.01, "price_open": 1.15702},
+    {"ticket": 346788158, "symbol": "USDCAD", "volume": 0.01, "price_open": 1.4017},
+    {"ticket": 346788192, "symbol": "EURUSD", "volume": 0.01, "price_open": 1.15685},
+    {"ticket": 346791844, "symbol": "USDCAD", "volume": 0.01, "price_open": 1.40164},
+    {"ticket": 346791880, "symbol": "EURAUD", "volume": 0.01, "price_open": 1.77075},
+    {"ticket": 346795193, "symbol": "USDCAD", "volume": 0.01, "price_open": 1.40161},
+    {"ticket": 346798891, "symbol": "USDCAD", "volume": 0.01, "price_open": 1.40153},
+    {"ticket": 346798923, "symbol": "EURAUD", "volume": 0.01, "price_open": 1.77061},
+    {"ticket": 346800636, "symbol": "GBPCHF", "volume": 0.01, "price_open": 1.04912},
+    {"ticket": 346807892, "symbol": "GBPCHF", "volume": 0.01, "price_open": 1.04905},
+    {"ticket": 346816237, "symbol": "USDCAD", "volume": 0.01, "price_open": 1.40118},
+    {"ticket": 346816241, "symbol": "EURJPY", "volume": 0.01, "price_open": 179.205},
+    {"ticket": 346816265, "symbol": "EURAUD", "volume": 0.01, "price_open": 1.77088}
+  ],
+  "closed_attempts_map": {
+    "346606693": {"symbol":"EURAUD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346610977": {"symbol":"GBPCHF","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346617817": {"symbol":"EURAUD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346624841": {"symbol":"GBPCHF","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346624858": {"symbol":"EURAUD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346628795": {"symbol":"EURUSD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346649137": {"symbol":"GBPCHF","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346655498": {"symbol":"GBPCHF","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346655526": {"symbol":"EURUSD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346683656": {"symbol":"EURAUD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346688664": {"symbol":"EURUSD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346688668": {"symbol":"EURAUD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346690392": {"symbol":"EURUSD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346690395": {"symbol":"EURAUD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346696024": {"symbol":"EURUSD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346703380": {"symbol":"GBPCHF","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346703394": {"symbol":"EURUSD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346739247": {"symbol":"GBPCHF","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346744896": {"symbol":"AUDNZD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346750361": {"symbol":"AUDNZD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346750383": {"symbol":"EURUSD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346756820": {"symbol":"XAUUSD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346756831": {"symbol":"EURUSD","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}},
+    "346756837": {"symbol":"US500.cash","attempts":5,"order_result":{"retcode":10013,"comment":"Invalid request"}}
+  },
+  "plan": [
+    {
+      "ticket": 346764084,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "current_price": 1.40193,
+      "previous_attempts": null,
+      "recommended_action": "targeted_close",
+      "details": "Close by sending a market close order (opposite side) for volume 0.01. Use conservative retries: up to 5 attempts with exponential backoff (1s,2s,4s,8s,16s). If retcode 10013 appears, check lot size, symbol formatting, and account permissions before retrying. Log each attempt.",
+      "safe_checks_before_send": [
+        "Confirm same account/credentials as the MT5 that returned positions",
+        "Check symbol trading allowed (mt5.symbol_info_tick / symbol_info) and lot step/min/max",
+        "Ensure market open and margin sufficient",
+        "Temporarily remove control/disable_trading ONLY after explicit authorization"
+      ]
+    }
+  ],
+  "bulk_plan_notes": "The plan contains a per-ticket recommended_action 'targeted_close' for each of the 25 tickets listed in mt5_positions. For tickets that show previous attempts (retcode 10013) in closed_attempts_map, prefer a pre-check step to adapt request parameters (lot sizes, symbol naming) before retrying. No write operations will be performed by this plan file. Execute only after explicit confirmation."
+}

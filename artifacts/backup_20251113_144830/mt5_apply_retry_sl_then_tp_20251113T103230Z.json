@@ -1,0 +1,142 @@
+{
+  "timestamp": "20251113T103230Z",
+  "source": "mt5_apply_retry_targeted_10016_20251113T094745Z.json",
+  "processed": 9,
+  "results": [
+    {
+      "ticket": 347648862,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648863,
+      "symbol": "XAUUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648865,
+      "symbol": "USDCAD",
+      "sl_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648865,
+          "sl": 1.39867,
+          "tp": 1.39712
+        },
+        "result": {
+          "retcode": 10016,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.0,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Invalid stops",
+          "request_id": 0,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            1.39867,
+            1.39712,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648865,
+            0
+          ]
+        }
+      },
+      "tp_attempt": {
+        "request": {
+          "sl": 1.39867,
+          "tp": 1.39852
+        },
+        "result": "skipped-sl-not-accepted"
+      }
+    },
+    {
+      "ticket": 347648868,
+      "symbol": "EURJPY",
+      "sl_attempt": {
+        "request": {
+          "action": 6,
+          "position": 347648868,
+          "sl": 179.635,
+          "tp": 183.232
+        },
+        "result": {
+          "retcode": 10016,
+          "deal": 0,
+          "order": 0,
+          "volume": 0.0,
+          "price": 0.0,
+          "bid": 0.0,
+          "ask": 0.0,
+          "comment": "Invalid stops",
+          "request_id": 0,
+          "retcode_external": 0,
+          "request": [
+            6,
+            0,
+            0,
+            "",
+            0.0,
+            0.0,
+            0.0,
+            179.635,
+            183.232,
+            0,
+            0,
+            0,
+            0,
+            0,
+            "",
+            347648868,
+            0
+          ]
+        }
+      },
+      "tp_attempt": {
+        "request": {
+          "sl": 179.635,
+          "tp": 179.65
+        },
+        "result": "skipped-sl-not-accepted"
+      }
+    },
+    {
+      "ticket": 347648877,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648879,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648881,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648883,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648887,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    }
+  ]
+}
