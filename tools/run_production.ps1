@@ -120,6 +120,21 @@ function Start-ProductionProcess([switch]$DetachedMode) {
     }
 }
 
+        # --- Préparer l'environnement d'exécution (seuil et mode adaptatif) ---
+        try {
+            # Charger un seuil persistant s'il existe
+            $ctrlFile = Join-Path -Path $repoRoot -ChildPath 'control\base_confidence_threshold.txt'
+            if (Test-Path $ctrlFile) {
+                $persisted = (Get-Content -Path $ctrlFile -Raw).Trim()
+                if ($persisted) {
+                    Write-Output "Applying persisted BASE_CONFIDENCE_THRESHOLD=$persisted from control\\base_confidence_threshold.txt"
+                    $env:BASE_CONFIDENCE_THRESHOLD = $persisted
+                }
+            }
+            if (-not $env:AUTO_THRESHOLD_MODE) { $env:AUTO_THRESHOLD_MODE = '1' }
+            Write-Output "AUTO_THRESHOLD_MODE=$($env:AUTO_THRESHOLD_MODE)"
+        } catch {}
+
 # If user requested to start live immediately, validate token
 if ($StartLive) {
     if ($env:CONFIRM_PRODUCTION -eq 'I_CONFIRM_ALLOW_MT5_SEND') {

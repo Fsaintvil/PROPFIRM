@@ -100,6 +100,28 @@ if ($env:AUTO_THRESHOLD_MODE -eq '1') {
     }
 }
 
+# --- Mettre à jour le statut du monitor (incluant le dernier seuil) ---
+try {
+    $statusFile = Join-Path (Join-Path 'artifacts' 'live_trading') 'monitor_status.json'
+    $now = Get-Date
+    $thrNow = $env:BASE_CONFIDENCE_THRESHOLD
+    if (-not $thrNow) { $thrNow = [string]$baseThreshold }
+
+    $status = $null
+    if (Test-Path $statusFile) {
+        try { $status = Get-Content $statusFile -Raw | ConvertFrom-Json } catch {}
+    }
+    if (-not $status) { $status = [pscustomobject]@{} }
+
+    # Conserver les champs existants et mettre à jour/ajouter des clés clés
+    $status | Add-Member -NotePropertyName 'timestamp' -NotePropertyValue $now.ToString('o') -Force
+    $status | Add-Member -NotePropertyName 'threshold_last' -NotePropertyValue $thrNow -Force
+    $status | Add-Member -NotePropertyName 'monitor_heartbeat' -NotePropertyValue $now.ToString('o') -Force
+
+    $json = $status | ConvertTo-Json -Depth 5
+    Set-Content -Path $statusFile -Value $json -Encoding UTF8
+} catch {}
+
 # --- Arrêter les jobs PowerShell au-delà de MaxHours:ExtraMinutes ---
 $maxRun = New-TimeSpan -Hours $MaxHours -Minutes $ExtraMinutes
 Get-Job -ErrorAction SilentlyContinue | ForEach-Object {
