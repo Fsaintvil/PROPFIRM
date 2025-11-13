@@ -1,0 +1,123 @@
+{
+  "attempted_at": "2025-11-10T21:55:19.818502",
+  "import_module": "MetaTrader5",
+  "initialized": true,
+  "initialize_result": "True",
+  "account_info": {
+    "login": 1512027373,
+    "trade_mode": 0,
+    "leverage": 100,
+    "limit_orders": 200,
+    "margin_so_mode": 0,
+    "trade_allowed": true,
+    "trade_expert": true,
+    "margin_mode": 2,
+    "currency_digits": 2,
+    "fifo_close": false,
+    "balance": 99890.19,
+    "credit": 0.0,
+    "profit": -1.74,
+    "equity": 99888.45,
+    "margin": 5856.17,
+    "margin_free": 94034.02,
+    "margin_level": 1705.6958728998645,
+    "margin_so_call": 100.0,
+    "margin_so_so": 50.0,
+    "margin_initial": 0.0,
+    "margin_maintenance": 0.0,
+    "assets": 0.0,
+    "liabilities": 0.0,
+    "commission_blocked": 0.0,
+    "name": "$100k FTMO Free Trial",
+    "server": "FTMO-Demo",
+    "currency": "USD",
+    "company": "FTMO Global Markets Ltd"
+  },
+  "sample_symbols": {
+    "BTCUSD": {
+      "point": 0.01,
+      "digits": 2,
+      "trade_stops_level": 0,
+      "trade_contract_size": 1.0,
+      "spread": 100
+    },
+    "EURUSD": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "trade_contract_size": 100000.0,
+      "spread": 6
+    },
+    "XAUUSD": {
+      "point": 0.01,
+      "digits": 2,
+      "trade_stops_level": 0,
+      "trade_contract_size": 100.0,
+      "spread": 31
+    },
+    "USDJPY": {
+      "point": 0.001,
+      "digits": 3,
+      "trade_stops_level": 0,
+      "trade_contract_size": 100000.0,
+      "spread": 15
+    },
+    "ETHUSD": {
+      "point": 0.01,
+      "digits": 2,
+      "trade_stops_level": 0,
+      "trade_contract_size": 10.0,
+      "spread": 60
+    },
+    "USDCAD": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "trade_contract_size": 100000.0,
+      "spread": 14
+    },
+    "AUDNZD": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "trade_contract_size": 100000.0,
+      "spread": 32
+    },
+    "EURJPY": {
+      "point": 0.001,
+      "digits": 3,
+      "trade_stops_level": 0,
+      "trade_contract_size": 100000.0,
+      "spread": 36
+    },
+    "GBPCHF": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "trade_contract_size": 100000.0,
+      "spread": 35
+    },
+    "NZDJPY": {
+      "point": 0.001,
+      "digits": 3,
+      "trade_stops_level": 0,
+      "trade_contract_size": 100000.0,
+      "spread": 27
+    },
+    "EURAUD": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "trade_contract_size": 100000.0,
+      "spread": 35
+    },
+    "GBPUSD": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "trade_contract_size": 100000.0,
+      "spread": 19
+    }
+  },
+  "shutdown": true
+}

@@ -1,0 +1,302 @@
+{
+  "generated_at": "2025-11-12T12:48:11.688366Z",
+  "account_login": 1512027373,
+  "kill_switch_removed": true,
+  "positions_count": 21,
+  "results": [
+    {
+      "ticket": 346764084,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:11.881600Z",
+          "retcode": 10009,
+          "order": 346850830,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346770863,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:12.079993Z",
+          "retcode": 10009,
+          "order": 346850832,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346770879,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:12.269523Z",
+          "retcode": 10009,
+          "order": 346850836,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346772453,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:12.474449Z",
+          "retcode": 10009,
+          "order": 346850837,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346772456,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:12.663445Z",
+          "retcode": 10009,
+          "order": 346850839,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346777196,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:12.860141Z",
+          "retcode": 10009,
+          "order": 346850840,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346777200,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:13.046369Z",
+          "retcode": 10009,
+          "order": 346850842,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346779928,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:13.242686Z",
+          "retcode": 10009,
+          "order": 346850843,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346779934,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:13.438794Z",
+          "retcode": 10009,
+          "order": 346850845,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346782400,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:13.646843Z",
+          "retcode": 10009,
+          "order": 346850847,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346782409,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:13.852371Z",
+          "retcode": 10009,
+          "order": 346850854,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346782424,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:14.078617Z",
+          "retcode": 10009,
+          "order": 346850856,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346788158,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:14.289905Z",
+          "retcode": 10009,
+          "order": 346850858,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346791844,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:14.477372Z",
+          "retcode": 10009,
+          "order": 346850861,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346791880,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:14.685943Z",
+          "retcode": 10009,
+          "order": 346850864,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346795193,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:14.889935Z",
+          "retcode": 10009,
+          "order": 346850865,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346798891,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:15.070723Z",
+          "retcode": 10009,
+          "order": 346850868,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346798923,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:15.281154Z",
+          "retcode": 10009,
+          "order": 346850870,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346816237,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:15.487976Z",
+          "retcode": 10009,
+          "order": 346850873,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346816241,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:15.703820Z",
+          "retcode": 10009,
+          "order": 346850877,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    },
+    {
+      "ticket": 346816265,
+      "status": "closed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "time": "2025-11-12T12:48:15.908985Z",
+          "retcode": 10009,
+          "order": 346850879,
+          "deal": 0,
+          "comment": "Request executed"
+        }
+      ]
+    }
+  ]
+}

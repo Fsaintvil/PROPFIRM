@@ -24,6 +24,47 @@ Set-Location $repoRoot
 # 2) Environment preparation (adjust values as needed)
 $env:PYTHONPATH = ".;$($repoRoot)"
 $env:SYMBOLS = "BTCUSD,ETHUSD,XAUUSD,USDCAD,AUDNZD,EURJPY,GBPCHF,NZDJPY,EURUSD,EURAUD,US500.cash,JP225.cash"
+# Persisted env (synchronized from artifacts/live_trading/env_setup_20251112T142656.txt)
+# These values are persisted here so running the production helper applies the
+# same runtime configuration used during the last live session.
+$env:AI_AUTOMATE = "1"
+$env:AI_VOLUME = "0.01"
+$env:ALLOW_MT5_SEND = "1"
+$env:AUDIT_DIR = "artifacts\\live_trading"
+$env:AUTO_ADAPT = "1"
+$env:AUTO_APPLY = "1"
+$env:AUTO_CLOSE_MINUTES = "30"
+$env:AUTO_DEPLOY = "1"
+$env:AUTO_ENRICH = "1"
+$env:AUTO_LEARN = "1"
+$env:BACKUP_ARTIFACTS_ON_START = "1"
+$env:BREAKEVEN_AFTER_SECONDS = "300"
+$env:BREAKEVEN_PROFIT_PTS = "10"
+$env:CONFIRME_DEPLACEMENT = "YES_I_CONFIRM"
+$env:DAILY_MAX_TRADES = "180"
+$env:ENABLE_BREAKEVEN = "1"
+$env:FORCE = "0"
+$env:HEALTHCHECK_CMD = ""
+$env:INIT_ALL_AI = "1"
+$env:LIVE_ENGINE_LIGHT_MODE = "0"
+$env:LOG_LEVEL = "INFO"
+$env:MAX_DRAWDOWN_PCT = "0.05"
+$env:MAX_OPEN_POSITIONS = "6"
+$env:META_LEARNING_TRADING_SYSTEM = "1"
+$env:METRICS_ENABLE = "0"
+$env:METRICS_PORT = "9090"
+$env:MULTI_ASSET_PORTFOLIO_OPTIMIZER = "1"
+$env:NOTIFY_ON_CRITICAL = ""
+$env:ORDER_TIMEOUT_SECONDS = "30"
+$env:PYTHONPATH = ".;$($repoRoot)"
+$env:PYTHONUNBUFFERED = "1"
+$env:REINFORCEMENT_LEARNING_TRADING_SYSTEM = "1"
+$env:RISK_PER_TRADE_PCT = "0.1"
+$env:SL_RETRY_BACKOFF_SECONDS = "2"
+$env:SL_RETRY_MAX = "10"
+$env:SYMBOLS = "BTCUSD,ETHUSD,XAUUSD,USDCAD,AUDNZD,EURJPY,GBPCHF,NZDJPY,EURUSD,EURAUD,US500.cash,JP225.cash"
+$env:TRADE_INTERVAL_SECONDS = "1860"
+$env:TRADING_INTERVAL = "1860"
 
 # Safety & confirmations
 $env:LIVE_ENGINE_LIGHT_MODE = "0"
@@ -57,7 +98,8 @@ $env:SL_AS_ATR_MULT = "1.5"          # multiplier for ATR when DEFAULT_SL_PTS=0
 $env:SL_MAX_PCT_ACCOUNT = "0.5"      # max % of account to risk per trade if using monetary cap (0.5 = 0.5%)
 
 # Use existing risk controls
-$env:TRADE_INTERVAL_SECONDS = "930"
+$env:TRADING_INTERVAL = "1860"       # harmonisé: 31 minutes
+$env:TRADE_INTERVAL_SECONDS = "1860" # backwards-compatible name
 $env:AUTO_CLOSE_MINUTES = "30"       # harmonisé avec 30 minutes
 $env:MAX_OPEN_POSITIONS = "6"
 $env:MAX_DRAWDOWN_PCT = "0.05"       # 5% = 0.05

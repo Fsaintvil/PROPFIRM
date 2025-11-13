@@ -1,0 +1,97 @@
+{
+  "started_at": "2025-11-12T15:17:05Z",
+  "pause_seconds": 30.0,
+  "connected": true,
+  "errors": [],
+  "attempts": [
+    {
+      "ticket": 346923781,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "price": 1.04574,
+      "result": "None",
+      "mt5_last_error": [
+        -2,
+        "Invalid \"comment\" argument"
+      ]
+    },
+    {
+      "ticket": 346938418,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "price": 1.04575,
+      "result": "None",
+      "mt5_last_error": [
+        -2,
+        "Invalid \"comment\" argument"
+      ]
+    },
+    {
+      "ticket": 346950486,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "price": 1.04569,
+      "result": "None",
+      "mt5_last_error": [
+        -2,
+        "Invalid \"comment\" argument"
+      ]
+    },
+    {
+      "ticket": 346961599,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "price": 1.04562,
+      "result": "None",
+      "mt5_last_error": [
+        -2,
+        "Invalid \"comment\" argument"
+      ]
+    },
+    {
+      "ticket": 346984462,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price": 1.40096,
+      "result": "None",
+      "mt5_last_error": [
+        -2,
+        "Invalid \"comment\" argument"
+      ]
+    },
+    {
+      "ticket": 347003953,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price": 1.40095,
+      "result": "None",
+      "mt5_last_error": [
+        -2,
+        "Invalid \"comment\" argument"
+      ]
+    },
+    {
+      "ticket": 347021546,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price": 1.40095,
+      "result": "None",
+      "mt5_last_error": [
+        -2,
+        "Invalid \"comment\" argument"
+      ]
+    },
+    {
+      "ticket": 347021556,
+      "symbol": "AUDNZD",
+      "volume": 0.01,
+      "price": 1.15458,
+      "result": "None",
+      "mt5_last_error": [
+        -2,
+        "Invalid \"comment\" argument"
+      ]
+    }
+  ],
+  "remaining_after": 8
+}

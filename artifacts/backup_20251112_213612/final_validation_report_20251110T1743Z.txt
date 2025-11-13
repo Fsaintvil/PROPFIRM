@@ -1,0 +1,38 @@
+FINAL VALIDATION REPORT
+Timestamp: 2025-11-10T17:43:00Z
+
+Actions performed:
+- Option 1 (breakeven) requested by user. First attempt: set SL = price_open for positions from `artifacts/live_trading/current_positions.json`.
+  - Result: requests returned retcode 10013 (Invalid request) for all attempted positions. No SL changes applied.
+- Second attempt (safer): set SL slightly past price_open in the valid direction (price_open +/- delta where delta = point * 5).
+  - Executed with ALLOW_MT5_SEND=1.
+  - Results written to: artifacts/live_trading/mt5_apply_breakeven_adjusted_20251110T174141Z.json
+
+Summary counts (from adjusted run):
+- Total positions processed: 67
+- Retcode 10009 (Request executed): 11
+- Retcode 10016 (Invalid stops): 56
+
+Interpretation:
+- Retcode 10009 indicates the broker accepted the MODIFY SL/TP request (no deal created since it's a modification). These 11 positions had their SL updated.
+- Retcode 10016 "Invalid stops" means the requested SL/TP values violated broker constraints (too close, reversed, or otherwise invalid relative to market or existing TP). For these positions, no SL change occurred.
+
+Files produced:
+- artifacts/live_trading/mt5_apply_breakeven_20251110T174032Z.json  (initial attempt)
+- artifacts/live_trading/mt5_apply_breakeven_adjusted_20251110T174141Z.json  (adjusted attempt, 67 processed)
+- active monitor artifacts already present (enrich files, orders_audit_enriched_*.csv/json)
+
+Next recommended actions:
+1) For the 56 "Invalid stops" positions, compute minimal required stop distance per symbol (`symbol_info.trade_stops_level` and `symbol_info.point`) and retry using delta = max(point * trade_stops_level + safety_margin, point * 5). I can implement and re-run this automatically.
+2) Alternatively, choose a safer SL policy (e.g., set SL relative to current market price with margin, or apply per-symbol rules).
+3) If you prefer, revert any accidental modifications (none were made for invalid stops; only 11 succeeded) — I can list the ticket IDs that were updated.
+
+What I will do next if you authorize:
+- Option A: Retry only the failed tickets using trade_stops_level-based delta (automated). Requires one confirmation (I have ALLOW_MT5_SEND already set for the session).
+- Option B: Stop here and record the final validation in the todo list (I will mark validation done).
+
+Succeeded ticket sample (first 20 retcode=10009):
+(see artifacts file for full list)
+- entries with retcode 10009 are present in the apply results file.
+
+If you want me to retry failed tickets with the stops-level-aware delta, reply: "YES — retry with stops_level delta". If you want to finish now, reply: "NO — finalize report".

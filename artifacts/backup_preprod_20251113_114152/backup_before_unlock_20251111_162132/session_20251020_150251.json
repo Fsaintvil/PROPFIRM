@@ -1,0 +1,36 @@
+{
+  "timestamp": "2025-10-20T15:02:51.939958",
+  "symbols": [
+    "EURUSD",
+    "XAUUSD",
+    "BTCUSD"
+  ],
+  "performance_metrics": {
+    "total_trades": 1,
+    "winning_trades": 1,
+    "current_balance": 10000.0,
+    "max_drawdown": 0.0,
+    "current_regime": "Bear",
+    "symbols_traded": [
+      "EURUSD",
+      "XAUUSD",
+      "BTCUSD"
+    ],
+    "optimal_threshold": 0.63,
+    "target_win_rate": 0.5,
+    "expected_sharpe": 18.46,
+    "confidence_filter_rejections": 0,
+    "peak_balance": 10000
+  },
+  "trade_history": [
+    {
+      "timestamp": "2025-10-20T15:01:37.382576",
+      "symbol": "BTCUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 110792.04,
+      "order_id": 329239721
+    }
+  ],
+  "total_runtime": "0:00:00"
+}

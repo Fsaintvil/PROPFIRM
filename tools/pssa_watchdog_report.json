@@ -1,0 +1,30 @@
+[
+  {
+    "RuleName": "PSUseShouldProcessForStateChangingFunctions",
+    "Severity": 1,
+    "ScriptName": "watchdog_sf_ia7.ps1",
+    "Line": 61,
+    "Message": "Function 'New-LockFile' has verb that could change system state. Therefore, the function has to support 'ShouldProcess'."
+  },
+  {
+    "RuleName": "PSUseShouldProcessForStateChangingFunctions",
+    "Severity": 1,
+    "ScriptName": "watchdog_sf_ia7.ps1",
+    "Line": 87,
+    "Message": "Function 'Remove-LockFile' has verb that could change system state. Therefore, the function has to support 'ShouldProcess'."
+  },
+  {
+    "RuleName": "PSShouldProcess",
+    "Severity": 1,
+    "ScriptName": "watchdog_sf_ia7.ps1",
+    "Line": 81,
+    "Message": "'New-LockFile' calls ShouldProcess/ShouldContinue but does not have the ShouldProcess attribute."
+  },
+  {
+    "RuleName": "PSShouldProcess",
+    "Severity": 1,
+    "ScriptName": "watchdog_sf_ia7.ps1",
+    "Line": 93,
+    "Message": "'Remove-LockFile' calls ShouldProcess/ShouldContinue but does not have the ShouldProcess attribute."
+  }
+]

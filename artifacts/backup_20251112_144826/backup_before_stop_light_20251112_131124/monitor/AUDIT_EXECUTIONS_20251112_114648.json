@@ -1,0 +1,245 @@
+{
+  "generated_at": "2025-11-12T12:46:48.260997",
+  "orders": [
+    {
+      "time": "2025-11-12T11:53:16.0575481+01:00",
+      "side": "sell",
+      "symbol": "BTCUSD",
+      "lots": 0.01,
+      "price": 104717.9,
+      "raw": "2025-11-12T11:53:16.0575481+01:00 11:31:14 | INFO     | ✅ Ordre exécuté: sell BTCUSD 0.01 lots à 104717.9"
+    },
+    {
+      "time": "2025-11-12T11:53:16.0584273+01:00",
+      "side": "sell",
+      "symbol": "XAUUSD",
+      "lots": 0.01,
+      "price": 4121.04,
+      "raw": "2025-11-12T11:53:16.0584273+01:00 11:31:15 | INFO     | ✅ Ordre exécuté: sell XAUUSD 0.01 lots à 4121.04"
+    },
+    {
+      "time": "2025-11-12T11:53:16.0595216+01:00",
+      "side": "sell",
+      "symbol": "NZDJPY",
+      "lots": 0.01,
+      "price": 87.56,
+      "raw": "2025-11-12T11:53:16.0595216+01:00 11:31:17 | INFO     | ✅ Ordre exécuté: sell NZDJPY 0.01 lots à 87.56"
+    },
+    {
+      "time": "2025-11-12T11:53:16.0598712+01:00",
+      "side": "sell",
+      "symbol": "EURUSD",
+      "lots": 0.01,
+      "price": 1.1567,
+      "raw": "2025-11-12T11:53:16.0598712+01:00 11:31:18 | INFO     | ✅ Ordre exécuté: sell EURUSD 0.01 lots à 1.1567"
+    },
+    {
+      "time": "2025-11-12T11:53:16.0605368+01:00",
+      "side": "sell",
+      "symbol": "JP225.cash",
+      "lots": 0.01,
+      "price": 51261.83,
+      "raw": "2025-11-12T11:53:16.0605368+01:00 11:31:19 | INFO     | ✅ Ordre exécuté: sell JP225.cash 0.01 lots à 51261.83"
+    },
+    {
+      "time": "2025-11-12T11:53:16.0699152+01:00",
+      "side": "sell",
+      "symbol": "NZDJPY",
+      "lots": 0.01,
+      "price": 87.551,
+      "raw": "2025-11-12T11:53:16.0699152+01:00 11:40:57 | INFO     | ✅ Ordre exécuté: sell NZDJPY 0.01 lots à 87.551"
+    },
+    {
+      "time": "2025-11-12T11:53:16.0706550+01:00",
+      "side": "sell",
+      "symbol": "US500.cash",
+      "lots": 0.01,
+      "price": 6868.17,
+      "raw": "2025-11-12T11:53:16.0706550+01:00 11:40:58 | INFO     | ✅ Ordre exécuté: sell US500.cash 0.01 lots à 6868.17"
+    },
+    {
+      "time": "2025-11-12T11:53:16.0721014+01:00",
+      "side": "sell",
+      "symbol": "ETHUSD",
+      "lots": 0.01,
+      "price": 3528.36,
+      "raw": "2025-11-12T11:53:16.0721014+01:00 11:50:54 | INFO     | ✅ Ordre exécuté: sell ETHUSD 0.01 lots à 3528.36"
+    },
+    {
+      "time": "2025-11-12T11:53:16.0727311+01:00",
+      "side": "sell",
+      "symbol": "USDCAD",
+      "lots": 0.01,
+      "price": 1.40198,
+      "raw": "2025-11-12T11:53:16.0727311+01:00 11:50:55 | INFO     | ✅ Ordre exécuté: sell USDCAD 0.01 lots à 1.40198"
+    },
+    {
+      "time": "2025-11-12T11:53:16.0730726+01:00",
+      "side": "sell",
+      "symbol": "AUDNZD",
+      "lots": 0.01,
+      "price": 1.15494,
+      "raw": "2025-11-12T11:53:16.0730726+01:00 11:50:56 | INFO     | ✅ Ordre exécuté: sell AUDNZD 0.01 lots à 1.15494"
+    },
+    {
+      "time": "2025-11-12T11:53:16.0737592+01:00",
+      "side": "sell",
+      "symbol": "NZDJPY",
+      "lots": 0.01,
+      "price": 87.558,
+      "raw": "2025-11-12T11:53:16.0737592+01:00 11:50:57 | INFO     | ✅ Ordre exécuté: sell NZDJPY 0.01 lots à 87.558"
+    },
+    {
+      "time": "2025-11-12T11:53:16.0745552+01:00",
+      "side": "sell",
+      "symbol": "JP225.cash",
+      "lots": 0.01,
+      "price": 51251.83,
+      "raw": "2025-11-12T11:53:16.0745552+01:00 11:50:58 | INFO     | ✅ Ordre exécuté: sell JP225.cash 0.01 lots à 51251.83"
+    },
+    {
+      "time": "2025-11-12T12:00:55.2537093+01:00",
+      "side": "sell",
+      "symbol": "USDCAD",
+      "lots": 0.01,
+      "price": 1.40173,
+      "raw": "2025-11-12T12:00:55.2537093+01:00 12:00:54 | INFO     | ✅ Ordre exécuté: sell USDCAD 0.01 lots à 1.40173"
+    },
+    {
+      "time": "2025-11-12T12:00:55.8983997+01:00",
+      "side": "sell",
+      "symbol": "AUDNZD",
+      "lots": 0.01,
+      "price": 1.15478,
+      "raw": "2025-11-12T12:00:55.8983997+01:00 12:00:55 | INFO     | ✅ Ordre exécuté: sell AUDNZD 0.01 lots à 1.15478"
+    },
+    {
+      "raw": "11:31:14 | INFO     | ✅ Ordre exécuté: sell BTCUSD 0.01 lots à 104717.9"
+    },
+    {
+      "raw": "11:31:15 | INFO     | ✅ Ordre exécuté: sell XAUUSD 0.01 lots à 4121.04"
+    },
+    {
+      "raw": "11:31:17 | INFO     | ✅ Ordre exécuté: sell NZDJPY 0.01 lots à 87.56"
+    },
+    {
+      "raw": "11:31:18 | INFO     | ✅ Ordre exécuté: sell EURUSD 0.01 lots à 1.1567"
+    },
+    {
+      "raw": "11:31:19 | INFO     | ✅ Ordre exécuté: sell JP225.cash 0.01 lots à 51261.83"
+    },
+    {
+      "raw": "11:40:57 | INFO     | ✅ Ordre exécuté: sell NZDJPY 0.01 lots à 87.551"
+    },
+    {
+      "raw": "11:40:58 | INFO     | ✅ Ordre exécuté: sell US500.cash 0.01 lots à 6868.17"
+    },
+    {
+      "raw": "11:50:54 | INFO     | ✅ Ordre exécuté: sell ETHUSD 0.01 lots à 3528.36"
+    },
+    {
+      "raw": "11:50:55 | INFO     | ✅ Ordre exécuté: sell USDCAD 0.01 lots à 1.40198"
+    },
+    {
+      "raw": "11:50:56 | INFO     | ✅ Ordre exécuté: sell AUDNZD 0.01 lots à 1.15494"
+    },
+    {
+      "raw": "11:50:57 | INFO     | ✅ Ordre exécuté: sell NZDJPY 0.01 lots à 87.558"
+    },
+    {
+      "raw": "11:50:58 | INFO     | ✅ Ordre exécuté: sell JP225.cash 0.01 lots à 51251.83"
+    },
+    {
+      "raw": "12:00:54 | INFO     | ✅ Ordre exécuté: sell USDCAD 0.01 lots à 1.40173"
+    },
+    {
+      "raw": "12:00:55 | INFO     | ✅ Ordre exécuté: sell AUDNZD 0.01 lots à 1.15478"
+    },
+    {
+      "raw": "12:10:54 | INFO     | ✅ Ordre exécuté: sell XAUUSD 0.01 lots à 4131.01"
+    },
+    {
+      "raw": "12:10:55 | INFO     | ✅ Ordre exécuté: sell USDCAD 0.01 lots à 1.40164"
+    },
+    {
+      "raw": "12:10:56 | INFO     | ✅ Ordre exécuté: sell AUDNZD 0.01 lots à 1.15475"
+    },
+    {
+      "raw": "12:10:57 | INFO     | ✅ Ordre exécuté: sell EURUSD 0.01 lots à 1.15703"
+    },
+    {
+      "raw": "12:20:55 | INFO     | ✅ Ordre exécuté: sell BTCUSD 0.01 lots à 105049.7"
+    },
+    {
+      "raw": "12:20:56 | INFO     | ✅ Ordre exécuté: sell XAUUSD 0.01 lots à 4125.56"
+    },
+    {
+      "raw": "12:20:57 | INFO     | ✅ Ordre exécuté: sell USDCAD 0.01 lots à 1.40171"
+    },
+    {
+      "raw": "12:20:58 | INFO     | ✅ Ordre exécuté: sell EURJPY 0.01 lots à 179.164"
+    },
+    {
+      "raw": "12:20:59 | INFO     | ✅ Ordre exécuté: sell NZDJPY 0.01 lots à 87.579"
+    },
+    {
+      "raw": "12:21:00 | INFO     | ✅ Ordre exécuté: sell EURUSD 0.01 lots à 1.15685"
+    },
+    {
+      "raw": "12:21:01 | INFO     | ✅ Ordre exécuté: sell US500.cash 0.01 lots à 6868.77"
+    },
+    {
+      "raw": "12:21:02 | INFO     | ✅ Ordre exécuté: sell JP225.cash 0.01 lots à 51264.83"
+    },
+    {
+      "raw": "12:30:55 | INFO     | ✅ Ordre exécuté: sell BTCUSD 0.01 lots à 104791.83"
+    },
+    {
+      "raw": "12:30:55 | INFO     | ✅ Ordre exécuté: sell ETHUSD 0.01 lots à 3542.74"
+    },
+    {
+      "raw": "12:30:56 | INFO     | ✅ Ordre exécuté: sell XAUUSD 0.01 lots à 4124.32"
+    },
+    {
+      "raw": "12:30:57 | INFO     | ✅ Ordre exécuté: sell USDCAD 0.01 lots à 1.40161"
+    },
+    {
+      "raw": "12:31:00 | INFO     | ✅ Ordre exécuté: sell NZDJPY 0.01 lots à 87.569"
+    },
+    {
+      "raw": "12:31:01 | INFO     | ✅ Ordre exécuté: sell US500.cash 0.01 lots à 6861.67"
+    },
+    {
+      "raw": "12:31:02 | INFO     | ✅ Ordre exécuté: sell JP225.cash 0.01 lots à 51216.83"
+    },
+    {
+      "raw": "12:40:55 | INFO     | ✅ Ordre exécuté: sell BTCUSD 0.01 lots à 104772.38"
+    },
+    {
+      "raw": "12:40:55 | INFO     | ✅ Ordre exécuté: sell ETHUSD 0.01 lots à 3541.85"
+    },
+    {
+      "raw": "12:40:57 | INFO     | ✅ Ordre exécuté: sell GBPCHF 0.01 lots à 1.04913"
+    },
+    {
+      "raw": "12:40:59 | INFO     | ✅ Ordre exécuté: sell US500.cash 0.01 lots à 6863.97"
+    },
+    {
+      "raw": "12:40:59 | INFO     | ✅ Ordre exécuté: sell JP225.cash 0.01 lots à 51249.83"
+    }
+  ],
+  "errors": [
+    {
+      "raw": "2025-11-12T11:53:16.0571913+01:00 2025-11-12 11:30:57.650329: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`."
+    },
+    {
+      "raw": "2025-11-12T11:53:16.0572959+01:00 2025-11-12 11:31:10.086257: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`."
+    },
+    {
+      "raw": "2025-11-12 11:30:57.650329: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`."
+    },
+    {
+      "raw": "2025-11-12 11:31:10.086257: I tensorflow/core/util/port.cc:153] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`."
+    }
+  ]
+}

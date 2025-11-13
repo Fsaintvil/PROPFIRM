@@ -1,0 +1,153 @@
+{
+  "meta": {
+    "timestamp": "20251113T131923Z",
+    "symbols": [
+      "BTCUSD",
+      "ETHUSD",
+      "XAUUSD",
+      "USDCAD",
+      "AUDNZD",
+      "EURJPY",
+      "GBPCHF",
+      "NZDJPY",
+      "EURUSD",
+      "EURAUD",
+      "US500.cash",
+      "JP225.cash"
+    ]
+  },
+  "results": {
+    "BTCUSD": {
+      "point": 0.01,
+      "digits": 2,
+      "trade_stops_level": 0,
+      "trade_tick_value": 0.01,
+      "trade_contract_size": 1.0,
+      "bid": 102960.84,
+      "ask": 102961.84,
+      "spread": 1.0,
+      "min_stop_distance": 1.02
+    },
+    "ETHUSD": {
+      "point": 0.01,
+      "digits": 2,
+      "trade_stops_level": 0,
+      "trade_tick_value": 0.1,
+      "trade_contract_size": 10.0,
+      "bid": 3490.97,
+      "ask": 3491.57,
+      "spread": 0.6000000000003638,
+      "min_stop_distance": 0.6200000000003638
+    },
+    "XAUUSD": {
+      "point": 0.01,
+      "digits": 2,
+      "trade_stops_level": 0,
+      "trade_tick_value": 1.0,
+      "trade_contract_size": 100.0,
+      "bid": 4234.78,
+      "ask": 4234.95,
+      "spread": 0.17000000000007276,
+      "min_stop_distance": 0.19000000000007275
+    },
+    "USDCAD": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "trade_tick_value": 0.7144541213285989,
+      "trade_contract_size": 100000.0,
+      "bid": 1.39964,
+      "ask": 1.39967,
+      "spread": 2.999999999997449e-05,
+      "min_stop_distance": 4.999999999997449e-05
+    },
+    "AUDNZD": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "trade_tick_value": 0.56664,
+      "trade_contract_size": 100000.0,
+      "bid": 1.158,
+      "ask": 1.15809,
+      "spread": 9.000000000014552e-05,
+      "min_stop_distance": 0.00011000000000014552
+    },
+    "EURJPY": {
+      "point": 0.001,
+      "digits": 3,
+      "trade_stops_level": 0,
+      "trade_tick_value": 0.6462661970465634,
+      "trade_contract_size": 100000.0,
+      "bid": 179.67,
+      "ask": 179.686,
+      "spread": 0.016000000000019554,
+      "min_stop_distance": 0.018000000000019556
+    },
+    "GBPCHF": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "trade_tick_value": 1.2566287164794292,
+      "trade_contract_size": 100000.0,
+      "bid": 1.04679,
+      "ask": 1.04694,
+      "spread": 0.00014999999999987246,
+      "min_stop_distance": 0.00016999999999987246
+    },
+    "NZDJPY": {
+      "point": 0.001,
+      "digits": 3,
+      "trade_stops_level": 0,
+      "trade_tick_value": 0.6462661970465634,
+      "trade_contract_size": 100000.0,
+      "bid": 87.674,
+      "ask": 87.687,
+      "spread": 0.012999999999991019,
+      "min_stop_distance": 0.014999999999991019
+    },
+    "EURUSD": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "trade_tick_value": 1.0,
+      "trade_contract_size": 100000.0,
+      "bid": 1.16124,
+      "ask": 1.16124,
+      "spread": 0.0,
+      "min_stop_distance": 2e-05
+    },
+    "EURAUD": {
+      "point": 1e-05,
+      "digits": 5,
+      "trade_stops_level": 0,
+      "trade_tick_value": 0.6562100000000001,
+      "trade_contract_size": 100000.0,
+      "bid": 1.76953,
+      "ask": 1.76965,
+      "spread": 0.00011999999999989797,
+      "min_stop_distance": 0.00013999999999989796
+    },
+    "US500.cash": {
+      "point": 0.01,
+      "digits": 2,
+      "trade_stops_level": 0,
+      "trade_tick_value": 0.01,
+      "trade_contract_size": 1.0,
+      "bid": 6840.37,
+      "ask": 6840.83,
+      "spread": 0.4600000000000364,
+      "min_stop_distance": 0.4800000000000364
+    },
+    "JP225.cash": {
+      "point": 0.01,
+      "digits": 2,
+      "trade_stops_level": 0,
+      "trade_tick_value": 0.0006462661970465634,
+      "trade_contract_size": 10.0,
+      "bid": 50848.83,
+      "ask": 50853.17,
+      "spread": 4.3399999999965075,
+      "min_stop_distance": 4.359999999996507
+    }
+  }
+}

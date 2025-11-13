@@ -1,0 +1,198 @@
+{
+  "generated_at": "2025-11-12T12:25:26Z",
+  "tickets": {
+    "346764084": {
+      "ticket": 346764084,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price_open": 1.40193,
+      "type": 1,
+      "time": 1762950999
+    },
+    "346770863": {
+      "ticket": 346770863,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price_open": 1.40201,
+      "type": 1,
+      "time": 1762951602
+    },
+    "346770879": {
+      "ticket": 346770879,
+      "symbol": "AUDNZD",
+      "volume": 0.01,
+      "price_open": 1.15487,
+      "type": 1,
+      "time": 1762951603
+    },
+    "346772453": {
+      "ticket": 346772453,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price_open": 1.40199,
+      "type": 1,
+      "time": 1762951857
+    },
+    "346772456": {
+      "ticket": 346772456,
+      "symbol": "AUDNZD",
+      "volume": 0.01,
+      "price_open": 1.15494,
+      "type": 1,
+      "time": 1762951857
+    },
+    "346777196": {
+      "ticket": 346777196,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price_open": 1.40173,
+      "type": 1,
+      "time": 1762952456
+    },
+    "346777200": {
+      "ticket": 346777200,
+      "symbol": "AUDNZD",
+      "volume": 0.01,
+      "price_open": 1.15478,
+      "type": 1,
+      "time": 1762952457
+    },
+    "346779928": {
+      "ticket": 346779928,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price_open": 1.40174,
+      "type": 1,
+      "time": 1762952799
+    },
+    "346779934": {
+      "ticket": 346779934,
+      "symbol": "AUDNZD",
+      "volume": 0.01,
+      "price_open": 1.15479,
+      "type": 1,
+      "time": 1762952799
+    },
+    "346779939": {
+      "ticket": 346779939,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "price_open": 1.04898,
+      "type": 1,
+      "time": 1762952800
+    },
+    "346782400": {
+      "ticket": 346782400,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price_open": 1.40164,
+      "type": 1,
+      "time": 1762953056
+    },
+    "346782409": {
+      "ticket": 346782409,
+      "symbol": "AUDNZD",
+      "volume": 0.01,
+      "price_open": 1.15476,
+      "type": 1,
+      "time": 1762953057
+    },
+    "346782424": {
+      "ticket": 346782424,
+      "symbol": "EURUSD",
+      "volume": 0.01,
+      "price_open": 1.15702,
+      "type": 1,
+      "time": 1762953059
+    },
+    "346788158": {
+      "ticket": 346788158,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price_open": 1.4017,
+      "type": 1,
+      "time": 1762953657
+    },
+    "346788192": null,
+    "346791844": {
+      "ticket": 346791844,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price_open": 1.40164,
+      "type": 1,
+      "time": 1762953999
+    },
+    "346791880": {
+      "ticket": 346791880,
+      "symbol": "EURAUD",
+      "volume": 0.01,
+      "price_open": 1.77075,
+      "type": 1,
+      "time": 1762954001
+    },
+    "346795193": {
+      "ticket": 346795193,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price_open": 1.40161,
+      "type": 1,
+      "time": 1762954257
+    },
+    "346798891": {
+      "ticket": 346798891,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price_open": 1.40153,
+      "type": 1,
+      "time": 1762954599
+    },
+    "346798923": {
+      "ticket": 346798923,
+      "symbol": "EURAUD",
+      "volume": 0.01,
+      "price_open": 1.77061,
+      "type": 1,
+      "time": 1762954601
+    },
+    "346800636": {
+      "ticket": 346800636,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "price_open": 1.04912,
+      "type": 1,
+      "time": 1762954857
+    },
+    "346807892": {
+      "ticket": 346807892,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "price_open": 1.04905,
+      "type": 1,
+      "time": 1762955799
+    },
+    "346816237": {
+      "ticket": 346816237,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "price_open": 1.40118,
+      "type": 1,
+      "time": 1762956399
+    },
+    "346816241": {
+      "ticket": 346816241,
+      "symbol": "EURJPY",
+      "volume": 0.01,
+      "price_open": 179.205,
+      "type": 1,
+      "time": 1762956400
+    },
+    "346816265": {
+      "ticket": 346816265,
+      "symbol": "EURAUD",
+      "volume": 0.01,
+      "price_open": 1.77088,
+      "type": 1,
+      "time": 1762956402
+    }
+  }
+}

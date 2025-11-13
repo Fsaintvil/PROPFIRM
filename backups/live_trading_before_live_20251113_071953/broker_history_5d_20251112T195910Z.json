@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-11-12T19:59:07.042903Z",
+  "mt5_available": true,
+  "connected": false,
+  "errors": [
+    "mt5.connect_with_retry returned False"
+  ],
+  "orders": [],
+  "deals": []
+}

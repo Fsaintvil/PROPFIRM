@@ -1,0 +1,1230 @@
+{
+  "timestamp": "20251113T101929Z",
+  "processed": 151,
+  "results": [
+    {
+      "ticket": 347648862,
+      "symbol": "ETHUSD",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648862,
+            "sl": 3509.12,
+            "tp": 3508.97,
+            "factor": 1.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648862,
+            "sl": 3509.14,
+            "tp": 3508.92,
+            "factor": 1.5
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648862,
+            "sl": 3509.17,
+            "tp": 3508.87,
+            "factor": 2.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648862,
+            "sl": 3509.22,
+            "tp": 3508.77,
+            "factor": 3.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 4.0,
+          "request": {
+            "action": 6,
+            "position": 347648862,
+            "sl": 3509.27,
+            "tp": 3508.67,
+            "factor": 4.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 5.0,
+          "request": {
+            "action": 6,
+            "position": 347648862,
+            "sl": 3509.32,
+            "tp": 3508.57,
+            "factor": 5.0
+          },
+          "result": "dry-run"
+        }
+      ]
+    },
+    {
+      "ticket": 347648863,
+      "symbol": "XAUUSD",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648863,
+            "sl": 4234.25,
+            "tp": 4240.25,
+            "factor": 1.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648863,
+            "sl": 4233.25,
+            "tp": 4242.25,
+            "factor": 1.5
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648863,
+            "sl": 4232.25,
+            "tp": 4244.25,
+            "factor": 2.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648863,
+            "sl": 4230.25,
+            "tp": 4248.25,
+            "factor": 3.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 4.0,
+          "request": {
+            "action": 6,
+            "position": 347648863,
+            "sl": 4228.25,
+            "tp": 4252.25,
+            "factor": 4.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 5.0,
+          "request": {
+            "action": 6,
+            "position": 347648863,
+            "sl": 4226.25,
+            "tp": 4256.25,
+            "factor": 5.0
+          },
+          "result": "dry-run"
+        }
+      ]
+    },
+    {
+      "ticket": 347648865,
+      "symbol": "USDCAD",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648865,
+            "sl": 1.39912,
+            "tp": 1.39762,
+            "factor": 1.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648865,
+            "sl": 1.39937,
+            "tp": 1.39712,
+            "factor": 1.5
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648865,
+            "sl": 1.39962,
+            "tp": 1.39662,
+            "factor": 2.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648865,
+            "sl": 1.40012,
+            "tp": 1.39562,
+            "factor": 3.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 4.0,
+          "request": {
+            "action": 6,
+            "position": 347648865,
+            "sl": 1.40062,
+            "tp": 1.39462,
+            "factor": 4.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 5.0,
+          "request": {
+            "action": 6,
+            "position": 347648865,
+            "sl": 1.40112,
+            "tp": 1.39362,
+            "factor": 5.0
+          },
+          "result": "dry-run"
+        }
+      ]
+    },
+    {
+      "ticket": 347648868,
+      "symbol": "EURJPY",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648868,
+            "sl": 179.639,
+            "tp": 179.642,
+            "factor": 1.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648868,
+            "sl": 179.639,
+            "tp": 179.643,
+            "factor": 1.5
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648868,
+            "sl": 179.638,
+            "tp": 179.644,
+            "factor": 2.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648868,
+            "sl": 179.637,
+            "tp": 179.646,
+            "factor": 3.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 4.0,
+          "request": {
+            "action": 6,
+            "position": 347648868,
+            "sl": 179.636,
+            "tp": 179.648,
+            "factor": 4.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 5.0,
+          "request": {
+            "action": 6,
+            "position": 347648868,
+            "sl": 179.635,
+            "tp": 179.65,
+            "factor": 5.0
+          },
+          "result": "dry-run"
+        }
+      ]
+    },
+    {
+      "ticket": 347648877,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648879,
+      "symbol": "EURUSD",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648879,
+            "sl": 1.16244,
+            "tp": 1.16394,
+            "factor": 1.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648879,
+            "sl": 1.16219,
+            "tp": 1.16444,
+            "factor": 1.5
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648879,
+            "sl": 1.16194,
+            "tp": 1.16494,
+            "factor": 2.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648879,
+            "sl": 1.16144,
+            "tp": 1.16594,
+            "factor": 3.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 4.0,
+          "request": {
+            "action": 6,
+            "position": 347648879,
+            "sl": 1.16094,
+            "tp": 1.16694,
+            "factor": 4.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 5.0,
+          "request": {
+            "action": 6,
+            "position": 347648879,
+            "sl": 1.16044,
+            "tp": 1.16794,
+            "factor": 5.0
+          },
+          "result": "dry-run"
+        }
+      ]
+    },
+    {
+      "ticket": 347648881,
+      "symbol": "EURAUD",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648881,
+            "sl": 1.76791,
+            "tp": 1.76941,
+            "factor": 1.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648881,
+            "sl": 1.76766,
+            "tp": 1.76991,
+            "factor": 1.5
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648881,
+            "sl": 1.76741,
+            "tp": 1.77041,
+            "factor": 2.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648881,
+            "sl": 1.76691,
+            "tp": 1.77141,
+            "factor": 3.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 4.0,
+          "request": {
+            "action": 6,
+            "position": 347648881,
+            "sl": 1.76641,
+            "tp": 1.77241,
+            "factor": 4.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 5.0,
+          "request": {
+            "action": 6,
+            "position": 347648881,
+            "sl": 1.76591,
+            "tp": 1.77341,
+            "factor": 5.0
+          },
+          "result": "dry-run"
+        }
+      ]
+    },
+    {
+      "ticket": 347648883,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648887,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648859,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347648867,
+      "symbol": "AUDNZD",
+      "attempts": [
+        {
+          "factor": 1.0,
+          "request": {
+            "action": 6,
+            "position": 347648867,
+            "sl": 1.15872,
+            "tp": 1.15722,
+            "factor": 1.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 1.5,
+          "request": {
+            "action": 6,
+            "position": 347648867,
+            "sl": 1.15897,
+            "tp": 1.15672,
+            "factor": 1.5
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 2.0,
+          "request": {
+            "action": 6,
+            "position": 347648867,
+            "sl": 1.15922,
+            "tp": 1.15622,
+            "factor": 2.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 3.0,
+          "request": {
+            "action": 6,
+            "position": 347648867,
+            "sl": 1.15972,
+            "tp": 1.15522,
+            "factor": 3.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 4.0,
+          "request": {
+            "action": 6,
+            "position": 347648867,
+            "sl": 1.16022,
+            "tp": 1.15422,
+            "factor": 4.0
+          },
+          "result": "dry-run"
+        },
+        {
+          "factor": 5.0,
+          "request": {
+            "action": 6,
+            "position": 347648867,
+            "sl": 1.16072,
+            "tp": 1.15322,
+            "factor": 5.0
+          },
+          "result": "dry-run"
+        }
+      ]
+    },
+    {
+      "ticket": 347648871,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347543154,
+      "symbol": "XAUUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347543157,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347543160,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347543163,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347543167,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347543172,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347543175,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347543181,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347543186,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347552856,
+      "symbol": "XAUUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347552858,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347552860,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347552861,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347552865,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347552866,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347552867,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347552869,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347552870,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347567919,
+      "symbol": "XAUUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347567921,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347567923,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347567925,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347567930,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347567932,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347567934,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347567939,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347567941,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347567942,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347588445,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347588496,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347588514,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347588532,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347588542,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347608821,
+      "symbol": "XAUUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347608822,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347608823,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347608826,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347608834,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347608846,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347608851,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347608856,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347608860,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347608870,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347626658,
+      "symbol": "XAUUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347626661,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347626665,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347626669,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347626673,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347626676,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347626682,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347626690,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347626692,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347626695,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347543150,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347552854,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347552855,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347567916,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347588442,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347543145,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347543178,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347552868,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347567913,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347588436,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347588444,
+      "symbol": "XAUUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347588466,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347588506,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347588517,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 347588524,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231907,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231913,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231920,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231922,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264827,
+      "symbol": "XAUUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264838,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264847,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264851,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264853,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264863,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264871,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285839,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285845,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285865,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285866,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285871,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285874,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285879,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285886,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307552,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307568,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307570,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307581,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307589,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307592,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307649,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307676,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331158,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331160,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331184,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331190,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331209,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341440,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341459,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341467,
+      "symbol": "NZDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341471,
+      "symbol": "EURUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341476,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341477,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341455,
+      "symbol": "AUDNZD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231911,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231934,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231936,
+      "symbol": "US500.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345231939,
+      "symbol": "JP225.cash",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264831,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264857,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285855,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345285877,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307562,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307596,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331162,
+      "symbol": "XAUUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345331166,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341451,
+      "symbol": "USDCAD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345264818,
+      "symbol": "BTCUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345307554,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341443,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 345341463,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344357268,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344357269,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344359374,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344359379,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344361273,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344361274,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344361276,
+      "symbol": "EURAUD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344361278,
+      "symbol": "GBPUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344363497,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344363500,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344363503,
+      "symbol": "GBPUSD",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344365154,
+      "symbol": "USDJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344365156,
+      "symbol": "EURJPY",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344365157,
+      "symbol": "GBPCHF",
+      "error": "position_not_found"
+    },
+    {
+      "ticket": 344379258,
+      "symbol": "ETHUSD",
+      "error": "position_not_found"
+    }
+  ]
+}

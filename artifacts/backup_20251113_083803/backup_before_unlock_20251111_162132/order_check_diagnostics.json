@@ -1,0 +1,725 @@
+{
+  "timestamp": "2025-11-08T02:17:52Z",
+  "diagnostics": [
+    {
+      "ticket": 344357268,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 1,
+        "position": 344357268,
+        "symbol": "EURJPY",
+        "volume": 0.02,
+        "type": 0,
+        "price": 177.447,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199873.56,
+        "equity": 199860.93,
+        "profit": -9.13,
+        "margin": 546.7,
+        "margin_free": 199326.86,
+        "margin_level": 36557.69709164075,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "EURJPY",
+          0.02,
+          177.447,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344357268,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344357269,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 1,
+        "position": 344357269,
+        "symbol": "GBPCHF",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.05983,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199873.13,
+        "equity": 199860.5,
+        "profit": -8.7,
+        "margin": 546.7,
+        "margin_free": 199326.43,
+        "margin_level": 36557.61843790012,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "GBPCHF",
+          0.02,
+          1.05983,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344357269,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344359374,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 1,
+        "position": 344359374,
+        "symbol": "EURJPY",
+        "volume": 0.02,
+        "type": 0,
+        "price": 177.447,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199873.58,
+        "equity": 199860.95,
+        "profit": -9.15,
+        "margin": 546.7,
+        "margin_free": 199326.88,
+        "margin_level": 36557.70074995427,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "EURJPY",
+          0.02,
+          177.447,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344359374,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344359379,
+      "symbol": "EURAUD",
+      "request": {
+        "action": 1,
+        "position": 344359379,
+        "symbol": "EURAUD",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.78092,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199872.05,
+        "equity": 199859.42,
+        "profit": -7.62,
+        "margin": 546.7,
+        "margin_free": 199325.35,
+        "margin_level": 36557.420888970184,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "EURAUD",
+          0.02,
+          1.78092,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344359379,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344361273,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 1,
+        "position": 344361273,
+        "symbol": "EURJPY",
+        "volume": 0.02,
+        "type": 0,
+        "price": 177.447,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199874.24,
+        "equity": 199861.61,
+        "profit": -9.81,
+        "margin": 546.7,
+        "margin_free": 199327.54,
+        "margin_level": 36557.82147430034,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "EURJPY",
+          0.02,
+          177.447,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344361273,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344361274,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 1,
+        "position": 344361274,
+        "symbol": "GBPCHF",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.05983,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199872.44,
+        "equity": 199859.81,
+        "profit": -8.01,
+        "margin": 546.7,
+        "margin_free": 199325.74,
+        "margin_level": 36557.49222608377,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "GBPCHF",
+          0.02,
+          1.05983,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344361274,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344361276,
+      "symbol": "EURAUD",
+      "request": {
+        "action": 1,
+        "position": 344361276,
+        "symbol": "EURAUD",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.78092,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199872.39,
+        "equity": 199859.76,
+        "profit": -7.96,
+        "margin": 546.7,
+        "margin_free": 199325.69,
+        "margin_level": 36557.483080299986,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "EURAUD",
+          0.02,
+          1.78092,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344361276,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344361278,
+      "symbol": "GBPUSD",
+      "request": {
+        "action": 1,
+        "position": 344361278,
+        "symbol": "GBPUSD",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.31609,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199873.23,
+        "equity": 199860.6,
+        "profit": -8.8,
+        "margin": 546.7,
+        "margin_free": 199326.53,
+        "margin_level": 36557.63672946771,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "GBPUSD",
+          0.02,
+          1.31609,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344361278,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344363497,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 1,
+        "position": 344363497,
+        "symbol": "EURJPY",
+        "volume": 0.02,
+        "type": 0,
+        "price": 177.447,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199873.68,
+        "equity": 199861.05,
+        "profit": -9.25,
+        "margin": 546.7,
+        "margin_free": 199326.98,
+        "margin_level": 36557.71904152185,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "EURJPY",
+          0.02,
+          177.447,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344363497,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344363500,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 1,
+        "position": 344363500,
+        "symbol": "GBPCHF",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.05983,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199871.74,
+        "equity": 199859.11,
+        "profit": -7.31,
+        "margin": 546.7,
+        "margin_free": 199325.04,
+        "margin_level": 36557.36418511066,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "GBPCHF",
+          0.02,
+          1.05983,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344363500,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344363503,
+      "symbol": "GBPUSD",
+      "request": {
+        "action": 1,
+        "position": 344363503,
+        "symbol": "GBPUSD",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.31609,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199872.33,
+        "equity": 199859.7,
+        "profit": -7.9,
+        "margin": 546.7,
+        "margin_free": 199325.63,
+        "margin_level": 36557.472105359426,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "GBPUSD",
+          0.02,
+          1.31609,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344363503,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344365154,
+      "symbol": "USDJPY",
+      "request": {
+        "action": 1,
+        "position": 344365154,
+        "symbol": "USDJPY",
+        "volume": 0.02,
+        "type": 0,
+        "price": 153.435,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199873.25,
+        "equity": 199860.62,
+        "profit": -8.82,
+        "margin": 546.7,
+        "margin_free": 199326.55,
+        "margin_level": 36557.64038778123,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "USDJPY",
+          0.02,
+          153.435,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344365154,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344365156,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 1,
+        "position": 344365156,
+        "symbol": "EURJPY",
+        "volume": 0.02,
+        "type": 0,
+        "price": 177.447,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199872.94,
+        "equity": 199860.31,
+        "profit": -8.51,
+        "margin": 546.7,
+        "margin_free": 199326.24,
+        "margin_level": 36557.58368392171,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "EURJPY",
+          0.02,
+          177.447,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344365156,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344365157,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 1,
+        "position": 344365157,
+        "symbol": "GBPCHF",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.05983,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199872.29,
+        "equity": 199859.66,
+        "profit": -7.86,
+        "margin": 546.7,
+        "margin_free": 199325.59,
+        "margin_level": 36557.464788732395,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "GBPCHF",
+          0.02,
+          1.05983,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344365157,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    },
+    {
+      "ticket": 344379258,
+      "symbol": "ETHUSD",
+      "request": {
+        "action": 1,
+        "position": 344379258,
+        "symbol": "ETHUSD",
+        "volume": 0.02,
+        "type": 0,
+        "price": 3450.31,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "order_check_diagnostics.py"
+      },
+      "order_check": {
+        "retcode": 0,
+        "balance": 199873.37,
+        "equity": 199860.74,
+        "profit": -8.94,
+        "margin": 546.7,
+        "margin_free": 199326.67,
+        "margin_level": 36557.66233766233,
+        "comment": "Done",
+        "request": [
+          1,
+          0,
+          0,
+          "ETHUSD",
+          0.02,
+          3450.31,
+          0.0,
+          0.0,
+          0.0,
+          20,
+          0,
+          0,
+          0,
+          0,
+          "order_check_diagnostics.py",
+          344379258,
+          0
+        ]
+      },
+      "last_error": [
+        1,
+        "Success"
+      ]
+    }
+  ]
+}

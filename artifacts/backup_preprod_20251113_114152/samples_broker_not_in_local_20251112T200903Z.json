@@ -1,0 +1,306 @@
+[
+  {
+    "ticket": "329780822",
+    "entries": [
+      {
+        "ticket": 329780822,
+        "order": 0,
+        "time": 1762714475,
+        "time_msc": 1762714475407,
+        "type": 2,
+        "entry": 0,
+        "magic": 0,
+        "position_id": 0,
+        "reason": 0,
+        "volume": 0.0,
+        "price": 0.0,
+        "commission": 0.0,
+        "swap": 0.0,
+        "profit": 100000.0,
+        "fee": 0.0,
+        "symbol": "",
+        "comment": "Initial account balance",
+        "external_id": ""
+      }
+    ]
+  },
+  {
+    "ticket": "344733525",
+    "entries": [
+      {
+        "ticket": 344733525,
+        "time_setup": 1762757745,
+        "time_setup_msc": 1762757745203,
+        "time_done": 1762757745,
+        "time_done_msc": 1762757745361,
+        "time_expiration": 0,
+        "type": 0,
+        "type_time": 0,
+        "type_filling": 0,
+        "state": 4,
+        "magic": 0,
+        "position_id": 344733525,
+        "position_by_id": 0,
+        "reason": 0,
+        "volume_initial": 0.01,
+        "volume_current": 0.0,
+        "price_open": 0.0,
+        "sl": 0.0,
+        "tp": 0.0,
+        "price_current": 86.705,
+        "price_stoplimit": 0.0,
+        "symbol": "NZDJPY",
+        "comment": "",
+        "external_id": "344733525-O"
+      }
+    ]
+  },
+  {
+    "ticket": "344784129",
+    "entries": [
+      {
+        "ticket": 344784129,
+        "time_setup": 1762764207,
+        "time_setup_msc": 1762764207778,
+        "time_done": 1762764207,
+        "time_done_msc": 1762764207914,
+        "time_expiration": 0,
+        "type": 1,
+        "type_time": 0,
+        "type_filling": 1,
+        "state": 4,
+        "magic": 0,
+        "position_id": 344733525,
+        "position_by_id": 0,
+        "reason": 4,
+        "volume_initial": 0.01,
+        "volume_current": 0.0,
+        "price_open": 86.74,
+        "sl": 0.0,
+        "tp": 0.0,
+        "price_current": 86.74,
+        "price_stoplimit": 0.0,
+        "symbol": "NZDJPY",
+        "comment": "[sl 86.740]",
+        "external_id": "344784129-O"
+      }
+    ]
+  },
+  {
+    "ticket": "344784758",
+    "entries": [
+      {
+        "ticket": 344784758,
+        "time_setup": 1762764286,
+        "time_setup_msc": 1762764286744,
+        "time_done": 1762764286,
+        "time_done_msc": 1762764286878,
+        "time_expiration": 0,
+        "type": 0,
+        "type_time": 0,
+        "type_filling": 0,
+        "state": 4,
+        "magic": 0,
+        "position_id": 344784758,
+        "position_by_id": 0,
+        "reason": 3,
+        "volume_initial": 0.01,
+        "volume_current": 0.0,
+        "price_open": 0.0,
+        "sl": 105080.0,
+        "tp": 108264.24,
+        "price_current": 106141.42,
+        "price_stoplimit": 0.0,
+        "symbol": "BTCUSD",
+        "comment": "ai_mtf_m15",
+        "external_id": "344784758-O"
+      }
+    ]
+  },
+  {
+    "ticket": "344784761",
+    "entries": [
+      {
+        "ticket": 344784761,
+        "time_setup": 1762764286,
+        "time_setup_msc": 1762764286932,
+        "time_done": 1762764287,
+        "time_done_msc": 1762764287071,
+        "time_expiration": 0,
+        "type": 1,
+        "type_time": 0,
+        "type_filling": 0,
+        "state": 4,
+        "magic": 0,
+        "position_id": 344784761,
+        "position_by_id": 0,
+        "reason": 3,
+        "volume_initial": 0.01,
+        "volume_current": 0.0,
+        "price_open": 0.0,
+        "sl": 3640.19,
+        "tp": 3532.07,
+        "price_current": 3603.97,
+        "price_stoplimit": 0.0,
+        "symbol": "ETHUSD",
+        "comment": "ai_mtf_m15",
+        "external_id": "344784761-O"
+      }
+    ]
+  },
+  {
+    "ticket": "344784762",
+    "entries": [
+      {
+        "ticket": 344784762,
+        "time_setup": 1762764287,
+        "time_setup_msc": 1762764287130,
+        "time_done": 1762764287,
+        "time_done_msc": 1762764287285,
+        "time_expiration": 0,
+        "type": 0,
+        "type_time": 0,
+        "type_filling": 0,
+        "state": 4,
+        "magic": 0,
+        "position_id": 344784762,
+        "position_by_id": 0,
+        "reason": 3,
+        "volume_initial": 0.01,
+        "volume_current": 0.0,
+        "price_open": 0.0,
+        "sl": 4032.92,
+        "tp": 4155.13,
+        "price_current": 4073.49,
+        "price_stoplimit": 0.0,
+        "symbol": "XAUUSD",
+        "comment": "ai_mtf_m15",
+        "external_id": "344784762-O"
+      }
+    ]
+  },
+  {
+    "ticket": "344784763",
+    "entries": [
+      {
+        "ticket": 344784763,
+        "time_setup": 1762764287,
+        "time_setup_msc": 1762764287341,
+        "time_done": 1762764287,
+        "time_done_msc": 1762764287474,
+        "time_expiration": 0,
+        "type": 1,
+        "type_time": 0,
+        "type_filling": 0,
+        "state": 4,
+        "magic": 0,
+        "position_id": 344784763,
+        "position_by_id": 0,
+        "reason": 3,
+        "volume_initial": 0.01,
+        "volume_current": 0.0,
+        "price_open": 0.0,
+        "sl": 1.41676,
+        "tp": 1.3746800000000001,
+        "price_current": 1.40274,
+        "price_stoplimit": 0.0,
+        "symbol": "USDCAD",
+        "comment": "ai_mtf_m15",
+        "external_id": "344784763-O"
+      }
+    ]
+  },
+  {
+    "ticket": "344784767",
+    "entries": [
+      {
+        "ticket": 344784767,
+        "time_setup": 1762764287,
+        "time_setup_msc": 1762764287536,
+        "time_done": 1762764287,
+        "time_done_msc": 1762764287683,
+        "time_expiration": 0,
+        "type": 0,
+        "type_time": 0,
+        "type_filling": 0,
+        "state": 4,
+        "magic": 0,
+        "position_id": 344784767,
+        "position_by_id": 0,
+        "reason": 3,
+        "volume_initial": 0.01,
+        "volume_current": 0.0,
+        "price_open": 0.0,
+        "sl": 1.14699,
+        "tp": 1.18175,
+        "price_current": 1.15858,
+        "price_stoplimit": 0.0,
+        "symbol": "AUDNZD",
+        "comment": "ai_mtf_m15",
+        "external_id": "344784767-O"
+      }
+    ]
+  },
+  {
+    "ticket": "344784769",
+    "entries": [
+      {
+        "ticket": 344784769,
+        "time_setup": 1762764287,
+        "time_setup_msc": 1762764287749,
+        "time_done": 1762764287,
+        "time_done_msc": 1762764287888,
+        "time_expiration": 0,
+        "type": 0,
+        "type_time": 0,
+        "type_filling": 0,
+        "state": 4,
+        "magic": 0,
+        "position_id": 344784769,
+        "position_by_id": 0,
+        "reason": 3,
+        "volume_initial": 0.01,
+        "volume_current": 0.0,
+        "price_open": 0.0,
+        "sl": 176.202,
+        "tp": 181.542,
+        "price_current": 177.983,
+        "price_stoplimit": 0.0,
+        "symbol": "EURJPY",
+        "comment": "ai_mtf_m15",
+        "external_id": "344784769-O"
+      }
+    ]
+  },
+  {
+    "ticket": "344784771",
+    "entries": [
+      {
+        "ticket": 344784771,
+        "time_setup": 1762764287,
+        "time_setup_msc": 1762764287939,
+        "time_done": 1762764288,
+        "time_done_msc": 1762764288089,
+        "time_expiration": 0,
+        "type": 0,
+        "type_time": 0,
+        "type_filling": 0,
+        "state": 4,
+        "magic": 0,
+        "position_id": 344784771,
+        "position_by_id": 0,
+        "reason": 3,
+        "volume_initial": 0.01,
+        "volume_current": 0.0,
+        "price_open": 0.0,
+        "sl": 1.04979,
+        "tp": 1.0816,
+        "price_current": 1.06039,
+        "price_stoplimit": 0.0,
+        "symbol": "GBPCHF",
+        "comment": "ai_mtf_m15",
+        "external_id": "344784771-O"
+      }
+    ]
+  }
+]

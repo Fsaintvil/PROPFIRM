@@ -27,19 +27,37 @@ $env:ALLOW_MT5_SEND = "1"
 $env:PER_SYMBOL_SL_JSON = '{"BTCUSD":300,"ETHUSD":20,"XAUUSD":50,"USDCAD":25,"AUDNZD":20,"EURJPY":30,"GBPCHF":35,"NZDJPY":25,"EURUSD":25,"EURAUD":25,"US500.cash":15,"JP225.cash":25}'
 $env:PER_SYMBOL_TP_JSON = '{"BTCUSD":600,"ETHUSD":40,"XAUUSD":100,"USDCAD":50,"AUDNZD":40,"EURJPY":60,"GBPCHF":70,"NZDJPY":50,"EURUSD":50,"EURAUD":50,"US500.cash":30,"JP225.cash":50}'
 
-# === HORAIRES FOREX (UTC) ===
-
-$marketOpen = [datetime]::Today.AddHours(22).AddMinutes(5)
-$marketClose = [datetime]::Today.AddDays(5).AddHours(21).AddMinutes(30)
+# === HORAIRES FOREX (timezone-aware) ===
+# Use the system local timezone explicitly and show UTC equivalents.
+$tz = [System.TimeZoneInfo]::Local
 $now = Get-Date
-$timeToOpen = ($marketOpen - $now).TotalMinutes
-$timeToClose = ($marketClose - $now).TotalMinutes
+# Build local dates from today's date in the local timezone (midnight local)
+$todayLocal = $now.Date
+# Market open/close times defined in local clock (project convention)
+$marketOpenLocal = $todayLocal.AddHours(22).AddMinutes(5)
+$marketCloseLocal = $todayLocal.AddDays(5).AddHours(21).AddMinutes(30)
+# Convert to UTC for clarity and any components requiring UTC
+$marketOpenUtc = [System.TimeZoneInfo]::ConvertTimeToUtc($marketOpenLocal, $tz)
+$marketCloseUtc = [System.TimeZoneInfo]::ConvertTimeToUtc($marketCloseLocal, $tz)
+$timeToOpen = ($marketOpenLocal - $now).TotalMinutes
+$timeToClose = ($marketCloseLocal - $now).TotalMinutes
+
+Write-Output ("System timezone: {0}" -f $tz.Id)
+Write-Output ("now (local): {0}" -f $now.ToString('o'))
+Write-Output ("marketOpen (local): {0}" -f $marketOpenLocal.ToString('o'))
+Write-Output ("marketOpen (UTC): {0}" -f $marketOpenUtc.ToString('o'))
+Write-Output ("marketClose (local): {0}" -f $marketCloseLocal.ToString('o'))
+Write-Output ("marketClose (UTC): {0}" -f $marketCloseUtc.ToString('o'))
 
 # === ATTENTE OUVERTURE ===
 
 if ($timeToOpen -gt 0) {
-    Write-Output "🕒 Marché fermé. Attente jusqu'à ouverture à $marketOpen ..."
-    Start-Sleep -Seconds ([int]($marketOpen - $now).TotalSeconds)
+    Write-Output "🕒 Marché fermé. Attente jusqu'à ouverture à $marketOpenLocal ..."
+    # Compute seconds to sleep safely and clamp to a sane maximum to avoid Int32 overflow
+    $diffSeconds = ($marketOpenLocal - $now).TotalSeconds
+    if ($diffSeconds -lt 0) { $sleepSec = 0 } else { $sleepSec = [math]::Min([math]::Max($diffSeconds,0), 7*24*3600) }
+    # Start-Sleep expects an Int32, ensure safe cast
+    Start-Sleep -Seconds ([int]$sleepSec)
 }
 
 # === CONTRÔLE FERMETURE PROCHAINE ===
@@ -97,7 +115,8 @@ if (-not $signalDetected) {
 
 while ($true) {
     $now = Get-Date
-    $timeToClose = ($marketClose - $now).TotalMinutes
+    # Use the timezone-aware local market close variable
+    $timeToClose = ($marketCloseLocal - $now).TotalMinutes
 
     if ($timeToClose -le 30) {
         Write-Output "🛑 Fermeture imminente du marché. Arrêt contrôlé des nouvelles positions."

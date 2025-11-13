@@ -115,11 +115,6 @@ def parse_args() -> argparse.Namespace:
         "--auto", action="store_true",
         help="Configure automatiquement symboles/lots/flags/threshold"
     )
-    parser.add_argument(
-        "--auto-confirm", action="store_true",
-        help=("Bypass le prompt interactif uniquement si la variable d'environnement "
-              "CONFIRM_PRODUCTION == 'I_CONFIRM_ALLOW_MT5_SEND'. Utiliser avec précaution")
-    )
     return parser.parse_args()
 
 
@@ -195,6 +190,23 @@ def main():
     args = parse_args()
     logger = setup_logger(args.log_level)
     exit_code = 0
+
+    # Enforce running from PowerShell (pwsh / Windows PowerShell)
+    try:
+        # Common PowerShell environment variables include PSModulePath and PSExecutionPolicyPreference
+        ps_env_present = any(k in os.environ for k in ("PSModulePath", "PSExecutionPolicyPreference"))
+    except Exception:
+        ps_env_present = False
+
+    if not ps_env_present:
+        # Not running inside a PowerShell session (pwsh/powershell)
+        msg = (
+            "This script must be launched from PowerShell (pwsh.exe or powershell.exe).\n"
+            "Please open a PowerShell terminal and run the command there."
+        )
+        # Print to console (logger may not be configured early in some runs)
+        print(msg)
+        return 6
 
     logger.info("🚀 PROPFIRM - LANCEMENT PRODUCTION")
     logger.info("=" * 50)
@@ -320,17 +332,7 @@ def main():
             return 0 if health_ok else 4
 
         # 5. Confirmation utilisateur (sécurisée)
-        # Priorité: --auto-confirm (vérifie strictement CONFIRM_PRODUCTION),
-        # puis --yes (bypass non stricte), sinon prompt interactif.
-        if args.auto_confirm:
-            env_token = os.environ.get("CONFIRM_PRODUCTION", "")
-            if env_token == "I_CONFIRM_ALLOW_MT5_SEND":
-                logger.info("--auto-confirm détecté et token valide: démarrage autorisé")
-            else:
-                logger.error("--auto-confirm demandé mais CONFIRM_PRODUCTION absent/invalide")
-                remove_lock(lock_path, logger)
-                return 6
-        elif not args.yes:
+        if not args.yes:
             print()  # newline pour la question
             print("⚠️ MODE LIVE - Trading réel activé")
             print("Tapez 'PROD' pour confirmer le démarrage en production")

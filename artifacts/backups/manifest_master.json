@@ -1,0 +1,14 @@
+[
+  {
+    "backup": "backup_20251112T165337",
+    "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\backups\\backup_20251112T165337",
+    "manifestPath": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\backups\\backup_20251112T165337\\manifest.json",
+    "lastwrite": "2025-11-12T15:53:39.8780984Z"
+  },
+  {
+    "backup": "backup_20251112T172041",
+    "path": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\backups\\backup_20251112T172041",
+    "manifestPath": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\backups\\backup_20251112T172041\\manifest.json",
+    "lastwrite": "2025-11-12T16:20:41.2656820Z"
+  }
+]

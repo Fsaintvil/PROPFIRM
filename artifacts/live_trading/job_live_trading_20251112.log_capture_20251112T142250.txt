@@ -1,0 +1,200 @@
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346739235 symbol=ETHUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346739253 symbol=US500.cash auto_close_at=2025-11-12 10:26:40.471105 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346739253 symbol=US500.cash - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346688646 symbol=USDCAD auto_close_at=2025-11-12 10:36:37.769330 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346688646 symbol=USDCAD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346744912 symbol=NZDJPY auto_close_at=2025-11-12 10:36:39.721894 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346744912 symbol=NZDJPY - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346739241 symbol=AUDNZD auto_close_at=2025-11-12 10:46:38.021904 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346739241 symbol=AUDNZD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346750429 symbol=JP225.cash auto_close_at=2025-11-12 10:46:41.422028 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346750429 symbol=JP225.cash - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346756820 symbol=XAUUSD auto_close_at=2025-11-12 10:56:37.490866 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346756820 symbol=XAUUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346628795 symbol=EURUSD auto_close_at=2025-11-12 10:56:39.570412 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346628795 symbol=EURUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346756837 symbol=US500.cash auto_close_at=2025-11-12 10:56:40.569057 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346756837 symbol=US500.cash - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346761439 symbol=BTCUSD auto_close_at=2025-11-12 11:01:14.192456 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346761439 symbol=BTCUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346761453 symbol=XAUUSD auto_close_at=2025-11-12 11:01:15.269887 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346761453 symbol=XAUUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346761472 symbol=NZDJPY auto_close_at=2025-11-12 11:01:17.401714 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346761472 symbol=NZDJPY - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346761478 symbol=EURUSD auto_close_at=2025-11-12 11:01:18.054037 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346761478 symbol=EURUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346761498 symbol=JP225.cash auto_close_at=2025-11-12 11:01:19.396060 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346761498 symbol=JP225.cash - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346764084 symbol=USDCAD auto_close_at=2025-11-12 11:06:37.641232 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346764084 symbol=USDCAD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346764091 symbol=EURJPY auto_close_at=2025-11-12 11:06:38.424223 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346764091 symbol=EURJPY - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346764112 symbol=US500.cash auto_close_at=2025-11-12 11:06:40.121023 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346764112 symbol=US500.cash - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346770879 symbol=AUDNZD auto_close_at=2025-11-12 11:16:42.276625 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346770879 symbol=AUDNZD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346772447 symbol=ETHUSD auto_close_at=2025-11-12 11:20:54.571596 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346772447 symbol=ETHUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346772463 symbol=NZDJPY auto_close_at=2025-11-12 11:20:57.539485 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346772463 symbol=NZDJPY - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346772472 symbol=JP225.cash auto_close_at=2025-11-12 11:20:58.984077 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346772472 symbol=JP225.cash - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346774421 symbol=JP225.cash auto_close_at=2025-11-12 11:26:39.561246 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346774421 symbol=JP225.cash - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346779924 symbol=XAUUSD auto_close_at=2025-11-12 11:36:37.257575 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346779924 symbol=XAUUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346779939 symbol=GBPCHF auto_close_at=2025-11-12 11:36:39.335996 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346779939 symbol=GBPCHF - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346786061 symbol=EURJPY auto_close_at=2025-11-12 11:46:37.828426 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346786061 symbol=EURJPY - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346786069 symbol=NZDJPY auto_close_at=2025-11-12 11:46:39.047748 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346786069 symbol=NZDJPY - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346786081 symbol=US500.cash auto_close_at=2025-11-12 11:46:41.035827 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346786081 symbol=US500.cash - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346786091 symbol=JP225.cash auto_close_at=2025-11-12 11:46:41.667493 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346786091 symbol=JP225.cash - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346788130 symbol=BTCUSD auto_close_at=2025-11-12 11:50:55.388244 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346788130 symbol=BTCUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346788167 symbol=EURJPY auto_close_at=2025-11-12 11:50:58.596024 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346788167 symbol=EURJPY - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346788186 symbol=NZDJPY auto_close_at=2025-11-12 11:50:59.803124 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346788186 symbol=NZDJPY - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346788213 symbol=US500.cash auto_close_at=2025-11-12 11:51:01.445990 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346788213 symbol=US500.cash - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346788224 symbol=JP225.cash auto_close_at=2025-11-12 11:51:02.164574 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346788224 symbol=JP225.cash - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346791837 symbol=BTCUSD auto_close_at=2025-11-12 11:56:38.105227 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346791837 symbol=BTCUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346791842 symbol=ETHUSD auto_close_at=2025-11-12 11:56:38.695550 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346791842 symbol=ETHUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346791868 symbol=NZDJPY auto_close_at=2025-11-12 11:56:41.195292 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346791868 symbol=NZDJPY - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346791880 symbol=EURAUD auto_close_at=2025-11-12 11:56:42.064708 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346791880 symbol=EURAUD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346791891 symbol=US500.cash auto_close_at=2025-11-12 11:56:42.642657 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346791891 symbol=US500.cash - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346791897 symbol=JP225.cash auto_close_at=2025-11-12 11:56:43.360001 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346791897 symbol=JP225.cash - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346795177 symbol=BTCUSD auto_close_at=2025-11-12 12:00:55.229258 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346795177 symbol=BTCUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346800599 symbol=BTCUSD auto_close_at=2025-11-12 12:10:55.210267 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346800599 symbol=BTCUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346791843 symbol=XAUUSD auto_close_at=2025-11-12 12:26:38.669097 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346791843 symbol=XAUUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346816225 symbol=BTCUSD auto_close_at=2025-11-12 12:36:38.229761 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346816225 symbol=BTCUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346816231 symbol=ETHUSD auto_close_at=2025-11-12 12:36:38.941746 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346816231 symbol=ETHUSD - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Watchlist check: ticket=346816241 symbol=EURJPY auto_close_at=2025-11-12 12:36:40.861854 now=2025-11-12T13:11:25.080702
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Auto-close: active position not found for ticket=346816241 symbol=EURJPY - marking entry closed
+2025-11-12 14:11:25 | INFO     | enforce_auto_close   | PID:29108 | Audit auto-close (position_missing) écrit: artifacts\live_trading\mt5_auto_close_audit.jsonl
+2025-11-12 14:11:25 | INFO     | main_trading_loop    | PID:29108 | ⏰ Cycle 1 terminé (32.2s) | Trades: 0 | Seuil: 0.5 | Prochain: 568s
+2025-11-12 14:20:53 | INFO     | get_ai_signals       | PID:29108 | Meta-confidence clamp applied: raw=1.000 clamped=0.300
+2025-11-12 14:20:53 | INFO     | apply_advanced_decision_engine | PID:29108 | 🧠 Enhancement appliqué - Confiance: 0.896, Urgence: immediate
+2025-11-12 14:20:53 | INFO     | get_ai_signals       | PID:29108 | DIAG post-advanced: {'symbol': 'BTCUSD', 'final_action': 'sell', 'final_confidence': 0.896, 'enhanced': True, 'adaptive_threshold': 0.55}
+2025-11-12 14:20:53 | INFO     | main_trading_loop    | PID:29108 | 🧩 Extension MTF technique: +0.080 -> conf=0.976
+2025-11-12 14:20:53 | INFO     | main_trading_loop    | PID:29108 | 📊 BTCUSD: SELL conf=0.976 [✅ TRADE]
+2025-11-12 14:20:53 | WARNING  | execute_trade        | PID:29108 | TRADING_DISABLED: kill-switch actif - ordre bloqué
+2025-11-12 14:20:53 | ERROR    | main_trading_loop    | PID:29108 | ❌ Échec trade BTCUSD
+2025-11-12 14:20:53 | INFO     | get_ai_signals       | PID:29108 | Meta-confidence clamp applied: raw=1.000 clamped=0.300
+2025-11-12 14:20:53 | INFO     | apply_advanced_decision_engine | PID:29108 | 🧠 Enhancement appliqué - Confiance: 0.000, Urgence: soon
+2025-11-12 14:20:53 | INFO     | get_ai_signals       | PID:29108 | DIAG post-advanced: {'symbol': 'ETHUSD', 'final_action': 'hold', 'final_confidence': 0.0, 'enhanced': True, 'adaptive_threshold': 0.55}
+2025-11-12 14:20:53 | INFO     | main_trading_loop    | PID:29108 | 📊 ETHUSD: HOLD conf=0.000 [⏸️  SKIP]
+2025-11-12 14:20:53 | INFO     | get_ai_signals       | PID:29108 | Meta-confidence clamp applied: raw=1.000 clamped=0.300
+2025-11-12 14:20:53 | INFO     | apply_advanced_decision_engine | PID:29108 | 🧠 Enhancement appliqué - Confiance: 0.996, Urgence: immediate
+2025-11-12 14:20:53 | INFO     | get_ai_signals       | PID:29108 | DIAG post-advanced: {'symbol': 'XAUUSD', 'final_action': 'sell', 'final_confidence': 0.996, 'enhanced': True, 'adaptive_threshold': 0.55}
+2025-11-12 14:20:53 | INFO     | main_trading_loop    | PID:29108 | 🧩 Extension MTF technique: +0.080 -> conf=1.000
+2025-11-12 14:20:53 | INFO     | main_trading_loop    | PID:29108 | 📊 XAUUSD: SELL conf=1.000 [✅ TRADE]
+2025-11-12 14:20:53 | WARNING  | execute_trade        | PID:29108 | TRADING_DISABLED: kill-switch actif - ordre bloqué
+2025-11-12 14:20:53 | ERROR    | main_trading_loop    | PID:29108 | ❌ Échec trade XAUUSD
+2025-11-12 14:20:54 | INFO     | get_ai_signals       | PID:29108 | Meta-confidence clamp applied: raw=1.000 clamped=0.300
+2025-11-12 14:20:54 | INFO     | apply_advanced_decision_engine | PID:29108 | 🧠 Enhancement appliqué - Confiance: 0.000, Urgence: soon
+2025-11-12 14:20:54 | INFO     | get_ai_signals       | PID:29108 | DIAG post-advanced: {'symbol': 'USDCAD', 'final_action': 'hold', 'final_confidence': 0.0, 'enhanced': True, 'adaptive_threshold': 0.55}
+2025-11-12 14:20:54 | INFO     | main_trading_loop    | PID:29108 | 📊 USDCAD: HOLD conf=0.000 [⏸️  SKIP]
+2025-11-12 14:20:54 | INFO     | get_ai_signals       | PID:29108 | Meta-confidence clamp applied: raw=1.000 clamped=0.300
+2025-11-12 14:20:54 | INFO     | apply_advanced_decision_engine | PID:29108 | 🧠 Enhancement appliqué - Confiance: 0.000, Urgence: soon
+2025-11-12 14:20:54 | INFO     | get_ai_signals       | PID:29108 | DIAG post-advanced: {'symbol': 'AUDNZD', 'final_action': 'hold', 'final_confidence': 0.0, 'enhanced': True, 'adaptive_threshold': 0.55}
+2025-11-12 14:20:54 | INFO     | main_trading_loop    | PID:29108 | 📊 AUDNZD: HOLD conf=0.000 [⏸️  SKIP]
+2025-11-12 14:20:54 | INFO     | get_ai_signals       | PID:29108 | Meta-confidence clamp applied: raw=1.000 clamped=0.300
+2025-11-12 14:20:54 | INFO     | apply_advanced_decision_engine | PID:29108 | 🧠 Enhancement appliqué - Confiance: 0.000, Urgence: immediate
+2025-11-12 14:20:54 | INFO     | get_ai_signals       | PID:29108 | DIAG post-advanced: {'symbol': 'EURJPY', 'final_action': 'hold', 'final_confidence': 0.0, 'enhanced': True, 'adaptive_threshold': 0.55}
+2025-11-12 14:20:54 | INFO     | main_trading_loop    | PID:29108 | 📊 EURJPY: HOLD conf=0.000 [⏸️  SKIP]
+2025-11-12 14:20:55 | INFO     | get_ai_signals       | PID:29108 | Meta-confidence clamp applied: raw=1.000 clamped=0.300
+2025-11-12 14:20:55 | INFO     | apply_advanced_decision_engine | PID:29108 | 🧠 Enhancement appliqué - Confiance: 0.896, Urgence: immediate
+2025-11-12 14:20:55 | INFO     | get_ai_signals       | PID:29108 | DIAG post-advanced: {'symbol': 'GBPCHF', 'final_action': 'sell', 'final_confidence': 0.896, 'enhanced': True, 'adaptive_threshold': 0.55}
+2025-11-12 14:20:55 | INFO     | main_trading_loop    | PID:29108 | 🧩 Extension MTF technique: +0.080 -> conf=0.976
+2025-11-12 14:20:55 | INFO     | main_trading_loop    | PID:29108 | 📊 GBPCHF: SELL conf=0.976 [✅ TRADE]
+2025-11-12 14:20:55 | WARNING  | execute_trade        | PID:29108 | TRADING_DISABLED: kill-switch actif - ordre bloqué
+2025-11-12 14:20:55 | ERROR    | main_trading_loop    | PID:29108 | ❌ Échec trade GBPCHF
+2025-11-12 14:20:55 | INFO     | get_ai_signals       | PID:29108 | Meta-confidence clamp applied: raw=1.000 clamped=0.300
+2025-11-12 14:20:55 | INFO     | apply_advanced_decision_engine | PID:29108 | 🧠 Enhancement appliqué - Confiance: 0.896, Urgence: immediate
+2025-11-12 14:20:55 | INFO     | get_ai_signals       | PID:29108 | DIAG post-advanced: {'symbol': 'NZDJPY', 'final_action': 'sell', 'final_confidence': 0.896, 'enhanced': True, 'adaptive_threshold': 0.55}
+2025-11-12 14:20:55 | INFO     | main_trading_loop    | PID:29108 | 🧩 Extension MTF technique: +0.080 -> conf=0.976
+2025-11-12 14:20:55 | INFO     | main_trading_loop    | PID:29108 | 📊 NZDJPY: SELL conf=0.976 [✅ TRADE]
+2025-11-12 14:20:55 | WARNING  | execute_trade        | PID:29108 | TRADING_DISABLED: kill-switch actif - ordre bloqué
+2025-11-12 14:20:55 | ERROR    | main_trading_loop    | PID:29108 | ❌ Échec trade NZDJPY
+2025-11-12 14:20:55 | INFO     | get_ai_signals       | PID:29108 | Meta-confidence clamp applied: raw=1.000 clamped=0.300
+2025-11-12 14:20:55 | INFO     | apply_advanced_decision_engine | PID:29108 | 🧠 Enhancement appliqué - Confiance: 0.000, Urgence: later
+2025-11-12 14:20:55 | INFO     | get_ai_signals       | PID:29108 | DIAG post-advanced: {'symbol': 'EURUSD', 'final_action': 'hold', 'final_confidence': 0.0, 'enhanced': True, 'adaptive_threshold': 0.55}
+2025-11-12 14:20:55 | INFO     | main_trading_loop    | PID:29108 | 📊 EURUSD: HOLD conf=0.000 [⏸️  SKIP]
+2025-11-12 14:20:55 | INFO     | get_ai_signals       | PID:29108 | Meta-confidence clamp applied: raw=1.000 clamped=0.300
+2025-11-12 14:20:55 | INFO     | apply_advanced_decision_engine | PID:29108 | 🧠 Enhancement appliqué - Confiance: 0.000, Urgence: immediate
+2025-11-12 14:20:55 | INFO     | get_ai_signals       | PID:29108 | DIAG post-advanced: {'symbol': 'EURAUD', 'final_action': 'hold', 'final_confidence': 0.0, 'enhanced': True, 'adaptive_threshold': 0.55}
+2025-11-12 14:20:55 | INFO     | main_trading_loop    | PID:29108 | 📊 EURAUD: HOLD conf=0.000 [⏸️  SKIP]
+2025-11-12 14:20:56 | INFO     | get_ai_signals       | PID:29108 | Meta-confidence clamp applied: raw=1.000 clamped=0.300
+2025-11-12 14:20:56 | INFO     | apply_advanced_decision_engine | PID:29108 | 🧠 Enhancement appliqué - Confiance: 0.946, Urgence: immediate
+2025-11-12 14:20:56 | INFO     | get_ai_signals       | PID:29108 | DIAG post-advanced: {'symbol': 'US500.cash', 'final_action': 'sell', 'final_confidence': 0.946, 'enhanced': True, 'adaptive_threshold': 0.55}
+2025-11-12 14:20:56 | INFO     | main_trading_loop    | PID:29108 | 🧩 Extension MTF technique: +0.080 -> conf=1.000
+2025-11-12 14:20:56 | INFO     | main_trading_loop    | PID:29108 | 📊 US500.cash: SELL conf=1.000 [✅ TRADE]
+2025-11-12 14:20:56 | WARNING  | execute_trade        | PID:29108 | TRADING_DISABLED: kill-switch actif - ordre bloqué
+2025-11-12 14:20:56 | ERROR    | main_trading_loop    | PID:29108 | ❌ Échec trade US500.cash
+2025-11-12 14:20:56 | INFO     | get_ai_signals       | PID:29108 | Meta-confidence clamp applied: raw=1.000 clamped=0.300
+2025-11-12 14:20:56 | INFO     | apply_advanced_decision_engine | PID:29108 | 🧠 Enhancement appliqué - Confiance: 0.000, Urgence: soon
+2025-11-12 14:20:56 | INFO     | get_ai_signals       | PID:29108 | DIAG post-advanced: {'symbol': 'JP225.cash', 'final_action': 'hold', 'final_confidence': 0.0, 'enhanced': True, 'adaptive_threshold': 0.55}
+2025-11-12 14:20:56 | INFO     | main_trading_loop    | PID:29108 | 📊 JP225.cash: HOLD conf=0.000 [⏸️  SKIP]
+2025-11-12 14:20:56 | INFO     | enforce_auto_close   | PID:29108 | Positions snapshot écrit: artifacts\live_trading\current_positions_post_autoclose.json
+2025-11-12 14:20:56 | INFO     | main_trading_loop    | PID:29108 | ⏰ Cycle 2 terminé (3.3s) | Trades: 0 | Seuil: 0.5 | Prochain: 597s

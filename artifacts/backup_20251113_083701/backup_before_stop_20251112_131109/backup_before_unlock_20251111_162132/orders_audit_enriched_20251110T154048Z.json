@@ -1,0 +1,124 @@
+{
+  "timestamp": "2025-11-10T15:40:48.844143",
+  "source": "artifacts\\live_trading\\orders_audit_20251110T115647Z.json",
+  "tickets": [
+    343914680,
+    343923537,
+    343932453,
+    343932455,
+    343932458,
+    343943866,
+    343943875,
+    343943887,
+    343943910,
+    343943919,
+    343943924,
+    343951503,
+    343951512,
+    343951523,
+    343951525,
+    343960421,
+    343960426,
+    343960439,
+    343960444,
+    343960447,
+    343960454,
+    343970041,
+    343970121
+  ],
+  "orders": [
+    {
+      "ticket": 343914680,
+      "found": false
+    },
+    {
+      "ticket": 343923537,
+      "found": false
+    },
+    {
+      "ticket": 343932453,
+      "found": false
+    },
+    {
+      "ticket": 343932455,
+      "found": false
+    },
+    {
+      "ticket": 343932458,
+      "found": false
+    },
+    {
+      "ticket": 343943866,
+      "found": false
+    },
+    {
+      "ticket": 343943875,
+      "found": false
+    },
+    {
+      "ticket": 343943887,
+      "found": false
+    },
+    {
+      "ticket": 343943910,
+      "found": false
+    },
+    {
+      "ticket": 343943919,
+      "found": false
+    },
+    {
+      "ticket": 343943924,
+      "found": false
+    },
+    {
+      "ticket": 343951503,
+      "found": false
+    },
+    {
+      "ticket": 343951512,
+      "found": false
+    },
+    {
+      "ticket": 343951523,
+      "found": false
+    },
+    {
+      "ticket": 343951525,
+      "found": false
+    },
+    {
+      "ticket": 343960421,
+      "found": false
+    },
+    {
+      "ticket": 343960426,
+      "found": false
+    },
+    {
+      "ticket": 343960439,
+      "found": false
+    },
+    {
+      "ticket": 343960444,
+      "found": false
+    },
+    {
+      "ticket": 343960447,
+      "found": false
+    },
+    {
+      "ticket": 343960454,
+      "found": false
+    },
+    {
+      "ticket": 343970041,
+      "found": false
+    },
+    {
+      "ticket": 343970121,
+      "found": false
+    }
+  ],
+  "errors": []
+}

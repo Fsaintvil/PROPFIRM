@@ -1,0 +1,18 @@
+{
+  "ai_file": "ai_send_1762894656.json",
+  "summary": "Each ai_send entry returned retcode 10009 in the ai_send file, and the broker history contains matching orders/deals for each ai_order (ticket equals ai_order). However these history orders have volume_current=0.0 (no open volume).",
+  "per_symbol": [
+    {"symbol":"BTCUSD","ai_order":346370889,"retcode":10009,"deals_found":1,"orders_found":1,"deal_sample":{"ticket":331533462,"time":1762901854},"order_sample":{"ticket":346370889,"time_done":1762901854,"state":4,"volume_current":0.0}},
+    {"symbol":"ETHUSD","ai_order":346370890,"retcode":10009,"deals_found":1,"orders_found":1,"deal_sample":{"ticket":331533463,"time":1762901854},"order_sample":{"ticket":346370890,"time_done":1762901854,"state":4,"volume_current":0.0}},
+    {"symbol":"XAUUSD","ai_order":346370892,"retcode":10009,"deals_found":1,"orders_found":1,"deal_sample":{"ticket":331533465,"time":1762901854},"order_sample":{"ticket":346370892,"time_done":1762901854,"state":4,"volume_current":0.0}},
+    {"symbol":"USDCAD","ai_order":346370894,"retcode":10009,"deals_found":1,"orders_found":1,"deal_sample":{"ticket":331533467,"time":1762901854},"order_sample":{"ticket":346370894,"time_done":1762901854,"state":4,"volume_current":0.0}},
+    {"symbol":"AUDNZD","ai_order":346370895,"retcode":10009,"deals_found":1,"orders_found":1,"deal_sample":{"ticket":331533468,"time":1762901854},"order_sample":{"ticket":346370895,"time_done":1762901854,"state":4,"volume_current":0.0}},
+    {"symbol":"EURJPY","ai_order":346370897,"retcode":10009,"deals_found":1,"orders_found":1,"deal_sample":{"ticket":331533470,"time":1762901855},"order_sample":{"ticket":346370897,"time_done":1762901855,"state":4,"volume_current":0.0}},
+    {"symbol":"GBPCHF","ai_order":346370898,"retcode":10009,"deals_found":1,"orders_found":1,"deal_sample":{"ticket":331533471,"time":1762901855},"order_sample":{"ticket":346370898,"time_done":1762901855,"state":4,"volume_current":0.0}},
+    {"symbol":"NZDJPY","ai_order":346370900,"retcode":10009,"deals_found":1,"orders_found":1,"deal_sample":{"ticket":331533473,"time":1762901855},"order_sample":{"ticket":346370900,"time_done":1762901855,"state":4,"volume_current":0.0}},
+    {"symbol":"EURUSD","ai_order":346370903,"retcode":10009,"deals_found":1,"orders_found":1,"deal_sample":{"ticket":331533477,"time":1762901855},"order_sample":{"ticket":346370903,"time_done":1762901855,"state":4,"volume_current":0.0}},
+    {"symbol":"EURAUD","ai_order":346370905,"retcode":10009,"deals_found":1,"orders_found":1,"deal_sample":{"ticket":331533478,"time":1762901855},"order_sample":{"ticket":346370905,"time_done":1762901855,"state":4,"volume_current":0.0}},
+    {"symbol":"US500.cash","ai_order":346370907,"retcode":10009,"deals_found":1,"orders_found":1,"deal_sample":{"ticket":331533480,"time":1762901856},"order_sample":{"ticket":346370907,"time_done":1762901856,"state":4,"volume_current":0.0}},
+    {"symbol":"JP225.cash","ai_order":346370908,"retcode":10009,"deals_found":1,"orders_found":1,"deal_sample":{"ticket":331533481,"time":1762901856},"order_sample":{"ticket":346370908,"time_done":1762901856,"state":4,"volume_current":0.0}}
+  ]
+}

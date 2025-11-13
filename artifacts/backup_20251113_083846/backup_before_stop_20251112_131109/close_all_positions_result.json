@@ -1,0 +1,294 @@
+{
+  "timestamp": "2025-11-12T10:23:55Z",
+  "connected": true,
+  "errors": [],
+  "closed": [
+    {
+      "ticket": 346602247,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "requested_price": 1.04843,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol GBPCHF"
+      }
+    },
+    {
+      "ticket": 346602259,
+      "symbol": "EURAUD",
+      "volume": 0.01,
+      "requested_price": 1.7711000000000001,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURAUD"
+      }
+    },
+    {
+      "ticket": 346606692,
+      "symbol": "EURUSD",
+      "volume": 0.01,
+      "requested_price": 1.15666,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURUSD"
+      }
+    },
+    {
+      "ticket": 346606693,
+      "symbol": "EURAUD",
+      "volume": 0.01,
+      "requested_price": 1.77108,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURAUD"
+      }
+    },
+    {
+      "ticket": 346610977,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "requested_price": 1.04858,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol GBPCHF"
+      }
+    },
+    {
+      "ticket": 346617817,
+      "symbol": "EURAUD",
+      "volume": 0.01,
+      "requested_price": 1.77093,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURAUD"
+      }
+    },
+    {
+      "ticket": 346624841,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "requested_price": 1.04856,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol GBPCHF"
+      }
+    },
+    {
+      "ticket": 346624858,
+      "symbol": "EURAUD",
+      "volume": 0.01,
+      "requested_price": 1.77081,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURAUD"
+      }
+    },
+    {
+      "ticket": 346628795,
+      "symbol": "EURUSD",
+      "volume": 0.01,
+      "requested_price": 1.1565699999999999,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURUSD"
+      }
+    },
+    {
+      "ticket": 346649137,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "requested_price": 1.04848,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol GBPCHF"
+      }
+    },
+    {
+      "ticket": 346655498,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "requested_price": 1.04845,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol GBPCHF"
+      }
+    },
+    {
+      "ticket": 346655526,
+      "symbol": "EURUSD",
+      "volume": 0.01,
+      "requested_price": 1.1566,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURUSD"
+      }
+    },
+    {
+      "ticket": 346683656,
+      "symbol": "EURAUD",
+      "volume": 0.01,
+      "requested_price": 1.77061,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURAUD"
+      }
+    },
+    {
+      "ticket": 346688664,
+      "symbol": "EURUSD",
+      "volume": 0.01,
+      "requested_price": 1.15661,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURUSD"
+      }
+    },
+    {
+      "ticket": 346688668,
+      "symbol": "EURAUD",
+      "volume": 0.01,
+      "requested_price": 1.77054,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURAUD"
+      }
+    },
+    {
+      "ticket": 346690392,
+      "symbol": "EURUSD",
+      "volume": 0.01,
+      "requested_price": 1.15658,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURUSD"
+      }
+    },
+    {
+      "ticket": 346690395,
+      "symbol": "EURAUD",
+      "volume": 0.01,
+      "requested_price": 1.7705899999999999,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURAUD"
+      }
+    },
+    {
+      "ticket": 346696024,
+      "symbol": "EURUSD",
+      "volume": 0.01,
+      "requested_price": 1.15661,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURUSD"
+      }
+    },
+    {
+      "ticket": 346703380,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "requested_price": 1.04851,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol GBPCHF"
+      }
+    },
+    {
+      "ticket": 346703394,
+      "symbol": "EURUSD",
+      "volume": 0.01,
+      "requested_price": 1.15659,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURUSD"
+      }
+    },
+    {
+      "ticket": 346739241,
+      "symbol": "AUDNZD",
+      "volume": 0.01,
+      "requested_price": 1.15523,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol AUDNZD"
+      }
+    },
+    {
+      "ticket": 346739247,
+      "symbol": "GBPCHF",
+      "volume": 0.01,
+      "requested_price": 1.04844,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol GBPCHF"
+      }
+    },
+    {
+      "ticket": 346744892,
+      "symbol": "USDCAD",
+      "volume": 0.01,
+      "requested_price": 1.40204,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol USDCAD"
+      }
+    },
+    {
+      "ticket": 346744896,
+      "symbol": "AUDNZD",
+      "volume": 0.01,
+      "requested_price": 1.15518,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol AUDNZD"
+      }
+    },
+    {
+      "ticket": 346750361,
+      "symbol": "AUDNZD",
+      "volume": 0.01,
+      "requested_price": 1.15518,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol AUDNZD"
+      }
+    },
+    {
+      "ticket": 346750383,
+      "symbol": "EURUSD",
+      "volume": 0.01,
+      "requested_price": 1.15656,
+      "volume_sent": 0.01,
+      "attempts": 3,
+      "order_result": {
+        "exception": "Cadence blocked for symbol EURUSD"
+      }
+    }
+  ],
+  "remaining_positions": 21
+}

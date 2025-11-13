@@ -1,0 +1,641 @@
+{
+  "timestamp": "20251113T091033Z",
+  "results": [
+    {
+      "ticket": 347543154,
+      "symbol": "XAUUSD",
+      "request": {
+        "action": 6,
+        "position": 347543154,
+        "symbol": "XAUUSD",
+        "sl": 4204.98,
+        "tp": 4210.98
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347543157,
+      "symbol": "USDCAD",
+      "request": {
+        "action": 6,
+        "position": 347543157,
+        "symbol": "USDCAD",
+        "sl": 1.40071,
+        "tp": 1.40221
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347543160,
+      "symbol": "AUDNZD",
+      "request": {
+        "action": 6,
+        "position": 347543160,
+        "symbol": "AUDNZD",
+        "sl": 1.16149,
+        "tp": 1.16299
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347543163,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 6,
+        "position": 347543163,
+        "symbol": "EURJPY",
+        "sl": 179.469,
+        "tp": 179.47
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347543167,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 6,
+        "position": 347543167,
+        "symbol": "GBPCHF",
+        "sl": 1.04804,
+        "tp": 1.04954
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347543172,
+      "symbol": "NZDJPY",
+      "request": {
+        "action": 6,
+        "position": 347543172,
+        "symbol": "NZDJPY",
+        "sl": 87.444,
+        "tp": 87.442
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347543175,
+      "symbol": "EURUSD",
+      "request": {
+        "action": 6,
+        "position": 347543175,
+        "symbol": "EURUSD",
+        "sl": 1.15886,
+        "tp": 1.15736
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347543181,
+      "symbol": "US500.cash",
+      "request": {
+        "action": 6,
+        "position": 347543181,
+        "symbol": "US500.cash",
+        "sl": 6867.93,
+        "tp": 6867.93
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347543186,
+      "symbol": "JP225.cash",
+      "request": {
+        "action": 6,
+        "position": 347543186,
+        "symbol": "JP225.cash",
+        "sl": 51243.17,
+        "tp": 51243.17
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347552856,
+      "symbol": "XAUUSD",
+      "request": {
+        "action": 6,
+        "position": 347552856,
+        "symbol": "XAUUSD",
+        "sl": 4207.56,
+        "tp": 4213.56
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347552858,
+      "symbol": "USDCAD",
+      "request": {
+        "action": 6,
+        "position": 347552858,
+        "symbol": "USDCAD",
+        "sl": 1.40068,
+        "tp": 1.40218
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347552860,
+      "symbol": "AUDNZD",
+      "request": {
+        "action": 6,
+        "position": 347552860,
+        "symbol": "AUDNZD",
+        "sl": 1.16088,
+        "tp": 1.16238
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347552861,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 6,
+        "position": 347552861,
+        "symbol": "EURJPY",
+        "sl": 179.538,
+        "tp": 179.54
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347552865,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 6,
+        "position": 347552865,
+        "symbol": "GBPCHF",
+        "sl": 1.04758,
+        "tp": 1.04608
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347552866,
+      "symbol": "NZDJPY",
+      "request": {
+        "action": 6,
+        "position": 347552866,
+        "symbol": "NZDJPY",
+        "sl": 87.558,
+        "tp": 87.559
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347552867,
+      "symbol": "EURUSD",
+      "request": {
+        "action": 6,
+        "position": 347552867,
+        "symbol": "EURUSD",
+        "sl": 1.1582,
+        "tp": 1.1597
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347552869,
+      "symbol": "US500.cash",
+      "request": {
+        "action": 6,
+        "position": 347552869,
+        "symbol": "US500.cash",
+        "sl": 6866.43,
+        "tp": 6866.43
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347552870,
+      "symbol": "JP225.cash",
+      "request": {
+        "action": 6,
+        "position": 347552870,
+        "symbol": "JP225.cash",
+        "sl": 51257.17,
+        "tp": 51257.17
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347567919,
+      "symbol": "XAUUSD",
+      "request": {
+        "action": 6,
+        "position": 347567919,
+        "symbol": "XAUUSD",
+        "sl": 4212.31,
+        "tp": 4218.31
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347567921,
+      "symbol": "USDCAD",
+      "request": {
+        "action": 6,
+        "position": 347567921,
+        "symbol": "USDCAD",
+        "sl": 1.40065,
+        "tp": 1.39915
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347567923,
+      "symbol": "AUDNZD",
+      "request": {
+        "action": 6,
+        "position": 347567923,
+        "symbol": "AUDNZD",
+        "sl": 1.1599,
+        "tp": 1.1614
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347567925,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 6,
+        "position": 347567925,
+        "symbol": "EURJPY",
+        "sl": 179.52,
+        "tp": 179.521
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347567930,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 6,
+        "position": 347567930,
+        "symbol": "GBPCHF",
+        "sl": 1.04789,
+        "tp": 1.04639
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347567932,
+      "symbol": "NZDJPY",
+      "request": {
+        "action": 6,
+        "position": 347567932,
+        "symbol": "NZDJPY",
+        "sl": 87.663,
+        "tp": 87.665
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347567934,
+      "symbol": "EURUSD",
+      "request": {
+        "action": 6,
+        "position": 347567934,
+        "symbol": "EURUSD",
+        "sl": 1.15944,
+        "tp": 1.16094
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347567939,
+      "symbol": "EURAUD",
+      "request": {
+        "action": 6,
+        "position": 347567939,
+        "symbol": "EURAUD",
+        "sl": 1.76536,
+        "tp": 1.76386
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347567941,
+      "symbol": "US500.cash",
+      "request": {
+        "action": 6,
+        "position": 347567941,
+        "symbol": "US500.cash",
+        "sl": 6866.23,
+        "tp": 6866.23
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347567942,
+      "symbol": "JP225.cash",
+      "request": {
+        "action": 6,
+        "position": 347567942,
+        "symbol": "JP225.cash",
+        "sl": 51256.17,
+        "tp": 51256.17
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347588445,
+      "symbol": "USDCAD",
+      "request": {
+        "action": 6,
+        "position": 347588445,
+        "symbol": "USDCAD",
+        "sl": 1.3997,
+        "tp": 1.3982
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347588496,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 6,
+        "position": 347588496,
+        "symbol": "EURJPY",
+        "sl": 179.701,
+        "tp": 179.702
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347588514,
+      "symbol": "NZDJPY",
+      "request": {
+        "action": 6,
+        "position": 347588514,
+        "symbol": "NZDJPY",
+        "sl": 87.791,
+        "tp": 87.793
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347588532,
+      "symbol": "US500.cash",
+      "request": {
+        "action": 6,
+        "position": 347588532,
+        "symbol": "US500.cash",
+        "sl": 6860.67,
+        "tp": 6860.67
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347588542,
+      "symbol": "JP225.cash",
+      "request": {
+        "action": 6,
+        "position": 347588542,
+        "symbol": "JP225.cash",
+        "sl": 51205.83,
+        "tp": 51205.83
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347608821,
+      "symbol": "XAUUSD",
+      "request": {
+        "action": 6,
+        "position": 347608821,
+        "symbol": "XAUUSD",
+        "sl": 4236.22,
+        "tp": 4242.22
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347608822,
+      "symbol": "USDCAD",
+      "request": {
+        "action": 6,
+        "position": 347608822,
+        "symbol": "USDCAD",
+        "sl": 1.39951,
+        "tp": 1.39801
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347608823,
+      "symbol": "AUDNZD",
+      "request": {
+        "action": 6,
+        "position": 347608823,
+        "symbol": "AUDNZD",
+        "sl": 1.15922,
+        "tp": 1.15772
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347608826,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 6,
+        "position": 347608826,
+        "symbol": "EURJPY",
+        "sl": 179.661,
+        "tp": 179.662
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347608834,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 6,
+        "position": 347608834,
+        "symbol": "GBPCHF",
+        "sl": 1.04577,
+        "tp": 1.04427
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347608846,
+      "symbol": "NZDJPY",
+      "request": {
+        "action": 6,
+        "position": 347608846,
+        "symbol": "NZDJPY",
+        "sl": 87.816,
+        "tp": 87.818
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347608851,
+      "symbol": "EURUSD",
+      "request": {
+        "action": 6,
+        "position": 347608851,
+        "symbol": "EURUSD",
+        "sl": 1.16095,
+        "tp": 1.16245
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347608856,
+      "symbol": "EURAUD",
+      "request": {
+        "action": 6,
+        "position": 347608856,
+        "symbol": "EURAUD",
+        "sl": 1.766,
+        "tp": 1.7645
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347608860,
+      "symbol": "US500.cash",
+      "request": {
+        "action": 6,
+        "position": 347608860,
+        "symbol": "US500.cash",
+        "sl": 6857.97,
+        "tp": 6857.97
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347608870,
+      "symbol": "JP225.cash",
+      "request": {
+        "action": 6,
+        "position": 347608870,
+        "symbol": "JP225.cash",
+        "sl": 51163.83,
+        "tp": 51163.83
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347626658,
+      "symbol": "XAUUSD",
+      "request": {
+        "action": 6,
+        "position": 347626658,
+        "symbol": "XAUUSD",
+        "sl": 4233.17,
+        "tp": 4239.17
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347626661,
+      "symbol": "USDCAD",
+      "request": {
+        "action": 6,
+        "position": 347626661,
+        "symbol": "USDCAD",
+        "sl": 1.39945,
+        "tp": 1.39795
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347626665,
+      "symbol": "AUDNZD",
+      "request": {
+        "action": 6,
+        "position": 347626665,
+        "symbol": "AUDNZD",
+        "sl": 1.15852,
+        "tp": 1.15702
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347626669,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 6,
+        "position": 347626669,
+        "symbol": "EURJPY",
+        "sl": 179.696,
+        "tp": 179.697
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347626673,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 6,
+        "position": 347626673,
+        "symbol": "GBPCHF",
+        "sl": 1.04651,
+        "tp": 1.04501
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347626676,
+      "symbol": "NZDJPY",
+      "request": {
+        "action": 6,
+        "position": 347626676,
+        "symbol": "NZDJPY",
+        "sl": 87.84,
+        "tp": 87.841
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347626682,
+      "symbol": "EURUSD",
+      "request": {
+        "action": 6,
+        "position": 347626682,
+        "symbol": "EURUSD",
+        "sl": 1.16194,
+        "tp": 1.16344
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347626690,
+      "symbol": "EURAUD",
+      "request": {
+        "action": 6,
+        "position": 347626690,
+        "symbol": "EURAUD",
+        "sl": 1.76617,
+        "tp": 1.76767
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347626692,
+      "symbol": "US500.cash",
+      "request": {
+        "action": 6,
+        "position": 347626692,
+        "symbol": "US500.cash",
+        "sl": 6861.77,
+        "tp": 6861.77
+      },
+      "result": "dry-run"
+    },
+    {
+      "ticket": 347626695,
+      "symbol": "JP225.cash",
+      "request": {
+        "action": 6,
+        "position": 347626695,
+        "symbol": "JP225.cash",
+        "sl": 51136.83,
+        "tp": 51136.83
+      },
+      "result": "dry-run"
+    }
+  ]
+}

@@ -1,0 +1,1285 @@
+{
+  "timestamp": "2025-11-10T16:03:40.204034",
+  "source": "artifacts\\live_trading\\tmp_orders_for_enrich_20251110T154133Z.json",
+  "tickets": [
+    345147130,
+    345147142,
+    345147157,
+    345147192,
+    345147226,
+    345147236,
+    345147249,
+    345147301,
+    345147312,
+    345147360,
+    345147382,
+    345147391,
+    345160735,
+    345160739,
+    345160745,
+    345160752,
+    345160760,
+    345160763,
+    345160769,
+    345160779,
+    345160784,
+    345160787,
+    345160791,
+    345160796,
+    345201602,
+    345201612,
+    345201622,
+    345201630,
+    345201635,
+    345201643,
+    345201652,
+    345201663,
+    345201676,
+    345201687,
+    345201697,
+    345201702,
+    345231907,
+    345231909,
+    345231910,
+    345231911,
+    345231913,
+    345231918,
+    345231920,
+    345231922,
+    345231933,
+    345231934
+  ],
+  "orders": [
+    {
+      "ticket": 345147130,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "BTCUSD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 105980.1,
+      "time_setup": 1762792387,
+      "profit": 9.43,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "BTCUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 105982.18,
+          "sl": 107042.0,
+          "tp": 103862.54,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785188.json",
+        "meta_ts": "2025-11-10T14:33:08.587175"
+      },
+      "controller_log_line": "({'symbol': 'BTCUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 105982.18, 'sl': 107042.0, 'tp': 103862.54, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345147130, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945762, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='BTCUSD', volume=0.01, price=105982.18, stoplimit=0.0, sl=107042.0, tp=103862.54, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345147142,
+      "found_in_history": false,
+      "found_in_positions": false,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "ETHUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 3591.61,
+          "sl": 3627.53,
+          "tp": 3519.78,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785188.json",
+        "meta_ts": "2025-11-10T14:33:08.587175"
+      },
+      "controller_log_line": "({'symbol': 'ETHUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 3591.61, 'sl': 3627.53, 'tp': 3519.78, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345147142, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945763, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='ETHUSD', volume=0.01, price=3591.61, stoplimit=0.0, sl=3627.53, tp=3519.78, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345147157,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "XAUUSD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 4081.05,
+      "time_setup": 1762792387,
+      "profit": -5.97,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "XAUUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 4081.22,
+          "sl": 4122.03,
+          "tp": 3999.6,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785188.json",
+        "meta_ts": "2025-11-10T14:33:08.587175"
+      },
+      "controller_log_line": "({'symbol': 'XAUUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 4081.22, 'sl': 4122.03, 'tp': 3999.6, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345147157, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945764, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='XAUUSD', volume=0.01, price=4081.22, stoplimit=0.0, sl=4122.03, tp=3999.6, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345147192,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "USDCAD",
+      "type": 0,
+      "volume": 0.01,
+      "price_open": 1.40283,
+      "time_setup": 1762792387,
+      "profit": -0.09,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "USDCAD",
+          "side": "BUY",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.40283,
+          "sl": 1.3888,
+          "tp": 1.43089,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785188.json",
+        "meta_ts": "2025-11-10T14:33:08.587175"
+      },
+      "controller_log_line": "({'symbol': 'USDCAD', 'side': 'BUY', 'volume': 0.01, 'type': 'MARKET', 'price': 1.40283, 'sl': 1.3888, 'tp': 1.43089, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345147192, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945765, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='USDCAD', volume=0.01, price=1.40283, stoplimit=0.0, sl=1.3888, tp=1.43089, deviation=20, type=0, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345147226,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 1.15751,
+      "time_setup": 1762792387,
+      "profit": -0.03,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "AUDNZD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.15751,
+          "sl": 1.16909,
+          "tp": 1.13436,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785188.json",
+        "meta_ts": "2025-11-10T14:33:08.587175"
+      },
+      "controller_log_line": "({'symbol': 'AUDNZD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 1.15751, 'sl': 1.16909, 'tp': 1.13436, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345147226, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945766, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='AUDNZD', volume=0.01, price=1.15751, stoplimit=0.0, sl=1.16909, tp=1.13436, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345147236,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "EURJPY",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 178.193,
+      "time_setup": 1762792388,
+      "profit": 1.87,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "EURJPY",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 178.192,
+          "sl": 179.974,
+          "tp": 174.628,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785188.json",
+        "meta_ts": "2025-11-10T14:33:08.587175"
+      },
+      "controller_log_line": "({'symbol': 'EURJPY', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 178.192, 'sl': 179.974, 'tp': 174.628, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345147236, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945767, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='EURJPY', volume=0.01, price=178.192, stoplimit=0.0, sl=179.974, tp=174.628, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345147249,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 1.06008,
+      "time_setup": 1762792388,
+      "profit": -0.3,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "GBPCHF",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.06012,
+          "sl": 1.07072,
+          "tp": 1.03892,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785188.json",
+        "meta_ts": "2025-11-10T14:33:08.587175"
+      },
+      "controller_log_line": "({'symbol': 'GBPCHF', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 1.06012, 'sl': 1.07072, 'tp': 1.03892, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345147249, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945768, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='GBPCHF', volume=0.01, price=1.06012, stoplimit=0.0, sl=1.07072, tp=1.03892, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345147301,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "NZDJPY",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 86.841,
+      "time_setup": 1762792388,
+      "profit": 0.64,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "NZDJPY",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 86.838,
+          "sl": 87.706,
+          "tp": 85.101,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785188.json",
+        "meta_ts": "2025-11-10T14:33:08.587175"
+      },
+      "controller_log_line": "({'symbol': 'NZDJPY', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 86.838, 'sl': 87.706, 'tp': 85.101, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345147301, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945769, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='NZDJPY', volume=0.01, price=86.838, stoplimit=0.0, sl=87.706, tp=85.101, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345147312,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "EURUSD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 1.15618,
+      "time_setup": 1762792388,
+      "profit": 1.17,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "EURUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.15616,
+          "sl": 1.16772,
+          "tp": 1.13304,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785188.json",
+        "meta_ts": "2025-11-10T14:33:08.587175"
+      },
+      "controller_log_line": "({'symbol': 'EURUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 1.15616, 'sl': 1.16772, 'tp': 1.13304, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345147312, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945770, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='EURUSD', volume=0.01, price=1.15616, stoplimit=0.0, sl=1.16772, tp=1.13304, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345147360,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "EURAUD",
+      "type": 0,
+      "volume": 0.01,
+      "price_open": 1.77267,
+      "time_setup": 1762792388,
+      "profit": -0.5,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "EURAUD",
+          "side": "BUY",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.7726899999999999,
+          "sl": 1.75496,
+          "tp": 1.80814,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785188.json",
+        "meta_ts": "2025-11-10T14:33:08.587175"
+      },
+      "controller_log_line": "({'symbol': 'EURAUD', 'side': 'BUY', 'volume': 0.01, 'type': 'MARKET', 'price': 1.7726899999999999, 'sl': 1.75496, 'tp': 1.80814, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345147360, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945771, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='EURAUD', volume=0.01, price=1.7726899999999999, stoplimit=0.0, sl=1.75496, tp=1.80814, deviation=20, type=0, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345147382,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "US500.cash",
+      "type": 0,
+      "volume": 0.01,
+      "price_open": 6798.13,
+      "time_setup": 1762792389,
+      "profit": -0.18,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "US500.cash",
+          "side": "BUY",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 6797.83,
+          "sl": 6729.85,
+          "tp": 6933.79,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785188.json",
+        "meta_ts": "2025-11-10T14:33:08.587175"
+      },
+      "controller_log_line": "({'symbol': 'US500.cash', 'side': 'BUY', 'volume': 0.01, 'type': 'MARKET', 'price': 6797.83, 'sl': 6729.85, 'tp': 6933.79, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345147382, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945772, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='US500.cash', volume=0.01, price=6797.83, stoplimit=0.0, sl=6729.85, tp=6933.79, deviation=20, type=0, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345147391,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "JP225.cash",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 50969.83,
+      "time_setup": 1762792389,
+      "profit": 0.12,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "JP225.cash",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 50969.83,
+          "sl": 51479.53,
+          "tp": 49950.43,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785188.json",
+        "meta_ts": "2025-11-10T14:33:08.587175"
+      },
+      "controller_log_line": "({'symbol': 'JP225.cash', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 50969.83, 'sl': 51479.53, 'tp': 49950.43, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345147391, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945773, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='JP225.cash', volume=0.01, price=50969.83, stoplimit=0.0, sl=51479.53, tp=49950.43, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\live_run_controller.py:352: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC)."
+    },
+    {
+      "ticket": 345160735,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "BTCUSD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 105660.05,
+      "time_setup": 1762792707,
+      "profit": 6.23,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "BTCUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 105660.22,
+          "sl": 106716.82,
+          "tp": 103547.02,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785509.json",
+        "meta_ts": "2025-11-10T14:38:29.047919"
+      },
+      "controller_log_line": "({'symbol': 'BTCUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 105660.22, 'sl': 106716.82, 'tp': 103547.02, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345160735, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945774, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='BTCUSD', volume=0.01, price=105660.22, stoplimit=0.0, sl=106716.82, tp=103547.02, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345160739,
+      "found_in_history": false,
+      "found_in_positions": false,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "ETHUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 3580.87,
+          "sl": 3616.68,
+          "tp": 3509.25,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785509.json",
+        "meta_ts": "2025-11-10T14:38:29.047919"
+      },
+      "controller_log_line": "({'symbol': 'ETHUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 3580.87, 'sl': 3616.68, 'tp': 3509.25, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345160739, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945775, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='ETHUSD', volume=0.01, price=3580.87, stoplimit=0.0, sl=3616.68, tp=3509.25, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345160745,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "XAUUSD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 4079.98,
+      "time_setup": 1762792707,
+      "profit": -7.04,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "XAUUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 4080.09,
+          "sl": 4120.89,
+          "tp": 3998.49,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785509.json",
+        "meta_ts": "2025-11-10T14:38:29.047919"
+      },
+      "controller_log_line": "({'symbol': 'XAUUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 4080.09, 'sl': 4120.89, 'tp': 3998.49, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345160745, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945776, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='XAUUSD', volume=0.01, price=4080.09, stoplimit=0.0, sl=4120.89, tp=3998.49, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345160752,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "USDCAD",
+      "type": 0,
+      "volume": 0.01,
+      "price_open": 1.4021,
+      "time_setup": 1762792708,
+      "profit": 0.43,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "USDCAD",
+          "side": "BUY",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.40208,
+          "sl": 1.38806,
+          "tp": 1.43012,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785509.json",
+        "meta_ts": "2025-11-10T14:38:29.047919"
+      },
+      "controller_log_line": "({'symbol': 'USDCAD', 'side': 'BUY', 'volume': 0.01, 'type': 'MARKET', 'price': 1.40208, 'sl': 1.38806, 'tp': 1.43012, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345160752, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945777, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='USDCAD', volume=0.01, price=1.40208, stoplimit=0.0, sl=1.38806, tp=1.43012, deviation=20, type=0, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345160760,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 1.15734,
+      "time_setup": 1762792708,
+      "profit": -0.13,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "AUDNZD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.15735,
+          "sl": 1.16892,
+          "tp": 1.1342,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785509.json",
+        "meta_ts": "2025-11-10T14:38:29.047919"
+      },
+      "controller_log_line": "({'symbol': 'AUDNZD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 1.15735, 'sl': 1.16892, 'tp': 1.1342, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345160760, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945778, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='AUDNZD', volume=0.01, price=1.15735, stoplimit=0.0, sl=1.16892, tp=1.1342, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345160763,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "EURJPY",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 178.123,
+      "time_setup": 1762792708,
+      "profit": 1.42,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "EURJPY",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 178.124,
+          "sl": 179.905,
+          "tp": 174.562,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785509.json",
+        "meta_ts": "2025-11-10T14:38:29.047919"
+      },
+      "controller_log_line": "({'symbol': 'EURJPY', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 178.124, 'sl': 179.905, 'tp': 174.562, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345160763, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945779, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='EURJPY', volume=0.01, price=178.124, stoplimit=0.0, sl=179.905, tp=174.562, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345160769,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 1.05951,
+      "time_setup": 1762792708,
+      "profit": -1.0,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "GBPCHF",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.05953,
+          "sl": 1.07013,
+          "tp": 1.03834,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785509.json",
+        "meta_ts": "2025-11-10T14:38:29.047919"
+      },
+      "controller_log_line": "({'symbol': 'GBPCHF', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 1.05953, 'sl': 1.07013, 'tp': 1.03834, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345160769, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945780, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='GBPCHF', volume=0.01, price=1.05953, stoplimit=0.0, sl=1.07013, tp=1.03834, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345160779,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "NZDJPY",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 86.829,
+      "time_setup": 1762792708,
+      "profit": 0.56,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "NZDJPY",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 86.829,
+          "sl": 87.697,
+          "tp": 85.092,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785509.json",
+        "meta_ts": "2025-11-10T14:38:29.047919"
+      },
+      "controller_log_line": "({'symbol': 'NZDJPY', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 86.829, 'sl': 87.697, 'tp': 85.092, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345160779, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945781, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='NZDJPY', volume=0.01, price=86.829, stoplimit=0.0, sl=87.697, tp=85.092, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345160784,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "EURUSD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 1.15653,
+      "time_setup": 1762792709,
+      "profit": 1.52,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "EURUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.15653,
+          "sl": 1.1681,
+          "tp": 1.1334,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785509.json",
+        "meta_ts": "2025-11-10T14:38:29.047919"
+      },
+      "controller_log_line": "({'symbol': 'EURUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 1.15653, 'sl': 1.1681, 'tp': 1.1334, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345160784, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945782, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='EURUSD', volume=0.01, price=1.15653, stoplimit=0.0, sl=1.1681, tp=1.1334, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345160787,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "EURAUD",
+      "type": 0,
+      "volume": 0.01,
+      "price_open": 1.77246,
+      "time_setup": 1762792709,
+      "profit": -0.37,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "EURAUD",
+          "side": "BUY",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.7724600000000001,
+          "sl": 1.75474,
+          "tp": 1.80791,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785509.json",
+        "meta_ts": "2025-11-10T14:38:29.047919"
+      },
+      "controller_log_line": "({'symbol': 'EURAUD', 'side': 'BUY', 'volume': 0.01, 'type': 'MARKET', 'price': 1.7724600000000001, 'sl': 1.75474, 'tp': 1.80791, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345160787, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945783, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='EURAUD', volume=0.01, price=1.7724600000000001, stoplimit=0.0, sl=1.75474, tp=1.80791, deviation=20, type=0, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345160791,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "US500.cash",
+      "type": 0,
+      "volume": 0.01,
+      "price_open": 6803.13,
+      "time_setup": 1762792709,
+      "profit": -0.23,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "US500.cash",
+          "side": "BUY",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 6802.83,
+          "sl": 6734.8,
+          "tp": 6938.89,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785509.json",
+        "meta_ts": "2025-11-10T14:38:29.047919"
+      },
+      "controller_log_line": "({'symbol': 'US500.cash', 'side': 'BUY', 'volume': 0.01, 'type': 'MARKET', 'price': 6802.83, 'sl': 6734.8, 'tp': 6938.89, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345160791, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945784, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='US500.cash', volume=0.01, price=6802.83, stoplimit=0.0, sl=6734.8, tp=6938.89, deviation=20, type=0, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345160796,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "JP225.cash",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 50982.83,
+      "time_setup": 1762792709,
+      "profit": 0.13,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "JP225.cash",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 50979.83,
+          "sl": 51489.63,
+          "tp": 49960.23,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762785509.json",
+        "meta_ts": "2025-11-10T14:38:29.047919"
+      },
+      "controller_log_line": "({'symbol': 'JP225.cash', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 50979.83, 'sl': 51489.63, 'tp': 49960.23, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345160796, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945785, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='JP225.cash', volume=0.01, price=50979.83, stoplimit=0.0, sl=51489.63, tp=49960.23, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))C:\\Users\\saint\\Documents\\PROPFIRM\\tools\\live_run_controller.py:262: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC)."
+    },
+    {
+      "ticket": 345201602,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "BTCUSD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 104837.08,
+      "time_setup": 1762794240,
+      "profit": -2.0,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "BTCUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 104837.25,
+          "sl": 105885.62,
+          "tp": 102740.51,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762787041.json",
+        "meta_ts": "2025-11-10T15:04:01.613980"
+      },
+      "controller_log_line": "({'symbol': 'BTCUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 104837.25, 'sl': 105885.62, 'tp': 102740.51, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345201602, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945786, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='BTCUSD', volume=0.01, price=104837.25, stoplimit=0.0, sl=105885.62, tp=102740.51, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345201612,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "ETHUSD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 3531.98,
+      "time_setup": 1762794240,
+      "profit": 1.46,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "ETHUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 3532.2,
+          "sl": 3567.52,
+          "tp": 3461.56,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762787041.json",
+        "meta_ts": "2025-11-10T15:04:01.613980"
+      },
+      "controller_log_line": "({'symbol': 'ETHUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 3532.2, 'sl': 3567.52, 'tp': 3461.56, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345201612, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945787, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='ETHUSD', volume=0.01, price=3532.2, stoplimit=0.0, sl=3567.52, tp=3461.56, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345201622,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "XAUUSD",
+      "type": 0,
+      "volume": 0.01,
+      "price_open": 4088.36,
+      "time_setup": 1762794240,
+      "profit": -1.52,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "XAUUSD",
+          "side": "BUY",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 4088.93,
+          "sl": 4048.04,
+          "tp": 4170.71,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762787041.json",
+        "meta_ts": "2025-11-10T15:04:01.613980"
+      },
+      "controller_log_line": "({'symbol': 'XAUUSD', 'side': 'BUY', 'volume': 0.01, 'type': 'MARKET', 'price': 4088.93, 'sl': 4048.04, 'tp': 4170.71, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345201622, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945788, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='XAUUSD', volume=0.01, price=4088.93, stoplimit=0.0, sl=4048.04, tp=4170.71, deviation=20, type=0, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345201630,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "USDCAD",
+      "type": 0,
+      "volume": 0.01,
+      "price_open": 1.40184,
+      "time_setup": 1762794240,
+      "profit": 0.62,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "USDCAD",
+          "side": "BUY",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.40184,
+          "sl": 1.38782,
+          "tp": 1.42988,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762787041.json",
+        "meta_ts": "2025-11-10T15:04:01.613980"
+      },
+      "controller_log_line": "({'symbol': 'USDCAD', 'side': 'BUY', 'volume': 0.01, 'type': 'MARKET', 'price': 1.40184, 'sl': 1.38782, 'tp': 1.42988, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345201630, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945789, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='USDCAD', volume=0.01, price=1.40184, stoplimit=0.0, sl=1.38782, tp=1.42988, deviation=20, type=0, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345201635,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 1.1576,
+      "time_setup": 1762794240,
+      "profit": 0.02,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "AUDNZD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.15761,
+          "sl": 1.16919,
+          "tp": 1.13446,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762787041.json",
+        "meta_ts": "2025-11-10T15:04:01.613980"
+      },
+      "controller_log_line": "({'symbol': 'AUDNZD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 1.15761, 'sl': 1.16919, 'tp': 1.13446, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345201635, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945790, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='AUDNZD', volume=0.01, price=1.15761, stoplimit=0.0, sl=1.16919, tp=1.13446, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345201643,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "EURJPY",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 178.196,
+      "time_setup": 1762794241,
+      "profit": 1.8900000000000001,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "EURJPY",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 178.196,
+          "sl": 179.978,
+          "tp": 174.632,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762787041.json",
+        "meta_ts": "2025-11-10T15:04:01.613980"
+      },
+      "controller_log_line": "({'symbol': 'EURJPY', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 178.196, 'sl': 179.978, 'tp': 174.632, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345201643, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945791, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='EURJPY', volume=0.01, price=178.196, stoplimit=0.0, sl=179.978, tp=174.632, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345201652,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 1.06016,
+      "time_setup": 1762794241,
+      "profit": -0.2,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "GBPCHF",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.06015,
+          "sl": 1.07075,
+          "tp": 1.03895,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762787041.json",
+        "meta_ts": "2025-11-10T15:04:01.613980"
+      },
+      "controller_log_line": "({'symbol': 'GBPCHF', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 1.06015, 'sl': 1.07075, 'tp': 1.03895, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345201652, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945792, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='GBPCHF', volume=0.01, price=1.06015, stoplimit=0.0, sl=1.07075, tp=1.03895, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345201663,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "NZDJPY",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 86.875,
+      "time_setup": 1762794241,
+      "profit": 0.86,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "NZDJPY",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 86.874,
+          "sl": 87.743,
+          "tp": 85.137,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762787041.json",
+        "meta_ts": "2025-11-10T15:04:01.613980"
+      },
+      "controller_log_line": "({'symbol': 'NZDJPY', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 86.874, 'sl': 87.743, 'tp': 85.137, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345201663, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945793, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='NZDJPY', volume=0.01, price=86.874, stoplimit=0.0, sl=87.743, tp=85.137, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345201676,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "EURUSD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 1.15654,
+      "time_setup": 1762794241,
+      "profit": 1.53,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "EURUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.15653,
+          "sl": 1.1681,
+          "tp": 1.1334,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762787041.json",
+        "meta_ts": "2025-11-10T15:04:01.613980"
+      },
+      "controller_log_line": "({'symbol': 'EURUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 1.15653, 'sl': 1.1681, 'tp': 1.1334, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345201676, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945794, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='EURUSD', volume=0.01, price=1.15653, stoplimit=0.0, sl=1.1681, tp=1.1334, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345201687,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "EURAUD",
+      "type": 0,
+      "volume": 0.01,
+      "price_open": 1.77195,
+      "time_setup": 1762794241,
+      "profit": -0.03,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "EURAUD",
+          "side": "BUY",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.77195,
+          "sl": 1.75423,
+          "tp": 1.80739,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762787041.json",
+        "meta_ts": "2025-11-10T15:04:01.613980"
+      },
+      "controller_log_line": "({'symbol': 'EURAUD', 'side': 'BUY', 'volume': 0.01, 'type': 'MARKET', 'price': 1.77195, 'sl': 1.75423, 'tp': 1.80739, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345201687, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945795, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='EURAUD', volume=0.01, price=1.77195, stoplimit=0.0, sl=1.75423, tp=1.80739, deviation=20, type=0, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345201697,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "US500.cash",
+      "type": 0,
+      "volume": 0.01,
+      "price_open": 6805.43,
+      "time_setup": 1762794242,
+      "profit": -0.26,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "US500.cash",
+          "side": "BUY",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 6805.63,
+          "sl": 6737.57,
+          "tp": 6941.74,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762787041.json",
+        "meta_ts": "2025-11-10T15:04:01.613980"
+      },
+      "controller_log_line": "({'symbol': 'US500.cash', 'side': 'BUY', 'volume': 0.01, 'type': 'MARKET', 'price': 6805.63, 'sl': 6737.57, 'tp': 6941.74, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345201697, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945796, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='US500.cash', volume=0.01, price=6805.63, stoplimit=0.0, sl=6737.57, tp=6941.74, deviation=20, type=0, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345201702,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "JP225.cash",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 50884.83,
+      "time_setup": 1762794242,
+      "profit": 0.07,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "JP225.cash",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 50887.83,
+          "sl": 51396.71,
+          "tp": 49870.07,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762787041.json",
+        "meta_ts": "2025-11-10T15:04:01.613980"
+      },
+      "controller_log_line": "({'symbol': 'JP225.cash', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 50887.83, 'sl': 51396.71, 'tp': 49870.07, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345201702, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945797, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='JP225.cash', volume=0.01, price=50887.83, stoplimit=0.0, sl=51396.71, tp=49870.07, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345231907,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "BTCUSD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 105422.5,
+      "time_setup": 1762795772,
+      "profit": 3.86,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "BTCUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 105422.0,
+          "sl": 106476.22,
+          "tp": 103313.56,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762788574.json",
+        "meta_ts": "2025-11-10T15:29:34.351125"
+      },
+      "controller_log_line": "({'symbol': 'BTCUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 105422.0, 'sl': 106476.22, 'tp': 103313.56, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345231907, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945798, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='BTCUSD', volume=0.01, price=105422.0, stoplimit=0.0, sl=106476.22, tp=103313.56, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345231909,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "ETHUSD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 3545.06,
+      "time_setup": 1762795772,
+      "profit": 2.77,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "ETHUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 3544.3,
+          "sl": 3579.74,
+          "tp": 3473.41,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762788574.json",
+        "meta_ts": "2025-11-10T15:29:34.351125"
+      },
+      "controller_log_line": "({'symbol': 'ETHUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 3544.3, 'sl': 3579.74, 'tp': 3473.41, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345231909, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945799, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='ETHUSD', volume=0.01, price=3544.3, stoplimit=0.0, sl=3579.74, tp=3473.41, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345231910,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "XAUUSD",
+      "type": 0,
+      "volume": 0.01,
+      "price_open": 4089.45,
+      "time_setup": 1762795772,
+      "profit": -2.61,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "XAUUSD",
+          "side": "BUY",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 4089.56,
+          "sl": 4048.66,
+          "tp": 4171.35,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762788574.json",
+        "meta_ts": "2025-11-10T15:29:34.351125"
+      },
+      "controller_log_line": "({'symbol': 'XAUUSD', 'side': 'BUY', 'volume': 0.01, 'type': 'MARKET', 'price': 4089.56, 'sl': 4048.66, 'tp': 4171.35, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345231910, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945800, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='XAUUSD', volume=0.01, price=4089.56, stoplimit=0.0, sl=4048.66, tp=4171.35, deviation=20, type=0, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345231911,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "USDCAD",
+      "type": 0,
+      "volume": 0.01,
+      "price_open": 1.40265,
+      "time_setup": 1762795773,
+      "profit": 0.04,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "USDCAD",
+          "side": "BUY",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.40265,
+          "sl": 1.38862,
+          "tp": 1.4307,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762788574.json",
+        "meta_ts": "2025-11-10T15:29:34.351125"
+      },
+      "controller_log_line": "({'symbol': 'USDCAD', 'side': 'BUY', 'volume': 0.01, 'type': 'MARKET', 'price': 1.40265, 'sl': 1.38862, 'tp': 1.4307, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345231911, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945801, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='USDCAD', volume=0.01, price=1.40265, stoplimit=0.0, sl=1.38862, tp=1.4307, deviation=20, type=0, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345231913,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "AUDNZD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 1.15747,
+      "time_setup": 1762795773,
+      "profit": -0.06,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "AUDNZD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.15749,
+          "sl": 1.16906,
+          "tp": 1.13434,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762788574.json",
+        "meta_ts": "2025-11-10T15:29:34.351125"
+      },
+      "controller_log_line": "({'symbol': 'AUDNZD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 1.15749, 'sl': 1.16906, 'tp': 1.13434, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345231913, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945802, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='AUDNZD', volume=0.01, price=1.15749, stoplimit=0.0, sl=1.16906, tp=1.13434, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345231918,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "EURJPY",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 178.074,
+      "time_setup": 1762795773,
+      "profit": 1.1,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "EURJPY",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 178.074,
+          "sl": 179.855,
+          "tp": 174.513,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762788574.json",
+        "meta_ts": "2025-11-10T15:29:34.351125"
+      },
+      "controller_log_line": "({'symbol': 'EURJPY', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 178.074, 'sl': 179.855, 'tp': 174.513, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345231918, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945803, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='EURJPY', volume=0.01, price=178.074, stoplimit=0.0, sl=179.855, tp=174.513, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345231920,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "GBPCHF",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 1.05981,
+      "time_setup": 1762795773,
+      "profit": -0.63,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "GBPCHF",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.05982,
+          "sl": 1.07042,
+          "tp": 1.03862,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762788574.json",
+        "meta_ts": "2025-11-10T15:29:34.351125"
+      },
+      "controller_log_line": "({'symbol': 'GBPCHF', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 1.05982, 'sl': 1.07042, 'tp': 1.03862, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345231920, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945804, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='GBPCHF', volume=0.01, price=1.05982, stoplimit=0.0, sl=1.07042, tp=1.03862, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345231922,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "NZDJPY",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 86.809,
+      "time_setup": 1762795774,
+      "profit": 0.43,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "NZDJPY",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 86.809,
+          "sl": 87.677,
+          "tp": 85.073,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762788574.json",
+        "meta_ts": "2025-11-10T15:29:34.351125"
+      },
+      "controller_log_line": "({'symbol': 'NZDJPY', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 86.809, 'sl': 87.677, 'tp': 85.073, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345231922, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945805, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='NZDJPY', volume=0.01, price=86.809, stoplimit=0.0, sl=87.677, tp=85.073, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345231933,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "EURUSD",
+      "type": 1,
+      "volume": 0.01,
+      "price_open": 1.15601,
+      "time_setup": 1762795774,
+      "profit": 1.0,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "EURUSD",
+          "side": "SELL",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.15601,
+          "sl": 1.16757,
+          "tp": 1.13289,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762788574.json",
+        "meta_ts": "2025-11-10T15:29:34.351125"
+      },
+      "controller_log_line": "({'symbol': 'EURUSD', 'side': 'SELL', 'volume': 0.01, 'type': 'MARKET', 'price': 1.15601, 'sl': 1.16757, 'tp': 1.13289, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345231933, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945806, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='EURUSD', volume=0.01, price=1.15601, stoplimit=0.0, sl=1.16757, tp=1.13289, deviation=20, type=1, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    },
+    {
+      "ticket": 345231934,
+      "found_in_history": false,
+      "found_in_positions": true,
+      "symbol": "EURAUD",
+      "type": 0,
+      "volume": 0.01,
+      "price_open": 1.77218,
+      "time_setup": 1762795774,
+      "profit": -0.18,
+      "ai_send": {
+        "retcode": 10009,
+        "request": {
+          "symbol": "EURAUD",
+          "side": "BUY",
+          "volume": 0.01,
+          "type": "MARKET",
+          "price": 1.77216,
+          "sl": 1.75444,
+          "tp": 1.8076,
+          "comment": "ai_mtf_m15"
+        },
+        "file": "C:\\Users\\saint\\Documents\\PROPFIRM\\artifacts\\live_trading\\ai_send_1762788574.json",
+        "meta_ts": "2025-11-10T15:29:34.351125"
+      },
+      "controller_log_line": "({'symbol': 'EURAUD', 'side': 'BUY', 'volume': 0.01, 'type': 'MARKET', 'price': 1.77216, 'sl': 1.75444, 'tp': 1.8076, 'comment': 'ai_mtf_m15'}, OrderSendResult(retcode=10009, deal=0, order=345231934, volume=0.01, price=0.0, bid=0.0, ask=0.0, comment='Request executed', request_id=2224945807, retcode_external=0, request=TradeRequest(action=1, magic=0, order=0, symbol='EURAUD', volume=0.01, price=1.77216, stoplimit=0.0, sl=1.75444, tp=1.8076, deviation=20, type=0, type_filling=0, type_time=0, expiration=0, comment='ai_mtf_m15', position=0, position_by=0)))"
+    }
+  ],
+  "errors": []
+}

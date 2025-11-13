@@ -1,0 +1,413 @@
+{
+  "timestamp": "2025-10-20T07:10:51.092261",
+  "symbols": [
+    "EURUSD",
+    "XAUUSD",
+    "BTCUSD"
+  ],
+  "performance_metrics": {
+    "total_trades": 48,
+    "winning_trades": 3,
+    "current_balance": 11100.0,
+    "max_drawdown": -0.008928571428571428,
+    "current_regime": "Bull",
+    "symbols_traded": [
+      "EURUSD",
+      "XAUUSD",
+      "BTCUSD"
+    ],
+  "optimal_threshold": 0.50,
+  "target_win_rate": 0.50,
+    "expected_sharpe": 18.46,
+    "confidence_filter_rejections": 0,
+    "last_balance_update": 48,
+    "peak_balance": 11200.0
+  },
+  "trade_history": [
+    {
+      "timestamp": "2025-10-20T01:19:04.367703",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 4243.8,
+      "order_id": 328694828
+    },
+    {
+      "timestamp": "2025-10-20T01:19:04.667479",
+      "symbol": "BTCUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 108799.51,
+      "order_id": 328694830
+    },
+    {
+      "timestamp": "2025-10-20T01:34:32.623875",
+      "symbol": "BTCUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 108675.95,
+      "order_id": 328703457
+    },
+    {
+      "timestamp": "2025-10-20T01:50:02.556328",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 4239.66,
+      "order_id": 328710367
+    },
+    {
+      "timestamp": "2025-10-20T01:50:02.894657",
+      "symbol": "BTCUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 108432.41,
+      "order_id": 328710371
+    },
+    {
+      "timestamp": "2025-10-20T02:05:32.436905",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.1659,
+      "order_id": 328719568
+    },
+    {
+      "timestamp": "2025-10-20T02:05:32.885140",
+      "symbol": "BTCUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 108331.4,
+      "order_id": 328719573
+    },
+    {
+      "timestamp": "2025-10-20T02:21:02.544372",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 4234.78,
+      "order_id": 328732569
+    },
+    {
+      "timestamp": "2025-10-20T02:21:02.871475",
+      "symbol": "BTCUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 107770.67,
+      "order_id": 328732570
+    },
+    {
+      "timestamp": "2025-10-20T02:36:32.439001",
+      "symbol": "EURUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.16611,
+      "order_id": 328742446
+    },
+    {
+      "timestamp": "2025-10-20T02:36:32.754666",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 4229.37,
+      "order_id": 328742447
+    },
+    {
+      "timestamp": "2025-10-20T02:52:02.463085",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.16633,
+      "order_id": 328750727
+    },
+    {
+      "timestamp": "2025-10-20T02:52:02.757982",
+      "symbol": "XAUUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 4247.59,
+      "order_id": 328750730
+    },
+    {
+      "timestamp": "2025-10-20T02:52:03.061611",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 107801.42,
+      "order_id": 328750764
+    },
+    {
+      "timestamp": "2025-10-20T03:07:32.480450",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.16659,
+      "order_id": 328759930
+    },
+    {
+      "timestamp": "2025-10-20T03:07:32.806485",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 4237.12,
+      "order_id": 328759935
+    },
+    {
+      "timestamp": "2025-10-20T03:07:33.112972",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 107963.18,
+      "order_id": 328759940
+    },
+    {
+      "timestamp": "2025-10-20T03:23:02.453313",
+      "symbol": "EURUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.16638,
+      "order_id": 328769502
+    },
+    {
+      "timestamp": "2025-10-20T03:23:02.770067",
+      "symbol": "XAUUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 4249.47,
+      "order_id": 328769505
+    },
+    {
+      "timestamp": "2025-10-20T03:23:03.057789",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 107973.14,
+      "order_id": 328769506
+    },
+    {
+      "timestamp": "2025-10-20T03:38:32.533524",
+      "symbol": "EURUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.16583,
+      "order_id": 328776158
+    },
+    {
+      "timestamp": "2025-10-20T03:38:32.979628",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 107936.26,
+      "order_id": 328776160
+    },
+    {
+      "timestamp": "2025-10-20T03:54:02.494382",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.16633,
+      "order_id": 328782599
+    },
+    {
+      "timestamp": "2025-10-20T03:54:03.168881",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 108021.77,
+      "order_id": 328782611
+    },
+    {
+      "timestamp": "2025-10-20T04:09:32.596559",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.16649,
+      "order_id": 328788297
+    },
+    {
+      "timestamp": "2025-10-20T04:09:32.920048",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 4260.47,
+      "order_id": 328788299
+    },
+    {
+      "timestamp": "2025-10-20T04:09:33.236704",
+      "symbol": "BTCUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 107850.98,
+      "order_id": 328788301
+    },
+    {
+      "timestamp": "2025-10-20T04:25:02.455823",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.16698,
+      "order_id": 328792479
+    },
+    {
+      "timestamp": "2025-10-20T04:25:02.970567",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 108413.37,
+      "order_id": 328792484
+    },
+    {
+      "timestamp": "2025-10-20T04:40:32.482032",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.16688,
+      "order_id": 328798579
+    },
+    {
+      "timestamp": "2025-10-20T04:40:32.841182",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 4263.13,
+      "order_id": 328798582
+    },
+    {
+      "timestamp": "2025-10-20T04:40:33.187906",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 108714.17,
+      "order_id": 328798583
+    },
+    {
+      "timestamp": "2025-10-20T04:56:02.461399",
+      "symbol": "EURUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.16648,
+      "order_id": 328806161
+    },
+    {
+      "timestamp": "2025-10-20T05:11:32.539805",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.1667399999999999,
+      "order_id": 328811398
+    },
+    {
+      "timestamp": "2025-10-20T05:11:32.869456",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 4256.28,
+      "order_id": 328811401
+    },
+    {
+      "timestamp": "2025-10-20T05:11:33.169405",
+      "symbol": "BTCUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 108587.72,
+      "order_id": 328811403
+    },
+    {
+      "timestamp": "2025-10-20T05:27:02.679030",
+      "symbol": "BTCUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 108657.12,
+      "order_id": 328816261
+    },
+    {
+      "timestamp": "2025-10-20T05:42:32.696836",
+      "symbol": "XAUUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 4256.7,
+      "order_id": 328822339
+    },
+    {
+      "timestamp": "2025-10-20T05:58:02.581757",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.16681,
+      "order_id": 328830150
+    },
+    {
+      "timestamp": "2025-10-20T05:58:02.909972",
+      "symbol": "XAUUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 4264.25,
+      "order_id": 328830152
+    },
+    {
+      "timestamp": "2025-10-20T05:58:03.245773",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 110140.99,
+      "order_id": 328830153
+    },
+    {
+      "timestamp": "2025-10-20T06:13:32.570780",
+      "symbol": "EURUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 1.16665,
+      "order_id": 328836263
+    },
+    {
+      "timestamp": "2025-10-20T06:13:33.055511",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 110345.05,
+      "order_id": 328836265
+    },
+    {
+      "timestamp": "2025-10-20T06:29:02.569960",
+      "symbol": "EURUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 1.16689,
+      "order_id": 328840199
+    },
+    {
+      "timestamp": "2025-10-20T06:29:02.874329",
+      "symbol": "XAUUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 4264.73,
+      "order_id": 328840202
+    },
+    {
+      "timestamp": "2025-10-20T06:29:03.239191",
+      "symbol": "BTCUSD",
+      "action": "sell",
+      "volume": 0.01,
+      "price": 110008.48,
+      "order_id": 328840204
+    },
+    {
+      "timestamp": "2025-10-20T06:44:32.687258",
+      "symbol": "XAUUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 4267.38,
+      "order_id": 328845769
+    },
+    {
+      "timestamp": "2025-10-20T07:00:03.178562",
+      "symbol": "BTCUSD",
+      "action": "buy",
+      "volume": 0.01,
+      "price": 110369.31,
+      "order_id": 328850832
+    }
+  ],
+  "total_runtime": "0:00:00"
+}

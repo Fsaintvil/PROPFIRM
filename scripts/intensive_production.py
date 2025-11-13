@@ -178,17 +178,18 @@ class IntensiveProductionEngine(LiveTradingEngine):
         try:
             # SL/TP plus agressifs pour mode intensif
             if symbol == "EURUSD":
-                sl_pct = 0.0015  # 1.5% = ~15 pips (plus tight)
-                tp_pct = 0.0025  # 2.5% = ~25 pips (ratio 1:1.67)
+                # SL = 0.15% (≈15 pips), TP = 0.30% (≈30 pips) → R/R 1:2 (1.5:3)
+                sl_pct = 0.0015  # 0.15% = ~15 pips
+                tp_pct = 0.0030  # 0.30% = ~30 pips (ratio 1:2)
             elif symbol == "XAUUSD":
                 sl_pct = 0.008   # 0.8% pour l'or
-                tp_pct = 0.012   # 1.2% pour l'or (ratio 1:1.5)
+                tp_pct = 0.016   # 1.6% pour l'or (ratio 1:2)
             elif symbol == "BTCUSD":
-                sl_pct = 0.015   # 1.5% pour crypto (plus tight)
-                tp_pct = 0.025   # 2.5% pour crypto (ratio 1:1.67)
+                sl_pct = 0.015   # 1.5% pour crypto
+                tp_pct = 0.030   # 3.0% pour crypto (ratio 1:2)
             else:
                 sl_pct = 0.003   # 0.3% par défaut
-                tp_pct = 0.005   # 0.5% par défaut
+                tp_pct = 0.006   # 0.6% par défaut (ratio 1:2)
 
             sl_distance = current_price * sl_pct
             tp_distance = current_price * tp_pct

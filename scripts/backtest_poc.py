@@ -45,8 +45,8 @@ def run_backtest(
             transaction_cost: float = 0.0,
             slippage: float = 0.0,
             max_position_size: float = 1.0,
-            stop_loss: float = 0.02,
-            take_profit: float = 0.04,
+            stop_loss: float = 0.015,
+            take_profit: float = 0.03,
             ) -> dict:
     # prepare X features (drop close/volume if present)
     features = [c for c in df.columns if c not in ("label",)]
@@ -118,8 +118,8 @@ def main():
     parser.add_argument("--transaction-cost", type=float, default=0.0)
     parser.add_argument("--slippage", type=float, default=0.0)
     parser.add_argument("--max-position-size", type=float, default=1.0)
-    parser.add_argument("--stop-loss", type=float, default=0.02)
-    parser.add_argument("--take-profit", type=float, default=0.04)
+    parser.add_argument("--stop-loss", type=float, default=0.015)
+    parser.add_argument("--take-profit", type=float, default=0.03)
     args = parser.parse_args()
 
     feat = base / "data" / "features_sample.csv"

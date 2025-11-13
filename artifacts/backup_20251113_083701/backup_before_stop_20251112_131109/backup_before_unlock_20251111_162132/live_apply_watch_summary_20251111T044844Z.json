@@ -1,0 +1,11 @@
+{
+  "monitored_from": "2025-11-11T04:48:44.076094",
+  "found": "artifacts\\live_trading\\mt5_apply_breakeven_20251110T174032Z.json",
+  "retcode_counts": {
+    "10013": 14
+  },
+  "applied_count": 0,
+  "examples": {
+    "10013": "{'ticket': 344357268, 'symbol': 'EURJPY', 'request': {'action': 6, 'position': 344357268, 'sl': 177.442, 'tp': 0.0}, 'result': {'retcode': 10013, 'deal': 0, 'order': 0, 'volume': 0.0, 'price': 0.0, 'bid': 0.0, 'ask': 0.0, 'comment': 'Invalid request', 'request_id': 0, 'retcode_external': 0, 'request': [6, 0, 0, '', 0.0, 0.0, 0.0, 177.442, 0.0, 0, 0, 0, 0, 0, '', 344357268, 0]}}"
+  }
+}

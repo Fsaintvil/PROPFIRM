@@ -2,6 +2,19 @@
 
 **Système de trading automatisé avec IA et gestion de risque avancée**
 
+## Prérequis
+
+- PowerShell (préférer PowerShell Core `pwsh.exe`) est requis pour l'exécution des scripts d'exploitation et des tâches d'administration.
+- Pour les opérations administratives (persistance des variables MACHINE, création de tâches planifiées), ouvrez une session PowerShell élevée (Run as Administrator).
+- Exemple d'ouverture d'une console PowerShell Core élevée sous Windows:
+
+```powershell
+# Ouvrir Windows Terminal / PowerShell en mode administrateur
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process pwsh -Verb runAs"
+```
+
+Les scripts situés dans `tools/*.ps1` appellent `tools/ensure_pwsh.ps1` pour valider l'environnement.
+
 ## 🧭 Politique d’exploitation: 100% live — pas de mode paper
 
 - Trading uniquement en temps réel via MT5. Aucun mode paper/dry-run/simulation en production.

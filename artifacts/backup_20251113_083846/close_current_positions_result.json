@@ -1,0 +1,321 @@
+{
+  "timestamp": "2025-11-08T02:18:49Z",
+  "results": [
+    {
+      "ticket": 344357268,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 1,
+        "position": 344357268,
+        "symbol": "EURJPY",
+        "volume": 0.02,
+        "type": 0,
+        "price": 177.447,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344357269,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 1,
+        "position": 344357269,
+        "symbol": "GBPCHF",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.05983,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344359374,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 1,
+        "position": 344359374,
+        "symbol": "EURJPY",
+        "volume": 0.02,
+        "type": 0,
+        "price": 177.447,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344359379,
+      "symbol": "EURAUD",
+      "request": {
+        "action": 1,
+        "position": 344359379,
+        "symbol": "EURAUD",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.78092,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344361273,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 1,
+        "position": 344361273,
+        "symbol": "EURJPY",
+        "volume": 0.02,
+        "type": 0,
+        "price": 177.447,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344361274,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 1,
+        "position": 344361274,
+        "symbol": "GBPCHF",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.05983,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344361276,
+      "symbol": "EURAUD",
+      "request": {
+        "action": 1,
+        "position": 344361276,
+        "symbol": "EURAUD",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.78092,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344361278,
+      "symbol": "GBPUSD",
+      "request": {
+        "action": 1,
+        "position": 344361278,
+        "symbol": "GBPUSD",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.31609,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344363497,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 1,
+        "position": 344363497,
+        "symbol": "EURJPY",
+        "volume": 0.02,
+        "type": 0,
+        "price": 177.447,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344363500,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 1,
+        "position": 344363500,
+        "symbol": "GBPCHF",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.05983,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344363503,
+      "symbol": "GBPUSD",
+      "request": {
+        "action": 1,
+        "position": 344363503,
+        "symbol": "GBPUSD",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.31609,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344365154,
+      "symbol": "USDJPY",
+      "request": {
+        "action": 1,
+        "position": 344365154,
+        "symbol": "USDJPY",
+        "volume": 0.02,
+        "type": 0,
+        "price": 153.435,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344365156,
+      "symbol": "EURJPY",
+      "request": {
+        "action": 1,
+        "position": 344365156,
+        "symbol": "EURJPY",
+        "volume": 0.02,
+        "type": 0,
+        "price": 177.447,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344365157,
+      "symbol": "GBPCHF",
+      "request": {
+        "action": 1,
+        "position": 344365157,
+        "symbol": "GBPCHF",
+        "volume": 0.02,
+        "type": 0,
+        "price": 1.05983,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    },
+    {
+      "ticket": 344379258,
+      "symbol": "ETHUSD",
+      "request": {
+        "action": 1,
+        "position": 344379258,
+        "symbol": "ETHUSD",
+        "volume": 0.02,
+        "type": 0,
+        "price": 3451.85,
+        "deviation": 20,
+        "magic": 0,
+        "comment": "close_current_positions_safe.py"
+      },
+      "order_check": {
+        "raw": "None"
+      },
+      "order_send": {
+        "raw": "None"
+      }
+    }
+  ],
+  "remaining_positions": 15
+}
