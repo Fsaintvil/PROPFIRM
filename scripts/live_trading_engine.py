@@ -424,6 +424,52 @@ class LiveTradingEngine:
 
         # Préparer support MTF/fondamentaux (chargement lazy)
         self._fundamentals_map = None
+        # --- Intégration PER_SYMBOL_SL_JSON via utilitaire partagé ---
+        # Import utilitaire commun de validation JSON
+        try:
+            from utils.json_utils import load_env_json_mapping
+        except Exception:
+            try:
+                from json_utils import load_env_json_mapping  # fallback si chemin différent
+            except Exception:
+                def load_env_json_mapping(*_a, **_k):  # fallback minimal
+                    return {}
+
+        self._per_symbol_sl_points_map = load_env_json_mapping(
+            "PER_SYMBOL_SL_JSON", logger=self.logger
+        ) or {}
+        self._sl_override_logged = set()  # éviter re-log
+        self._sl_calc_context = {}  # contexte dernière calc SL pour audit
+
+        # Charger les contraintes symboles (spread, stops) si disponibles
+        self.symbol_constraints = {}
+        try:
+            sc_path = Path('artifacts') / 'live_trading' / 'symbol_constraints.json'
+            if sc_path.exists():
+                with open(sc_path, 'r', encoding='utf-8') as _f:
+                    _raw = json.load(_f)
+                if isinstance(_raw, dict) and 'results' in _raw:
+                    self.symbol_constraints = _raw['results'] or {}
+                elif isinstance(_raw, dict):
+                    self.symbol_constraints = _raw
+        except Exception as _sce:
+            try:
+                self.logger.debug(f"Constraints non chargées: {_sce}")
+            except Exception:
+                pass
+
+        # Min de confiance par symbole (politique prudente par défaut)
+        base_thr = float(self.confidence_threshold)
+        self.per_symbol_min_conf = {}
+        for s in self.symbols:
+            if 'BTC' in s:
+                self.per_symbol_min_conf[s] = max(base_thr, 0.80)
+            elif 'XAU' in s:
+                self.per_symbol_min_conf[s] = max(base_thr, 0.75)
+            elif s.endswith('.cash'):
+                self.per_symbol_min_conf[s] = max(base_thr, 0.78)
+            else:
+                self.per_symbol_min_conf[s] = max(base_thr, 0.72)
 
     def is_market_open(self, symbol):
         """Vérifier si le marché est ouvert pour un symbole"""
@@ -1278,7 +1324,10 @@ class LiveTradingEngine:
                                     try:
                                         if raw_meta_conf != meta_conf:
                                             self.logger.info(
-                                                "Meta-confidence clamp applied: raw=%.3f clamped=%.3f",
+                                                (
+                                                    "Meta-confidence clamp applied: "
+                                                    "raw=%.3f clamped=%.3f"
+                                                ),
                                                 raw_meta_conf,
                                                 meta_conf,
                                             )
@@ -2058,6 +2107,13 @@ class LiveTradingEngine:
             min_confidence = signals.get(
                 'adaptive_threshold', self.confidence_threshold)
 
+            # Appliquer un minimum par symbole (politique prudente)
+            try:
+                sym_floor = float(self.per_symbol_min_conf.get(symbol, min_confidence))
+                min_confidence = max(float(min_confidence), sym_floor)
+            except Exception:
+                pass
+
             # 1. Vérifier confiance avec seuil intelligent
             current_confidence = signals["confidence"]
             
@@ -2102,20 +2158,81 @@ class LiveTradingEngine:
                 self.logger.info(risk_msg)
                 return False
 
-            # 2. Vérifier le nombre de positions ouvertes
-            max_positions = 2 if urgency == 'immediate' else 3
+            # 2. Vérifier le nombre de positions ouvertes (override ENV MAX_OPEN_POSITIONS)
+            try:
+                env_max_positions = int(os.getenv('MAX_OPEN_POSITIONS', '0'))
+            except Exception:
+                env_max_positions = 0
+            if env_max_positions > 0:
+                max_positions = env_max_positions
+            else:
+                max_positions = 2 if urgency == 'immediate' else 3
             if len(self.current_positions) >= max_positions:
-                pos_msg = (f"Nombre maximum de positions "
-                           f"atteint ({max_positions})")
+                pos_msg = f"Nombre maximum de positions atteint ({max_positions})"
                 self.logger.info(pos_msg)
                 return False
 
-            # 3. Vérifier le drawdown
-            if self.performance_metrics["max_drawdown"] < -0.10:  # -10%
+            # 3. Vérifier le drawdown (override ENV MAX_DRAWDOWN_PCT si présent)
+            try:
+                max_dd_env = float(os.getenv('MAX_DRAWDOWN_PCT', '0'))
+            except Exception:
+                max_dd_env = 0.0
+            current_dd = self.performance_metrics.get('max_drawdown', 0.0)
+            if max_dd_env > 0:
+                dd_threshold = -abs(max_dd_env)
+            else:
+                dd_threshold = -0.10  # défaut historique
+            if current_dd < dd_threshold:
                 self.logger.warning(
-                    "Drawdown maximum atteint - Trading suspendu"
+                    f"Drawdown maximum atteint ({current_dd:.3f} < {dd_threshold:.3f}) - Trading suspendu"
                 )
                 return False
+
+            # 3.b Cap quotidien de trades (ENV DAILY_MAX_TRADES)
+            try:
+                daily_cap = int(os.getenv('DAILY_MAX_TRADES', '0'))
+            except Exception:
+                daily_cap = 0
+            if daily_cap > 0:
+                trade_count = self.performance_metrics.get('total_trades', 0)
+                if trade_count >= daily_cap:
+                    self.logger.info(
+                        f"Cap quotidien atteint ({trade_count}/{daily_cap}) - rejet du signal"
+                    )
+                    return False
+
+            # 3.c Filtre pro: spread temps réel vs seuil dérivé des contraintes
+            try:
+                if MT5_AVAILABLE and symbol:
+                    t = mt5.symbol_info_tick(symbol)
+                    si = mt5.symbol_info(symbol)
+                    if t and si and getattr(t, 'ask', None) and getattr(t, 'bid', None):
+                        curr_spread = float(t.ask) - float(t.bid)
+                        # Seuil dynamique: max(1.5x spread de référence, 5 points)
+                        ref = None
+                        sc = self.symbol_constraints.get(symbol) if hasattr(self, 'symbol_constraints') else None
+                        if isinstance(sc, dict):
+                            ref = float(sc.get('spread') or 0.0)
+                        pt = float(getattr(si, 'point', 0.0) or 0.0)
+                        hard_min = (pt * 5.0) if pt > 0 else 0.0
+                        dyn = max((ref * 1.5) if (ref and ref > 0) else 0.0, hard_min)
+                        # Clamp dyn à un plafond relatif pour éviter extrêmes (0.15%)
+                        max_rel = float(getattr(si, 'ask', t.ask)) * 0.0015 if hasattr(si, 'ask') else float(t.ask) * 0.0015
+                        spread_cap = max(dyn, 0.0)
+                        spread_cap = min(spread_cap if spread_cap > 0 else max_rel, max_rel)
+                        if curr_spread > spread_cap:
+                            self.logger.info(
+                                (
+                                    "Spread élevé %s: %.6f > cap %.6f (ref=%.6f, pt=%.6f)"
+                                ),
+                                symbol, curr_spread, spread_cap, (ref or 0.0), pt
+                            )
+                            return False
+            except Exception as _se:
+                try:
+                    self.logger.debug(f"Filtre spread ignoré: {_se}")
+                except Exception:
+                    pass
 
             # 4. Vérifier la cohérence du signal
             if action not in ["buy", "sell"]:
@@ -2144,6 +2261,23 @@ class LiveTradingEngine:
                                f"> seuil {vol_threshold:.4f}")
                     self.logger.warning(vol_msg)
                     return False
+
+            # 6. Alignement MTF: exiger biais aligné ou confiance nettement supérieure
+            try:
+                mtf = signals.get('mtf_convergence') or {}
+                mtf_action = mtf.get('action')
+                mtf_conf = float(mtf.get('confidence', 0.0) or 0.0)
+                if mtf_action in ("buy", "sell") and action in ("buy", "sell"):
+                    if mtf_action != action and mtf_conf >= max(0.60, self.confidence_threshold):
+                        self.logger.info(
+                            (
+                                "Rejet: MTF %s(%.2f) ≠ action %s et conf MTF élevée"
+                            ), mtf_action, mtf_conf, action
+                        )
+                        return False
+                    # Bonus: si aligné et conf MTF >= seuil, continuer
+            except Exception:
+                pass
 
             return True
 
@@ -2430,6 +2564,32 @@ class LiveTradingEngine:
                                     f"{action} conf={confidence:.3f}"
                                 )
 
+                        # 🧠 Clamp global de confiance après toutes fusions (MTF, fondamentaux, extensions)
+                        try:
+                            from config.trading_config import TradingConfig as _TC
+                            max_conf = float(getattr(_TC, 'MAX_CONFIDENCE_THRESHOLD', 0.85))
+                            if confidence > max_conf:
+                                old_conf = confidence
+                                confidence = float(max_conf)
+                                try:
+                                    self.logger.info(
+                                        "🔧 Global confidence clamp: %.3f -> %.3f",
+                                        old_conf,
+                                        confidence,
+                                    )
+                                except Exception:
+                                    pass
+                        except Exception:
+                            # Si config indisponible, ne rien faire
+                            pass
+
+                        # Synchroniser les signaux avec l'action/confiance finales
+                        try:
+                            signals["combined_signal"] = action
+                            signals["confidence"] = confidence
+                        except Exception:
+                            pass
+
                         # Logging optimisé avec seuil de décision
                         if confidence > self.confidence_threshold:
                             status = "✅ TRADE"
@@ -2440,7 +2600,7 @@ class LiveTradingEngine:
                             f"conf={confidence:.3f} [{status}]"
                         )
 
-                        # 4. Vérification des risques et exécution
+            # 4. Vérification des risques et exécution
                         # Seuil optimisé configuré (+98% perf vs 0.6)
                         if (action in ["buy", "sell"] and
                                 confidence > self.confidence_threshold):
@@ -2725,6 +2885,44 @@ class LiveTradingEngine:
     def calculate_dynamic_stop_loss(self, symbol, action, entry_price, current_volatility=None):
         """Calcule un stop loss dynamique basé sur la volatilité du marché"""
         try:
+            # 1) Priorité aux overrides PER_SYMBOL_SL_JSON s'ils existent
+            override_distance = None
+            if hasattr(self, '_per_symbol_sl_points_map'):
+                raw_points = self._per_symbol_sl_points_map.get(symbol)
+                if isinstance(raw_points, (int, float)) and raw_points > 0:
+                    # Convertir points -> distance prix via symbol_info.point si disponible
+                    price_distance = None
+                    if MT5_AVAILABLE:
+                        try:
+                            si = mt5.symbol_info(symbol)
+                            if si and getattr(si, 'point', None):
+                                price_distance = float(raw_points) * float(si.point)
+                        except Exception:
+                            price_distance = None
+                    # Fallback si point inconnu
+                    if price_distance is None:
+                        # Heuristique: FX 5 décimales ~ point 1e-5, indices/cash souvent 0.01
+                        if symbol.endswith('.cash'):
+                            price_distance = float(raw_points) * 0.01
+                        elif (
+                            any(sym in symbol for sym in ['USD', 'EUR', 'JPY'])
+                            and entry_price and entry_price > 10
+                        ):
+                            price_distance = float(raw_points) * 1e-5
+                        else:
+                            price_distance = float(raw_points) * 0.0001
+                    override_distance = max(price_distance, 0.0)
+                    if symbol not in getattr(self, '_sl_override_logged', set()):
+                        try:
+                            msg = (
+                                f"🔧 Override SL points {symbol}: {raw_points} points => "
+                                f"distance {override_distance:.6f}"
+                            )
+                            self.logger.info(msg)
+                        except Exception:
+                            pass
+                        self._sl_override_logged.add(symbol)
+
             # 🔧 PARAMÈTRES OPTIMISÉS - Stop Loss professionnels réalistes
             default_stops = {
                 'EURUSD': 0.0005,    # 5 pips (0.04% risk) - était 20 pips
@@ -2732,7 +2930,10 @@ class LiveTradingEngine:
                 'BTCUSD': 150.0      # 150 dollars (0.22% risk)
             }
             
-            base_stop = default_stops.get(symbol, 0.0005)
+            if override_distance is not None:
+                base_stop = override_distance
+            else:
+                base_stop = default_stops.get(symbol, 0.0005)
             
             # 🔧 VOLATILITÉ AJUSTÉE - Amplification réduite
             if current_volatility is not None:
@@ -2750,6 +2951,17 @@ class LiveTradingEngine:
                 f"Stop loss dynamique {symbol}: {stop_loss:.5f} "
                 f"(base: {base_stop:.5f})"
             )
+            # Contexte pour audit watchlist
+            try:
+                sl_distance = abs(entry_price - stop_loss) if entry_price else None
+                self._sl_calc_context = {
+                    'symbol': symbol,
+                    'override_points': raw_points if override_distance else None,
+                    'computed_distance': sl_distance,
+                    'source': 'override' if override_distance else 'dynamic'
+                }
+            except Exception:
+                self._sl_calc_context = {}
             return stop_loss
             
         except Exception as e:
@@ -2858,15 +3070,54 @@ class LiveTradingEngine:
             for position in positions:
                 symbol = position.symbol
                 current_price = position.price_current
+                entry_price = position.price_open
+                current_sl = position.sl
+                pos_type = 'buy' if position.type == mt5.ORDER_TYPE_BUY else 'sell'
                 
                 # Calculer nouveau trailing stop
                 new_sl = self.calculate_trailing_stop(
                     symbol,
-                    "buy" if position.type == mt5.ORDER_TYPE_BUY else "sell",
-                    position.price_open,
+                    pos_type,
+                    entry_price,
                     current_price,
-                    position.sl
+                    current_sl
                 )
+
+                # R distance (1R = distance entrée -> SL initial)
+                try:
+                    if entry_price and current_sl:
+                        r_distance = abs(float(entry_price) - float(current_sl))
+                    else:
+                        r_distance = None
+                except Exception:
+                    r_distance = None
+
+                # Break-even: déplacer SL au prix d'entrée lorsque profit >= 1R
+                try:
+                    if r_distance and r_distance > 0:
+                        if pos_type == 'buy':
+                            profit = float(current_price) - float(entry_price)
+                            if profit >= r_distance:
+                                be_sl = float(entry_price)
+                                if current_sl is None or be_sl > float(current_sl):
+                                    new_sl = max(new_sl or be_sl, be_sl)
+                            # Après 1.5R, resserrer à +0.5R
+                            if profit >= (1.5 * r_distance):
+                                adv_sl = float(entry_price) + (0.5 * r_distance)
+                                if current_sl is None or adv_sl > float(current_sl):
+                                    new_sl = max(new_sl or adv_sl, adv_sl)
+                        else:  # sell
+                            profit = float(entry_price) - float(current_price)
+                            if profit >= r_distance:
+                                be_sl = float(entry_price)
+                                if current_sl is None or be_sl < float(current_sl):
+                                    new_sl = min(new_sl or be_sl, be_sl)
+                            if profit >= (1.5 * r_distance):
+                                adv_sl = float(entry_price) - (0.5 * r_distance)
+                                if current_sl is None or adv_sl < float(current_sl):
+                                    new_sl = min(new_sl or adv_sl, adv_sl)
+                except Exception:
+                    pass
                 
                 # Mettre à jour le stop loss si nécessaire
                 if new_sl != position.sl and new_sl is not None:
@@ -2894,7 +3145,13 @@ class LiveTradingEngine:
                         positions = mt5.positions_get() or []
                         for p in positions:
                             try:
-                                if getattr(p, 'symbol', None) == symbol and abs(float(getattr(p, 'volume', 0.0)) - float(lot_size)) < 1e-6:
+                                if (
+                                    getattr(p, 'symbol', None) == symbol
+                                    and abs(
+                                        float(getattr(p, 'volume', 0.0))
+                                        - float(lot_size)
+                                    ) < 1e-6
+                                ):
                                     ticket = int(getattr(p, 'ticket', 0))
                                     break
                             except Exception:
@@ -2914,7 +3171,25 @@ class LiveTradingEngine:
                 'entry_price': float(entry_price) if entry_price is not None else None,
                 'sl': float(sl) if sl is not None else None,
                 'tp': float(tp) if tp is not None else None,
-                'auto_close_at': (datetime.utcnow() + timedelta(minutes=self.auto_close_minutes)).isoformat() + 'Z',
+                'sl_distance': (
+                    abs(float(entry_price) - float(sl))
+                    if (entry_price is not None and sl is not None)
+                    else None
+                ),
+                'sl_source': (
+                    self._sl_calc_context.get('source')
+                    if self._sl_calc_context.get('symbol') == symbol
+                    else None
+                ),
+                'sl_override_points': (
+                    self._sl_calc_context.get('override_points')
+                    if self._sl_calc_context.get('symbol') == symbol
+                    else None
+                ),
+                'auto_close_at': (
+                    (datetime.utcnow() + timedelta(minutes=self.auto_close_minutes))
+                    .isoformat() + 'Z'
+                ),
                 'closed': False,
             }
 
@@ -2929,7 +3204,9 @@ class LiveTradingEngine:
             except Exception:
                 pass
 
-            self.logger.info(f"🔖 Position enregistrée dans watchlist: {symbol} ticket={ticket} order={entry['order_id']}")
+            self.logger.info(
+                f"🔖 Watchlist: {symbol} ticket={ticket} order={entry['order_id']}"
+            )
             return True
         except Exception as e:
             try:
@@ -2971,7 +3248,14 @@ class LiveTradingEngine:
                     fn_snapshot = audit_dir / 'current_positions_post_autoclose.json'
                     try:
                         with open(fn_snapshot, 'w', encoding='utf-8') as _sf:
-                            json.dump({'ts': datetime.utcnow().isoformat() + 'Z', 'positions': serializable}, _sf, default=str)
+                            json.dump(
+                                {
+                                    'ts': datetime.utcnow().isoformat() + 'Z',
+                                    'positions': serializable,
+                                },
+                                _sf,
+                                default=str,
+                            )
                         try:
                             self.logger.info(f"Positions snapshot écrit: {str(fn_snapshot)}")
                         except Exception:
@@ -2979,7 +3263,9 @@ class LiveTradingEngine:
                     except Exception as e:
                         try:
                             tb = traceback.format_exc()
-                            self.logger.warning(f"Impossible d'écrire snapshot positions: {e} | traceback: {tb}")
+                            self.logger.warning(
+                                f"Snapshot positions write failed: {e} | tb: {tb}"
+                            )
                         except Exception:
                             pass
                 except Exception as e:
@@ -3000,21 +3286,30 @@ class LiveTradingEngine:
                 # comparer l'heure
                 auto_close_at = None
                 try:
-                    auto_close_at = datetime.fromisoformat(entry.get('auto_close_at').replace('Z', ''))
+                    auto_close_at = datetime.fromisoformat(
+                        entry.get('auto_close_at').replace('Z', '')
+                    )
                 except Exception:
                     auto_close_at = None
 
                 # Log basic diagnostics for this entry
                 try:
                     self.logger.info(
-                        f"Watchlist check: ticket={entry.get('ticket')} symbol={entry.get('symbol')} auto_close_at={auto_close_at} now={now.isoformat()}"
+                        (
+                            f"Watchlist check: ticket={entry.get('ticket')} "
+                            f"symbol={entry.get('symbol')} auto_close_at="
+                            f"{auto_close_at} now={now.isoformat()}"
+                        )
                     )
                 except Exception:
                     pass
 
                 if auto_close_at is None or now < auto_close_at:
                     try:
-                        self.logger.debug(f"Auto-close not due yet for ticket {entry.get('ticket')} (auto_close_at={auto_close_at})")
+                        self.logger.debug(
+                            f"Auto-close not due yet ticket={entry.get('ticket')}"
+                            f" due={auto_close_at}"
+                        )
                     except Exception:
                         pass
                     continue
@@ -3027,7 +3322,13 @@ class LiveTradingEngine:
                     try:
                         positions = mt5.positions_get() or []
                         for p in positions:
-                            if getattr(p, 'symbol', None) == symbol and abs(float(getattr(p, 'volume', 0.0)) - float(entry.get('volume', 0.0))) < 1e-6:
+                            if (
+                                getattr(p, 'symbol', None) == symbol
+                                and abs(
+                                    float(getattr(p, 'volume', 0.0))
+                                    - float(entry.get('volume', 0.0))
+                                ) < 1e-6
+                            ):
                                 ticket = int(getattr(p, 'ticket', 0))
                                 entry['ticket'] = ticket
                                 break
@@ -3037,7 +3338,9 @@ class LiveTradingEngine:
                 if ticket is None:
                     # position non trouvée: marquer closed pour éviter bouclage
                     try:
-                        self.logger.info(f"Auto-close: ticket absent and position not found for symbol {symbol} - marking entry closed")
+                        self.logger.info(
+                            f"Auto-close: missing ticket symbol={symbol} closed"
+                        )
                     except Exception:
                         pass
                     entry['closed'] = True
@@ -3055,13 +3358,17 @@ class LiveTradingEngine:
                             with open(fn_missing, 'a', encoding='utf-8') as _mf:
                                 _mf.write(json.dumps(rec_missing, default=str) + '\n')
                             try:
-                                self.logger.info(f"Audit auto-close (position_missing) écrit: {str(fn_missing)}")
+                                self.logger.info(
+                                    f"Audit position_missing saved: {str(fn_missing)}"
+                                )
                             except Exception:
                                 pass
                         except Exception as e:
                             try:
                                 tb = traceback.format_exc()
-                                self.logger.warning(f"Impossible d'écrire audit position_missing: {e} | traceback: {tb}")
+                                self.logger.warning(
+                                    f"Audit position_missing write failed: {e} | tb: {tb}"
+                                )
                             except Exception:
                                 pass
                     except Exception:
@@ -3081,7 +3388,9 @@ class LiveTradingEngine:
 
                 if pos is None:
                     try:
-                        self.logger.info(f"Auto-close: active position not found for ticket={ticket} symbol={symbol} - marking entry closed")
+                        self.logger.info(
+                            f"Auto-close: active pos not found ticket={ticket} symbol={symbol}"
+                        )
                     except Exception:
                         pass
                     entry['closed'] = True
@@ -3099,13 +3408,17 @@ class LiveTradingEngine:
                             with open(fn_missing, 'a', encoding='utf-8') as _mf:
                                 _mf.write(json.dumps(rec_missing, default=str) + '\n')
                             try:
-                                self.logger.info(f"Audit auto-close (position_missing) écrit: {str(fn_missing)}")
+                                self.logger.info(
+                                    f"Audit position_missing saved: {str(fn_missing)}"
+                                )
                             except Exception:
                                 pass
                         except Exception as e:
                             try:
                                 tb = traceback.format_exc()
-                                self.logger.warning(f"Impossible d'écrire audit position_missing: {e} | traceback: {tb}")
+                                self.logger.warning(
+                                    f"Audit position_missing write failed: {e} | tb: {tb}"
+                                )
                             except Exception:
                                 pass
                     except Exception:
@@ -3118,8 +3431,14 @@ class LiveTradingEngine:
                 desired_sl = entry.get('sl')
                 desired_tp = entry.get('tp')
 
-                sl_unchanged = ( (current_sl == desired_sl) or (current_sl is None and desired_sl is None) )
-                tp_unchanged = ( (current_tp == desired_tp) or (current_tp is None and desired_tp is None) )
+                sl_unchanged = (
+                    (current_sl == desired_sl)
+                    or (current_sl is None and desired_sl is None)
+                )
+                tp_unchanged = (
+                    (current_tp == desired_tp)
+                    or (current_tp is None and desired_tp is None)
+                )
 
                 if not (sl_unchanged and tp_unchanged):
                     # SL/TP were changed — do not auto-close
@@ -3159,8 +3478,13 @@ class LiveTradingEngine:
                 try:
                     # Log the request we are about to send for traceability
                     try:
-                        self.logger.info(f"Auto-close: sending order_send for ticket={ticket} symbol={symbol}")
-                        self.logger.debug("Auto-close request: %s", json.dumps(request, default=str))
+                        self.logger.info(
+                            f"Auto-close send ticket={ticket} symbol={symbol}"
+                        )
+                        self.logger.debug(
+                            "Auto-close request: %s",
+                            json.dumps(request, default=str),
+                        )
                     except Exception:
                         pass
 
@@ -3168,15 +3492,26 @@ class LiveTradingEngine:
                     # Log result minimal info to aid debugging
                     try:
                         self.logger.info(
-                            f"Auto-close: order_send returned for ticket={ticket} retcode={getattr(result, 'retcode', None)} comment={getattr(result, 'comment', None)}"
+                            (
+                                f"Auto-close result ticket={ticket} retcode="
+                                f"{getattr(result, 'retcode', None)} comment="
+                                f"{getattr(result, 'comment', None)}"
+                            )
                         )
                     except Exception:
                         pass
                 except Exception as e:
-                    entry.setdefault('audit', []).append({'error': str(e), 'ts': datetime.utcnow().isoformat() + 'Z'})
+                    entry.setdefault('audit', []).append(
+                        {
+                            'error': str(e),
+                            'ts': datetime.utcnow().isoformat() + 'Z',
+                        }
+                    )
                     try:
                         tb = traceback.format_exc()
-                        self.logger.warning(f"Erreur envoi auto-close ticket {ticket}: {e} | traceback: {tb}")
+                        self.logger.warning(
+                            f"Auto-close send error ticket={ticket}: {e} | tb: {tb}"
+                        )
                     except Exception:
                         try:
                             print(f"Erreur envoi auto-close ticket {ticket}: {e}")
@@ -3206,7 +3541,10 @@ class LiveTradingEngine:
                     try:
                         # Log the exact JSON being written at debug level
                         try:
-                            self.logger.debug("Auto-close audit record: %s", json.dumps(rec, default=str))
+                            self.logger.debug(
+                                "Auto-close audit record: %s",
+                                json.dumps(rec, default=str),
+                            )
                         except Exception:
                             pass
 
@@ -3223,7 +3561,9 @@ class LiveTradingEngine:
                         try:
                             tb = traceback.format_exc()
                             self.logger.warning(
-                                f"Impossible d'écrire mt5_auto_close_audit.jsonl: {e} | traceback: {tb}"
+                                (
+                                    f"Write mt5_auto_close_audit.jsonl failed: {e} | tb: {tb}"
+                                )
                             )
                         except Exception:
                             # Best-effort: if logging fails, print to stderr
@@ -3251,7 +3591,9 @@ class LiveTradingEngine:
                     self.logger.info(f"🔒 Auto-closed position {ticket} symbol {symbol}")
                 else:
                     entry.setdefault('audit', []).append({'result': rec})
-                    self.logger.warning(f"Échec auto-close {ticket}: {getattr(result, 'comment', None)}")
+                    self.logger.warning(
+                        f"Auto-close fail ticket={ticket}: {getattr(result, 'comment', None)}"
+                    )
 
             except Exception as e:
                 try:
@@ -3340,10 +3682,14 @@ class LiveTradingEngine:
                 audit_record['attempts'].append(attempt_record)
 
                 if result is None:
-                    self.logger.warning(f"❌ Résultat ordre null pour position {ticket} (attempt {attempt})")
+                    self.logger.warning(
+                        f"Null order result ticket={ticket} attempt={attempt}"
+                    )
                 else:
                     if getattr(result, 'retcode', None) == mt5.TRADE_RETCODE_DONE:
-                        self.logger.info(f"✅ Stop loss mis à jour: position {ticket} → SL {new_sl:.5f} (attempt {attempt})")
+                        self.logger.info(
+                            f"Stop loss updated ticket={ticket} SL={new_sl:.5f} attempt={attempt}"
+                        )
                         success = True
                         audit_record['final_status'] = 'success'
                         break
@@ -3351,12 +3697,21 @@ class LiveTradingEngine:
                         # retcode non ok, log et decide retry selon commentaire
                         comment = getattr(result, 'comment', None)
                         self.logger.warning(
-                            f"❌ Échec mise à jour SL position {ticket}: {comment} (retcode={getattr(result,'retcode',None)})"
+                            (
+                                f"Stop loss update failed ticket={ticket} comment={comment} "
+                                f"retcode={getattr(result, 'retcode', None)}"
+                            )
                         )
                         # si erreur non récupérable, continuer les retries pour robustesse
                 # backoff avant prochaine tentative
             except Exception as e:
-                audit_record['attempts'].append({'attempt': attempt, 'error': str(e), 'timestamp': datetime.utcnow().isoformat() + 'Z'})
+                audit_record['attempts'].append(
+                    {
+                        'attempt': attempt,
+                        'error': str(e),
+                        'timestamp': datetime.utcnow().isoformat() + 'Z',
+                    }
+                )
                 self.logger.warning(f"Erreur order_send attempt {attempt} for {ticket}: {e}")
 
             # Exponential backoff
@@ -3390,7 +3745,8 @@ class LiveTradingEngine:
     def monitor_and_apply_retries(self, apply_files=None, interval_s=10, cycles=20):
         """Surveille les fichiers apply et applique les updates lorsque la position apparaît.
 
-        - apply_files: liste de chemins vers les fichiers mt5_apply_*.json; si None, scanne artifacts/live_trading/
+                - apply_files: liste de chemins vers les fichiers mt5_apply_*.json;
+                    si None, scanne artifacts/live_trading/
         - interval_s: intervalle entre vérifications
         - cycles: nombre d'itérations
         Produits: écrit un fichier résumé JSON et CSV dans artifacts/live_trading/
@@ -3744,10 +4100,17 @@ class LiveTradingEngine:
                             duplicate = False
                             for _p in getattr(self, 'position_watchlist', []):
                                 try:
-                                    if (_p.get('order_id') is not None and _p.get('order_id') == _obj.get('order_id')):
+                                    if (
+                                        _p.get('order_id') is not None
+                                        and _p.get('order_id') == _obj.get('order_id')
+                                    ):
                                         duplicate = True
                                         break
-                                    if (_p.get('ticket') is not None and _obj.get('ticket') is not None and _p.get('ticket') == _obj.get('ticket')):
+                                    if (
+                                        _p.get('ticket') is not None
+                                        and _obj.get('ticket') is not None
+                                        and _p.get('ticket') == _obj.get('ticket')
+                                    ):
                                         duplicate = True
                                         break
                                 except Exception:
