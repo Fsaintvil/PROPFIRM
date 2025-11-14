@@ -23,6 +23,33 @@ class TradingConfig:
     )
     MIN_CONFIDENCE_THRESHOLD = float(os.getenv("MIN_CONFIDENCE", "0.60"))
     MAX_CONFIDENCE_THRESHOLD = float(os.getenv("MAX_CONFIDENCE", "0.85"))
+    # === PERFORMANCE / QUALITY THRESHOLDS ===
+    WINRATE_MIN_SYMBOL = float(os.getenv("WINRATE_MIN_SYMBOL", "0.45"))
+    EXPECTANCY_MIN_SYMBOL = float(os.getenv("EXPECTANCY_MIN_SYMBOL", "0.00"))
+    DAILY_LOSS_LIMIT_PCT = float(os.getenv("DAILY_LOSS_LIMIT_PCT", "0.03"))  # 3% défaut
+
+    # Lots par défaut par symbole (centralisation)
+    # Prioritaires si présents (AI_VOLUME reste utilisé comme fallback)
+    PER_SYMBOL_DEFAULT_LOTS = {
+        "BTCUSD": 0.01,
+        "ETHUSD": 0.01,
+        "XAUUSD": 0.01,
+        "USDCAD": 0.03,
+        "AUDNZD": 0.03,
+        "EURJPY": 0.05,
+        "GBPCHF": 0.03,
+        "NZDJPY": 0.03,
+        "EURUSD": 0.03,
+        "EURAUD": 0.03,
+        "US500.cash": 0.01,
+        "JP225.cash": 0.01,
+    }
+
+    ENABLE_PROFIT_LOCK = os.getenv("ENABLE_PROFIT_LOCK", "1") in {"1", "true", "True"}
+    PROFIT_LOCK_MIN_R = float(os.getenv("PROFIT_LOCK_MIN_R", "1.2"))  # activer après 1.2R
+    PROFIT_LOCK_SECURE_R = float(os.getenv("PROFIT_LOCK_SECURE_R", "0.6"))  # sécuriser 0.6R
+    # Après 1.8R profit, on resserre le SL à 1.0R
+    PROFIT_LOCK_TRAIL_R = float(os.getenv("PROFIT_LOCK_TRAIL_R", "1.8"))
 
     # === GESTION DES DONNÉES ===
     MAX_HISTORY_TRADES = int(os.getenv("MAX_HISTORY_TRADES", "1000"))
@@ -128,3 +155,29 @@ class TradingConfig:
 
         print("✅ Configuration valide")
         return True
+
+    # === NOUVEAU: Seuils minimaux par symbole (politique prudente) ===
+    @classmethod
+    def per_symbol_min_confidence(cls, symbol: str, base: float | None = None) -> float:
+        """Retourne un plancher de confiance par symbole.
+
+        Logique:
+        - Crypto (BTC, ETH): ≥ max(base, 0.80)
+        - Métaux précieux (XAU): ≥ max(base, 0.78)
+        - Indices *.cash: ≥ max(base, 0.80)
+        - Forex autres: ≥ max(base, 0.72)
+        """
+        if base is None:
+            base = cls.DEFAULT_CONFIDENCE_THRESHOLD
+        try:
+            s = symbol.upper()
+            if 'BTC' in s or 'ETH' in s:
+                return max(base, 0.80)
+            if 'XAU' in s:
+                return max(base, 0.78)
+            if s.endswith('.CASH'):
+                return max(base, 0.80)
+            # Forex / général
+            return max(base, 0.72)
+        except Exception:
+            return max(base, 0.72)
