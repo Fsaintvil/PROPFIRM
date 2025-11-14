@@ -10,6 +10,15 @@ import os
 import logging
 import importlib
 from typing import List
+try:
+    from config.lot_config import EXCEPTION_LOTS, DEFAULT_LOT  # legacy fallback
+except Exception:
+    EXCEPTION_LOTS = {"BTCUSD": 0.01, "XAUUSD": 0.01, "JP225.cash": 0.01, "US500.cash": 0.01}
+    DEFAULT_LOT = 0.05
+try:
+    from config.trading_config import TradingConfig as _TC
+except Exception:
+    _TC = None
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from datetime import datetime
@@ -123,28 +132,51 @@ def parse_args() -> argparse.Namespace:
 
 
 def parse_lots(lots_arg: str, symbols: List[str]) -> dict:
-    """Parse l'argument --lots en dictionnaire par symbole."""
+    """Parse --lots en mapping.
+
+    Comportement moderne:
+    - Si valeur unique fournie (ex: 0.01), on privilégie TradingConfig.PER_SYMBOL_DEFAULT_LOTS
+      pour chaque symbole présent si disponible, sinon EXCEPTION_LOTS puis valeur unique.
+    - Si mapping (EURUSD=0.02,XAUUSD=0.01) on le respecte et complète manquants avec
+      TradingConfig puis fallback legacy.
+    """
+    # 1) Valeur unique ?
     try:
-        # Valeur unique
-        val = float(lots_arg)
-        return {s: val for s in symbols}
+        val_unique = float(lots_arg)
+        per_symbol_defaults = {}
+        if _TC and hasattr(_TC, 'PER_SYMBOL_DEFAULT_LOTS'):
+            per_symbol_defaults = getattr(_TC, 'PER_SYMBOL_DEFAULT_LOTS', {}) or {}
+        return {
+            s: per_symbol_defaults.get(
+                s,
+                EXCEPTION_LOTS.get(s, val_unique)
+            )
+            for s in symbols
+        }
     except Exception:
         pass
 
+    # 2) Mapping explicite
     result = {}
-    for item in lots_arg.split(","):
+    for item in lots_arg.split(','):
         if not item:
             continue
-        if "=" in item:
-            k, v = item.split("=", 1)
+        if '=' in item:
+            k, v = item.split('=', 1)
             try:
                 result[k.strip()] = float(v)
             except Exception:
                 continue
-    # Compléter manquants avec 0.01
+    # Compléter manquants
+    per_symbol_defaults = {}
+    if _TC and hasattr(_TC, 'PER_SYMBOL_DEFAULT_LOTS'):
+        per_symbol_defaults = getattr(_TC, 'PER_SYMBOL_DEFAULT_LOTS', {}) or {}
     for s in symbols:
         if s not in result:
-            result[s] = 0.01
+            result[s] = per_symbol_defaults.get(
+                s,
+                EXCEPTION_LOTS.get(s, DEFAULT_LOT)
+            )
     return result
 
 
@@ -217,6 +249,23 @@ def main():
     logger.info("🚀 PROPFIRM - LANCEMENT PRODUCTION")
     logger.info("=" * 50)
     logger.info(f"📅 Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    # Enforcement règles opérationnelles (non-invasif, avant lock minimal)
+    try:
+        from control.rules_enforcer import enforce_operational_rules
+        rules_report = enforce_operational_rules(args.risk)
+        if rules_report.get("status") == "fail":
+            for v in rules_report.get("violations", []):
+                logger.error(f"❌ Règle violée: {v}")
+            logger.error("Arrêt: règles opérationnelles non satisfaites")
+            return 11
+        else:
+            logger.debug(f"Règles OK: {rules_report.get('details')}")
+    except ImportError:
+        logger.warning("Rules enforcer indisponible (control.rules_enforcer)")
+    except Exception as e:
+        logger.error(f"Erreur enforcement règles: {e}")
+        return 12
 
     # Créer lockfile
     lock_path = Path(args.lock_file)
@@ -318,13 +367,92 @@ def main():
             except Exception:
                 pass
 
-        # 3. Résumé préflight
+    # 3. Résumé préflight + harmonisation seuil persistant (non-invasif)
+    # Si aucun override explicite (arg ou auto-config) n'a été appliqué,
+    # on remplace par la valeur du fichier persistant si présent
+        try:
+            from pathlib import Path as _Path
+            persist_file = _Path("control/base_confidence_threshold.txt")
+            _persistent_loaded = False
+            if (
+                persist_file.exists()
+                and args.threshold is None
+                and engine_threshold_override is None
+            ):
+                try:
+                    _raw = persist_file.read_text(encoding="utf-8").strip()
+                    _val = float(_raw)
+                    # Appliquer uniquement si différent pour tracer l'action
+                    if abs(float(engine.confidence_threshold) - _val) > 1e-6:
+                        engine.confidence_threshold = _val
+                        if isinstance(engine.performance_metrics, dict):
+                            engine.performance_metrics["optimal_threshold"] = _val
+                        _persistent_loaded = True
+                        logger.info(
+                            f"🗂️  Seuil persistant appliqué (fichier): {_val:.3f}"
+                        )
+                except Exception as _pe:
+                    logger.info(
+                        f"  • Seuil persistant fichier présent mais non utilisable ({_pe})"
+                    )
+        except Exception:
+            pass
+
         logger.info("\n🔎 RÉSUMÉ PRÉFLIGHT")
         logger.info(f"  • Symboles: {engine.symbols}")
         logger.info(f"  • Lots: {engine.lot_sizes}")
         logger.info(f"  • Intervalle: {engine.trading_interval}s")
         logger.info(f"  • Seuil: {engine.confidence_threshold}")
+        if _persistent_loaded:
+            logger.info("  • Source seuil: fichier persistant (aucun override explicite)")
+        else:
+            if args.threshold is not None:
+                logger.info("  • Source seuil: argument --threshold")
+            elif engine_threshold_override is not None:
+                logger.info("  • Source seuil: auto-config")
+            else:
+                logger.info("  • Source seuil: valeur par défaut / config interne")
         logger.info(f"  • Risk/trade: {args.risk:.2%}")
+        # Diagnostics supplémentaires non-invasifs (présence fichier / contraintes / flags env)
+        try:
+            if not _persistent_loaded:
+                # Si pas appliqué, afficher simple statut du fichier
+                if persist_file.exists():
+                    try:
+                        _raw_show = persist_file.read_text(encoding="utf-8").strip()
+                        logger.info(f"  • Fichier seuil persistant détecté: {_raw_show}")
+                    except Exception as _pe2:
+                        logger.info(f"  • Fichier seuil persistant: erreur lecture ({_pe2})")
+                else:
+                    logger.info(
+                        "  • Fichier seuil persistant absent (aucune adaptation enregistrée)"
+                    )
+        except Exception:
+            pass
+
+        try:
+            sc_path = _Path("artifacts/live_trading/symbol_constraints.json")
+            if sc_path.exists():
+                import json as _json
+                try:
+                    _constraints = _json.loads(sc_path.read_text(encoding="utf-8"))
+                    logger.info(f"  • Contraintes symboles: {_constraints}")
+                except Exception as _ce:
+                    logger.info(f"  • Contraintes symboles: lecture erreur ({_ce})")
+            else:
+                logger.info("  • Contraintes symboles: (aucun fichier constraints)")
+        except Exception:
+            pass
+
+        try:
+            allow_send = os.getenv("ALLOW_MT5_SEND")
+            if allow_send is not None:
+                logger.info(f"  • ALLOW_MT5_SEND={allow_send}")
+            dry_run_env = os.getenv("DRY_RUN_MODE")
+            if dry_run_env:
+                logger.info(f"  • DRY_RUN_MODE={dry_run_env}")
+        except Exception:
+            pass
 
         # 3.b Vérification arrêt d'urgence
         emergency_active = False
