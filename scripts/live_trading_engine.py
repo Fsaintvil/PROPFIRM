@@ -387,6 +387,8 @@ class LiveTradingEngine:
         # Liste de suivi des positions ouvertes pour auto-close
         # Chaque entrée: {ticket, symbol, open_time, sl, tp, auto_close_at, closed}
         self.position_watchlist = []
+        # Tracking du max profit par ticket (en points) pour breakeven multi-paliers
+        self._position_max_profit = {}
         # Durée par défaut avant auto-close (minutes)
         self.auto_close_minutes = getattr(TradingConfig, 'AUTO_CLOSE_MINUTES', 30)
 
@@ -638,7 +640,8 @@ class LiveTradingEngine:
                 self.symbol_pnl_stats[sym]['last_update'] = ts
             # Persistance JSON pour outils d'analyse
             try:
-                import json, os
+                import json
+                import os
                 out_dir = os.path.join('artifacts', 'live_trading')
                 os.makedirs(out_dir, exist_ok=True)
                 out_path = os.path.join(out_dir, 'symbol_pnl_stats.json')
@@ -2551,7 +2554,14 @@ class LiveTradingEngine:
                         hard_min = (pt * 5.0) if pt > 0 else 0.0
                         dyn = max((ref * 1.3) if (ref and ref > 0) else 0.0, hard_min)
                         # Clamp dyn à un plafond relatif pour éviter extrêmes (0.10%)
-                        base_ask = float(getattr(si, 'ask', t.ask)) if hasattr(si, 'ask') else float(t.ask)
+                        if hasattr(si, 'ask'):
+                            try:
+                                base_ask = float(getattr(si, 'ask'))
+                            except Exception:
+                                base_ask = float(t.ask)
+                        else:
+                            base_ask = float(t.ask)
+
                         max_rel = base_ask * 0.0010
                         spread_cap = max(dyn, 0.0)
                         spread_cap = min(spread_cap if spread_cap > 0 else max_rel, max_rel)
@@ -2643,16 +2653,19 @@ class LiveTradingEngine:
                 cycle_start = time.time()
                 # Recalcul périodique d'allocation (premier cycle + chaque intervalle)
                 try:
-                    if (
-                        cycle_count == 1 or
-                        (cycle_count - self._last_allocation_recalc_cycle) >= self.allocation_recalc_interval
-                    ):
-                        if hasattr(self, '_apply_portfolio_allocation'):
-                            self._apply_portfolio_allocation()
-                            self._last_allocation_recalc_cycle = cycle_count
-                            self.logger.info(
-                                "♻️ Allocation portefeuille recalculée (cycle %d)" % cycle_count
-                            )
+                    should_recalc = False
+                    if cycle_count == 1:
+                        should_recalc = True
+                    else:
+                        delta_cycles = (cycle_count - self._last_allocation_recalc_cycle)
+                        should_recalc = (delta_cycles >= self.allocation_recalc_interval)
+
+                    if should_recalc and hasattr(self, '_apply_portfolio_allocation'):
+                        self._apply_portfolio_allocation()
+                        self._last_allocation_recalc_cycle = cycle_count
+                        self.logger.info(
+                            "♻️ Allocation portefeuille recalculée (cycle %d)" % cycle_count
+                        )
                 except Exception as _alloc_e:
                     self.logger.warning(f"Échec recalcul allocation périodique: {_alloc_e}")
 
@@ -2782,7 +2795,9 @@ class LiveTradingEngine:
                                         signals["fundamental_confluence"] = fconf
 
                                         # Appliquer un léger boost si biais aligné
-                                        max_boost = float(getattr(_TC, 'FUNDAMENTAL_BOOST_MAX', 0.07))
+                                        max_boost = float(
+                                            getattr(_TC, 'FUNDAMENTAL_BOOST_MAX', 0.07)
+                                        )
                                         bias = fconf.get('bias', 'neutral')
                                         fscore = float(fconf.get('score', 0.0))
 
@@ -2925,7 +2940,7 @@ class LiveTradingEngine:
                                     f"{action} conf={confidence:.3f}"
                                 )
 
-                        # 🧠 Clamp global de confiance après toutes fusions (MTF, fondamentaux, extensions)
+                        # 🧠 Clamp global de confiance (après merges MTF/fund/tech)
                         try:
                             from config.trading_config import TradingConfig as _TC
                             max_conf = float(getattr(_TC, 'MAX_CONFIDENCE_THRESHOLD', 0.85))
@@ -3481,16 +3496,40 @@ class LiveTradingEngine:
                         self._sl_override_logged.add(symbol)
 
             # 🔧 PARAMÈTRES OPTIMISÉS - Stop Loss professionnels réalistes
+            # Tentative: si des données live sont disponibles, calculer ATR
+            # localement (rolling high-low mean) et appliquer règles par instrument.
             default_stops = {
-                'EURUSD': 0.0005,    # 5 pips (0.04% risk) - était 20 pips
-                'XAUUSD': 2.0,       # 2 dollars (0.08% risk) - était 5 dollars
-                'BTCUSD': 150.0      # 150 dollars (0.22% risk)
+                'EURUSD': 0.0005,
+                'XAUUSD': 2.0,
+                'BTCUSD': 150.0,
             }
-            
+
+            # Si un override explicite par points est présent, l'utiliser.
             if override_distance is not None:
                 base_stop = override_distance
             else:
-                base_stop = default_stops.get(symbol, 0.0005)
+                # Essayer de calculer l'ATR depuis les données live si disponibles
+                atr_est = None
+                try:
+                    df = self.live_data.get(symbol)
+                    if isinstance(df, pd.DataFrame) and {'high', 'low'}.issubset(df.columns):
+                        price_range = (df['high'] - df['low']).rolling(14).mean()
+                        if len(price_range) > 0 and not pd.isna(price_range.iloc[-1]):
+                            atr_est = float(price_range.iloc[-1])
+                except Exception:
+                    atr_est = None
+
+                # Règle spécifique: pour JP225 (indices), on veut SL = ATR * 3.0
+                if atr_est is not None:
+                    symbol_up = symbol.upper() if isinstance(symbol, str) else ''
+                    if symbol_up.startswith('JP225') or 'JP225' in symbol_up:
+                        base_stop = atr_est * 3.0
+                # Si ATR disponible et raisonnable, l'utiliser pour instruments volatils
+                elif atr_est is not None and atr_est > 0:
+                    # valeur par défaut proportionnelle à ATR (conservative multiplier)
+                    base_stop = max(default_stops.get(symbol, 0.0005), atr_est)
+                else:
+                    base_stop = default_stops.get(symbol, 0.0005)
             
             # 🔧 VOLATILITÉ AJUSTÉE - Amplification réduite
             if current_volatility is not None:
@@ -3863,6 +3902,65 @@ class LiveTradingEngine:
                     )
                 except Exception:
                     auto_close_at = None
+                
+                # Vérifier scalping timeout global (TRADING_INTERVAL_STOP en secondes)
+                try:
+                    stop_secs = int(os.getenv('TRADING_INTERVAL_STOP', '0'))
+                except Exception:
+                    stop_secs = 0
+                if stop_secs > 0:
+                    try:
+                        ticket_lookup = entry.get('ticket')
+                        pos_found = None
+                        positions = mt5.positions_get() or []
+                        for p in positions:
+                            try:
+                                if ticket_lookup:
+                                    try:
+                                        if int(ticket_lookup) == int(getattr(p, 'ticket', 0)):
+                                            pos_found = p
+                                            break
+                                    except Exception:
+                                        # ignore non-integer ticket values
+                                        pass
+                                else:
+                                    # fallback: match by symbol + volume with clearer checks
+                                    try:
+                                        p_symbol = getattr(p, 'symbol', None)
+                                        entry_symbol = entry.get('symbol')
+                                        sym_match = p_symbol == entry_symbol
+
+                                        p_vol = getattr(p, 'volume', 0.0)
+                                        entry_vol = entry.get('volume', 0.0)
+                                        # Convert and compare volumes safely
+                                        try:
+                                            vol_diff = abs(float(p_vol) - float(entry_vol))
+                                        except Exception:
+                                            vol_diff = float('inf')
+
+                                        vol_match = vol_diff < 1e-6
+                                        if sym_match and vol_match:
+                                            pos_found = p
+                                            break
+                                    except Exception:
+                                        # ignore conversion errors and continue
+                                        pass
+                            except Exception:
+                                continue
+
+                        if pos_found is not None:
+                            try:
+                                open_ts = int(getattr(pos_found, 'time', 0))
+                                age_seconds = int(datetime.now(UTC).timestamp() - open_ts)
+                                if age_seconds >= stop_secs:
+                                    # marquer pour auto-close immédiat (scalping timeout)
+                                    entry['scalping_timeout'] = True
+                                    # forcer auto_close_at pour que le flux gère la fermeture
+                                    auto_close_at = datetime.now(UTC) - timedelta(seconds=1)
+                            except Exception:
+                                pass
+                    except Exception:
+                        pass
 
                 # Log basic diagnostics for this entry
                 try:
@@ -4331,6 +4429,28 @@ class LiveTradingEngine:
             positions = mt5.positions_get() or []
         except Exception:
             return
+        # Charger paramètres de breakeven multi-paliers
+        try:
+            from config.trading_config import TradingConfig as _TC_BP
+            _base = getattr(_TC_BP, 'BREAKEVEN_PROFIT_PTS', None)
+            _step = getattr(_TC_BP, 'BREAKEVEN_STEP_PTS', None)
+            if _base is not None:
+                BREAKEVEN_BASE_PTS = int(_base)
+            else:
+                BREAKEVEN_BASE_PTS = int(os.getenv('BREAKEVEN_PROFIT_PTS', '10'))
+
+            if _step is not None:
+                BREAKEVEN_STEP_PTS = int(_step)
+            else:
+                BREAKEVEN_STEP_PTS = int(os.getenv('BREAKEVEN_STEP_PTS', '2'))
+        except Exception:
+            try:
+                BREAKEVEN_BASE_PTS = int(os.getenv('BREAKEVEN_PROFIT_PTS', '10'))
+                BREAKEVEN_STEP_PTS = int(os.getenv('BREAKEVEN_STEP_PTS', '2'))
+            except Exception:
+                BREAKEVEN_BASE_PTS = 10
+                BREAKEVEN_STEP_PTS = 2
+
         for p in positions:
             try:
                 entry = float(getattr(p, 'price_open', 0.0))
@@ -4396,6 +4516,100 @@ class LiveTradingEngine:
                             pass
                     except Exception:
                         continue
+                # --- Breakeven multi-paliers (progressifs +BREAKEVEN_STEP_PTS) ---
+                try:
+                    ticket = int(getattr(p, 'ticket', 0))
+                    si = None
+                    try:
+                        si = mt5.symbol_info(getattr(p, 'symbol', None))
+                    except Exception:
+                        si = None
+
+                    point = 1.0
+                    if si is not None and getattr(si, 'point', None):
+                        try:
+                            point = float(getattr(si, 'point', 1.0))
+                        except Exception:
+                            point = 1.0
+
+                    # Calculer profit en 'points'
+                    if pos_type == 'buy':
+                        profit_price = current_price - entry
+                    else:
+                        profit_price = entry - current_price
+                    profit_pts = float(profit_price) / max(point, 1e-12)
+
+                    # Mettre à jour max profit observé
+                    prev_max = float(self._position_max_profit.get(ticket, 0.0))
+                    if profit_pts > prev_max:
+                        self._position_max_profit[ticket] = profit_pts
+                        prev_max = profit_pts
+
+                    # Si le max dépasse le seuil de base, calculer le palier courant
+                    if prev_max >= BREAKEVEN_BASE_PTS:
+                        # nombre de steps franchis (0 => first palier at BASE)
+                        steps = int((prev_max - BREAKEVEN_BASE_PTS) // BREAKEVEN_STEP_PTS)
+                        palier = BREAKEVEN_BASE_PTS + steps * BREAKEVEN_STEP_PTS
+                        target_sl_pts = max(palier - BREAKEVEN_STEP_PTS, 0)
+
+                        # Calculer price target pour SL
+                        if pos_type == 'buy':
+                            target_sl_price = entry + (target_sl_pts * point)
+                            # n'appliquer que si c'est plus favorable
+                            if current_sl is None or float(current_sl) < target_sl_price:
+                                # Ne pas réduire le SL s'il est déjà plus avantageux
+                                try:
+                                    self._update_position_stop_loss(ticket, target_sl_price)
+                                    # Audit breakeven
+                                    try:
+                                        audit_dir = Path('artifacts') / 'live_trading'
+                                        audit_dir.mkdir(parents=True, exist_ok=True)
+                                        be_event = {
+                                            'timestamp': datetime.now(UTC).isoformat(),
+                                            'symbol': getattr(p, 'symbol', None),
+                                            'ticket': ticket,
+                                            'stage': 'breakeven_step',
+                                            'palier_pts': palier,
+                                            'target_sl_pts': target_sl_pts,
+                                            'prev_max_pts': prev_max,
+                                            'old_sl': float(current_sl),
+                                            'new_sl': float(target_sl_price)
+                                        }
+                                        be_file = audit_dir / 'breakeven_events.jsonl'
+                                        with open(be_file, 'a', encoding='utf-8') as _f:
+                                            _f.write(json.dumps(be_event, default=str) + '\n')
+                                    except Exception:
+                                        pass
+                                except Exception:
+                                    pass
+                        else:
+                            target_sl_price = entry - (target_sl_pts * point)
+                            if current_sl is None or float(current_sl) > target_sl_price:
+                                try:
+                                    self._update_position_stop_loss(ticket, target_sl_price)
+                                    try:
+                                        audit_dir = Path('artifacts') / 'live_trading'
+                                        audit_dir.mkdir(parents=True, exist_ok=True)
+                                        be_event = {
+                                            'timestamp': datetime.now(UTC).isoformat(),
+                                            'symbol': getattr(p, 'symbol', None),
+                                            'ticket': ticket,
+                                            'stage': 'breakeven_step',
+                                            'palier_pts': palier,
+                                            'target_sl_pts': target_sl_pts,
+                                            'prev_max_pts': prev_max,
+                                            'old_sl': float(current_sl),
+                                            'new_sl': float(target_sl_price)
+                                        }
+                                        be_file = audit_dir / 'breakeven_events.jsonl'
+                                        with open(be_file, 'a', encoding='utf-8') as _f:
+                                            _f.write(json.dumps(be_event, default=str) + '\n')
+                                    except Exception:
+                                        pass
+                                except Exception:
+                                    pass
+                except Exception:
+                    pass
             except Exception:
                 continue
 

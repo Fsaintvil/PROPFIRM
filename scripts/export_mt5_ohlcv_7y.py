@@ -83,10 +83,30 @@ def main():
                  "EURJPY,GBPCHF,NZDJPY,EURAUD,GBPUSD")
     )
     ap.add_argument("--out", default="data/ohlcv")
+    ap.add_argument("--dry-run", action="store_true", help="Ne pas se connecter à MT5; créer un fichier CSV minimal pour test.")
     args = ap.parse_args()
 
     symbols = [s.strip().upper() for s in args.symbols.split(",") if s.strip()]
     out_dir = Path(args.out)
+
+    if args.dry_run:
+        # Création d'un CSV minimal sans connexion MT5 pour les tests
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for sym in symbols:
+            csv_path = out_dir / f"{sym}_15m.csv"
+            # écrire un en-tête minimal
+            import pandas as _pd
+            df = _pd.DataFrame([{
+                'time': datetime.now(timezone.utc).isoformat(),
+                'open': 0.0,
+                'high': 0.0,
+                'low': 0.0,
+                'close': 0.0,
+                'volume': 0
+            }])
+            df.to_csv(csv_path, index=False)
+            print(f"(dry-run) CSV créé: {csv_path}")
+        return
 
     mt5 = _connect_mt5()
     try:

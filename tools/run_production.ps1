@@ -9,7 +9,8 @@ WARNING: Live sends will trade real capital. Only enable live after explicit hum
 #>
 param(
     [switch]$Detached,
-    [switch]$StartLive
+    [switch]$StartLive,
+    [switch]$Yes
 )
 
 $repoRoot = (Resolve-Path -Path "." | Select-Object -ExpandProperty Path)
@@ -67,10 +68,14 @@ $logErr = "artifacts\live_trading\production_run_$ts.err.log"
 $pidFile = "artifacts\live_trading\production_run_$ts.pid"
 
 function Start-ProductionProcess([switch]$DetachedMode) {
+    $script:PassYes = $false
+    if ($StartLive -or $Yes) { $script:PassYes = $true }
+    $pyArgs = '.\start_production.py'
+    if ($script:PassYes) { $pyArgs = "$pyArgs --yes" }
     if ($DetachedMode) {
         $startInfo = @{
             FilePath = 'python'
-            ArgumentList = '.\start_production.py'
+            ArgumentList = $pyArgs
             WorkingDirectory = $repoRoot
             WindowStyle = 'Hidden'
             RedirectStandardOutput = $logOut
@@ -88,7 +93,7 @@ function Start-ProductionProcess([switch]$DetachedMode) {
             return $null
         }
     } else {
-        Start-Process -FilePath python -ArgumentList '.\start_production.py' -WorkingDirectory $repoRoot -NoNewWindow -RedirectStandardOutput $logOut -RedirectStandardError $logErr
+        Start-Process -FilePath python -ArgumentList $pyArgs -WorkingDirectory $repoRoot -NoNewWindow -RedirectStandardOutput $logOut -RedirectStandardError $logErr
         Write-Output "Production process started (interactive). stdout -> $logOut, stderr -> $logErr"
         return $null
     }

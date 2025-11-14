@@ -12,6 +12,7 @@ import os
 import json
 from pathlib import Path
 from typing import Dict, Any, List
+from config.lot_config import build_default_lots
 
 
 def _read_selected_threshold() -> float | None:
@@ -55,8 +56,7 @@ def _probe_mt5_symbols(candidates: List[str]) -> List[str]:
 
 
 def _default_lots(symbols: List[str]) -> Dict[str, float]:
-    # Valeurs sûres par défaut
-    return {s: 0.01 for s in symbols}
+    return build_default_lots(symbols)
 
 
 def suggest_production_config() -> Dict[str, Any]:

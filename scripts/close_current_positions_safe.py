@@ -119,7 +119,7 @@ for p in list(positions or []):
             "price": price,
             "deviation": 20,
             "magic": 0,
-            "comment": "close_current_positions_safe.py",
+            "comment": "manual_close_all",
         }
 
         # order_check

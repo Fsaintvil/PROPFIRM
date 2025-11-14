@@ -129,12 +129,22 @@ def _apply_one(pr):
         else:
             price_ref = 0.0
 
-    # fetch min_stop_distance from symbol constraints or symbol_info.trade_stops_level
+    # fetch min_stop_distance from symbol constraints or fallback
     min_stop_distance = None
     sc = SYMBOL_CONSTRAINTS.get(symbol)
-    if sc and isinstance(sc, dict) and 'min_stop_distance' in sc:
-        min_stop_distance = float(sc['min_stop_distance'])
-    else:
+    try:
+        if sc and isinstance(sc, dict):
+            if 'min_stop_distance' in sc and sc['min_stop_distance']:
+                min_stop_distance = float(sc['min_stop_distance'])
+            else:
+                # compute from trade_stops_level * point if available in constraints
+                tsl_c = sc.get('trade_stops_level')
+                pt_c = sc.get('point')
+                if tsl_c and pt_c:
+                    min_stop_distance = float(tsl_c) * float(pt_c)
+    except Exception:
+        min_stop_distance = None
+    if min_stop_distance is None:
         try:
             tsl = getattr(syminfo, 'trade_stops_level', None)
             point = getattr(syminfo, 'point', None) or 0.00001
@@ -142,10 +152,16 @@ def _apply_one(pr):
                 min_stop_distance = float(tsl * point)
         except Exception:
             min_stop_distance = None
-
-    # ensure we have a reasonable min_stop_distance
     if not min_stop_distance or min_stop_distance <= 0:
-        min_stop_distance = 1e-5
+        # dynamic fallback: use spread + 2*point if available
+        try:
+            spr = 0.0
+            if tick and getattr(tick, 'ask', None) and getattr(tick, 'bid', None):
+                spr = (tick.ask - tick.bid)
+            pt = getattr(syminfo, 'point', None) or 0.00001
+            min_stop_distance = max(spr + (2 * pt), 1e-5)
+        except Exception:
+            min_stop_distance = 1e-5
 
     adjusted = {'adjusted_sl': sl, 'adjusted_tp': tp, 'constraint_used': min_stop_distance}
 
@@ -173,9 +189,11 @@ def _apply_one(pr):
                 if dist < min_stop_distance:
                     # push SL away from price_ref
                     if sl < price_ref:
-                        new_sl = price_ref - (min_stop_distance + (syminfo.point if syminfo else 0.0))
+                        buffer = (syminfo.point if syminfo else 0.0)
+                        new_sl = price_ref - (min_stop_distance + buffer)
                     else:
-                        new_sl = price_ref + (min_stop_distance + (syminfo.point if syminfo else 0.0))
+                        buffer = (syminfo.point if syminfo else 0.0)
+                        new_sl = price_ref + (min_stop_distance + buffer)
                     adjusted['adjusted_sl'] = float(round_by_point(new_sl))
 
         # TP enforcement
@@ -197,9 +215,11 @@ def _apply_one(pr):
                 dist = abs(price_ref - tp)
                 if dist < min_stop_distance:
                     if tp < price_ref:
-                        new_tp = price_ref - (min_stop_distance + (syminfo.point if syminfo else 0.0))
+                        buffer = (syminfo.point if syminfo else 0.0)
+                        new_tp = price_ref - (min_stop_distance + buffer)
                     else:
-                        new_tp = price_ref + (min_stop_distance + (syminfo.point if syminfo else 0.0))
+                        buffer = (syminfo.point if syminfo else 0.0)
+                        new_tp = price_ref + (min_stop_distance + buffer)
                     adjusted['adjusted_tp'] = float(round_by_point(new_tp))
     except Exception:
         # on any error, keep original values
@@ -214,13 +234,22 @@ def _apply_one(pr):
         'tp': adjusted['adjusted_tp'],
     }
 
-    print(f"Modifying position {ticket} {symbol} -> SL={adjusted['adjusted_sl']} TP={adjusted['adjusted_tp']} (constraint {min_stop_distance})")
+    print(
+        f"Modifying position {ticket} {symbol} -> SL={adjusted['adjusted_sl']} "
+        f"TP={adjusted['adjusted_tp']} (constraint {min_stop_distance})"
+    )
     try:
         res = mt5.order_send(req)
         res_obj = res._asdict() if hasattr(res, '_asdict') else str(res)
     except Exception as e:
         res_obj = {'error': str(e)}
-    rec = {'ticket': ticket, 'symbol': symbol, 'request': req, 'result': res_obj, 'adjusted': adjusted}
+    rec = {
+        'ticket': ticket,
+        'symbol': symbol,
+        'request': req,
+        'result': res_obj,
+        'adjusted': adjusted,
+    }
     results.append(rec)
     return rec
 
@@ -230,7 +259,10 @@ if AUTO_MODE not in ('manual', 'canary', 'staged', 'full'):
     AUTO_MODE = 'manual'
 
 if AUTO_MODE in ('staged', 'full') and not APPROVAL_TOKEN:
-    print('ERROR: AUTO_MODE is', AUTO_MODE, 'but APPROVAL_TOKEN is not set in environment. Aborting.')
+    print(
+        'ERROR: AUTO_MODE is', AUTO_MODE,
+        'but APPROVAL_TOKEN is not set in environment. Aborting.'
+    )
     sys.exit(6)
 
 # Determine how many to apply
@@ -260,7 +292,16 @@ elif AUTO_MODE == 'staged':
             applied += 1
         # write intermediate results
         with open(RESULT_FILE, 'w', encoding='utf-8') as f:
-            json.dump({'timestamp': TS, 'mode': AUTO_MODE, 'applied': applied, 'results': results}, f, indent=2)
+            json.dump(
+                {
+                    'timestamp': TS,
+                    'mode': AUTO_MODE,
+                    'applied': applied,
+                    'results': results,
+                },
+                f,
+                indent=2,
+            )
         print('Wrote intermediate results to', RESULT_FILE)
         # optional verification
         if VERIFY_AFTER_BATCH:
