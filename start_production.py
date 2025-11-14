@@ -128,6 +128,13 @@ def parse_args() -> argparse.Namespace:
         "--auto", action="store_true",
         help="Configure automatiquement symboles/lots/flags/threshold"
     )
+    parser.add_argument(
+        "--report-env",
+        action="store_true",
+        help=(
+            "Rapport des variables d'environnement critiques puis sortie"
+        )
+    )
     return parser.parse_args()
 
 
@@ -277,6 +284,19 @@ def main():
         os.environ["ENGINE_MAX_CYCLES"] = str(int(args.smoke))
         # Temps de sommeil réduit pour tests rapides
         os.environ.setdefault("ENGINE_SMOKE_SLEEP", "2")
+
+    # Report environnement détaillé précoce
+    if args.report_env:
+        critical_vars = [
+            "ALLOW_MT5_SEND", "CONFIRM_PRODUCTION", "ENABLE_PROFIT_LOCK",
+            "USE_MTF", "USE_FUNDAMENTAL", "USE_EXT_MTF_TECH", "TRADING_INTERVAL",
+            "WINRATE_MIN_SYMBOL", "EXPECTANCY_MIN_SYMBOL", "DAILY_LOSS_LIMIT_PCT"
+        ]
+        logger.info("\n🧪 RAPPORT ENVIRONNEMENT CRITIQUE")
+        for cv in critical_vars:
+            logger.info(f"  • {cv}={os.getenv(cv)}")
+        logger.info("Fin rapport --report-env")
+        return 0
 
     try:
         # 1. Import du moteur optimisé

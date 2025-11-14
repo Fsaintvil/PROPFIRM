@@ -19,7 +19,7 @@ import sys
 import logging
 import csv
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from pathlib import Path
 import pytz
 import warnings
@@ -159,6 +159,14 @@ else:
         from scripts.reinforcement_learning_agent import ReinforcementLearningTradingSystem
         from scripts.multi_asset_portfolio import MultiAssetPortfolioOptimizer
         from scripts.market_regime_detection import MarketRegimeDetector
+        # Optimizer unifié (préféré) si disponible
+        try:
+            from src.portfolio.optimizer import UnifiedPortfolioOptimizer  # nouveau module
+        except Exception:
+            try:
+                from portfolio.optimizer import UnifiedPortfolioOptimizer  # fallback chemin racine
+            except Exception:
+                UnifiedPortfolioOptimizer = None
 
         SYSTEMS_AVAILABLE = True
         print("✅ Systèmes de trading IA (scripts/) chargés avec succès")
@@ -169,6 +177,13 @@ else:
             from reinforcement_learning_agent import ReinforcementLearningTradingSystem
             from multi_asset_portfolio import MultiAssetPortfolioOptimizer
             from market_regime_detection import MarketRegimeDetector
+            try:
+                from src.portfolio.optimizer import UnifiedPortfolioOptimizer
+            except Exception:
+                try:
+                    from portfolio.optimizer import UnifiedPortfolioOptimizer
+                except Exception:
+                    UnifiedPortfolioOptimizer = None
 
             SYSTEMS_AVAILABLE = True
             print("✅ Systèmes de trading IA (root) chargés avec succès")
@@ -251,38 +266,59 @@ class LiveTradingEngine:
         else:
             self.symbols = symbols if isinstance(symbols, list) else [symbols]
 
-        # Configuration des lot sizes
+        # Configuration des lot sizes (centralisée via config.lot_config)
+        try:
+            from config.lot_config import build_default_lots, EXCEPTION_LOTS, DEFAULT_LOT
+        except Exception:
+            EXCEPTION_LOTS = {
+                "BTCUSD": 0.01,
+                "XAUUSD": 0.01,
+                "JP225.cash": 0.01,
+                "US500.cash": 0.01,
+            }
+            DEFAULT_LOT = 0.05
+
+            def build_default_lots(symbols):
+                return {
+                    s: EXCEPTION_LOTS.get(s, DEFAULT_LOT)
+                    for s in symbols
+                }
+
         if lot_sizes is None:
-            # Si config unifiée disponible, utiliser ses lot_sizes
             if UNIFIED_AVAILABLE and getattr(UNIFIED_CONFIG, "trading", None):
                 try:
                     configured_lots = dict(UNIFIED_CONFIG.trading.lot_sizes)
-                    # S'assurer que tous les symboles ont une valeur
                     self.lot_sizes = {
-                        symbol: configured_lots.get(symbol, 0.01)
-                        for symbol in self.symbols
+                        s: EXCEPTION_LOTS.get(s, configured_lots.get(s, DEFAULT_LOT))
+                        for s in self.symbols
                     }
-                    print(
-                        f"🔧 Lot sizes depuis config unifiée: {self.lot_sizes}"
-                    )
+                    print(f"🔧 Lot sizes (unified+overrides): {self.lot_sizes}")
                 except Exception as e:
                     print(f"⚠️  Échec lot_sizes config unifiée: {e}")
-                    self.lot_sizes = {symbol: 0.01 for symbol in self.symbols}
+                    self.lot_sizes = build_default_lots(self.symbols)
             else:
-                # Même lot size pour tous les symboles
-                self.lot_sizes = {symbol: 0.01 for symbol in self.symbols}
+                self.lot_sizes = build_default_lots(self.symbols)
         elif isinstance(lot_sizes, dict):
-            self.lot_sizes = lot_sizes
+            # Appliquer exceptions si absentes
+            self.lot_sizes = {
+                s: (
+                    EXCEPTION_LOTS.get(s, lot_sizes.get(s))
+                    if s in lot_sizes else EXCEPTION_LOTS.get(s, DEFAULT_LOT)
+                )
+                for s in self.symbols
+            }
         else:
-            # Valeur unique pour tous
-            self.lot_sizes = {symbol: lot_sizes for symbol in self.symbols}
+            # Valeur unique pour tous avec exceptions
+            self.lot_sizes = {s: EXCEPTION_LOTS.get(s, lot_sizes) for s in self.symbols}
 
-        # Validation des paramètres
-        for symbol in self.symbols:
-            if symbol not in self.lot_sizes:
-                self.lot_sizes[symbol] = 0.01  # Valeur par défaut
+        for s in self.symbols:
+            if s not in self.lot_sizes:
+                self.lot_sizes[s] = EXCEPTION_LOTS.get(s, DEFAULT_LOT)
 
         self.max_risk_per_trade = max_risk_per_trade
+        # Intervalle pour recalcul périodique de l'allocation portefeuille
+        self.allocation_recalc_interval = 50  # nombre de cycles
+        self._last_allocation_recalc_cycle = 0
 
         # État du système
         self.is_connected = False
@@ -421,6 +457,17 @@ class LiveTradingEngine:
         print(f"  📈 Symboles: {', '.join(self.symbols)}")
         print(f"  💰 Lots: {self.lot_sizes}")
         print(f"  🛡️  Risque max: {max_risk_per_trade*100:.1f}%")
+        # Initialiser OrderManager pour audit des ordres (non bloquant)
+        try:
+            from src.order.order_manager import OrderManager
+            self.order_manager = OrderManager(audit_path=Path('logs') / 'order_audit.jsonl')
+            self.logger.info("✅ OrderManager initialisé")
+        except Exception as _om_e:
+            self.order_manager = None
+            try:
+                self.logger.warning(f"OrderManager indisponible: {_om_e}")
+            except Exception:
+                pass
 
         # Préparer support MTF/fondamentaux (chargement lazy)
         self._fundamentals_map = None
@@ -458,18 +505,29 @@ class LiveTradingEngine:
             except Exception:
                 pass
 
-        # Min de confiance par symbole (politique prudente par défaut)
+        # Min de confiance par symbole (centralisé via TradingConfig)
         base_thr = float(self.confidence_threshold)
         self.per_symbol_min_conf = {}
+        try:
+            from config.trading_config import TradingConfig as _TC
+        except Exception:
+            _TC = None
         for s in self.symbols:
-            if 'BTC' in s:
-                self.per_symbol_min_conf[s] = max(base_thr, 0.80)
-            elif 'XAU' in s:
-                self.per_symbol_min_conf[s] = max(base_thr, 0.75)
-            elif s.endswith('.cash'):
-                self.per_symbol_min_conf[s] = max(base_thr, 0.78)
+            if _TC and hasattr(_TC, 'per_symbol_min_confidence'):
+                self.per_symbol_min_conf[s] = float(
+                    _TC.per_symbol_min_confidence(s, base_thr)
+                )
             else:
-                self.per_symbol_min_conf[s] = max(base_thr, 0.72)
+                # Fallback prudent si TradingConfig indisponible
+                up = s.upper()
+                if 'BTC' in up or 'ETH' in up:
+                    self.per_symbol_min_conf[s] = max(base_thr, 0.80)
+                elif 'XAU' in up:
+                    self.per_symbol_min_conf[s] = max(base_thr, 0.78)
+                elif up.endswith('.CASH'):
+                    self.per_symbol_min_conf[s] = max(base_thr, 0.80)
+                else:
+                    self.per_symbol_min_conf[s] = max(base_thr, 0.72)
 
     def is_market_open(self, symbol):
         """Vérifier si le marché est ouvert pour un symbole"""
@@ -506,6 +564,94 @@ class LiveTradingEngine:
             self.trade_count_today = 0
             self.last_reset_date = today
             self.logger.info(f"🔄 Reset quotidien - Date: {today}")
+            # Initialiser baseline balance pour PnL journalier
+            if MT5_AVAILABLE:
+                try:
+                    ai = mt5.account_info()
+                    if ai and hasattr(ai, 'balance'):
+                        self._daily_balance_baseline = float(ai.balance)
+                        self._daily_equity_baseline = float(getattr(ai, 'equity', ai.balance))
+                        self._daily_pnl = 0.0
+                        self.logger.info(
+                            "📊 Baseline journalière: balance=%.2f equity=%.2f" % (
+                                self._daily_balance_baseline,
+                                self._daily_equity_baseline,
+                            )
+                        )
+                except Exception as _pnl_e:
+                    try:
+                        self.logger.debug(f"Baseline PnL non disponible: {_pnl_e}")
+                    except Exception:
+                        pass
+
+    def _update_symbol_pnl_stats(self):
+        """Met à jour les stats PnL réelles par symbole à partir de l'historique des deals MT5.
+        Construit pour chaque symbole: gross_win, gross_loss, wins, losses, last_update.
+        Appelé périodiquement dans la boucle principale (PNL_UPDATE_EVERY_CYCLES)."""
+        if not MT5_AVAILABLE:
+            return
+        try:
+            from datetime import datetime, timedelta, UTC
+            end = datetime.now(UTC)
+            start = end - timedelta(days=30)
+            deals = mt5.history_deals_get(start, end)
+            if deals is None:
+                return
+            if not hasattr(self, 'symbol_pnl_stats'):
+                self.symbol_pnl_stats = {}
+            # Init structures si absent
+            for sym in self.symbols:
+                if sym not in self.symbol_pnl_stats:
+                    self.symbol_pnl_stats[sym] = {
+                        'gross_win': 0.0,
+                        'gross_loss': 0.0,
+                        'wins': 0,
+                        'losses': 0,
+                        'last_update': None
+                    }
+                else:
+                    # Reset avant recalcul complet
+                    sp = self.symbol_pnl_stats[sym]
+                    sp['gross_win'] = 0.0
+                    sp['gross_loss'] = 0.0
+                    sp['wins'] = 0
+                    sp['losses'] = 0
+            # Agrégation
+            for d in deals:
+                sym = getattr(d, 'symbol', None)
+                if sym not in self.symbols:
+                    continue
+                profit = float(getattr(d, 'profit', 0.0))
+                deal_type = getattr(d, 'type', None)
+                # BUY/SELL uniquement
+                if deal_type not in (mt5.DEAL_TYPE_BUY, mt5.DEAL_TYPE_SELL):
+                    continue
+                sp = self.symbol_pnl_stats[sym]
+                if profit > 0:
+                    sp['gross_win'] += profit
+                    sp['wins'] += 1
+                elif profit < 0:
+                    sp['gross_loss'] += profit  # négatif
+                    sp['losses'] += 1
+            ts = end.timestamp()
+            for sym in self.symbols:
+                self.symbol_pnl_stats[sym]['last_update'] = ts
+            # Persistance JSON pour outils d'analyse
+            try:
+                import json, os
+                out_dir = os.path.join('artifacts', 'live_trading')
+                os.makedirs(out_dir, exist_ok=True)
+                out_path = os.path.join(out_dir, 'symbol_pnl_stats.json')
+                with open(out_path, 'w', encoding='utf-8') as f:
+                    json.dump(self.symbol_pnl_stats, f, ensure_ascii=False, indent=2)
+            except Exception as _persist_e:
+                self.logger.debug(f"Persist PnL stats fail: {_persist_e}")
+            self.logger.debug("MAJ PnL symboles réelle + persist")
+        except Exception as e:
+            try:
+                self.logger.debug(f"_update_symbol_pnl_stats erreur: {e}")
+            except Exception:
+                pass
 
     def can_trade_continuously(self):
         """Vérifier si trading continu possible (pas de limite)"""
@@ -695,6 +841,29 @@ class LiveTradingEngine:
                 self.meta_learning = MetaLearningTradingSystem(max_models=3)
                 initialized['meta_learning'] = True
                 self.logger.info("✅ Meta-Learning initialisé")
+                # Chargement via manifeste modèle (si ensemble vide)
+                try:
+                    from src.utils.model_manifest import resolve_active_model
+                    manifest_path = Path('artifacts/production/model_manifest.json')
+                    res = resolve_active_model(manifest_path)
+                    if (
+                        res.get('status') == 'ok'
+                        and res.get('path')
+                        and not getattr(self.meta_learning, 'model_ensemble', [])
+                    ):
+                        import lightgbm as _lgb
+                        booster = _lgb.Booster(model_file=res['path'])
+                        self.meta_learning.model_ensemble = [{
+                            'model': booster,
+                            'performance': 1.0,
+                            'architecture': 'manifest_lightgbm'
+                        }]
+                        short_hash = res.get('hash', '')[:8]
+                        self.logger.info(
+                            f"📦 Modèle manifest chargé: {res['path']} hash={short_hash}"
+                        )
+                except Exception as _mme:
+                    self.logger.debug(f"Manifest ignoré: {_mme}")
                 # Si l'ensemble de modèles est vide, tenter de charger un
                 # modèle LightGBM déjà entraîné depuis artifacts (non invasif)
                 try:
@@ -751,11 +920,20 @@ class LiveTradingEngine:
             except Exception as e:
                 self.logger.warning(f"RL Agent init failed: {e}")
 
-            # 3. Portfolio Optimizer (pour allocation)
+            # 3. Portfolio Optimizer (unifié si disponible)
             try:
-                self.portfolio_optimizer = MultiAssetPortfolioOptimizer()
+                if 'UnifiedPortfolioOptimizer' in globals() and UnifiedPortfolioOptimizer:
+                    self.portfolio_optimizer = UnifiedPortfolioOptimizer()
+                    self.logger.info("✅ UnifiedPortfolioOptimizer initialisé")
+                else:
+                    self.portfolio_optimizer = MultiAssetPortfolioOptimizer()
+                    self.logger.info("✅ MultiAssetPortfolioOptimizer (fallback) initialisé")
                 initialized['portfolio_optimizer'] = True
-                self.logger.info("✅ Portfolio Optimizer initialisé")
+                # Initial allocation diagnostic
+                try:
+                    self._apply_portfolio_allocation(initial=True)
+                except Exception as _alloc_e:
+                    self.logger.debug(f"Allocation initiale ignorée: {_alloc_e}")
             except Exception as e:
                 self.logger.warning(f"Portfolio Optimizer init failed: {e}")
 
@@ -868,7 +1046,7 @@ class LiveTradingEngine:
 
             with open(tmp_file, 'w', encoding='utf-8') as f:
                 f.write(f"loaded_model_path: {model_path or 'None'}\n")
-                f.write(f"timestamp: {datetime.utcnow().isoformat()}Z\n")
+                f.write(f"timestamp: {datetime.now(UTC).isoformat()}\n")
                 try:
                     f.write(f"pid: {os.getpid()}\n")
                 except Exception:
@@ -1443,6 +1621,20 @@ class LiveTradingEngine:
             signals["combined_signal"] = combined_action
             signals["confidence"] = combined_confidence
 
+            # Intégrer information d'allocation si optimizer disponible
+            try:
+                if self.portfolio_optimizer and symbol:
+                    alloc = getattr(self, 'current_allocation', {})
+                    if alloc and symbol in alloc:
+                        signals['portfolio_allocation'] = alloc[symbol]
+                        # Ajuster légèrement la confiance (<= +0.05)
+                        signals['confidence'] = min(
+                            1.0,
+                            signals['confidence'] + alloc[symbol] * 0.05
+                        )
+            except Exception:
+                pass
+
             # 🧠 NOUVEAU: Appliquer le système de décision avancé
             try:
                 # Diagnostics faibles risques: journaliser l'état compact
@@ -1839,6 +2031,24 @@ class LiveTradingEngine:
             self.logger.debug(f"✅ Signal validé pour {symbol}")
             return True, []
 
+    def scale_lot(self, symbol: str) -> float:
+        """Calcule la taille de lot modulée par l'allocation courante.
+
+        base * (1 + 0.3 * ((w - avg)/avg)) où avg est la moyenne des poids.
+        Retourne la taille de lot de base en cas d'erreur ou absence d'allocation.
+        """
+        base = self.lot_sizes.get(symbol, 0.01)
+        try:
+            if getattr(self, 'current_allocation', None) and symbol in self.current_allocation:
+                avg = sum(self.current_allocation.values()) / max(len(self.current_allocation), 1)
+                if avg > 0:
+                    w = self.current_allocation.get(symbol, 0.0)
+                    factor = 1.0 + 0.3 * ((w - avg) / avg)
+                    return max(base * factor, 1e-6)
+        except Exception:
+            pass
+        return base
+
     def execute_trade(
         self,
         action: str,
@@ -1849,6 +2059,18 @@ class LiveTradingEngine:
         price: float = None,
     ):
         """Exécuter un trade sur MT5 pour un symbole spécifique avec validation"""
+        # Ajuster lot_size dynamiquement via allocation courante si disponible
+        try:
+            if lot_size is None and getattr(self, 'current_allocation', None) and symbol:
+                base = self.lot_sizes.get(symbol, 0.01)
+                weight = self.current_allocation.get(symbol, 0.0)
+                # Normalisation: conserver base mais moduler ±30% autour selon poids vs moyenne
+                avg_w = sum(self.current_allocation.values()) / max(len(self.current_allocation), 1)
+                if avg_w > 0:
+                    factor = 1.0 + 0.3 * ((weight - avg_w) / avg_w)
+                    lot_size = max(base * factor, 1e-6)
+        except Exception:
+            pass
         # Kill-switch global via fichiers/variables d'environnement
         try:
             from mt5_connector import trading_disabled  # dispo via utils path
@@ -2051,6 +2273,33 @@ class LiveTradingEngine:
                     request["tp"] = dynamic_tp
                     self.logger.info(f"🎯 Take profit automatique: {dynamic_tp:.5f}")
 
+            # Audit via OrderManager avant envoi
+            if getattr(self, 'order_manager', None):
+                try:
+                    valid = self.order_manager.validate_order(
+                        symbol,
+                        action,
+                        lot_size,
+                        price,
+                        request.get('sl'),
+                        request.get('tp')
+                    )
+                    if not valid:
+                        self.logger.error("OrderManager rejet: validation False")
+                        self._log_rejected_signal(symbol, action, ["OrderManager validation False"])
+                        return False
+                    self.order_manager.submit_order(
+                        symbol,
+                        action,
+                        lot_size,
+                        price,
+                        request.get('sl'),
+                        request.get('tp'),
+                        meta={"source": "execute_trade"}
+                    )
+                except Exception as _oe:
+                    self.logger.warning(f"OrderManager audit échoué: {_oe}")
+
             # Envoyer l'ordre avec retry robuste
             @robust_mt5_retry(max_attempts=3)
             def _send_order():
@@ -2087,7 +2336,14 @@ class LiveTradingEngine:
             # Enregistrer la position dans la watchlist pour auto-close
             try:
                 # Register asynchronously but attempt immediate discovery
-                self._register_position_watchlist(result, symbol, lot_size, request.get('sl'), request.get('tp'), price)
+                self._register_position_watchlist(
+                    result,
+                    symbol,
+                    lot_size,
+                    request.get('sl'),
+                    request.get('tp'),
+                    price,
+                )
             except Exception as _reg_e:
                 self.logger.debug(f"Impossible d'enregistrer position dans watchlist: {_reg_e}")
 
@@ -2099,13 +2355,87 @@ class LiveTradingEngine:
 
     # simulate_trade supprimé: le mode simulation est interdit (100% live)
 
+    def _apply_portfolio_allocation(self, initial=False):
+        """Calcule et stocke l'allocation portfolio pour ajuster les tailles de lots.
+        initial: log plus verbeux au premier calcul.
+        """
+        if not self.portfolio_optimizer:
+            return False
+        try:
+            # Volatility map de base: utiliser dernière volatilité calculée si dispo
+            vol_map = {}
+            for s in self.symbols:
+                df = self.live_data.get(s)
+                if df is not None and 'returns' in df.columns and len(df['returns'].dropna()) > 10:
+                    vol_map[s] = float(df['returns'].rolling(20).std().iloc[-1])
+            weights = self.portfolio_optimizer.allocate(self.symbols, vol_map if vol_map else None)
+            self.current_allocation = weights
+            if initial:
+                self.logger.info(f"🧮 Allocation initiale: {weights}")
+            else:
+                self.logger.debug(f"Allocation mise à jour: {weights}")
+            return True
+        except Exception as e:
+            self.logger.debug(f"Allocation échouée: {e}")
+            return False
+
     # LIGNE 547-589 : Checks de risque simplistes
     def risk_check(self, action, signals, symbol="UNKNOWN"):
         """Vérification de risque avancée avec système intelligent"""
         try:
+            # === Blocage symboles suspendus (sous-performance) ===
+            if hasattr(self, 'suspended_symbols') and symbol in self.suspended_symbols:
+                sus_info = self.suspended_symbols.get(symbol, {})
+                until_cycle = sus_info.get('until_cycle')
+                current_cycle = getattr(self, 'cycle_count', 0)
+                if until_cycle is None or current_cycle <= until_cycle:
+                    self.logger.info(
+                        f"Suspension active pour {symbol} (cycle {current_cycle}/{until_cycle})"
+                    )
+                    return False
+                else:
+                    # Levée suspension expirée
+                    try:
+                        del self.suspended_symbols[symbol]
+                        self.logger.info(f"Suspension levée pour {symbol}")
+                    except Exception:
+                        pass
+
             # 🧠 NOUVEAU: Utiliser seuil adaptatif si disponible
             min_confidence = signals.get(
                 'adaptive_threshold', self.confidence_threshold)
+
+            # === Daily loss limit (compte global) ===
+            try:
+                from config.trading_config import TradingConfig as _TC
+                dll_pct = float(getattr(_TC, 'DAILY_LOSS_LIMIT_PCT', 0.0))
+                if MT5_AVAILABLE and dll_pct > 0:
+                    ai = mt5.account_info()
+                    if ai and hasattr(self, '_daily_balance_baseline'):
+                        equity = float(getattr(ai, 'equity', ai.balance))
+                        baseline = float(getattr(self, '_daily_equity_baseline', ai.balance))
+                        daily_pnl = equity - baseline
+                        self._daily_pnl = daily_pnl
+                        if baseline > 0:
+                            draw_pct = daily_pnl / baseline
+                            # draw_pct négatif -> perte
+                            if draw_pct <= -dll_pct:
+                                self.logger.warning(
+                                    (
+                                        "⛔ Daily loss limit atteint (%s <= -%s) — rejet trade %s"
+                                        % (
+                                            f"{draw_pct:.2%}",
+                                            f"{dll_pct:.2%}",
+                                            symbol,
+                                        )
+                                    )
+                                )
+                                return False
+            except Exception as _dle:
+                try:
+                    self.logger.debug(f"Daily loss check ignoré: {_dle}")
+                except Exception:
+                    pass
 
             # Appliquer un minimum par symbole (politique prudente)
             try:
@@ -2184,7 +2514,9 @@ class LiveTradingEngine:
                 dd_threshold = -0.10  # défaut historique
             if current_dd < dd_threshold:
                 self.logger.warning(
-                    f"Drawdown maximum atteint ({current_dd:.3f} < {dd_threshold:.3f}) - Trading suspendu"
+                    "Drawdown maximum atteint (%s < %s) - Trading suspendu" % (
+                        f"{current_dd:.3f}", f"{dd_threshold:.3f}"
+                    )
                 )
                 return False
 
@@ -2208,16 +2540,19 @@ class LiveTradingEngine:
                     si = mt5.symbol_info(symbol)
                     if t and si and getattr(t, 'ask', None) and getattr(t, 'bid', None):
                         curr_spread = float(t.ask) - float(t.bid)
-                        # Seuil dynamique: max(1.5x spread de référence, 5 points)
+                        # Seuil dynamique: max(1.3x spread de référence, 5 points)
                         ref = None
-                        sc = self.symbol_constraints.get(symbol) if hasattr(self, 'symbol_constraints') else None
+                        sc = None
+                        if hasattr(self, 'symbol_constraints'):
+                            sc = self.symbol_constraints.get(symbol)
                         if isinstance(sc, dict):
                             ref = float(sc.get('spread') or 0.0)
                         pt = float(getattr(si, 'point', 0.0) or 0.0)
                         hard_min = (pt * 5.0) if pt > 0 else 0.0
-                        dyn = max((ref * 1.5) if (ref and ref > 0) else 0.0, hard_min)
-                        # Clamp dyn à un plafond relatif pour éviter extrêmes (0.15%)
-                        max_rel = float(getattr(si, 'ask', t.ask)) * 0.0015 if hasattr(si, 'ask') else float(t.ask) * 0.0015
+                        dyn = max((ref * 1.3) if (ref and ref > 0) else 0.0, hard_min)
+                        # Clamp dyn à un plafond relatif pour éviter extrêmes (0.10%)
+                        base_ask = float(getattr(si, 'ask', t.ask)) if hasattr(si, 'ask') else float(t.ask)
+                        max_rel = base_ask * 0.0010
                         spread_cap = max(dyn, 0.0)
                         spread_cap = min(spread_cap if spread_cap > 0 else max_rel, max_rel)
                         if curr_spread > spread_cap:
@@ -2293,11 +2628,33 @@ class LiveTradingEngine:
         )
 
         cycle_count = 0
+        self.cycle_count = 0  # exposer pour suspension
+        # Structures performance avancées
+        if not hasattr(self, 'symbol_trade_stats'):
+            self.symbol_trade_stats = {}
+        if not hasattr(self, 'suspended_symbols'):
+            self.suspended_symbols = {}
+        self._adaptive_last_adjust = None
 
         while self.is_running:
             try:
                 cycle_count += 1
+                self.cycle_count = cycle_count
                 cycle_start = time.time()
+                # Recalcul périodique d'allocation (premier cycle + chaque intervalle)
+                try:
+                    if (
+                        cycle_count == 1 or
+                        (cycle_count - self._last_allocation_recalc_cycle) >= self.allocation_recalc_interval
+                    ):
+                        if hasattr(self, '_apply_portfolio_allocation'):
+                            self._apply_portfolio_allocation()
+                            self._last_allocation_recalc_cycle = cycle_count
+                            self.logger.info(
+                                "♻️ Allocation portefeuille recalculée (cycle %d)" % cycle_count
+                            )
+                except Exception as _alloc_e:
+                    self.logger.warning(f"Échec recalcul allocation périodique: {_alloc_e}")
 
                 # 0. NOUVEAU: Vérifier arrêt d'urgence en priorité
                 if self.check_emergency_stop():
@@ -2360,17 +2717,21 @@ class LiveTradingEngine:
                                         from pathlib import Path as _P
                                         funda_dir = _P("data/fundamentals")
                                         if funda_dir.exists():
-                                            self._fundamentals_map = load_fundamentals_csv(funda_dir)
+                                            self._fundamentals_map = load_fundamentals_csv(
+                                                funda_dir
+                                            )
                                         else:
                                             self._fundamentals_map = {}
-                                    except Exception as _e:
+                                    except Exception:
                                         self._fundamentals_map = {}
 
                                 o15, tech_mtf, funda_mtf = build_live_mtf_from_m1(
                                     symbol_data, self._fundamentals_map
                                 )
                                 if tech_mtf is not None and len(tech_mtf) > 0:
-                                    mtf_action, mtf_conf, mtf_agree = compute_mtf_convergence(tech_mtf)
+                                    mtf_action, mtf_conf, mtf_agree = (
+                                        compute_mtf_convergence(tech_mtf)
+                                    )
                                     signals["mtf_convergence"] = {
                                         "action": mtf_action,
                                         "confidence": mtf_conf,
@@ -2713,6 +3074,202 @@ class LiveTradingEngine:
                     except Exception as e:
                         self.logger.error(f"Erreur analyse {symbol}: {e}")
                         continue
+
+                # === Adaptation & suspension post-analyse (pro) ===
+                try:
+                    # Mise à jour PnL symboles périodique
+                    try:
+                        update_mod = int(os.getenv('PNL_UPDATE_EVERY_CYCLES', '5'))
+                    except Exception:
+                        update_mod = 5
+                    if MT5_AVAILABLE and (cycle_count % update_mod == 0):
+                        self._update_symbol_pnl_stats()
+
+                    # Calcul agrégats pour adaptation
+                    total_trades = sum(v.get('trades', 0) for v in self.symbol_trade_stats.values())
+                    total_wins = sum(v.get('wins', 0) for v in self.symbol_trade_stats.values())
+                    total_losses = sum(v.get('losses', 0) for v in self.symbol_trade_stats.values())
+                    total_trades = total_wins + total_losses
+                    win_rate = total_wins / total_trades if total_trades > 0 else 0.0
+
+                    # Expectancy globale réelle si PnL dispo
+                    global_expectancy = None
+                    if hasattr(self, 'symbol_pnl_stats'):
+                        gp = 0.0
+                        gl = 0.0
+                        w_trades = 0
+                        l_trades = 0
+                        for d in self.symbol_pnl_stats.values():
+                            gp += d.get('gross_win', 0.0)
+                            gl += d.get('gross_loss', 0.0)
+                            w_trades += d.get('wins', 0)
+                            l_trades += d.get('losses', 0)
+                        if w_trades + l_trades > 0 and w_trades > 0 and l_trades > 0:
+                            avg_win = gp / max(1, w_trades)
+                            avg_loss = abs(gl) / max(1, l_trades)
+                            wr = w_trades / (w_trades + l_trades)
+                            global_expectancy = (avg_win * wr) - (avg_loss * (1 - wr))
+
+                    # Suspension symboles sous-performants
+                    from config.trading_config import TradingConfig as _TC
+                    wr_min = getattr(_TC, 'WINRATE_MIN_SYMBOL', 0.45)
+                    exp_min = getattr(_TC, 'EXPECTANCY_MIN_SYMBOL', 0.0)
+                    for sym, data in list(self.symbol_trade_stats.items()):
+                        if data.get('trades', 0) >= 20:
+                            denom = data.get('wins', 0) + data.get('losses', 0)
+                            wr_sym = data.get('wins', 0) / max(1, denom)
+                            expectancy_real = None
+                            if hasattr(self, 'symbol_pnl_stats') and sym in self.symbol_pnl_stats:
+                                sp = self.symbol_pnl_stats[sym]
+                                if sp.get('wins', 0) > 0 and sp.get('losses', 0) > 0:
+                                    avg_w = sp['gross_win'] / max(1, sp['wins'])
+                                    avg_l = abs(sp['gross_loss']) / max(1, sp['losses'])
+                                    expectancy_real = (avg_w * wr_sym) - (avg_l * (1 - wr_sym))
+                            if expectancy_real is not None:
+                                expectancy_check = expectancy_real
+                            else:
+                                expectancy_check = wr_sym - (1 - wr_sym)
+                            if expectancy_check <= exp_min or wr_sym < wr_min:
+                                if sym not in self.suspended_symbols:
+                                    reason = f"exp={expectancy_check:.3f} wr={wr_sym:.2f}"
+                                    self.suspended_symbols[sym] = {
+                                        'until_cycle': cycle_count + 10,
+                                        'reason': reason
+                                    }
+                                    self.logger.warning(f"Suspension {sym} (10 cycles) - {reason}")
+                                    # Audit suspension
+                                    try:
+                                        audit_dir = Path('artifacts') / 'live_trading'
+                                        audit_dir.mkdir(parents=True, exist_ok=True)
+                                        suspension_event = {
+                                            'timestamp': datetime.now(UTC).isoformat(),
+                                            'cycle': cycle_count,
+                                            'symbol': sym,
+                                            'win_rate': round(wr_sym, 4),
+                                            'expectancy': round(expectancy_check, 5),
+                                            'reason': reason,
+                                            'until_cycle': cycle_count + 10
+                                        }
+                                        sus_file = audit_dir / 'symbol_suspensions.jsonl'
+                                        with open(sus_file, 'a', encoding='utf-8') as _f:
+                                            _f.write(
+                                                json.dumps(
+                                                    suspension_event,
+                                                    default=str
+                                                ) + '\n'
+                                            )
+                                    except Exception:
+                                        pass
+                            else:
+                                # Tentative réactivation si conditions > seuil + marge
+                                if sym in self.suspended_symbols:
+                                    sus = self.suspended_symbols.get(sym, {})
+                                    if cycle_count >= sus.get('until_cycle', 0):
+                                        margin_wr = wr_min + 0.05
+                                        margin_exp = exp_min + 0.01
+                                        if wr_sym >= margin_wr and expectancy_check >= margin_exp:
+                                            try:
+                                                del self.suspended_symbols[sym]
+                                                self.logger.info(
+                                                    (
+                                                        f"Réactivation {sym} "
+                                                        f"(wr={wr_sym:.2f} "
+                                                        f"exp={expectancy_check:.3f})"
+                                                    )
+                                                )
+                                                audit_dir = Path('artifacts') / 'live_trading'
+                                                audit_dir.mkdir(parents=True, exist_ok=True)
+                                                react_event = {
+                                                    'timestamp': datetime.now(UTC).isoformat(),
+                                                    'cycle': cycle_count,
+                                                    'symbol': sym,
+                                                    'win_rate': round(wr_sym, 4),
+                                                    'expectancy': round(expectancy_check, 5),
+                                                    'event': 'reactivation'
+                                                }
+                                                sus_file = audit_dir / 'symbol_suspensions.jsonl'
+                                                with open(sus_file, 'a', encoding='utf-8') as _f:
+                                                    _f.write(
+                                                        json.dumps(
+                                                            react_event,
+                                                            default=str
+                                                        ) + '\n'
+                                                    )
+                                            except Exception:
+                                                pass
+
+                    # Adaptation seuil prudente
+                    decision_ratio = (total_trades / max(1, cycle_count))
+                    target_ratio = 0.35
+                    prudent = os.getenv('ADAPT_PRUDENT', '1') not in ('0', 'false', 'False')
+                    if prudent:
+                        target_ratio = 0.25
+                    if decision_ratio > target_ratio and win_rate < 0.60:
+                        old_thr = self.confidence_threshold
+                        self.confidence_threshold = min(
+                            old_thr + 0.02,
+                            getattr(_TC, 'MAX_CONFIDENCE_THRESHOLD', 0.85),
+                        )
+                        self.logger.info(
+                            (
+                                f"Ajustement seuil +0.02 -> {self.confidence_threshold:.3f} "
+                                f"(ratio={decision_ratio:.2f} wr={win_rate:.2f})"
+                            )
+                        )
+                    elif decision_ratio < (target_ratio * 0.5) and win_rate >= 0.65:
+                        old_thr = self.confidence_threshold
+                        self.confidence_threshold = max(
+                            old_thr - 0.01,
+                            getattr(_TC, 'MIN_CONFIDENCE_THRESHOLD', 0.60),
+                        )
+                        self.logger.info(
+                            (
+                                f"Ajustement seuil -0.01 -> {self.confidence_threshold:.3f} "
+                                f"(ratio={decision_ratio:.2f} wr={win_rate:.2f})"
+                            )
+                        )
+
+                    if cycle_count % 5 == 0:
+                        exp_val = (
+                            global_expectancy
+                            if global_expectancy is not None
+                            else float('nan')
+                        )
+                        # Alerte expectancy basse (3 cycles consécutifs sous seuil)
+                        try:
+                            if global_expectancy is not None:
+                                if not hasattr(self, 'expectancy_low_counter'):
+                                    self.expectancy_low_counter = 0
+                                if global_expectancy < exp_min:
+                                    self.expectancy_low_counter += 1
+                                    if self.expectancy_low_counter >= 3:
+                                        self.logger.warning(
+                                            (
+                                                f"Expectancy globale basse "
+                                                f"{global_expectancy:.4f} (<{exp_min:.4f})"
+                                                f"sur {self.expectancy_low_counter} cycles"
+                                            )
+                                        )
+                                else:
+                                    if self.expectancy_low_counter:
+                                        self.logger.info(
+                                            "Expectancy globale revenue au-dessus du seuil"
+                                        )
+                                    self.expectancy_low_counter = 0
+                        except Exception:
+                            pass
+                        self.logger.info(
+                            (
+                                f"📈 Cycle {cycle_count} summary: trades={total_trades} "
+                                f"win_rate={win_rate:.2f} decisions_ratio={decision_ratio:.2f} "
+                                f"exp_global={exp_val:.3f}"
+                            )
+                        )
+                except Exception as _adapt_e:
+                    try:
+                        self.logger.debug(f"Adaptation ignorée: {_adapt_e}")
+                    except Exception:
+                        pass
 
                 # 5. Mise à jour des métriques
                 self.update_performance_metrics()
@@ -3122,9 +3679,24 @@ class LiveTradingEngine:
                 # Mettre à jour le stop loss si nécessaire
                 if new_sl != position.sl and new_sl is not None:
                     self._update_position_stop_loss(position.ticket, new_sl)
-                    
+                
         except Exception as e:
             self.logger.warning(f"Erreur mise à jour gestion des risques: {e}")
+            
+        # Profit lock additionnel (après trailing/break-even)
+        try:
+            from config.trading_config import TradingConfig as _TC_PL
+            if getattr(_TC_PL, 'ENABLE_PROFIT_LOCK', False):
+                self._protect_open_profits(
+                    min_r=getattr(_TC_PL, 'PROFIT_LOCK_MIN_R', 1.2),
+                    secure_r=getattr(_TC_PL, 'PROFIT_LOCK_SECURE_R', 0.6),
+                    trail_r=getattr(_TC_PL, 'PROFIT_LOCK_TRAIL_R', 1.8)
+                )
+        except Exception as _e_pl:
+            try:
+                self.logger.debug(f"Profit lock erreur: {_e_pl}")
+            except Exception:
+                pass
 
     def _register_position_watchlist(self, order_result, symbol, lot_size, sl, tp, entry_price):
         """Enregistrer une position récemment ouverte dans la watchlist pour auto-close.
@@ -3163,7 +3735,7 @@ class LiveTradingEngine:
                     time.sleep(delay)
 
             entry = {
-                'registered_at': datetime.utcnow().isoformat() + 'Z',
+                'registered_at': datetime.now(UTC).isoformat(),
                 'order_id': getattr(order_result, 'order', None),
                 'ticket': ticket,
                 'symbol': symbol,
@@ -3187,7 +3759,7 @@ class LiveTradingEngine:
                     else None
                 ),
                 'auto_close_at': (
-                    (datetime.utcnow() + timedelta(minutes=self.auto_close_minutes))
+                    (datetime.now(UTC) + timedelta(minutes=self.auto_close_minutes))
                     .isoformat() + 'Z'
                 ),
                 'closed': False,
@@ -3250,7 +3822,7 @@ class LiveTradingEngine:
                         with open(fn_snapshot, 'w', encoding='utf-8') as _sf:
                             json.dump(
                                 {
-                                    'ts': datetime.utcnow().isoformat() + 'Z',
+                                    'ts': datetime.now(UTC).isoformat(),
                                     'positions': serializable,
                                 },
                                 _sf,
@@ -3277,7 +3849,7 @@ class LiveTradingEngine:
             # non critique
             pass
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         for entry in list(self.position_watchlist):
             try:
                 if entry.get('closed'):
@@ -3351,7 +3923,7 @@ class LiveTradingEngine:
                             'symbol': symbol,
                             'status': 'position_missing',
                             'note': 'ticket absent during enforcement',
-                            'ts': datetime.utcnow().isoformat() + 'Z',
+                            'ts': datetime.now(UTC).isoformat(),
                         }
                         fn_missing = audit_dir / 'mt5_auto_close_audit.jsonl'
                         try:
@@ -3401,7 +3973,7 @@ class LiveTradingEngine:
                             'symbol': symbol,
                             'status': 'position_missing',
                             'note': 'active position not found during enforcement',
-                            'ts': datetime.utcnow().isoformat() + 'Z',
+                            'ts': datetime.now(UTC).isoformat(),
                         }
                         fn_missing = audit_dir / 'mt5_auto_close_audit.jsonl'
                         try:
@@ -3504,7 +4076,7 @@ class LiveTradingEngine:
                     entry.setdefault('audit', []).append(
                         {
                             'error': str(e),
-                            'ts': datetime.utcnow().isoformat() + 'Z',
+                            'ts': datetime.now(UTC).isoformat(),
                         }
                     )
                     try:
@@ -3526,7 +4098,7 @@ class LiveTradingEngine:
                     'volume': float(getattr(pos, 'volume', 0.0)),
                     'result_retcode': getattr(result, 'retcode', None),
                     'result_comment': getattr(result, 'comment', None),
-                    'requested_at': datetime.utcnow().isoformat() + 'Z',
+                    'requested_at': datetime.now(UTC).isoformat(),
                 }
 
                 # enregistrer audit
@@ -3615,7 +4187,7 @@ class LiveTradingEngine:
             pass
 
         audit_record = {
-            'timestamp': datetime.utcnow().isoformat() + 'Z',
+            'timestamp': datetime.now(UTC).isoformat(),
             'ticket': int(ticket) if ticket is not None else None,
             'proposed_sl': float(new_sl) if new_sl is not None else None,
             'attempts': []
@@ -3675,7 +4247,7 @@ class LiveTradingEngine:
                 last_result = result
                 attempt_record = {
                     'attempt': attempt,
-                    'timestamp': datetime.utcnow().isoformat() + 'Z',
+                    'timestamp': datetime.now(UTC).isoformat(),
                     'retcode': getattr(result, 'retcode', None),
                     'comment': getattr(result, 'comment', None)
                 }
@@ -3709,7 +4281,7 @@ class LiveTradingEngine:
                     {
                         'attempt': attempt,
                         'error': str(e),
-                        'timestamp': datetime.utcnow().isoformat() + 'Z',
+                        'timestamp': datetime.now(UTC).isoformat(),
                     }
                 )
                 self.logger.warning(f"Erreur order_send attempt {attempt} for {ticket}: {e}")
@@ -3742,6 +4314,91 @@ class LiveTradingEngine:
 
         return bool(success)
 
+    def _protect_open_profits(self, min_r=1.2, secure_r=0.6, trail_r=1.8):
+        """Resserre progressivement les stop-loss pour protéger les gains réalisés.
+
+        Logique:
+                - min_r: dès que profit >= min_r * distance_initiale_SL (≈R) on remonte/descend
+                    le SL vers secure_r * R.
+        - trail_r: à partir de trail_r * R, on resserre davantage à 1.0 * R (verrou quasi complet).
+        Hypothèses:
+        - R est la distance initiale entre prix d'entrée et SL.
+        - Compatible avec break-even / trailing existants (appelé après ceux-ci).
+        """
+        if not MT5_AVAILABLE:
+            return
+        try:
+            positions = mt5.positions_get() or []
+        except Exception:
+            return
+        for p in positions:
+            try:
+                entry = float(getattr(p, 'price_open', 0.0))
+                current_sl = getattr(p, 'sl', None)
+                if not current_sl or float(current_sl) == 0.0:
+                    continue
+                pos_type_raw = int(getattr(p, 'type', 0))
+                pos_type = 'buy' if pos_type_raw == mt5.ORDER_TYPE_BUY else 'sell'
+                current_price = float(getattr(p, 'price_current', entry))
+                r_distance = abs(entry - float(current_sl))
+                if r_distance <= 0:
+                    continue
+                profit_r = (
+                    (current_price - entry) / r_distance if pos_type == 'buy'
+                    else (entry - current_price) / r_distance
+                )
+                new_sl = None
+                # Niveau initial (sécurisation partielle)
+                if profit_r >= min_r:
+                    if pos_type == 'buy':
+                        target_sl = entry + (secure_r * r_distance)
+                        if float(current_sl) < target_sl:
+                            new_sl = target_sl
+                    else:
+                        target_sl = entry - (secure_r * r_distance)
+                        if float(current_sl) > target_sl:
+                            new_sl = target_sl
+                # Resserrement avancé
+                if profit_r >= trail_r:
+                    if pos_type == 'buy':
+                        trail_sl = entry + (1.0 * r_distance)
+                        if float(current_sl) < trail_sl:
+                            new_sl = max(new_sl or trail_sl, trail_sl)
+                    else:
+                        trail_sl = entry - (1.0 * r_distance)
+                        if float(current_sl) > trail_sl:
+                            new_sl = min(new_sl or trail_sl, trail_sl)
+                if new_sl and abs(new_sl - float(current_sl)) > 1e-9:
+                    ticket = int(getattr(p, 'ticket', 0))
+                    stage = 'secure' if profit_r >= min_r and profit_r < trail_r else 'trail'
+                    try:
+                        self._update_position_stop_loss(ticket, new_sl)
+                        # Audit spécifique profit lock
+                        try:
+                            audit_dir = Path('artifacts') / 'live_trading'
+                            audit_dir.mkdir(parents=True, exist_ok=True)
+                            pl_event = {
+                                'timestamp': datetime.now(UTC).isoformat(),
+                                'symbol': getattr(p, 'symbol', None),
+                                'ticket': ticket,
+                                'stage': stage,
+                                'profit_r': round(float(profit_r), 4),
+                                'old_sl': float(current_sl),
+                                'new_sl': float(new_sl),
+                                'min_r': min_r,
+                                'secure_r': secure_r,
+                                'trail_r': trail_r
+                            }
+                            pl_file = audit_dir / 'profit_lock_events.jsonl'
+                            with open(pl_file, 'a', encoding='utf-8') as _f:
+                                _f.write(json.dumps(pl_event, default=str) + '\n')
+                        except Exception:
+                            pass
+                    except Exception:
+                        continue
+            except Exception:
+                continue
+
     def monitor_and_apply_retries(self, apply_files=None, interval_s=10, cycles=20):
         """Surveille les fichiers apply et applique les updates lorsque la position apparaît.
 
@@ -3761,7 +4418,7 @@ class LiveTradingEngine:
             files = [Path(p) for p in apply_files]
 
         summary = {
-            'started_at': datetime.utcnow().isoformat() + 'Z',
+            'started_at': datetime.now(UTC).isoformat(),
             'cycles': cycles,
             'interval_s': interval_s,
             'actions': [],
@@ -3788,7 +4445,7 @@ class LiveTradingEngine:
                     proposed_sl = entry.get('proposed_sl') or entry.get('sl')
                     action_record = {
                         'file': str(f), 'ticket': ticket, 'proposed_sl': proposed_sl,
-                        'cycle': cycle, 'timestamp': datetime.utcnow().isoformat() + 'Z',
+                        'cycle': cycle, 'timestamp': datetime.now(UTC).isoformat(),
                         'position_found': False, 'applied': False
                     }
 
@@ -3815,7 +4472,7 @@ class LiveTradingEngine:
 
             # écrire résumé intermédiaire
             try:
-                ts = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+                ts = datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')
                 summary_fn = audit_dir / f'mt5_live_actions_summary_{ts}.json'
                 summary_fn.write_text(json.dumps(summary, default=str, indent=2), encoding='utf-8')
                 # CSV
@@ -3843,10 +4500,10 @@ class LiveTradingEngine:
                 except Exception:
                     pass
 
-        summary['finished_at'] = datetime.utcnow().isoformat() + 'Z'
+        summary['finished_at'] = datetime.now(UTC).isoformat()
         # écrire résumé final
         try:
-            ts = datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')
+            ts = datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')
             summary_fn = audit_dir / f'mt5_live_actions_summary_{ts}.json'
             summary_fn.write_text(json.dumps(summary, default=str, indent=2), encoding='utf-8')
         except Exception:
@@ -3920,7 +4577,7 @@ class LiveTradingEngine:
                     'volume': vol,
                     'result_retcode': getattr(result, 'retcode', None),
                     'result_comment': getattr(result, 'comment', None),
-                    'timestamp': datetime.utcnow().isoformat() + 'Z',
+                    'timestamp': datetime.now(UTC).isoformat(),
                 }
                 close_audit.append(rec)
                 if getattr(result, 'retcode', None) == mt5.TRADE_RETCODE_DONE:
@@ -3950,7 +4607,7 @@ class LiveTradingEngine:
         try:
             fn = audit_dir / (
                 'mt5_close_positive_audit_' +
-                datetime.utcnow().strftime('%Y%m%dT%H%M%SZ') +
+                datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ') +
                 '.json'
             )
             fn.write_text(json.dumps(close_audit, default=str, indent=2), encoding='utf-8')
