@@ -24,7 +24,17 @@ python backtesting\ftmo_backtest.py
 
 # On Linux/Mac:
 python backtesting/ftmo_backtest.py
+
+# With options:
+python backtesting/ftmo_backtest.py --no-model              # Use simple MA/RSI strategy
+python backtesting/ftmo_backtest.py --threshold 0.60        # Adjust confidence threshold
+python backtesting/ftmo_backtest.py --no-model --threshold 0.55  # Combine options
 ```
+
+**Command-line Options:**
+- `--threshold <value>`: Set confidence threshold for trade entry (default: 0.50)
+- `--no-model`: Skip ML model and use simple MA/RSI crossover strategy
+- `--verbose`: Print verbose debug information
 
 **Output:**
 - Console: Summary of backtest results
