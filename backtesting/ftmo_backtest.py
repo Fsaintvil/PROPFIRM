@@ -68,16 +68,31 @@ def load_data():
     
     if not DATA_FILE.exists():
         print(f"Warning: {DATA_FILE} not found. Creating synthetic data for demonstration.")
-        # Create synthetic data
+        # Create synthetic data with trending patterns
+        np.random.seed(42)
         idx = pd.date_range("2025-01-01", periods=1000, freq="1h")
         df = pd.DataFrame(index=idx)
-        df["close"] = np.cumsum(np.random.randn(len(idx)) * 0.5) + 100.0
-        df["high"] = df["close"] + np.abs(np.random.randn(len(idx)) * 0.5)
-        df["low"] = df["close"] - np.abs(np.random.randn(len(idx)) * 0.5)
+        
+        # Generate price with trend and noise
+        trend = np.linspace(0, 20, len(idx))
+        noise = np.cumsum(np.random.randn(len(idx)) * 0.5)
+        df["close"] = 100.0 + trend + noise
+        
+        df["high"] = df["close"] + np.abs(np.random.randn(len(idx)) * 0.3)
+        df["low"] = df["close"] - np.abs(np.random.randn(len(idx)) * 0.3)
         df["volume"] = np.random.randint(100, 1000, size=len(idx))
+        
+        # Calculate indicators
         df["sma_1T"] = df["close"].rolling(5).mean()
         df["ema_15T"] = df["close"].ewm(span=10, adjust=False).mean()
-        df["rsi_60T"] = 50 + np.random.randn(len(idx)) * 10
+        
+        # RSI calculation
+        delta = df["close"].diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+        rs = gain / (loss + 1e-9)
+        df["rsi_60T"] = 100 - (100 / (1 + rs))
+        
         df = df.dropna()
         DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(DATA_FILE)
@@ -92,12 +107,21 @@ def load_data():
     return df
 
 
-def load_model():
+def load_model(skip_model=False):
     """Load trading model if available."""
+    if skip_model:
+        print("Skipping model loading (using simple MA/RSI strategy)")
+        return None
+        
     try:
         from meta_learning_system import MetaLearningTradingSystem
         
         meta = MetaLearningTradingSystem(max_models=3)
+        
+        # Check if model was auto-loaded
+        if hasattr(meta, 'model_ensemble') and meta.model_ensemble:
+            print(f'Model auto-loaded: {len(meta.model_ensemble)} ensemble member(s)')
+            return meta
         
         # Try to load pre-trained model
         if hasattr(meta, 'model_ensemble') and not meta.model_ensemble:
@@ -127,15 +151,19 @@ def load_model():
 def generate_signal(model, row, numeric_df, index):
     """Generate trading signal from model prediction."""
     if model is None:
-        # Simple MA crossover strategy as fallback
-        if 'sma_1T' in row.columns and 'ema_15T' in row.columns:
+        # Simple MA crossover strategy with RSI as fallback
+        if 'sma_1T' in row.columns and 'ema_15T' in row.columns and 'rsi_60T' in row.columns:
             sma = float(row['sma_1T'].iloc[0])
             ema = float(row['ema_15T'].iloc[0])
             close = float(row['close'].iloc[0])
+            rsi = float(row['rsi_60T'].iloc[0])
             
-            # Buy signal: price above both MAs and SMA > EMA
-            if close > sma and close > ema and sma > ema:
+            # Buy signal: price above EMA, EMA > SMA (uptrend), and RSI not overbought
+            if close > ema and ema > sma and 30 < rsi < 70:
                 return 0.65  # Above threshold
+            # Secondary signal: strong momentum with RSI
+            elif close > sma and 40 < rsi < 60:
+                return 0.55  # Above threshold
         return 0.40  # Below threshold
     
     # Use model prediction
@@ -174,7 +202,7 @@ def generate_signal(model, row, numeric_df, index):
     return pred
 
 
-def run_backtest():
+def run_backtest(threshold=THRESHOLD, skip_model=False, verbose=False):
     """Run FTMO-compliant backtest."""
     print("\n" + "="*60)
     print("FTMO BACKTEST - Starting...")
@@ -184,14 +212,15 @@ def run_backtest():
     print(f"Daily Drawdown Limit: {DAILY_DRAWDOWN_LIMIT:.1%}")
     print(f"Global Drawdown Limit: {GLOBAL_DRAWDOWN_LIMIT:.1%}")
     print(f"Min Risk/Reward Ratio: 1:{MIN_RISK_REWARD_RATIO:.0f}")
+    print(f"Confidence Threshold: {threshold:.2f}")
     print("="*60 + "\n")
     
     # Load data and model
     df = load_data()
-    model = load_model()
+    model = load_model(skip_model=skip_model)
     
     # Prepare numeric dataframe
-    numeric_df = df.select_dtypes(include=[np.number]).fillna(method='ffill').fillna(0)
+    numeric_df = df.select_dtypes(include=[np.number]).ffill().fillna(0)
     print(f"Data loaded: {len(numeric_df)} bars")
     
     # Initialize tracking variables
@@ -229,7 +258,7 @@ def run_backtest():
         # Generate trading signal
         pred = generate_signal(model, row, numeric_df, i)
         
-        if pred <= THRESHOLD:
+        if pred <= threshold:
             continue
         
         # Calculate position size based on risk
@@ -375,8 +404,24 @@ def run_backtest():
 
 
 if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="FTMO Backtest Script")
+    parser.add_argument("--threshold", type=float, default=THRESHOLD, 
+                       help=f"Confidence threshold for entry (default: {THRESHOLD})")
+    parser.add_argument("--no-model", action="store_true",
+                       help="Skip model loading and use simple MA/RSI strategy")
+    parser.add_argument("--verbose", action="store_true",
+                       help="Print verbose debug information")
+    
+    args = parser.parse_args()
+    
     try:
-        report = run_backtest()
+        report = run_backtest(
+            threshold=args.threshold,
+            skip_model=args.no_model,
+            verbose=args.verbose
+        )
         sys.exit(0)
     except Exception as e:
         print(f"\n❌ Error running backtest: {e}")
