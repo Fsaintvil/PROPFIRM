@@ -70,7 +70,7 @@ except Exception as e:
     MT5_LOGIN = 0
     MT5_PASSWORD = ""
     MT5_SERVER = ""
-    SYMBOLS = ["USDCAD", "GBPUSD", "USDCHF"]
+    SYMBOLS = ["USDCAD", "GBPUSD", "USDCHF", "EURUSD"]
     ROBOT_MAGIC = 999001
     MAX_POSITIONS = 6
     MAX_POSITIONS_PER_SYMBOL = 2

@@ -11,6 +11,7 @@ trading:
     - USDCAD     # 385 trades, 72.2% WR, +$2,728
     - GBPUSD     # 92 trades, 70.7% WR, +$650
     - USDCHF     # 41 trades, 54% WR, +$82
+    - EURUSD     # 49 trades, 49% WR, +$74 (strict: dl_required, no_ranging)
   max_positions: 6
   max_positions_per_symbol: 2
   max_trades_per_day: 5
