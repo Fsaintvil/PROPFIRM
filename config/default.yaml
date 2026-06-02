@@ -20,8 +20,8 @@ trading:
   max_orders_per_minute: 6
   lot_size: 0.05
   min_trade_interval_sec: 60
-  trading_start_hour: 5
-  trading_end_hour: 18
+  trading_start_hour: 0
+  trading_end_hour: 24
 
 signal:
   min_score: 0.65
