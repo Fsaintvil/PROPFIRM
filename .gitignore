@@ -1,0 +1,10 @@
+.env
+logs/
+runtime/
+historical_data/
+models/*.pkl
+__pycache__/
+*.pyc
+.venv/
+nul
+features_institutionnelles.csv

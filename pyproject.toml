@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+filterwarnings = "ignore"
+timeout = 30
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+no_implicit_optional = false
+warn_return_any = false
+warn_unused_ignores = true
+warn_redundant_casts = false
+
+[[tool.mypy.overrides]]
+module = [
+    "MetaTrader5", "torch", "torch.*", "numpy",
+    "joblib", "sklearn.*", "lightgbm", "xgboost",
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["engine_simple.retraining_pipeline"]
+ignore_errors = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "ARG", "PD"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG"]
+"*.py" = ["E501"]
+
+[tool.coverage.run]
+source = ["engine_simple"]
+omit = ["*/__pycache__/*", "*/tests/*"]
+
+[tool.coverage.report]
+exclude_also = [
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]

@@ -1,0 +1,14 @@
+# Surcharges production — valeurs agressives pour live
+# Ces valeurs écrasent config/default.yaml
+---
+trading:
+  max_positions: 6
+  max_signals_per_cycle: 3
+
+risk:
+  per_trade_pct: 0.004
+  max_daily_loss_pct: 0.02
+  max_dd_pct: 0.10
+  min_rr_ratio: 2.0
+  cooldown_minutes: 30
+  max_risk_amount: 800.0
