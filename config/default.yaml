@@ -12,6 +12,7 @@ trading:
     - GBPUSD     # 92 trades, 70.7% WR, +$650
     - USDCHF     # 41 trades, 54% WR, +$82
     - EURUSD     # 49 trades, 49% WR, +$74 (strict: dl_required, no_ranging)
+    - AUDUSD     # 18 trades, 61% WR, -$80 (strict: dl_required, no_ranging)
   max_positions: 6
   max_positions_per_symbol: 2
   max_trades_per_day: 5
@@ -75,6 +76,17 @@ symbol_limits:
     risk_mult: 0.8
     max_spread_points: 40
     min_score: 0.65
+    adx_thresh: 18
+    allow_buys: true
+    allow_shorts: true
+    max_daily_trades: 2
+    allow_ranging: false
+    dl_required: true
+  AUDUSD:
+    max_lot: 0.35
+    risk_mult: 0.8
+    max_spread_points: 40
+    min_score: 0.60
     adx_thresh: 18
     allow_buys: true
     allow_shorts: true

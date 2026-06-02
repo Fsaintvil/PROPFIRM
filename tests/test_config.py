@@ -26,7 +26,7 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    assert cfg.trading.symbols == ["USDCAD", "GBPUSD", "USDCHF", "EURUSD"]
+    assert cfg.trading.symbols == ["USDCAD", "GBPUSD", "USDCHF", "EURUSD", "AUDUSD"]
     assert cfg.risk.per_trade_pct == 0.004
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 2.0

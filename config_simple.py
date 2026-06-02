@@ -70,7 +70,7 @@ except Exception as e:
     MT5_LOGIN = 0
     MT5_PASSWORD = ""
     MT5_SERVER = ""
-    SYMBOLS = ["USDCAD", "GBPUSD", "USDCHF", "EURUSD"]
+    SYMBOLS = ["USDCAD", "GBPUSD", "USDCHF", "EURUSD", "AUDUSD"]
     ROBOT_MAGIC = 999001
     MAX_POSITIONS = 6
     MAX_POSITIONS_PER_SYMBOL = 2
@@ -106,6 +106,7 @@ except Exception as e:
         "GBPUSD": dict(max_lot=0.55, risk_mult=1.0, max_spread_points=50, adx_thresh=22, min_score=0.55),
         "USDCHF": dict(max_lot=0.55, risk_mult=0.8, max_spread_points=50, adx_thresh=18, min_score=0.55),
         "EURUSD": dict(max_lot=0.35, risk_mult=0.8, max_spread_points=40, adx_thresh=18, min_score=0.65, allow_buys=True, allow_shorts=True, max_daily_trades=2, allow_ranging=False, dl_required=True),
+        "AUDUSD": dict(max_lot=0.35, risk_mult=0.8, max_spread_points=40, adx_thresh=18, min_score=0.60, allow_buys=True, allow_shorts=True, max_daily_trades=2, allow_ranging=False, dl_required=True),
     }
     ML_EXPERIMENT_TRACKING = False
     ML_TRACKING_URI = ""

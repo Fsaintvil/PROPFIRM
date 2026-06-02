@@ -22,6 +22,7 @@ from engine_simple.structure_analyzer import multi_tf_alignment, multi_tf_bias
 logger = logging.getLogger("signals")
 
 STRATS = MappingProxyType({
+    "AUDUSD": [{"tf": "M5", "period": 20, "thresh": 2, "sl": 1.5, "tp": 4.0}],
     "EURUSD": [{"tf": "M5", "period": 20, "thresh": 2, "sl": 1.5, "tp": 4.0}],
     "GBPUSD": [{"tf": "M5", "period": 20, "thresh": 2, "sl": 1.5, "tp": 4.0}],
     "USDCAD": [{"tf": "M5", "period": 20, "thresh": 2, "sl": 1.5, "tp": 4.0}],
