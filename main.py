@@ -633,9 +633,8 @@ class FTMO_SIMPLE:
                 logger.debug(f"  [LIMIT] {symbol}: max positions ({cfg.MAX_POSITIONS_PER_SYMBOL}) atteint")
                 continue
 
-            adapt_params = dict(self.adaptive.learner.get_params(symbol))
-            overrides = dict(thresh=adapt_params["thresh"])
-            signal = self.signals.analyze(symbol, overrides)
+            # Signal MOM20x3 pur (pas de DL, pas de meta-learner, pas d'OnlineLearner)
+            signal = self.signals.analyze(symbol)
             if signal is None:
                 last = self._last_signals.get(symbol)
                 if last and self.cycle_count - last["cycle"] < 4:
@@ -659,12 +658,6 @@ class FTMO_SIMPLE:
                 f"conf={signal['confidence']:.2f}, action={signal['action']}, "
                 f"strat={signal.get('details','?')}")
 
-            rates_dict = signal.get("rates", {})
-            trade_stats = self.journal.get_stats(symbol=symbol)
-            adapted = self.adaptive.analyze(symbol, rates_dict, signal, trade_stats=trade_stats)
-            if adapted is None:
-                logger.info(f"  [ADAPTIVE] {symbol}: signal rejete")
-                continue
             # Feed features to concept drift detector
             drift_feats = {
                 "adx": signal.get("adx", 0),
@@ -675,7 +668,7 @@ class FTMO_SIMPLE:
                 "quality": signal.get("quality", 0.5),
             }
             self.drift_detector.add_sample(drift_feats)
-            candidates.append((adapted["score"], symbol, adapted, positions))
+            candidates.append((signal["score"], symbol, signal, positions))
             total_current = len(positions) + len(pending)
             if total_current >= cfg.MAX_POSITIONS:
                 logger.info(f"  [LIMIT] Max positions ({cfg.MAX_POSITIONS}) atteint")
