@@ -95,7 +95,7 @@ if ($mp) {
 
 Write-Host ""
 Write-Host "Commandes:"
-Write-Host "  .\scripts\robot.ps1 -Status   -> voir etat"
-Write-Host "  .\scripts\robot.ps1 -Logs    -> logs recents"
-Write-Host "  .\scripts\robot.ps1 -Stop    -> arreter tout"
-Write-Host "  .\scripts\robot.ps1 -Monitor -> logs moniteur"
+Write-Host "  .\scripts\robot.ps1 -Status    -> voir etat"
+Write-Host "  .\scripts\robot.ps1 -Logs     -> logs recents"
+Write-Host "  .\scripts\robot.ps1 -Stop     -> arreter tout"
+Write-Host "  .\scripts\robot.ps1 -Monitor  -> logs moniteur"

@@ -172,6 +172,8 @@ taskkill /F /IM python.exe  # Arrêter le robot
 .\scripts\robot.ps1         # Lancer robot + moniteur
 .\scripts\robot.ps1 -Status  # Voir l'état
 .\scripts\robot.ps1 -Stop    # Arrêter tout
+opencode                    # Lancer l'IA manager (mode interactif)
+opencode "bilan"            # L'IA analyse et résume l'état du robot
 ```
 
 ## Règles
@@ -228,3 +230,60 @@ taskkill /F /IM python.exe  # Arrêter le robot
 - Config YAML + schema.py + Docker support
 - ~400 fichiers legacy supprimés
 - .venv retiré du tracking git
+
+## Agents IA — Gestion Autonome du Projet
+
+Le projet est maintenant géré par des agents opencode autonomes. Tu n'as plus besoin d'intervenir manuellement.
+
+### Architecture des agents
+```
+┌─────────────────────────────────────────────────┐
+│ Robot Manager (primary agent)                   │
+│   Orchestre tout : surveillance, diag, fix, opt │
+├─────────────────────────────────────────────────┤
+│ Sous-agents (@mention) :                        │
+│   @log-analyst   → Analyse les logs en détail   │
+│   @auto-fixer    → Corrige les bugs seul        │
+│   @monitor-agent → Vérifie santé 24/7           │
+│   @optimizer     → Analyse les performances     │
+├─────────────────────────────────────────────────┤
+│ ai-manager.ps1 → Watchdog continu (2 min cycle) │
+│   - Redémarre robot si crash                    │
+│   - Nettoie PID lock zombie                     │
+│   - Alerte si DD > 8% ou logs figés > 5 min     │
+└─────────────────────────────────────────────────┘
+```
+
+### Commandes IA
+```powershell
+opencode                    # Mode interactif (Robot Manager actif)
+opencode "bilan"            # Résumé complet de l'état du robot
+opencode "@log-analyst analyse les 100 dernières lignes"
+opencode "@optimizer fais un rapport de performance"
+opencode "@monitor-agent check complet"
+opencode "@auto-fixer corrige [bug]"
+```
+
+### Scripts
+```powershell
+.\scripts\ai-manager.ps1         # Démarre le watchdog AI (daemon)
+.\scripts\ai-manager.ps1 -Status # Voir l'état du watchdog
+.\scripts\ai-manager.ps1 -Stop   # Arrêter le watchdog
+```
+
+### Fichiers de config
+- `opencode.json` — Configuration des agents opencode
+- `.opencode/agents/prompts/robot-manager.md` — Prompt de l'orchestrateur
+- `.opencode/agents/log-analyst.md` — Agent d'analyse de logs
+- `.opencode/agents/auto-fixer.md` — Agent de correction automatique
+- `.opencode/agents/monitor-agent.md` — Agent de surveillance
+- `.opencode/agents/optimizer.md` — Agent d'optimisation
+- `scripts/ai-manager.ps1` — Watchdog continu
+
+### Principe
+1. Le **Robot Manager** (opencode en mode build) est l'IA principale qui gère tout
+2. Les **sous-agents** sont invoqués via `@mention` pour des tâches spécialisées
+3. Le **watchdog** (`ai-manager.ps1`) tourne en arrière-plan et redémarre le robot si nécessaire
+4. En cas de bug, l'IA le détecte dans les logs, le diagnostique via `@log-analyst`, le corrige via `@auto-fixer`, et redémarre
+
+**Tu n'as plus qu'à lancer `opencode` et tout est géré.**

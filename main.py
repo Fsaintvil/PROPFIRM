@@ -15,6 +15,7 @@ import config_simple as cfg
 from engine_simple.adaptive_intelligence import AdaptiveEngine
 from engine_simple.audit_trail import AuditTrail
 from engine_simple.broker import Broker
+from engine_simple.feature_store import FeatureStore
 from engine_simple.concept_drift import ConceptDriftDetector
 from engine_simple.ftmo_protector import FTMOProtector
 from engine_simple.indicators import adx as ind_adx
@@ -147,6 +148,7 @@ class FTMO_SIMPLE:
         raw_mt5 = MT5Connector(cfg.MT5_LOGIN, cfg.MT5_PASSWORD, cfg.MT5_SERVER)
         self.mt5 = Broker(raw_mt5, audit=self.audit)
         self.journal = TradeJournal()
+        self.feature_store = FeatureStore()
         self.notifier = Notifier()
         if not self.notifier.is_enabled():
             logger.warning("TELEGRAM NON CONFIGURE: les notifications de crash "
@@ -237,6 +239,18 @@ class FTMO_SIMPLE:
         self.executor = TradeExecutor(self.mt5, self.ftmo, self.journal, self.tracker,
                                        self.signals, self.adaptive, audit=self.audit)
         self.risk_manager = RiskManager(self.ftmo, audit=self.audit)
+
+        # Modules refactorisés (shield/strategy/regime) — monitoring parallèle
+        from engine_simple.regime import RegimeDetector
+        from engine_simple.strategy import MOM20x3
+        from engine_simple.shield import FTMOAccount, PositionGuard
+        self._regime_detector = RegimeDetector()
+        self._shield_account = FTMOAccount(
+            initial_balance=challenge_init_bal,
+            peak_equity=self.ftmo.peak_equity,
+            current_balance=challenge_init_bal,
+        )
+        self._position_guard = PositionGuard()
 
         # ML Pipeline (optional, graceful fallback)
         drift_cfg = getattr(cfg, 'CONCEPT_DRIFT', {})
@@ -473,7 +487,7 @@ class FTMO_SIMPLE:
                 self._check_win_rate()
                 self._check_volatility()
             except Exception as e:
-                logger.error(f"MT5 operation failed mid-cycle: {e}")
+                logger.exception(f"MT5 operation failed mid-cycle: {e}")
                 if not self._health_check():
                     logger.error("MT5 unreachable after mid-cycle failure, stopping")
                     break
@@ -511,6 +525,29 @@ class FTMO_SIMPLE:
                 result = self.adaptive.vigilance(symbol, rates)
                 if result is None:
                     continue
+                # RegimeDetector: detection parallèle via le nouveau module
+                h1 = rates.get("H1")
+                if h1 is not None and len(h1) >= 30:
+                    hh = np.array([r[2] for r in h1], dtype=float)
+                    ll = np.array([r[3] for r in h1], dtype=float)
+                    cc = np.array([r[4] for r in h1], dtype=float)
+                    new_regime, new_meta = self._regime_detector.detect(hh, ll, cc)
+                    if new_regime != result.get("regime", ""):
+                        logger.debug(f"  [REGIME COMPARE] {symbol}: "
+                                     f"old={result.get('regime','?')} new={new_regime} (adx={new_meta.get('adx',0):.0f})")
+                # MOM20x3: signal parallèle
+                from engine_simple.strategy import MOM20x3
+                mom = MOM20x3(rates, symbol)
+                mom_signal = mom.analyze(
+                    regime=result.get("regime", "RANGING"),
+                    adx_val=result.get("adx", 0),
+                    atr_val=result.get("atr", 0.005),
+                )
+                if mom_signal and mom_signal.is_valid():
+                    old_action = result.get("action", "HOLD")
+                    if mom_signal.action != old_action:
+                        logger.debug(f"  [STRAT COMPARE] {symbol}: "
+                                     f"old={old_action} new={mom_signal.action} score={mom_signal.score:.2f}")
                 # If this symbol has an open position, compare current vs entry
                 pos = positions.get(symbol)
                 if pos:
@@ -519,7 +556,6 @@ class FTMO_SIMPLE:
                         if result["regime"] != entry_regime:
                             logger.info(f"  [REGIME SHIFT] {symbol}: {entry_regime} "
                                         f"→ {result['regime']} (position ouverte)")
-                    # Check if trailing SL needs attention
                     if pos.sl > 0:
                         dist = abs(pos.price_open - pos.sl)
                         logger.debug(f"  [POS] {symbol}: SL={pos.sl:.5f} dist={dist:.5f} profit={pos.profit:+.2f}")
@@ -550,6 +586,16 @@ class FTMO_SIMPLE:
             self.ftmo.check_invariants(pos)
             total_fl += pos.profit
             pos_summary.append(f"{pos.symbol}={pos.profit:+.0f}")
+            # PositionGuard: surveillance parallèle
+            ticket = str(pos.ticket)
+            if ticket not in self._position_guard.open_times:
+                regime_code = (pos.comment or "").replace("ADAPT_", "")[:5] if (pos.comment or "").startswith("ADAPT_") else "RANGING"
+                rmap = {"TRE": "TREND_UP", "DOW": "TREND_DOWN", "RAN": "RANGING", "HIG": "HIGH_VOL", "LOW": "LOW_VOL"}
+                self._position_guard.track(ticket, rmap.get(regime_code, "RANGING"), pos.price_open)
+            age = (datetime.utcnow() - self._position_guard.open_times.get(ticket, datetime.utcnow())).total_seconds() / 60
+            guard_result = self._position_guard.check(ticket, pos.price_current, age, 0.005, pos.price_open, pos.sl or 0, pos.tp)
+            if guard_result["action"] in ("close", "trail", "partial"):
+                logger.debug(f"  [GUARD] {pos.symbol} ticket={ticket} action={guard_result['action']} reason={guard_result['reason']}")
         if pos_summary:
             logger.info(f"  Positions: {' | '.join(pos_summary)}  →  Total: {total_fl:+.2f}")
 

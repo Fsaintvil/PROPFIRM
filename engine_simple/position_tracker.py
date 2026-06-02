@@ -118,19 +118,28 @@ class PositionTracker:
     def check_closed(self):
         current = {p.ticket for p in self.positions_cache.get() if p.magic == cfg.ROBOT_MAGIC}
         closed = self._previous_tickets - current
+        if closed:
+            logger.info(f"  [TRACKER] Closed tickets detected: {closed}, "
+                       f"previous={self._previous_tickets}, current={current}")
         for ticket in closed:
             if ticket in self._recorded_deals:
+                logger.debug(f"  [TRACKER] ticket {ticket} already recorded")
                 continue
             since = int(time.time() - 7 * 86400)
             now_ts = int(time.time())
             history = self.mt5.get_history(since, now_ts) or []
+            logger.debug(f"  [TRACKER] query history for ticket {ticket}: {len(history)} deals")
             closing = None
             for deal in history:
                 if deal.position_id == ticket and deal.magic == cfg.ROBOT_MAGIC and deal.profit != 0:
                     closing = deal
                     break
             if closing is None:
+                logger.warning(f"  [TRACKER] No closing deal found for ticket {ticket} "
+                              f"in {len(history)} history records")
                 continue
+            logger.info(f"  [TRACKER] Found closing deal for {closing.symbol} ticket {ticket}: "
+                       f"profit={closing.profit:.2f}")
             pos_key = f"{closing.position_id}_{closing.symbol}"
             if pos_key in self._recorded_position_ids:
                 continue

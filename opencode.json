@@ -1,0 +1,23 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "build": {
+      "mode": "primary",
+      "prompt": "{file:.opencode/agents/prompts/robot-manager.md}",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "write": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "bash": {
+          "*": "allow",
+          "git push": "ask"
+        },
+        "task": "allow",
+        "websearch": "allow",
+        "webfetch": "allow"
+      }
+    }
+  }
+}

@@ -11,7 +11,30 @@ class MockModule(types.ModuleType):
 
 # Build torch.nn as a module first
 torch_nn = MockModule("torch.nn")
-torch_nn.Module = type('Module', (), {'__call__': lambda s, *a, **kw: MagicMock()})
+class MockModuleBase:
+    """A proper base class mock that can be subclassed and instantiated."""
+    def __init__(self, *args, **kwargs):
+        self._mock = MagicMock()
+    def train(self, mode=True):
+        self.training = mode
+        return self._mock
+    def eval(self):
+        self.training = False
+        return self._mock
+    def parameters(self):
+        return []
+    def named_parameters(self):
+        return []
+    def state_dict(self):
+        return {}
+    def load_state_dict(self, sd, strict=True):
+        pass
+    def __call__(self, *args, **kwargs):
+        return MagicMock()
+    def __getattr__(self, name):
+        return MagicMock()
+
+torch_nn.Module = MockModuleBase
 torch_nn.LSTM = MagicMock
 torch_nn.Dropout = MagicMock
 torch_nn.Linear = MagicMock
@@ -19,7 +42,7 @@ torch_nn.Sigmoid = MagicMock
 torch_nn.MSELoss = MagicMock
 
 torch_optim = MockModule("torch.optim")
-torch_optim.Adam = MagicMock
+torch_optim.Adam = lambda *args, **kwargs: MagicMock()
 
 # Build torch
 torch_mod = MockModule("torch")
@@ -39,6 +62,31 @@ torch_mod.__path__ = []
 sys.modules['torch'] = torch_mod
 sys.modules['torch.nn'] = torch_nn
 sys.modules['torch.optim'] = torch_optim
+
+# ── Additional torch mocks for dl_ensemble ──
+torch_nn.LayerNorm = MagicMock
+torch_nn.BCELoss = MagicMock
+
+torch_nn_f = MockModule("torch.nn.functional")
+torch_nn_f.softmax = MagicMock(return_value=MagicMock())
+torch_nn_f.__package__ = "torch.nn.functional"
+torch_nn_f.__path__ = []
+sys.modules['torch.nn.functional'] = torch_nn_f
+
+torch_nn_utils = MockModule("torch.nn.utils")
+torch_nn_utils.clip_grad_norm_ = MagicMock()
+torch_nn_utils.__package__ = "torch.nn.utils"
+torch_nn_utils.__path__ = []
+sys.modules['torch.nn.utils'] = torch_nn_utils
+
+torch_utils_data = MockModule("torch.utils.data")
+torch_utils_data.TensorDataset = MagicMock
+torch_utils_data.DataLoader = MagicMock
+torch_utils_data.__package__ = "torch.utils.data"
+torch_utils_data.__path__ = []
+sys.modules['torch.utils.data'] = torch_utils_data
+
+torch_mod.FloatTensor = MagicMock(return_value=MagicMock())
 
 # ── Mock MetaTrader5 ──
 mt5_mod = MockModule("MetaTrader5")

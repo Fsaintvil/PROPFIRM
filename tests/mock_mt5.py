@@ -89,6 +89,15 @@ class MockMT5Server:
             p = (bid, ask)
         return p
 
+    def get_tick(self, symbol):
+        bid, ask = self.get_price(symbol)
+        tick = MagicMock()
+        tick.bid = bid
+        tick.ask = ask
+        tick.time = int(time.time())
+        tick.volume = 0
+        return tick
+
     def connect(self):
         self.connected = True
         return True

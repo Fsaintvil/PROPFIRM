@@ -4,9 +4,21 @@ import sqlite3
 import time
 from pathlib import Path
 
+import numpy as np
+
 logger = logging.getLogger("rate_cache")
 
 DB_PATH = Path("runtime/rate_cache.db")
+
+
+def _json_default(obj):
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.floating):
+        return float(obj)
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
 
 class RateCache:
@@ -42,7 +54,7 @@ class RateCache:
             logger.warning(f"SQLite init failed: {e}")
 
     def _serialize(self, obj):
-        return json.dumps(obj, default=str)
+        return json.dumps(obj, default=_json_default)
 
     def _deserialize(self, raw):
         if raw is None:

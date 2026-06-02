@@ -1,19 +1,27 @@
-__version__ = "3.2.0"
+__version__ = "3.3.0"
 
 __all__ = [
     "AdaptiveEngine",
     "AuditTrail",
     "Broker",
     "ConceptDriftDetector",
+    "FTMOAccount",
     "FTMOProtector",
     "MT5Connector",
     "MLflowTracker",
     "MetricsCollector",
     "HealthServer",
+    "MOM20x3",
+    "MarketRegime",
     "Notifier",
+    "OnlineLearner",
+    "PositionGuard",
     "PositionTracker",
+    "RateLimiter",
+    "RegimeDetector",
     "RetrainingPipeline",
     "RiskManager",
+    "Signal",
     "SignalGenerator",
     "SymbolInstitutionalProfile",
     "TradeExecutor",

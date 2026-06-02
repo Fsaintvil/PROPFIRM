@@ -8,7 +8,7 @@ import numpy as np
 
 from engine_simple.dl_ensemble import DLEnsemble
 from engine_simple.fvg_detector import detect_fvg, detect_liquidity_sweep, filter_active_fvgs, fvg_score
-from engine_simple.indicators import adx, obv, rsi, rsi_divergence
+from engine_simple.indicators import obv, rsi, rsi_divergence
 from engine_simple.market_structure import analyze_market_structure
 from engine_simple.meta_learner import MetaLearner
 from engine_simple.structure_analyzer import multi_tf_alignment
@@ -18,7 +18,11 @@ logger = logging.getLogger("adaptive")
 
 
 class MarketRegime:
-    """Enhanced regime detection with volume + market structure"""
+    """Enhanced regime detection — délègue à regime.py + enrichit avec structure/volume."""
+
+    def __init__(self):
+        from engine_simple.regime import RegimeDetector
+        self._detector = RegimeDetector()
 
     def detect(self, rates):
         closes = np.array([r[4] for r in rates], dtype=float)
@@ -26,78 +30,47 @@ class MarketRegime:
         lows = np.array([r[3] for r in rates], dtype=float)
         volumes = np.array([r[5] for r in rates], dtype=float) if len(rates[0]) > 5 else np.ones_like(closes)
 
-        if len(closes) < 50:
+        if len(closes) < 30:
             return "RANGING", {"adx": 20, "vol_percentile": 0.5, "structure_trend": "unknown"}
 
-        adx = self._adx(highs, lows, closes)
+        # Hook _adx pour compatibilité tests (peut être patché)
+        adx_val = self._adx(highs, lows, closes)
 
-        tr = np.maximum(highs[1:] - lows[1:],
-                        np.maximum(np.abs(highs[1:] - closes[:-1]),
-                                   np.abs(lows[1:] - closes[:-1])))
-        atr_now = np.mean(tr[-14:])
-        atr_hist = np.array([np.mean(tr[i:i+14]) for i in range(max(0, len(tr)-100), len(tr)-14)])
-        vol_percentile = 0.5
-        if len(atr_hist) > 10:
-            vol_percentile = np.sum(atr_hist < atr_now) / len(atr_hist)
+        # Délégation au nouveau détecteur
+        regime, meta = self._detector.detect(highs, lows, closes, adx_val=adx_val)
 
-        ma50 = np.mean(closes[-50:])
-        ma20 = np.mean(closes[-20:])
-        slope = (ma20 - ma50) / max(ma50, 0.0001)
-
-        # Market structure
+        # Enrichissement avec structure de marché, volume, RSI
         ms = analyze_market_structure(highs, lows, closes)
         structure_trend = ms.get("trend", "unknown")
-        structure_score = ms.get("score", 0)
 
-        # Volume trend
         obv_arr = obv(closes, volumes)
         obv_trend = 0
         if len(obv_arr) > 20:
             obv_trend = 1 if obv_arr[-1] > obv_arr[-20] else -1
 
-        # RSI
         rsi_arr = rsi(closes)
         rsi_now = rsi_arr[-1] if len(rsi_arr) > 0 and not np.isnan(rsi_arr[-1]) else 50
-
-        # RSI divergence
         div = rsi_divergence(closes, rsi_arr, lookback=20)
-        # Composite regime logic
-        is_trend = adx > 20  # ADX filter tightened to 20 (was 25)
-        is_bullish_struct = structure_trend == "bullish" or slope > 0.002
-        is_bearish_struct = structure_trend == "bearish" or slope < -0.002
-        volume_confirms = (obv_trend > 0 and is_bullish_struct) or (obv_trend < 0 and is_bearish_struct)
 
-        if vol_percentile > 0.80:
-            regime = "HIGH_VOL"
-        elif vol_percentile < 0.20:
-            regime = "LOW_VOL"
-        elif is_trend and is_bullish_struct and rsi_now > 50:
-            regime = "TREND_UP"
-        elif is_trend and is_bearish_struct and rsi_now < 50:
-            regime = "TREND_DOWN"
-        elif is_trend and is_bullish_struct:
-            regime = "TREND_UP"
-        elif is_trend and is_bearish_struct:
-            regime = "TREND_DOWN"
-        else:
-            regime = "RANGING"
-
-        confidence_bonus = 0.10 if volume_confirms else 0
+        volume_confirms = (obv_trend > 0 and structure_trend == "bullish") or \
+                          (obv_trend < 0 and structure_trend == "bearish")
 
         return regime, {
-            "adx": round(adx, 1),
-            "vol_percentile": round(vol_percentile, 2),
+            "adx": round(meta["adx"], 1),
+            "vol_percentile": round(meta["vol_percentile"], 2),
             "structure_trend": structure_trend,
-            "structure_score": round(structure_score, 2),
+            "structure_score": round(ms.get("score", 0), 2),
             "obv_trend": obv_trend,
             "rsi": round(rsi_now, 1),
             "volume_confirms": volume_confirms,
-            "confidence_bonus": confidence_bonus,
+            "confidence_bonus": 0.10 if volume_confirms else 0,
             "rsi_divergence": div.get("bullish", False) or div.get("bearish", False),
             "eq_hl_count": ms.get("equal_highs_lows", {}).get("count", 0),
         }
 
-    def _adx(self, highs, lows, closes, p=14): return adx(highs, lows, closes, p)
+    def _adx(self, highs, lows, closes, p=14):
+        """Hook pour compatibilité tests. Délègue à regime._calc_adx."""
+        return self._detector._calc_adx(highs, lows, closes)
 
 
 class OnlineLearner:

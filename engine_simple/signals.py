@@ -83,7 +83,9 @@ class SignalGenerator:
         if not rates_dict:
             return None
 
-        h1 = rates_dict.get("H1") or h1_data
+        h1 = rates_dict.get("H1")
+        if h1 is None:
+            h1 = h1_data
         if h1 is None or len(h1) < 30:
             return None
 

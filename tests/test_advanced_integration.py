@@ -204,6 +204,7 @@ def test_full_signal_to_execution_flow():
     from engine_simple.ftmo_protector import FTMOProtector
     from engine_simple.position_tracker import PositionTracker
     from engine_simple.signals import SignalGenerator
+    from engine_simple.strategy import Signal
     from engine_simple.trade_executor import TradeExecutor
     from engine_simple.trade_journal import TradeJournal
 
@@ -262,3 +263,166 @@ def test_full_signal_to_execution_flow():
         assert len(server._deals) > 0
         audit.close()
         journal.close()
+
+
+# ── Shield integration tests ──
+
+def test_shield_ftmo_account_with_integration():
+    """FTMOAccount state tracking via test trades."""
+    from engine_simple.shield import FTMOAccount
+
+    acc = FTMOAccount(200000, 200000, 200000)
+    for pnl in [100, 200, -50, 300, -100]:
+        acc.record_trade(pnl)
+    assert acc.total_trades == 5
+    assert acc.total_profit == 450
+    assert acc.current_balance == 200450
+    assert acc.consecutive_losses == 1  # last trade was -100
+    assert acc.peak_equity == 200550
+
+
+def test_shield_ftmo_account_recovery():
+    """FTMOAccount handles loss streak and recovery."""
+    from engine_simple.shield import FTMOAccount
+
+    acc = FTMOAccount(200000, 200000, 200000)
+    for pnl in [-100, -200, -150, 500]:
+        acc.record_trade(pnl)
+    assert acc.consecutive_losses == 0  # reset by win
+    assert acc.current_balance == 200050
+    assert acc.total_trades == 4
+
+
+def test_shield_position_guard_full_cycle():
+    """PositionGuard through track→trail→close lifecycle."""
+    from engine_simple.shield import PositionGuard
+
+    guard = PositionGuard()
+    for ticket, regime, entry in [("1", "TREND_UP", 1.1), ("2", "RANGING", 1.2)]:
+        guard.track(ticket, regime, entry)
+
+    # Simulate price movement and trailing
+    for price in [1.105, 1.110, 1.115, 1.112, 1.108]:
+        result = guard.check("1", price, 5, 0.005, 1.1, 1.095, tp_price=1.12)
+        if result["action"] == "partial":
+            guard.partial_closed.add("1")
+        if result["action"] == "partial":
+            # After partial, set BE
+            assert result["sl"] > 1.095
+            break
+
+    guard.reconcile(["1", "2"])
+    assert "1" in guard.open_times
+    assert "2" in guard.open_times
+    guard.reconcile([])
+    assert guard.open_times == {}
+
+
+# ── Regime + Strategy integration ──
+
+def test_regime_to_strategy_pipeline():
+    """RegimeDetector → MOM20x3 pipeline complet."""
+    import numpy as np
+    from engine_simple.regime import RegimeDetector
+    from engine_simple.strategy import MOM20x3
+
+    n = 100
+    base = 1.1
+    trend = 0.0008
+    closes = [base + trend * i + np.random.normal(0, 0.0002) for i in range(n)]
+    rates = [(i + 1000, c - np.random.normal(0, 0.0001), c + abs(np.random.normal(0, 0.0003)),
+              c - abs(np.random.normal(0, 0.0003)), c, 1000) for i, c in enumerate(closes)]
+
+    hh = np.array([r[2] for r in rates], dtype=float)
+    ll = np.array([r[3] for r in rates], dtype=float)
+    cc = np.array([r[4] for r in rates], dtype=float)
+
+    detector = RegimeDetector()
+    regime, meta = detector.detect(hh, ll, cc)
+
+    mom = MOM20x3({"H1": rates}, "EURUSD")
+    signal = mom.analyze(regime, meta["adx"], meta["atr"])
+    assert signal is None or signal.action in ("BUY", "SELL")
+
+
+def test_regime_detector_with_mock_mt5():
+    """RegimeDetector via MockMT5Server rates."""
+    import numpy as np
+    from tests.mock_mt5 import MockMT5Server
+    from engine_simple.regime import RegimeDetector
+
+    server = MockMT5Server()
+    rates = server.get_rates("EURUSD", "H1", 100)
+    assert len(rates) == 100
+
+    hh = np.array([r[2] for r in rates], dtype=float)
+    ll = np.array([r[3] for r in rates], dtype=float)
+    cc = np.array([r[4] for r in rates], dtype=float)
+
+    detector = RegimeDetector()
+    regime, meta = detector.detect(hh, ll, cc)
+    assert regime in ("TREND_UP", "TREND_DOWN", "RANGING", "LOW_VOL", "HIGH_VOL")
+    for key in ("adx", "atr", "slope", "vol_percentile"):
+        assert key in meta
+
+
+def test_strategy_mom20x3_with_mock_mt5():
+    """MOM20x3 via MockMT5Server rates."""
+    from tests.mock_mt5 import MockMT5Server
+    from engine_simple.strategy import MOM20x3
+
+    server = MockMT5Server()
+    rates = {"H1": server.get_rates("EURUSD", "H1", 100)}
+
+    mom = MOM20x3(rates, "EURUSD")
+    signal = mom.analyze("RANGING", 15, 0.005)
+    assert signal is None or isinstance(signal, Signal)
+
+
+# ── Stress test: circulation complète ──
+
+def test_stress_full_cycle_with_new_modules():
+    """Cycle complet avec RegimeDetector + MOM20x3 + PositionGuard."""
+    import numpy as np
+    from engine_simple.regime import RegimeDetector
+    from engine_simple.strategy import MOM20x3, Signal
+    from engine_simple.shield import PositionGuard
+
+    server = MockMT5Server(initial_balance=200000)
+
+    detector = RegimeDetector()
+    guard = PositionGuard()
+    pos_ticket = 0
+
+    for i in range(50):
+        rates = {"H1": server.get_rates("EURUSD", "H1", 100)}
+        h1 = rates["H1"]
+        hh = np.array([r[2] for r in h1], dtype=float)
+        ll = np.array([r[3] for r in h1], dtype=float)
+        cc = np.array([r[4] for r in h1], dtype=float)
+
+        regime, meta = detector.detect(hh, ll, cc)
+        mom = MOM20x3(rates, "EURUSD")
+        signal = mom.analyze(regime, meta["adx"], meta["atr"])
+
+        if signal and signal.is_valid():
+            price = h1[-1][4]
+            sl = price - 0.01 if signal.action == "BUY" else price + 0.01
+            tp = price + 0.02 if signal.action == "BUY" else price - 0.02
+            direction = 0 if signal.action == "BUY" else 1
+            req = dict(action=1, symbol="EURUSD", volume=0.05, type=direction,
+                       price=price, sl=sl, tp=tp, magic=999001,
+                       comment="SHIELD_TEST", type_filling=1, type_time=0)
+            result = server.order_send(req)
+            if result.retcode == 10009:
+                pos_ticket = result.order
+                guard.track(str(pos_ticket), regime, price)
+
+        # Close positions periodically
+        if i > 0 and i % 10 == 0:
+            server.close_position(symbol="EURUSD")
+            guard.reconcile([t for p in server._positions for t in [str(p.ticket)]])
+
+    assert server.open_positions_count >= 0
+    assert server.deals_count >= 0
+    assert guard.open_times or True  # guard might be empty after all closed

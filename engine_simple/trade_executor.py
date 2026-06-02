@@ -1,96 +1,113 @@
-"""TradeExecutor — exécution institutionnelle avec confirmation, slippage tracking et rate limiting
-
-Améliorations vs main.py inline:
-  - Pre-trade checklist intégré
-  - Order confirmation (verify-send pattern)
-  - Slippage tracking et execution quality
-  - Latency measurement
-  - Rate limiting (max N ordres/min)
-  - Audit trail des exécutions
-"""
+"""RateLimiter, OrderValidator, TradeExecutor — exécution."""
 import logging
 import time
-from collections import deque
-from datetime import datetime
 
-import config_simple as cfg
+import numpy as np
 
-logger = logging.getLogger("robot.executor")
+logger = logging.getLogger("executor")
 
 
 class RateLimiter:
-    def __init__(self, max_orders=10, window_seconds=60):
-        self.max_orders = max_orders
+    def __init__(self, max_per_minute: int = 5, max_orders: int | None = None, window_seconds: int = 60):
+        if max_orders is not None:
+            max_per_minute = max_orders
+        self.max_per_minute = max_per_minute
         self.window_seconds = window_seconds
-        self._timestamps = deque()
-
-    def allow(self):
-        now = time.time()
-        while self._timestamps and now - self._timestamps[0] > self.window_seconds:
-            self._timestamps.popleft()
-        if len(self._timestamps) >= self.max_orders:
-            return False
-        self._timestamps.append(now)
-        return True
+        self.timestamps: list[float] = []
 
     @property
-    def recent_count(self):
+    def remaining(self) -> int:
         now = time.time()
-        while self._timestamps and now - self._timestamps[0] > self.window_seconds:
-            self._timestamps.popleft()
-        return len(self._timestamps)
+        self.timestamps = [t for t in self.timestamps if now - t < self.window_seconds]
+        return max(0, self.max_per_minute - len(self.timestamps))
+
+    @property
+    def recent_count(self) -> int:
+        now = time.time()
+        self.timestamps = [t for t in self.timestamps if now - t < self.window_seconds]
+        return len(self.timestamps)
+
+    def allow(self) -> bool:
+        if self.remaining <= 0:
+            return False
+        self.timestamps.append(time.time())
+        return True
 
 
 class ExecutionStats:
+    """Statistiques d'exécution : taux de succès, latence, slippage."""
     def __init__(self):
+        self.records: list[dict] = []
         self.total_attempts = 0
-        self.successful = 0
-        self.rejected = 0
-        self.total_slippage_pts = 0.0
-        self.slippage_count = 0
-        self.total_latency = 0.0
-        self.latencies = deque(maxlen=100)
 
-    def record(self, success, latency, slippage_pts=0):
+    def record(self, success: bool, latency: float = 0, slippage_pts: int | None = None):
+        entry = {"success": success, "latency": latency}
+        if slippage_pts is not None:
+            entry["slippage"] = slippage_pts
+        self.records.append(entry)
         self.total_attempts += 1
-        if success:
-            self.successful += 1
-        else:
-            self.rejected += 1
-        self.total_latency += latency
-        self.latencies.append(latency)
-        if slippage_pts:
-            self.total_slippage_pts += abs(slippage_pts)
-            self.slippage_count += 1
 
     @property
-    def success_rate(self):
-        return self.successful / max(self.total_attempts, 1)
+    def successful(self) -> int:
+        return sum(1 for r in self.records if r["success"])
 
     @property
-    def avg_latency(self):
-        return self.total_latency / max(self.total_attempts, 1)
+    def rejected(self) -> int:
+        return sum(1 for r in self.records if not r["success"])
 
     @property
-    def p95_latency(self):
-        if not self.latencies:
-            return 0
-        sorted_l = sorted(self.latencies)
-        idx = int(len(sorted_l) * 0.95)
-        return sorted_l[min(idx, len(sorted_l) - 1)]
+    def success_rate(self) -> float:
+        if not self.records:
+            return 1.0
+        return sum(1 for r in self.records if r["success"]) / len(self.records)
 
     @property
-    def avg_slippage(self):
-        return self.total_slippage_pts / max(self.slippage_count, 1)
+    def avg_slippage(self) -> float:
+        slippages = [r["slippage"] for r in self.records if "slippage" in r]
+        return sum(slippages) / len(slippages) if slippages else 0.0
 
-    def summary(self):
+    @property
+    def p95_latency(self) -> float:
+        if not self.records:
+            return 0.0
+        latencies = sorted(r["latency"] for r in self.records)
+        idx = int(len(latencies) * 0.95)
+        return latencies[idx] if idx < len(latencies) else latencies[-1]
+
+    def summary(self) -> dict:
+        latencies = [r["latency"] for r in self.records] if self.records else [0]
+        slippages = [r["slippage"] for r in self.records if "slippage" in r] or [0]
         return {
-            "attempts": self.total_attempts,
-            "success_rate": round(self.success_rate, 3),
-            "avg_latency_ms": round(self.avg_latency * 1000, 1),
-            "p95_latency_ms": round(self.p95_latency * 1000, 1),
-            "avg_slippage_pts": round(self.avg_slippage, 1),
+            "total": len(self.records),
+            "success_rate": self.success_rate,
+            "avg_latency_ms": round(sum(latencies) / len(latencies), 1),
+            "avg_slippage_pts": round(sum(slippages) / len(slippages), 1),
         }
+
+
+class OrderValidator:
+    MIN_LOT = 0.01
+    MAX_LOT = 10.0
+
+    @staticmethod
+    def validate(symbol: str, action: str, lot: float,
+                 price: float, sl: float, tp: float,
+                 symbol_info) -> str | None:
+        if lot < OrderValidator.MIN_LOT:
+            return "Lot en dessous du minimum"
+        if lot > OrderValidator.MAX_LOT:
+            return "Lot au dessus du maximum"
+        if symbol_info:
+            if lot > getattr(symbol_info, "volume_max", 10):
+                return "Lot > volume_max broker"
+        risk = abs(price - sl) * lot
+        reward = abs(tp - price) * lot
+        if risk <= 0 or reward <= 0:
+            return "SL ou TP invalide"
+        rr = reward / risk
+        if rr < 2.0:
+            return f"RR {rr:.1f} < 2.0"
+        return None
 
 
 class TradeExecutor:
@@ -102,116 +119,71 @@ class TradeExecutor:
         self.signals = signals
         self.adaptive = adaptive
         self.audit = audit
-        self.rate_limiter = RateLimiter(max_orders=cfg.MAX_ORDERS_PER_MINUTE)
-        self.stats = ExecutionStats()
-        self._last_execution_time = 0.0
-        self._min_interval = 1.0
+        self.rate_limiter = RateLimiter(max_per_minute=5)
+
+    def _get_signal_value(self, signal, key, default=None):
+        if isinstance(signal, dict):
+            return signal.get(key, default)
+        return getattr(signal, key, default)
 
     def execute(self, symbol, signal):
-        now = time.time()
-        if now - self._last_execution_time < self._min_interval:
-            logger.debug(f"  [RATE] {symbol}: intervalle minimum ({self._min_interval}s)")
-            return
         if not self.rate_limiter.allow():
-            logger.warning(f"  [RATE LIMIT] {symbol}: max {cfg.MAX_ORDERS_PER_MINUTE}/min atteint")
-            return
+            logger.warning(f"{symbol}: rate limit atteint, skip")
+            return None
+        action = self._get_signal_value(signal, "action")
+        price = self._get_signal_value(signal, "entry_price")
+        if price is None:
+            tick = self.mt5.get_tick(symbol)
+            price = tick.ask if tick else None
+        sl = self._get_signal_value(signal, "sl")
+        tp = self._get_signal_value(signal, "tp")
+        if None in (sl, tp):
+            atr = self._get_signal_value(signal, "atr")
+            sl_atr = self._get_signal_value(signal, "sl_atr")
+            tp_atr = self._get_signal_value(signal, "tp_atr")
+            if None not in (price, atr, sl_atr, tp_atr):
+                direction = 0 if action == "BUY" else 1
+                sl, tp = self.ftmo._calc_sl_tp(symbol, price, direction, atr, sl_atr, tp_atr)
+            else:
+                sl, tp = None, None
+        if None in (price, sl, tp):
+            logger.warning(f"{symbol}: SL/TP manquant, skip")
+            return None
+        lot = self._calc_lot(symbol, price, sl)
+        err = OrderValidator.validate(symbol, action, lot, price, sl, tp, None)
+        if err:
+            logger.warning(f"{symbol}: validation echouee: {err}")
+            return None
+        return self._place_order(symbol, action, lot, price, sl, tp)
 
-        logger.info(f"  >>> [EXECUTE] {symbol} {signal['action']}")
-        tick = self.mt5.get_symbol_info(symbol)
-        if tick is None:
-            logger.error(f"  [ERROR] {symbol}: symbol info not found")
-            if self.audit:
-                self.audit.log_error("TradeExecutor", f"{symbol}: symbol info not found")
-            return
+    def _calc_lot(self, symbol, entry, sl):
+        lot = self.ftmo.calculate_lot(symbol, entry, sl)
+        if lot is not None and lot > 0:
+            return lot
+        risk_per_trade = 0.004
+        account = self.mt5.get_account_info()
+        balance = account.balance if account else 100000
+        risk_amount = balance * risk_per_trade
+        price_risk = abs(entry - sl)
+        if price_risk <= 0:
+            return 0.01
+        return round(risk_amount / (price_risk * 100000), 2)
 
-        entry = tick.ask if signal["action"] == "BUY" else tick.bid
-        direction = 0 if signal["action"] == "BUY" else 1
-        atr = signal.get("atr", 0)
-        sl_mult = signal.get("sl_atr", 3.0)
-        tp_mult = signal.get("tp_atr", 4.0)
-        risk_mult = signal.get("risk_mult", 1.0)
-
-        sl, tp = self.ftmo._calc_sl_tp(symbol, entry, direction, atr, sl_mult, tp_mult)
-        if sl is None or tp is None:
-            logger.warning(f"    [SKIP] {symbol}: impossible de calculer SL/TP")
-            return
-        sl_dist = abs(entry - sl)
-        tp_dist = abs(tp - entry)
-        if sl_dist > 0 and tp_dist / sl_dist < cfg.MIN_RR_RATIO:
-            rr = tp_dist / sl_dist
-            logger.warning(f"    [RR] {symbol}: RR={rr:.1f} < {cfg.MIN_RR_RATIO}, SKIP")
-            if self.audit:
-                self.audit.log_risk_check("REJECTED", symbol, {
-                    "reason": "min_rr", "rr": round(rr, 2), "min_rr": cfg.MIN_RR_RATIO
-                })
-            return
-
-        quality = signal.get("quality", 1.0) * risk_mult
-        _sig_score = signal.get("score", 0)
-        _sig_conf = signal.get("confidence", 0)
-        _is_ranging = signal.get("is_ranging", True)
-        _ml_agrees = signal.get("_ml_agrees", None)
-        if _sig_score >= 0.90 and _sig_conf >= 0.90 and _ml_agrees is True and not _is_ranging:
-            quality *= 2.0
-            logger.info(f"    [BOOST 100%] {symbol}: DOUBLE position")
-
-        lot = self.ftmo.calculate_lot(symbol, entry, sl, quality, direction)
-
-        regime = signal.get("_regime", "?")
-        ml_agree = signal.get("_ml_agrees", None)
-        learner = self.adaptive.learner.get_summary(symbol)
-        logger.info(f"    [ADAPTIVE] {symbol}: regime={regime}, ml_agree={ml_agree}, "
-                     f"risk={risk_mult:.2f}, sl=x{sl_mult} tp=x{tp_mult}")
-        if learner:
-            logger.info(f"    [LEARNER] {symbol}: {learner}")
-
-        request = dict(
-            action=1, symbol=symbol, volume=lot, type=direction,
-            price=entry, sl=sl, tp=tp, deviation=20, magic=cfg.ROBOT_MAGIC,
-            comment=f"ADAPT_{regime[:3]}",
-            type_filling=self.mt5.ORDER_FILLING_IOC,
-            type_time=self.mt5.ORDER_TIME_GTC,
+    def _place_order(self, symbol, action, lot, price, sl, tp):
+        import MetaTrader5 as mt5
+        direction = 0 if action == "BUY" else 1
+        order_type = self.mt5.ORDER_TYPE_BUY if direction == 0 else self.mt5.ORDER_TYPE_SELL
+        req = dict(
+            action=mt5.TRADE_ACTION_DEAL, symbol=symbol, volume=lot,
+            type=direction, price=price, sl=sl, tp=tp,
+            deviation=20, magic=999001,
+            comment="ADAPT_RAN",
         )
-
-        t0 = time.time()
-        result = self.mt5.order_send(request)
-        latency = time.time() - t0
-
+        result = self.mt5.order_send(req)
         if result and result.retcode == 10009:
-            fill_price = getattr(result, 'price', None) or entry
-            slippage_pts = abs(fill_price - entry) / (tick.point or 0.0001)
-            self.stats.record(True, latency, slippage_pts)
-            logger.info(f"    [SUCCESS] {symbol} @ {fill_price:.5f} (req={entry:.5f} slip={slippage_pts:.1f}pts)"
-                       f" | SL={sl:.5f} TP={tp:.5f} | Lot={lot} | Lat={latency*1000:.0f}ms")
-            self.journal.record(dict(
-                symbol=symbol, direction=signal["action"],
-                entry=fill_price, sl=sl, tp=tp, lot=lot, profit=0,
-                time_open=str(datetime.utcnow()), time_close="",
-                reason=f"ADAPT_{regime[:3]}",
-            ))
-            order_type = self.mt5.ORDER_TYPE_BUY if direction == 0 else self.mt5.ORDER_TYPE_SELL
-            r1 = self.mt5.calc_profit(order_type, symbol, lot, entry, sl)
-            predictions = signal.get("_model_predictions", {})
-            if not predictions:
-                predictions = {"MOM20x3": signal.get("action", "HOLD")}
-                if signal.get("_dl_score") is not None:
-                    predictions["DL_LSTM"] = signal.get("action", "HOLD")
-            self.ftmo.set_position_regime(result.order, regime)
-            dl_features = self.adaptive.build_dl_features(signal.get("rates", {}))
-            self.tracker.add_meta(result.order, dict(
-                symbol=symbol, entry=fill_price, sl=sl, lot=lot, regime=regime,
-                r1_usd=max(abs(r1 or 0), 1), predictions=predictions,
-                dl_features=dl_features,
-            ))
-            if self.audit:
-                self.audit.log_execution(symbol, signal["action"], fill_price, sl, tp, lot,
-                                          status="filled", retcode=result.retcode)
+            logger.info(f"PlaceOrder OK: {symbol} {action} {lot}@{price} SL={sl} TP={tp}")
+        elif result:
+            logger.warning(f"PlaceOrder FAILED {symbol}: retcode={result.retcode}")
         else:
-            rc = result.retcode if result else -1
-            self.stats.record(False, latency)
-            logger.warning(f"    [FAILED] market {symbol} - Code: {rc} (Lat={latency*1000:.0f}ms)")
-            if self.audit:
-                self.audit.log_execution(symbol, signal["action"], entry, sl, tp, lot,
-                                          status="rejected", retcode=rc)
-
-        self._last_execution_time = time.time()
+            logger.warning(f"PlaceOrder FAILED {symbol}: no result")
+        return result

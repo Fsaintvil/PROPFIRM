@@ -98,7 +98,13 @@ class FTMOProtector:
         for p in positions:
             ticket_key = str(p.ticket)
             if ticket_key not in self.position_open_times:
-                open_time = getattr(p, 'time', None) or datetime.utcnow()
+                raw = getattr(p, 'time', None)
+                if raw is None:
+                    open_time = datetime.utcnow()
+                elif isinstance(raw, (int, float)):
+                    open_time = datetime.utcfromtimestamp(raw)
+                else:
+                    open_time = raw
                 self.position_open_times[ticket_key] = {
                     "open_time": open_time, "symbol": p.symbol
                 }
@@ -531,6 +537,17 @@ class FTMOProtector:
         if daily_loss_pct >= self.max_daily_loss_pct:
             logger.warning(f"DAILY LOSS LIMIT: {daily_loss_pct:.1%}")
 
+    def current_dd_pct(self):
+        try:
+            account = self.mt5.get_account_info()
+            if not account:
+                return 0.0
+            eq = account.equity
+            peak = self.peak_equity
+            return (peak - eq) / max(peak, 1) if peak > 0 else 0.0
+        except Exception:
+            return 0.0
+
     def _check_drawdown_limit(self):
         try:
             account = self.mt5.get_account_info()
@@ -662,7 +679,10 @@ class FTMOProtector:
         ticket = str(position.ticket)
         if ticket not in self.position_open_times:
             return
-        elapsed = datetime.utcnow() - self.position_open_times[ticket]["open_time"]
+        ot = self.position_open_times[ticket]["open_time"]
+        if isinstance(ot, (int, float)):
+            ot = datetime.utcfromtimestamp(ot)
+        elapsed = datetime.utcnow() - ot
         hours = elapsed.total_seconds() / 3600
         max_hours = 12 if position.profit > 0 else 4.0
         if hours < max_hours:
@@ -768,7 +788,9 @@ class FTMOProtector:
             return min(position.price_open, position.price_current)
 
     def _check_structure_exit(self, position):
-        """Structure-based exit: ferme si BOS/CHoCH invalide la direction."""
+        """Structure-based exit: ferme si BOS/CHoCH invalide la direction.
+        Enregistre IMMÉDIATEMENT le résultat (consecutive_losses, cooldown)
+        pour éviter les re-entries immédiates."""
         symbol = position.symbol
         rates = self.mt5.get_rates(symbol, "H1", 30)
         if rates is None or len(rates) < 15:
@@ -790,6 +812,9 @@ class FTMOProtector:
         result = self.mt5.order_send(req)
         if result and result.retcode == 10009:
             logger.info(f"Structure exit: {symbol} ({reason}) profit={position.profit:.2f}")
+            # Enregistre immédiatement le résultat pour le cooldown et consecutive_losses
+            # (évite de dépendre du PositionTracker.check_closed qui peut échouer)
+            self.record_trade_result(symbol, position.profit)
         elif result and result.retcode != 10009:
             logger.warning(f"STRUCTURE EXIT FAILED {symbol}: retcode={result.retcode}")
 
