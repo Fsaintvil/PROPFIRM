@@ -61,13 +61,13 @@ def test_symbol_limits_eurusd_enabled_with_restrictions():
     from config.schema import load_config
     cfg = load_config("production")
     eurusd = cfg.symbol_limits.get("EURUSD", {})
-    assert eurusd.risk_mult == 0.5  # réduit car 29% WR en live
+    assert eurusd.risk_mult == 0.3  # réduit car 29% WR + RANGING actuel
     assert eurusd.allow_buys is True  # reactivé
     assert eurusd.allow_shorts is True  # reactivé
     assert eurusd.max_lot == 1.0  # max adaptatif (0.5-1.0)
     assert eurusd.min_score == 0.7  # score minimum plus haut pour filtrer
     assert eurusd.adx_thresh == 20.0  # ADX threshold ajusté
-    assert eurusd.allow_ranging is False  # pas de trades en range
+    assert eurusd.allow_ranging is None  # autorisé en range (risk déjà x0.3)
 
 
 def test_env_interpolation():

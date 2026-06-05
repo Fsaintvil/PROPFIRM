@@ -79,13 +79,12 @@ symbol_limits:
   EURUSD:
     max_lot: 1.0
     min_lot: 0.5
-    risk_mult: 0.5          # ⬇ réduit car 29% WR en live (110 trades)
+    risk_mult: 0.3          # ⬇ réduit : 29% WR live + RANGING + DL grey → risque mini
     max_spread_points: 40
     min_score: 0.70          # ⬆ monté pour filtrer les trades de mauvaise qualité
     adx_thresh: 20
     allow_buys: true
     allow_shorts: true
-    allow_ranging: false     # éviter les trades en range (cause du faible WR)
   AUDUSD:
     max_lot: 1.0
     min_lot: 0.5
