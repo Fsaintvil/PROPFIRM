@@ -88,6 +88,7 @@ class RiskConfig(BaseModel):
 
 class SymbolLimit(BaseModel):
     max_lot: float = Field(default=0.55, ge=0.01, le=10)
+    min_lot: float = Field(default=0.01, ge=0.01, le=10)
     risk_mult: float = Field(default=1.0, ge=0.0, le=3.0)
     max_spread_points: int = Field(default=50, ge=10, le=500)
     allow_buys: bool = True

@@ -12,7 +12,13 @@ from engine_simple.indicators import obv, rsi, rsi_divergence
 from engine_simple.market_structure import analyze_market_structure
 from engine_simple.meta_learner import MetaLearner
 from engine_simple.structure_analyzer import multi_tf_alignment
-from engine_simple.walk_forward_validator import WalkForwardValidator
+try:
+    from engine_simple.walk_forward_validator import WalkForwardValidator
+except ImportError:
+    try:
+        from scripts.recalibration.walk_forward_validator import WalkForwardValidator
+    except ImportError:
+        WalkForwardValidator = None  # fallback : pas de validateur
 
 logger = logging.getLogger("adaptive")
 
@@ -143,8 +149,12 @@ class AdaptiveEngine:
         self.calibration_path = calibration_path
         if calibration_path:
             self._load_calibration(calibration_path)
-        self.validator = WalkForwardValidator(snapshot_interval=50)
-        logger.info("Walk-Forward Validator ready")
+        if WalkForwardValidator is not None:
+            self.validator = WalkForwardValidator(snapshot_interval=50)
+            logger.info("Walk-Forward Validator ready")
+        else:
+            self.validator = None
+            logger.warning("Walk-Forward Validator unavailable (module moved)")
 
     def _load_calibration(self, path):
         if not os.path.exists(path):

@@ -9,13 +9,15 @@ robot:
 trading:
   symbols:
     - USDCAD     # 385 trades, 72.2% WR, +$2,728
-    - GBPUSD     # 92 trades, 70.7% WR, +$650
+    - GBPUSD     # 92 trades, 70.7% WR, +$650 (live: 19% WR — risk_mult=0.3)
     - USDCHF     # 41 trades, 54% WR, +$82
-    - EURUSD     # 49 trades, 49% WR, +$74 (strict: dl_required, no_ranging)
-    - AUDUSD     # 18 trades, 61% WR, -$80 (strict: dl_required, no_ranging)
-  max_positions: 6
+    - EURUSD     # 49 trades, 49% WR, +$74 (live: 29% WR — risk_mult=0.5)
+    - AUDUSD     # 18 trades, 61% WR, -$80
+    - XAUUSD     # 13 trades live, $+387, 61.5% WR, PF 4.51 ★
+    - NZDUSD     # 7 trades live, $+48, 100% WR ★
+  max_positions: 10
   max_positions_per_symbol: 2
-  max_trades_per_day: 5
+  max_trades_per_day: 8
   max_signals_per_cycle: 3
   max_orders_per_minute: 6
   lot_size: 0.05
@@ -31,12 +33,12 @@ risk:
   per_trade_pct: 0.004
   short_mult: 1.0
   max_daily_loss_pct: 0.02
-  zone2_loss_pct: 0.01
-  zone3_loss_pct: 0.015
+  zone2_loss_pct: 0.012
+  zone3_loss_pct: 0.017
   max_dd_pct: 0.10
   profit_target_pct: 0.10
   consistency_max_pct: 0.30
-  min_rr_ratio: 2.0
+  min_rr_ratio: 1.95
   atr_multiplier: 1.5
   cooldown_minutes: 30
   min_trading_days: 10
@@ -48,7 +50,8 @@ risk:
 
 symbol_limits:
   USDCAD:
-    max_lot: 0.55
+    max_lot: 1.0
+    min_lot: 0.5
     risk_mult: 1.0
     max_spread_points: 50
     min_score: 0.55
@@ -56,15 +59,17 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
   GBPUSD:
-    max_lot: 0.55
-    risk_mult: 1.0
+    max_lot: 1.0
+    min_lot: 0.5
+    risk_mult: 0.3          # ⬇ réduit : 19.2% WR en live, perdant
     max_spread_points: 50
-    min_score: 0.55
-    adx_thresh: 22
+    min_score: 0.65
+    adx_thresh: 24          # ⬆ plus sélectif : que sur bonnes tendances
     allow_buys: true
     allow_shorts: true
   USDCHF:
-    max_lot: 0.55
+    max_lot: 1.0
+    min_lot: 0.5
     risk_mult: 0.8
     max_spread_points: 50
     min_score: 0.55
@@ -72,27 +77,42 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
   EURUSD:
-    max_lot: 0.35
-    risk_mult: 0.8
+    max_lot: 1.0
+    min_lot: 0.5
+    risk_mult: 0.5          # ⬇ réduit car 29% WR en live (110 trades)
     max_spread_points: 40
-    min_score: 0.65
-    adx_thresh: 18
+    min_score: 0.70          # ⬆ monté pour filtrer les trades de mauvaise qualité
+    adx_thresh: 20
     allow_buys: true
     allow_shorts: true
-    max_daily_trades: 2
-    allow_ranging: false
-    dl_required: true
+    allow_ranging: false     # éviter les trades en range (cause du faible WR)
   AUDUSD:
-    max_lot: 0.35
-    risk_mult: 0.8
+    max_lot: 1.0
+    min_lot: 0.5
+    risk_mult: 1.0
     max_spread_points: 40
     min_score: 0.60
-    adx_thresh: 18
+    adx_thresh: 16
     allow_buys: true
     allow_shorts: true
-    max_daily_trades: 2
-    allow_ranging: false
-    dl_required: true
+  XAUUSD:
+    max_lot: 0.15
+    min_lot: 0.01
+    risk_mult: 1.0
+    max_spread_points: 80
+    min_score: 0.60
+    adx_thresh: 20
+    allow_buys: true
+    allow_shorts: true
+  NZDUSD:
+    max_lot: 1.0
+    min_lot: 0.5
+    risk_mult: 1.0
+    max_spread_points: 50
+    min_score: 0.60
+    adx_thresh: 20
+    allow_buys: true
+    allow_shorts: true
 
 ml:
   experiment_tracking: true
@@ -112,6 +132,12 @@ ml:
     psi_threshold_severe: 0.25
     auto_retrain: true
     retrain_cooldown_hours: 24
+
+news:
+  enabled: true
+  minutes_before: 5    # FTMO: 2 min mini, on utilise 5 pour securite
+  minutes_after: 5     # FTMO: 2 min mini, on utilise 5 pour securite
+  manual_file: "config/economic_events.json"
 
 secrets:
   mt5_login: "${MT5_LOGIN}"

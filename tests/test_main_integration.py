@@ -100,14 +100,14 @@ class TestFTMOCycle:
         mt5 = make_mock_mt5()
         ftmo = make_ftmo(mt5)
         lot = ftmo.calculate_lot("EURUSD", 1.1, 1.09, quality=1.0, direction=0)
-        assert 0.01 <= lot <= 0.55, f"Lot {lot} hors limites"
+        assert 0.01 <= lot <= 1.0, f"Lot {lot} hors limites (0.5-1.0 adaptatif)"
 
     def test_calculate_lot_with_max_risk_cap(self):
         mt5 = make_mock_mt5()
         ftmo = make_ftmo(mt5)
         ftmo.max_risk_amount = 10.0
         lot = ftmo.calculate_lot("EURUSD", 1.1, 1.09, quality=1.0, direction=0)
-        assert 0.01 <= lot <= 0.55, f"Lot {lot} hors limites"
+        assert 0.01 <= lot <= 1.0, f"Lot {lot} hors limites"
 
     def test_check_price_staleness_fresh(self):
         mt5 = make_mock_mt5()

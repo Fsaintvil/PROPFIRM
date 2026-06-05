@@ -3,7 +3,12 @@ import json
 import os
 import tempfile
 
-from engine_simple.walk_forward_validator import MODEL_NAMES, WalkForwardValidator
+try:
+    from engine_simple.walk_forward_validator import MODEL_NAMES, WalkForwardValidator
+except ImportError:
+    import sys
+    sys.path.insert(0, "scripts/recalibration")
+    from walk_forward_validator import MODEL_NAMES, WalkForwardValidator
 
 
 def test_init_defaults():

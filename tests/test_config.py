@@ -26,10 +26,10 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    assert cfg.trading.symbols == ["USDCAD", "GBPUSD", "USDCHF", "EURUSD", "AUDUSD"]
+    assert cfg.trading.symbols == ["USDCAD", "GBPUSD", "USDCHF", "EURUSD", "AUDUSD", "XAUUSD", "NZDUSD"]
     assert cfg.risk.per_trade_pct == 0.004
     assert cfg.risk.max_dd_pct == 0.10
-    assert cfg.risk.min_rr_ratio == 2.0
+    assert cfg.risk.min_rr_ratio == 1.95
 
 
 def test_load_production_config():
@@ -43,7 +43,7 @@ def test_as_flat_dict():
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
     assert flat["RISK_PER_TRADE_PCT"] == 0.004
-    assert flat["TRADING_MAX_POSITIONS"] == 6
+    assert flat["TRADING_MAX_POSITIONS"] == 10
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -51,7 +51,8 @@ def test_symbol_limits_defaults():
     cfg = load_config("default")
     assert "USDCAD" in cfg.symbol_limits
     assert "GBPUSD" in cfg.symbol_limits
-    assert cfg.symbol_limits["USDCAD"].max_lot == 0.55
+    assert cfg.symbol_limits["USDCAD"].max_lot == 1.0
+    assert cfg.symbol_limits["USDCAD"].min_lot == 0.5
     assert cfg.symbol_limits["USDCAD"].risk_mult == 1.0
 
 
@@ -60,12 +61,13 @@ def test_symbol_limits_eurusd_enabled_with_restrictions():
     from config.schema import load_config
     cfg = load_config("production")
     eurusd = cfg.symbol_limits.get("EURUSD", {})
-    assert eurusd.risk_mult == 0.8  # risque reduit
+    assert eurusd.risk_mult == 0.5  # réduit car 29% WR en live
     assert eurusd.allow_buys is True  # reactivé
     assert eurusd.allow_shorts is True  # reactivé
-    assert eurusd.max_lot == 0.35  # lot max reduit
-    assert eurusd.min_score == 0.65  # score minimum plus eleve
-    assert eurusd.adx_thresh == 18  # ADX threshold plus bas
+    assert eurusd.max_lot == 1.0  # max adaptatif (0.5-1.0)
+    assert eurusd.min_score == 0.7  # score minimum plus haut pour filtrer
+    assert eurusd.adx_thresh == 20.0  # ADX threshold ajusté
+    assert eurusd.allow_ranging is False  # pas de trades en range
 
 
 def test_env_interpolation():

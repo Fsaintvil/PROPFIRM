@@ -24,7 +24,7 @@ from engine_simple.mt5_connector import MT5Connector
 
 # Load trades
 with open("runtime/historical_trades.pkl", "rb") as f:
-    trades = pickle.load(f)
+    trades = pickle.load(f, encoding="utf-8")
 print(f"Loaded {len(trades)} trades")
 
 # Filter to symbols the robot currently trades

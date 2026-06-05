@@ -24,7 +24,7 @@ n_features = len(FULL_FEATURE_NAMES)
 print(f"Features: {n_features}")
 
 with open(r"C:\Users\saint\Documents\MT5_FTMO_IA.7\runtime\trades_clean.pkl", "rb") as f:
-    trades = pickle.load(f)
+    trades = pickle.load(f, encoding="utf-8")
 
 # Sort trades by time
 def parse_time(t):

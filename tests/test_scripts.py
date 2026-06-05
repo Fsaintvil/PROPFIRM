@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "engine_simple"
+RECALIB_DIR = Path(__file__).resolve().parent.parent / "scripts" / "recalibration"
 
 EXPECTED = {
     "step1_parse_reports": {"parse_report"},
@@ -46,7 +47,9 @@ def _get_top_level_names(tree):
 @pytest.mark.parametrize("module", sorted(EXPECTED))
 def test_module_has_expected_symbols(module):
     filepath = SCRIPTS_DIR / f"{module}.py"
-    assert filepath.exists(), f"{filepath} not found"
+    if not filepath.exists():
+        filepath = RECALIB_DIR / f"{module}.py"
+    assert filepath.exists(), f"{filepath} not found (tried engine_simple/ and scripts/recalibration/)"
     tree = ast.parse(filepath.read_text(encoding="utf-8"))
     names = _get_top_level_names(tree)
     for symbol in EXPECTED[module]:

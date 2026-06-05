@@ -28,7 +28,7 @@ print(f"Features: {FULL_FEATURE_NAMES}")
 
 # Load clean trades
 with open(r"C:\Users\saint\Documents\MT5_FTMO_IA.7\runtime\trades_clean.pkl", "rb") as f:
-    trades = pickle.load(f)
+    trades = pickle.load(f, encoding="utf-8")
 print(f"Loaded {len(trades)} trades")
 
 by_symbol = defaultdict(list)

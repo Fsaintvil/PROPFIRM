@@ -55,6 +55,7 @@ class FTMOProtector:
         self.daily_stats = {"trades": 0, "losses": 0, "pnl": 0, "day": datetime.utcnow().date()}
         self.consecutive_losses = 0
         self.cooldowns = {}
+        self._symbol_consecutive_losses = {}  # perte consécutives par symbole
         self.global_cooldown_until = None  # pause globale après 3 pertes consécutives
         self._trade_history = []
         self.trading_days = set()
@@ -65,6 +66,7 @@ class FTMOProtector:
         self.trailing_peaks = {}  # ticket -> best price reached (for trailing SL)
         self.position_regime = {}  # ticket_key -> regime string (set at trade open)
         self._atr_cache = {}  # symbol -> (value, timestamp) pour TTL cache
+        self._rates_cache = {}  # symbol -> (rates_array, timestamp) pour structure exit cache
 
         self.daily_pnl_by_date = {}  # date -> total PnL for consistency
         self._daily_trades_per_symbol = {}  # symbol -> count pour limite quotidienne par symbole
@@ -76,7 +78,7 @@ class FTMOProtector:
         self._profile_cache = {}
         self._corr_timestamp = 0
         self._corr_ttl = 3600  # recalc toutes les 1h
-        self._corr_max_threshold = 0.65  # Pearson max entre deux positions same-direction
+        self._corr_max_threshold = 0.70  # Pearson max entre deux positions same-direction
 
     def check_price_staleness(self, symbol, max_age=60):
         tick = self.mt5.get_tick(symbol)
@@ -95,6 +97,7 @@ class FTMOProtector:
         return True
 
     def _reconcile_positions(self, positions):
+        open_tickets = {str(p.ticket) for p in positions}
         for p in positions:
             ticket_key = str(p.ticket)
             if ticket_key not in self.position_open_times:
@@ -111,6 +114,20 @@ class FTMOProtector:
             if ticket_key not in self.position_regime:
                 comment = getattr(p, 'comment', '') or ''
                 self._parse_comment_regime(comment, ticket_key)
+        # Nettoyer les entrées obsolètes (positions fermées)
+        for t in list(self.trailing_peaks.keys()):
+            if t not in open_tickets:
+                del self.trailing_peaks[t]
+        for t in list(self.position_open_times.keys()):
+            if t not in open_tickets:
+                del self.position_open_times[t]
+        for t in list(self.position_regime.keys()):
+            if t not in open_tickets:
+                del self.position_regime[t]
+        for t in list(self.peak_profit.keys()):
+            if t not in open_tickets:
+                del self.peak_profit[t]
+        self.partial_closed &= open_tickets
 
     def _parse_comment_regime(self, comment, ticket_key):
         m = re.match(r"ADAPT_(\w{3})", comment)
@@ -168,30 +185,36 @@ class FTMOProtector:
         return self._profile_cache[symbol]
 
     def _check_correlation(self, symbol, action, our_positions):
-        """Dynamic correlation check + static group check."""
+        """Correlation-aware position sizing — passage progressif continu.
+        
+        Réduction continue de la taille au lieu d'un blocage binaire :
+          risk_mult = max(0.30, 1.0 - |correlation|)
+        
+        Exemples :
+          corr 0.00 → 100%   corr 0.50 → 50%
+          corr 0.30 → 70%    corr 0.73 → 27%
+          corr 0.90 → 30% (plancher)
+        """
         matrix = self._fetch_correlation_matrix()
         if not matrix or symbol not in matrix:
-            return True, None
+            return True, None, 1.0
         sig_dir = 0 if action == "BUY" else 1
+        min_risk_mult = 1.0
         for pos in our_positions:
             if pos.symbol == symbol or pos.symbol not in matrix:
                 continue
-            corr = matrix[symbol].get(pos.symbol, 0)
-            if abs(corr) >= self._corr_max_threshold and pos.type == sig_dir:
-                return False, f"Corr {pos.symbol}={corr:.2f} (>{self._corr_max_threshold}) same dir"
-        # Static group check: pas de positions opposées dans groupes corrélés
-        try:
-            from engine_simple.symbol_profile import get_same_group
-            same_group = get_same_group(symbol)
-            for pos in our_positions:
-                if pos.symbol in same_group and pos.type == sig_dir:
-                    return False, f"Same group: {pos.symbol} already {action} in group"
-        except (ImportError, RuntimeError, KeyError):
-            pass
-        return True, None
+            if pos.type != sig_dir:
+                continue  # direction opposée = pas de risque corrélatif
+            corr = abs(matrix[symbol].get(pos.symbol, 0))
+            if corr < 0.001:
+                continue
+            risk_mult = max(0.30, 1.0 - corr)
+            min_risk_mult = min(min_risk_mult, risk_mult)
+            logger.info(f"  [CORR] {symbol} vs {pos.symbol}: corr={corr:.2f} → risk_mult={risk_mult:.2f}")
+        return True, None, min_risk_mult
 
     def can_trade(self, symbol, signal=None, positions=None):
-        self._reset_daily()
+        # _reset_daily() est appelé dans _scan_signals() (main.py) — une fois par cycle
 
         # Spread check FIRST — fast reject
         info = self.mt5.get_symbol_info(symbol)
@@ -213,11 +236,7 @@ class FTMOProtector:
         if self.daily_stats["trades"] >= self.config.get("MAX_TRADES_PER_DAY", 5):
             return False, "Daily trade limit"
 
-        # Per-symbol daily limit: max 2 trades/day/symbol
-        sym_daily = self._daily_trades_per_symbol.get(symbol, 0)
-        sym_daily_max = self.config.get("SYMBOL_MAX_DAILY_TRADES", 2)
-        if sym_daily >= sym_daily_max:
-            return False, f"Symbol daily limit: {sym_daily}/{sym_daily_max} for {symbol}"
+        # Per-symbol daily limit: supprimé (l'utilisateur ne veut pas manquer d'opportunités)
 
         # Symbol-level direction restrictions
         if signal is not None:
@@ -274,18 +293,25 @@ class FTMOProtector:
             self.challenge_status = "FAILED_DD"
             return False, f"FTMO max drawdown from peak: {dd_peak:.1%}"
 
-        # Circuit breaker: drawdown > 7% interdit les shorts
-        if dd_initial > 0.07 and signal and signal.get("action") == "SELL":
-            return False, f"Circuit breaker: DD {dd_initial:.1%} > 7%, shorts disabled"
+        # Circuit breaker: drawdown > 8% interdit les shorts
+        if dd_initial > 0.08 and signal and signal.get("action") == "SELL":
+            return False, f"Circuit breaker: DD {dd_initial:.1%} > 8%, shorts disabled"
 
-        daily_dd = abs(daily_equity_change) / self.initial_balance
-        if daily_dd >= self.max_daily_loss_pct:
+        daily_loss = max(0, -daily_equity_change) / self.initial_balance
+        if daily_loss >= self.max_daily_loss_pct:
             self.challenge_status = "FAILED_DD"
-            return False, f"FTMO daily loss limit: {daily_dd:.1%}"
+            return False, f"FTMO daily loss limit: {daily_loss:.1%}"
         # Zone 3: >1.5% daily loss → stop trading (marge sous FTMO 5%)
         zone3 = self.config.get("ZONE3_LOSS_PCT", 0.015)
-        if daily_dd >= zone3 and self.daily_stats["losses"] > 0:
-            return False, f"Zone 3: daily DD {daily_dd:.1%} >= {zone3:.1%}, stop"
+        if daily_loss >= zone3 and self.daily_stats["losses"] > 0:
+            return False, f"Zone 3: daily DD {daily_loss:.1%} >= {zone3:.1%}, stop"
+
+        # Auto-reset: si le global cooldown a expiré (ou n'existe pas après restart), on débloque
+        if self.consecutive_losses >= self.config.get("AUTO_PAUSE_LOSSES", 3):
+            if self.global_cooldown_until is None or datetime.utcnow() >= self.global_cooldown_until:
+                logger.info(f"  [GLOBAL PAUSE] Cooldown terminé, reset des {self.consecutive_losses} pertes consécutives")
+                self.consecutive_losses = 0
+                self.global_cooldown_until = None
 
         # Global pause après 3 pertes consécutives (tous symboles, 30min)
         if self.global_cooldown_until is not None and datetime.utcnow() < self.global_cooldown_until:
@@ -302,9 +328,11 @@ class FTMOProtector:
 
         if signal:
             our_pos = [p for p in (positions or self.mt5.get_positions()) if p.magic == cfg.ROBOT_MAGIC]
-            corr_ok, corr_reason = self._check_correlation(symbol, signal.get("action"), our_pos)
-            if not corr_ok:
-                return False, f"Correlation: {corr_reason}"
+            _, _, corr_risk_mult = self._check_correlation(symbol, signal.get("action"), our_pos)
+            if corr_risk_mult < 1.0:
+                cur_mult = signal.get("risk_mult", 1.0)
+                signal["risk_mult"] = cur_mult * corr_risk_mult
+                logger.info(f"  [CORR] {symbol}: risk_mult ajusté {cur_mult:.2f} → {signal['risk_mult']:.2f}")
 
             # Institutional profile check
             profile = self._get_profile(symbol)
@@ -386,6 +414,57 @@ class FTMOProtector:
 
         return True, "OK"
 
+    def _adaptive_lot_mult(self):
+        """Multiplicateur adaptatif (0.30-1.0) basé sur performance récente.
+        Augmente les lots quand le robot performe bien, les réduit en cas de difficulté.
+        """
+        mult = 1.0
+
+        # 1. Win rate récent (max 20 derniers trades)
+        recent = self._trade_history[-20:] if len(self._trade_history) >= 20 else self._trade_history
+        if len(recent) >= 5:
+            wins = sum(1 for t in recent if t.get("profit", 0) > 0)
+            wr = wins / len(recent)
+            if wr > 0.65:
+                mult *= 1.15  # Bon WR → lots +15%
+            elif wr > 0.55:
+                mult *= 1.05  # WR correct → lots +5%
+            elif wr < 0.40:
+                mult *= 0.70  # Mauvais WR → lots -30%
+            elif wr < 0.50:
+                mult *= 0.85  # WR médiocre → lots -15%
+
+        # 2. Drawdown progressif
+        account = self.mt5.get_account_info()
+        if account:
+            dd = (self.peak_equity - account.equity) / max(self.peak_equity, 1)
+            if dd > 0.07:
+                mult *= 0.60  # DD > 7% → -40%
+            elif dd > 0.05:
+                mult *= 0.75  # DD > 5% → -25%
+            elif dd > 0.03:
+                mult *= 0.90  # DD > 3% → -10%
+
+        # 3. Pertes consécutives
+        if self.consecutive_losses >= 3:
+            mult *= 0.50
+        elif self.consecutive_losses >= 2:
+            mult *= 0.75
+
+        # 4. Challenge progress (confiance croissante)
+        report = self.get_progress_report()
+        progress_str = report.get("profit_progress", "0%")
+        try:
+            progress = float(progress_str.strip().rstrip("%"))
+        except (ValueError, AttributeError):
+            progress = 0
+        if progress > 70:
+            mult *= 1.20
+        elif progress > 40:
+            mult *= 1.10
+
+        return max(0.30, min(1.0, mult))
+
     def calculate_lot(self, symbol, entry, sl, quality=1.0, direction=0):
         account = self.mt5.get_account_info()
         if account is None:
@@ -413,12 +492,12 @@ class FTMOProtector:
         if self.max_risk_amount > 0:
             risk_amount = min(risk_amount, self.max_risk_amount)
 
-        # Zone 2: >1% daily loss → risk × 0.5
-        daily_dd_amt = abs(self.daily_stats["pnl"])
+        # Zone 2: >1% daily loss → risk × 0.5 (uniquement sur pertes réelles, pas sur gains)
+        daily_loss_amt = max(0, -self.daily_stats["pnl"])
         zone2 = self.config.get("ZONE2_LOSS_PCT", 0.01)
-        if daily_dd_amt > 0 and (daily_dd_amt / max(self.initial_balance, 1)) >= zone2:
+        if daily_loss_amt > 0 and (daily_loss_amt / max(self.initial_balance, 1)) >= zone2:
             risk_amount *= 0.50
-            logger.debug(f"  [ZONE 2] daily DD {daily_dd_amt/self.initial_balance:.2%} >= {zone2:.1%}, risk 50%")
+            logger.debug(f"  [ZONE 2] daily loss {daily_loss_amt/self.initial_balance:.2%} >= {zone2:.1%}, risk 50%")
 
         # Daily profit limit: risk reduit a 25%
         if self._daily_profit_reduced:
@@ -433,8 +512,15 @@ class FTMOProtector:
         else:
             lot = self.config.get("LOT_SIZE", 0.1)
 
-        max_lot = sym_cfg.get("max_lot", 0.5)
-        lot = max(0.01, min(lot, max_lot))
+        # Adaptive lot multiplier (performance-based)
+        adaptive_mult = self._adaptive_lot_mult()
+        lot *= adaptive_mult
+        logger.debug(f"  [ADAPTIVE LOT] {symbol}: base_lot ajusté x{adaptive_mult:.2f} = {lot:.3f}")
+
+        # Clamp between min_lot and max_lot from symbol config
+        max_lot = sym_cfg.get("max_lot", 0.55)
+        min_lot = sym_cfg.get("min_lot", 0.01)
+        lot = max(min_lot, min(lot, max_lot))
         return round(lot, 2)
 
     REGIME_FROM_COMMENT = {
@@ -486,7 +572,12 @@ class FTMOProtector:
         if profit < 0:
             self.daily_stats["losses"] += 1
             self.consecutive_losses += 1
-            self.cooldowns[symbol] = datetime.utcnow() + timedelta(minutes=self.cooldown_minutes)
+            # Cooldown progressif: 15 min pour 1 perte, 30 min pour 2+ consécutives
+            sym_losses = self._symbol_consecutive_losses.get(symbol, 0) + 1
+            self._symbol_consecutive_losses[symbol] = sym_losses
+            cd_minutes = 15 if sym_losses <= 1 else 30
+            self.cooldowns[symbol] = datetime.utcnow() + timedelta(minutes=cd_minutes)
+            logger.info(f"  [COOLDOWN] {symbol}: {sym_losses} perte(s) consecutive(s) → {cd_minutes}min")
             # Pause globale après 3 pertes consécutives (30min, tous symboles)
             if self.consecutive_losses >= 3:
                 self.global_cooldown_until = datetime.utcnow() + timedelta(minutes=30)
@@ -494,6 +585,7 @@ class FTMOProtector:
                               f"pause 30min jusqu'a {self.global_cooldown_until}")
         elif profit > 0:
             self.consecutive_losses = 0
+            self._symbol_consecutive_losses[symbol] = 0  # reset per-symbol sur gain
             self.global_cooldown_until = None
         # profit == 0 (BE) ne reset PAS consecutive_losses intentionnellement
 
@@ -505,8 +597,9 @@ class FTMOProtector:
     def _check_consistency(self):
         """FTMO consistency rule: aucun jour ne doit dépasser 30% du profit total.
         Ne check que quand on est proche du target (pnl > 80%) pour éviter les faux
-        positifs pendant le drawdown recovery."""
-        total_pnl = sum(t["profit"] for t in self._trade_history)
+        positifs pendant le drawdown recovery.
+        total_pnl calculé depuis daily_pnl_by_date (intégral, jamais tronqué)."""
+        total_pnl = sum(self.daily_pnl_by_date.values())
         profit_target_amount = self.initial_balance * self.profit_target_pct
         if total_pnl < profit_target_amount * 0.8:
             return
@@ -533,8 +626,9 @@ class FTMOProtector:
                 daily_equity_change = self.daily_stats["pnl"]
         except (AttributeError, RuntimeError, OSError):
             daily_equity_change = self.daily_stats["pnl"]
-        daily_loss_pct = abs(daily_equity_change) / max(self.initial_balance, 1)
+        daily_loss_pct = max(0, -daily_equity_change) / max(self.initial_balance, 1)
         if daily_loss_pct >= self.max_daily_loss_pct:
+            self.challenge_status = "FAILED_DD"
             logger.warning(f"DAILY LOSS LIMIT: {daily_loss_pct:.1%}")
 
     def current_dd_pct(self):
@@ -554,6 +648,7 @@ class FTMOProtector:
             if account:
                 dd_pct = (self.peak_equity - account.equity) / max(self.peak_equity, 1)
                 if dd_pct >= self.max_dd_pct:
+                    self.challenge_status = "FAILED_DD"
                     logger.warning(f"MAX DRAWDOWN: {dd_pct:.1%} - STOPPING")
         except Exception as e:
             logger.warning(f"Drawdown check failed: {e}")
@@ -587,7 +682,12 @@ class FTMOProtector:
         winners = sum(1 for t in self._trade_history if t["profit"] > 0)
         wr = winners / max(len(self._trade_history), 1)
         best_day = max(self.daily_pnl_by_date.values()) if self.daily_pnl_by_date else 0
-        best_day_pct = best_day / max(current_pnl, 1)
+        # best_day_pct = meilleur jour / profit total (pour règle consistance FTMO)
+        # Si profit total <= 0, le ratio n'a pas de sens
+        if current_pnl > 0 and best_day > 0:
+            best_day_pct = best_day / current_pnl
+        else:
+            best_day_pct = 0.0
         return dict(
             balance=balance, equity=equity, pnl=current_pnl,
             status=self.challenge_status,
@@ -630,9 +730,17 @@ class FTMOProtector:
             progress = (entry - position.price_current) / max(entry - position.tp, 0.00001)
         if progress < 0.60:
             return
-        close_vol = round(position.volume / 2, 2)
+        close_vol = position.volume / 2
         if close_vol < 0.01:
             return
+        # Ajuster au volume_step du symbole (ex: 0.01 pour standard, 0.001 pour mini lots)
+        info = self.mt5.get_symbol_info(position.symbol)
+        if info is None:
+            return
+        lot_step = getattr(info, 'volume_step', 0.01)
+        if isinstance(lot_step, (int, float)) and lot_step > 0:
+            close_vol = round(close_vol / lot_step) * lot_step
+            close_vol = round(close_vol, 6)  # éviter les artefacts flottants
         tick = self.mt5.get_tick(position.symbol)
         if tick is None:
             return
@@ -641,39 +749,40 @@ class FTMOProtector:
         req = dict(action=mt5.TRADE_ACTION_DEAL, symbol=position.symbol, volume=close_vol,
             type=ct, position=position.ticket, price=price, deviation=20,
             magic=cfg.ROBOT_MAGIC, comment="PARTIAL_TP")
-        info = self.mt5.get_symbol_info(position.symbol)
+        # info déjà récupéré pour volume_step (ligne ~673)
         result = self.mt5.order_send(req)
         if result and result.retcode == 10009:
             logger.info(f"TP Partiel: {position.symbol} ferme "
                         f"{close_vol}/{position.volume} a {price:.5f} "
                         f"(profit={position.profit:.2f})")
             self.partial_closed.add(ticket)
+            # Set BE for remaining position après partial TP réussi
+            if info:
+                atr_val = self._get_atr(position.symbol)
+                if atr_val and atr_val > 0:
+                    regime = self.position_regime.get(ticket, "RANGING")
+                    be_mult = BE_BUFFER_BY_REGIME.get(regime, 0.50)
+                    be_buffer = be_mult * atr_val
+                else:
+                    be_buffer = self._pip_offset(position.symbol, 10)
+                be_sl = entry + be_buffer if position.type == 0 else entry - be_buffer
+                be_sl = round(be_sl, info.digits)
+                # Ne JAMAIS reculer le SL — ne set BE que si le SL actuel est plus faible
+                is_buy = position.type == 0
+                sl_improves = (position.sl is None) or (
+                    (is_buy and be_sl > position.sl) or (not is_buy and be_sl < position.sl)
+                )
+                if sl_improves:
+                    old_sl = position.sl
+                    r = self.mt5.update_sl(position, be_sl)
+                    if r and r.retcode == 10009:
+                        position.sl = be_sl  # ← SYNC critical: met à jour l'objet Python
+                    logger.info(f"  [AUDIT] {position.symbol} SL {old_sl}→{be_sl} (BE after partial TP, retcode={r.retcode if r else '?'})")
         elif result and result.retcode != 10009:
             logger.warning(f"PARTIAL TP FAILED {position.symbol}: "
                            f"retcode={result.retcode} {getattr(result, 'comment', '')}")
         else:
             logger.warning(f"PARTIAL TP FAILED {position.symbol}: no result from MT5")
-
-        # Set BE for remaining position after partial TP (regardless of order_send result)
-        if info:
-            atr_val = self._get_atr(position.symbol)
-            if atr_val and atr_val > 0:
-                regime = self.position_regime.get(ticket, "RANGING")
-                be_mult = BE_BUFFER_BY_REGIME.get(regime, 0.50)
-                be_buffer = be_mult * atr_val
-            else:
-                be_buffer = self._pip_offset(position.symbol, 10)
-            be_sl = entry + be_buffer if position.type == 0 else entry - be_buffer
-            be_sl = round(be_sl, info.digits)
-            # Ne JAMAIS reculer le SL — ne set BE que si le SL actuel est plus faible
-            is_buy = position.type == 0
-            sl_improves = (position.sl is None) or (
-                (is_buy and be_sl > position.sl) or (not is_buy and be_sl < position.sl)
-            )
-            if sl_improves:
-                old_sl = position.sl
-                r = self.mt5.update_sl(position, be_sl)
-                logger.info(f"  [AUDIT] {position.symbol} SL {old_sl}→{be_sl} (BE after partial TP, retcode={r.retcode if r else '?'})")
 
     def _check_time_stop(self, position):
         ticket = str(position.ticket)
@@ -773,6 +882,7 @@ class FTMOProtector:
         old_sl = position.sl
         result = self.mt5.update_sl(position, new_sl)
         if result and result.retcode == 10009:
+            position.sl = new_sl  # ← SYNC: évite les décisions basées sur un SL obsolète
             self.peak_profit[ticket] = profit_atr
             logger.info(f"TrailATR: {position.symbol} SL {old_sl}→{new_sl} "
                         f"(peak_profit={profit_atr:.1f}ATR, "
@@ -789,17 +899,38 @@ class FTMOProtector:
 
     def _check_structure_exit(self, position):
         """Structure-based exit: ferme si BOS/CHoCH invalide la direction.
-        Enregistre IMMÉDIATEMENT le résultat (consecutive_losses, cooldown)
-        pour éviter les re-entries immédiates."""
+        Vérifie que la cassure de structure est POSTÉRIEURE à l'ouverture
+        du trade (évite les faux départs sur structure déjà cassée)."""
         symbol = position.symbol
-        rates = self.mt5.get_rates(symbol, "H1", 30)
+        # Cache TTL pour les rates H1 (rafraîchi toutes les 60s, mutualisé entre positions)
+        now = time.time()
+        cached = self._rates_cache.get(symbol)
+        if cached and now - cached["time"] < 60:
+            rates = cached["rates"]
+        else:
+            rates = self.mt5.get_rates(symbol, "H1", 30)
+            if rates is not None and len(rates) >= 15:
+                self._rates_cache[symbol] = {"rates": rates, "time": now}
         if rates is None or len(rates) < 15:
             return
         h1h = np.array([r[2] for r in rates], dtype=float)
         h1l = np.array([r[3] for r in rates], dtype=float)
         h1c = np.array([r[4] for r in rates], dtype=float)
-        should_exit, reason = structure_exit_signal(position.type, h1h, h1l, h1c, window=5)
-        if not should_exit:
+        h1t = np.array([r[0] for r in rates], dtype=float)  # timestamps
+        should_exit, reason, candle_idx = structure_exit_signal(
+            position.type, h1h, h1l, h1c, window=5)
+        if not should_exit or candle_idx is None:
+            return
+        # Vérifier que la cassure est POSTÉRIEURE à l'ouverture du trade
+        try:
+            pos_open_ts = position.time.timestamp()
+            candle_ts = h1t[candle_idx]
+            if candle_ts <= pos_open_ts:
+                logger.info(f"Structure exit SKIP: {symbol} BOS @ candle #{candle_idx} "
+                            f"({candle_ts}) <= open ({pos_open_ts}) — structure antérieure au trade")
+                return
+        except (AttributeError, IndexError, TypeError):
+            # Si on ne peut pas déterminer, ne pas fermer (conservateur)
             return
         tick = self.mt5.get_tick(symbol)
         if tick is None:
@@ -812,9 +943,8 @@ class FTMOProtector:
         result = self.mt5.order_send(req)
         if result and result.retcode == 10009:
             logger.info(f"Structure exit: {symbol} ({reason}) profit={position.profit:.2f}")
-            # Enregistre immédiatement le résultat pour le cooldown et consecutive_losses
-            # (évite de dépendre du PositionTracker.check_closed qui peut échouer)
-            self.record_trade_result(symbol, position.profit)
+            # Le résultat sera enregistré par PositionTracker.check_closed au prochain cycle
+            # (évite le double comptage si on enregistrait aussi ici)
         elif result and result.retcode != 10009:
             logger.warning(f"STRUCTURE EXIT FAILED {symbol}: retcode={result.retcode}")
 

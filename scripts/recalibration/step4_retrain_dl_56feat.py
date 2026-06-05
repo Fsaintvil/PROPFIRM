@@ -25,7 +25,7 @@ print(f"Features: {FULL_FEATURE_NAMES}")
 
 # Load historical trades
 with open(r"C:\Users\saint\Documents\MT5_FTMO_IA.7\runtime\historical_trades.pkl", "rb") as f:
-    trades = pickle.load(f)
+    trades = pickle.load(f, encoding="utf-8")
 print(f"Loaded {len(trades)} trades")
 
 # Group by symbol

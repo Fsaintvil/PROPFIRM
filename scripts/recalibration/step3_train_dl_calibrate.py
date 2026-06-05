@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Load validation data
 with open(r"C:\Users\saint\Documents\MT5_FTMO_IA.7\runtime\ml_validation_batch.pkl", "rb") as f:
-    validation = pickle.load(f)
+    validation = pickle.load(f, encoding="utf-8")
 print(f"Loaded {len(validation)} validated trades")
 
 # Connect MT5

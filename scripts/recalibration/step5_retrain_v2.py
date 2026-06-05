@@ -24,7 +24,7 @@ print(f"Feature count: {n_features}")
 
 # Load clean trades
 with open("runtime/all_trades_clean.pkl", "rb") as f:
-    trades = pickle.load(f)
+    trades = pickle.load(f, encoding="utf-8")
 
 MIN_TRADES = 10
 sym_counts: dict = defaultdict(int)
