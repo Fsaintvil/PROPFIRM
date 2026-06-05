@@ -133,7 +133,9 @@ class OnlineLearner:
 
 
 # Symbols ou DL est pire que aleatoire
-DL_MIN_SCORE = 0.60  # score < 0.60 = 33.5% accuracy (pire que hasard)
+DL_MIN_SCORE = 0.50  # Abaissé de 0.60→0.50 : le modèle donne 83% de scores entre 0.58-0.60
+                     # À 0.50 : scores 0.50-0.60 acceptés avec risque ×0.5 (même 33% WR × RR 3= profitable)
+DL_SAFE_SCORE = 0.60  # Seuil historique : scores >= 0.60 = risque plein
 
 class AdaptiveEngine:
     def __init__(self, mt5, calibration_path=None):
@@ -145,6 +147,7 @@ class AdaptiveEngine:
         # ML Ensemble (RF/XGB/LGBM) désactivé — info-only à 45%, 581 MB RAM pour rien
         self.ml = None
         self.lgb = None  # LightGBM désactivé (poids=0)
+        self._dl_grey_zone = False  # flag pour risk/2 entre 0.50-0.60
         logger.info(f"Meta-Learner ready, tracking {len(self.meta.get_model_names())} models")
         self.calibration_path = calibration_path
         if calibration_path:
@@ -248,6 +251,10 @@ class AdaptiveEngine:
                     if dl_score < DL_MIN_SCORE:
                         dl_label = f"IGNORE (score={dl_score:.2f} < {DL_MIN_SCORE})"
                         dl_result = None
+                    elif dl_score < DL_SAFE_SCORE:
+                        dl_label = f"GREY (score={dl_score:.2f}, risk/2)"
+                    else:
+                        dl_label = f"{dl_result['action']} ({dl_result['buy_prob']:.3f})"
                     logger.info(f"  [VIGIL] {symbol}: regime={regime} DL={dl_label} ADX={meta['adx']:.0f}")
             except (ValueError, TypeError, IndexError, AttributeError) as e:
                 logger.debug(f"  [VIGIL] {symbol}: DL error: {e}")
@@ -316,8 +323,16 @@ class AdaptiveEngine:
                     if dl_score < DL_MIN_SCORE:
                         logger.info(f"  [DL] {symbol}: IGNORE (score={dl_score:.2f} < {DL_MIN_SCORE})")
                         dl_result = None
-                    else:
+                    elif dl_score < DL_SAFE_SCORE:
+                        # Zone grise 0.50-0.60 : accepté mais risque réduit
                         all_predictions["DL_LSTM"] = dl_result
+                        dl_agrees = dl_result.get("action", "HOLD") == signal.get("action", "HOLD")
+                        self._dl_grey_zone = True  # Flag pour risk/2 plus tard
+                        logger.info(f"  [DL] {symbol}: {dl_result['action']} (score={dl_score:.3f}, GREY ZONE, agree={dl_agrees})")
+                    else:
+                        # Score >= 0.60 : confiance pleine
+                        all_predictions["DL_LSTM"] = dl_result
+                        self._dl_grey_zone = False
                         dl_agrees = dl_result.get("action", "HOLD") == signal.get("action", "HOLD")
                         logger.info(f"  [DL] {symbol}: {dl_result['action']} (score={dl_score:.3f}, agree={dl_agrees})")
             except (ValueError, TypeError, IndexError, AttributeError, KeyError) as e:
@@ -351,6 +366,12 @@ class AdaptiveEngine:
             adapted["tp_atr"] = 4.5
 
         adapted["risk_mult"] = params["risk_mult"]
+
+        # DL grey zone (0.50-0.60) : risk/2
+        if getattr(self, '_dl_grey_zone', False):
+            adapted["risk_mult"] *= 0.50
+            logger.info(f"  [DL GREY ZONE] {symbol}: risk/2 (score DL entre {DL_MIN_SCORE}-{DL_SAFE_SCORE})")
+            self._dl_grey_zone = False  # reset
 
         # DL ignored en regime RANGING → risk/2 (MOM20x3 seul en ranging est bruyant)
         if dl_result is None and regime == "RANGING":

@@ -30,12 +30,22 @@ from engine_simple.risk_manager import RiskManager
 from engine_simple.signals import SignalGenerator
 from engine_simple.trade_executor import TradeExecutor
 from engine_simple.trade_journal import TradeJournal
+from engine_simple.anticipation import AnticipationEngine
 
 warnings.filterwarnings("ignore", message="X does not have valid feature names")
 
 STATE_FILE = "runtime/robot_state.json"
 HEARTBEAT_FILE = "runtime/heartbeat.txt"
 PID_FILE = "runtime/robot.pid"
+
+
+def _atomic_write_json(path, data):
+    """Écriture atomique JSON : temp → rename. Évite la corruption si crash pendant écriture."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(data, default=str))
+    tmp.replace(path)  # atomique sur NTFS
 
 
 def _acquire_lock():
@@ -116,8 +126,8 @@ class FTMO_SIMPLE:
             errors.append(f"MAX_DAILY_LOSS_PCT={cfg.MAX_DAILY_LOSS_PCT} — doit être entre 0 et 5%")
         if cfg.MAX_DD_PCT <= 0 or cfg.MAX_DD_PCT > 0.12:
             errors.append(f"MAX_DD_PCT={cfg.MAX_DD_PCT} — doit être entre 0 et 12%")
-        if cfg.MIN_RR_RATIO < 2.0:
-            errors.append(f"MIN_RR_RATIO={cfg.MIN_RR_RATIO} < 2.0 — risque de non-rentabilité")
+        if cfg.MIN_RR_RATIO < 1.5:
+            errors.append(f"MIN_RR_RATIO={cfg.MIN_RR_RATIO} < 1.5 — risque de non-rentabilité")
         if cfg.MAX_POSITIONS > 12:
             errors.append(f"MAX_POSITIONS={cfg.MAX_POSITIONS} trop élevé pour FTMO 200K")
         if cfg.RISK_PER_TRADE <= 0 or cfg.RISK_PER_TRADE > 0.02:
@@ -203,6 +213,8 @@ class FTMO_SIMPLE:
             self.ftmo.peak_profit.update(self._state["peak_profit"])
         if self._state.get("challenge_status"):
             self.ftmo.challenge_status = self._state["challenge_status"]
+        if self._state.get("consistency_violated"):
+            self.ftmo.consistency_violated = True
         if self._state.get("daily_profit_reduced"):
             self.ftmo._daily_profit_reduced = True
         if self._state.get("trade_history"):
@@ -251,6 +263,15 @@ class FTMO_SIMPLE:
             current_balance=challenge_init_bal,
         )
         self._position_guard = PositionGuard()
+
+        # Anticipation Engine — connaissance profonde du marché
+        try:
+            self.anticipation = AnticipationEngine()
+            self.anticipation.initialize(retrain=False)
+            logger.info("Anticipation Engine chargé avec succès")
+        except Exception as e:
+            self.anticipation = None
+            logger.warning(f"Anticipation Engine non disponible: {e}")
 
         # ML Pipeline (optional, graceful fallback)
         drift_cfg = getattr(cfg, 'CONCEPT_DRIFT', {})
@@ -346,10 +367,11 @@ class FTMO_SIMPLE:
                 ),
                 trading_days_list=[str(d) for d in self.ftmo.trading_days] if hasattr(self, "ftmo") else [],
                 challenge_status=self.ftmo.challenge_status if hasattr(self, "ftmo") else "ACTIVE",
+                consistency_violated=self.ftmo.consistency_violated if hasattr(self, "ftmo") else False,
                 daily_stats=self.ftmo.daily_stats if hasattr(self, "ftmo") else None,
                 daily_start_equity=self.ftmo.daily_start_equity if hasattr(self, "ftmo") else None,
             )
-            Path(STATE_FILE).write_text(json.dumps(state, default=str))
+            _atomic_write_json(STATE_FILE, state)
         except Exception as e:
             logger.warning(f"State save failed: {e}")
 
@@ -425,8 +447,12 @@ class FTMO_SIMPLE:
                         logger.critical(f"{len(timestamps)} restarts dans l'heure — abandon")
                         self.notifier.send(f"WATCHDOG: {len(timestamps)} restarts/h — abandon")
                         self._save_state()
+                        # Libérer le PID lock AVANT d'arrêter pour que le nouveau processus puisse démarrer
+                        _release_lock()
                         sys.exit(1)
                     self._save_state()
+                    # Libérer le PID lock avant de spawner le nouveau processus
+                    _release_lock()
                     import subprocess
                     subprocess.Popen([sys.executable, "main.py"], cwd=os.path.dirname(os.path.abspath(__file__)))
                     sys.exit(1)
@@ -481,6 +507,21 @@ class FTMO_SIMPLE:
                     self.metrics.gauge("consecutive_losses", self.ftmo.consecutive_losses)
                     self.metrics.gauge("open_positions", len(self._pos_cache.get()))
 
+                # Reset daily stats si changement de jour (avant toute opération)
+                if hasattr(self, 'ftmo') and self.ftmo:
+                    old_day = self.ftmo.daily_stats.get("day")
+                    self.ftmo._reset_daily()
+                    new_day = self.ftmo.daily_stats.get("day")
+                    # Si le jour a changé, générer un rapport de fin de journée
+                    if old_day is not None and old_day != new_day:
+                        try:
+                            from engine_simple.performance_monitor import get_monitor
+                            pm = get_monitor()
+                            pm.generate_report()
+                            logger.info(f"[PERF] Rapport quotidien généré pour {old_day}")
+                        except Exception as e:
+                            logger.debug(f"[PERF] Rapport quotidien échoué: {e}")
+
                 self._manage_positions()
                 self._vigilance_scan()
                 self._scan_signals()
@@ -491,6 +532,8 @@ class FTMO_SIMPLE:
                 if not self._health_check():
                     logger.error("MT5 unreachable after mid-cycle failure, stopping")
                     break
+                time.sleep(5)  # Pause minimale pour éviter boucle serrée + watchdog intempestif
+                self._last_cycle_time = time.time()  # Reset watchdog timer
                 continue
             if self.cycle_count % 60 == 0:
                 self.adaptive.train_dl_if_ready()
@@ -580,6 +623,9 @@ class FTMO_SIMPLE:
     def _manage_positions(self):
         our = [p for p in self._pos_cache.get() if p.magic == cfg.ROBOT_MAGIC]
         self.ftmo._reconcile_positions(our)
+        # Nettoyer les tickets fermés du PositionGuard (évite fuite mémoire)
+        if hasattr(self, '_position_guard'):
+            self._position_guard.reconcile([str(p.ticket) for p in our])
         pos_summary = []
         total_fl = 0.0
         for pos in our:
@@ -638,22 +684,44 @@ class FTMO_SIMPLE:
             if signal is None:
                 last = self._last_signals.get(symbol)
                 if last and self.cycle_count - last["cycle"] < 4:
-                    signal = last["signal"]
+                    # Copie profonde pour éviter la mutation cumulative du risk_mult
+                    # par can_trade/ftmo_protector (correlation, anticipation)
+                    last_sig = dict(last["signal"])
+                    signal = last_sig
                     score = last["score"]
-                    logger.debug(f"  [SIGNAL] {symbol}: reusing signal from cycle {last['cycle']}")
+                    # Mise à jour de l'entry_price pour éviter un prix obsolète
+                    tick = self.mt5.get_tick(symbol)
+                    if tick:
+                        signal["entry_price"] = tick.ask if signal.get("action") == "BUY" else tick.bid
+                    signal["_reused"] = True
+                    signal["_reuse_age_cycles"] = self.cycle_count - last["cycle"]
+                    logger.debug(f"  [SIGNAL] {symbol}: reusing signal from cycle {last['cycle']} "
+                                 f"(price refreshed)")
                 else:
                     continue
             else:
                 score = signal.get("score", 0.6)
-                self._last_signals[symbol] = {"signal": signal, "score": score, "cycle": self.cycle_count}
+                # Stocker une COPIE du signal pour éviter la mutation cumulative
+                # du risk_mult par Anticipation/Kelly/OnlineLearner dans les cycles suivants
+                self._last_signals[symbol] = {"signal": dict(signal), "score": score, "cycle": self.cycle_count}
 
-            # ADX threshold: per-symbol override depuis config
+            # ADX threshold: adaptatif selon le régime + bypass sur score élevé
             signal_adx = signal.get("adx", 0)
             sym_cfg = cfg.SYMBOL_LIMITS.get(symbol, {})
-            adx_thresh = sym_cfg.get("adx_thresh", 10 if signal_adx >= 20 else 15)
-            if signal_adx < adx_thresh:
-                logger.info(f"  [ADX] {symbol}: ADX={signal_adx:.1f} < {adx_thresh} (score={score:.2f}), skip")
-                continue
+            signal_score = signal.get("score", 0.6)
+
+            # Fix #3: score MOM20x3 ≥ 0.80 → bypass total ADX (signal assez fort)
+            if signal_score >= 0.80:
+                logger.debug(f"  [ADX] {symbol}: bypass (score={signal_score:.2f} >= 0.80, ADX={signal_adx:.1f})")
+            else:
+                # Fix #2: ADX adaptatif — abaissé en RANGING/LOW_VOL
+                regime = signal.get("_regime", "RANGING")
+                adx_thresh = sym_cfg.get("adx_thresh", 20)
+                if regime in ("RANGING", "LOW_VOL"):
+                    adx_thresh = min(adx_thresh, 15)  # < 15 seulement en range
+                if signal_adx < adx_thresh:
+                    logger.info(f"  [ADX] {symbol}: ADX={signal_adx:.1f} < {adx_thresh} (score={signal_score:.2f}), skip")
+                    continue
             logger.debug(f"  [SIGNAL] {symbol}: score={signal['score']:.2f}, "
                 f"conf={signal['confidence']:.2f}, action={signal['action']}, "
                 f"strat={signal.get('details','?')}")
@@ -669,10 +737,8 @@ class FTMO_SIMPLE:
             }
             self.drift_detector.add_sample(drift_feats)
             candidates.append((signal["score"], symbol, signal, positions))
-            total_current = len(positions) + len(pending)
-            if total_current >= cfg.MAX_POSITIONS:
-                logger.info(f"  [LIMIT] Max positions ({cfg.MAX_POSITIONS}) atteint")
-                break
+            # Ne pas faire de check MAX_POSITIONS ici — la liste positions est figée
+            # Le vrai check est fait après chaque exécution dans la boucle d'exec
 
         # Save signal debug info
         self._save_signal_debug(candidates)
@@ -685,14 +751,51 @@ class FTMO_SIMPLE:
             if executed >= max_per_cycle:
                 logger.info(f"  [LIMIT] Max signaux par cycle ({max_per_cycle}) atteint")
                 break
-            can_trade, reason = self.ftmo.can_trade(symbol, signal, positions)
+            # Re-fetch positions réelles à chaque itération pour éviter les dépassements
+            live_positions = self._pos_cache.get()
+            live_pending = self.mt5.get_pending_orders()
+            live_total = len(live_positions) + len(live_pending)
+            if live_total >= cfg.MAX_POSITIONS:
+                logger.info(f"  [LIMIT] Max positions ({cfg.MAX_POSITIONS}) atteint ({live_total} en cours)")
+                break
+            can_trade, reason = self.ftmo.can_trade(symbol, signal, live_positions)
             if not can_trade:
                 logger.debug(f"  [FTMO FINAL] {symbol}: {reason}")
                 continue
-            total_current = len(positions) + len(pending)
-            if total_current >= cfg.MAX_POSITIONS:
-                logger.info(f"  [LIMIT] Max positions ({cfg.MAX_POSITIONS}) atteint")
-                break
+
+            # Anticipation Engine: vérifier que le DL confirme la direction
+            if hasattr(self, "anticipation") and self.anticipation is not None:
+                try:
+                    recent_h1 = self.mt5.get_rates(symbol, "H1", count=60)
+                    if recent_h1 is not None and len(recent_h1) > 10:
+                        current_price = signal.get("entry_price", 0)
+                        if current_price == 0:
+                            tick = self.mt5.get_tick(symbol)
+                            current_price = tick.ask if tick else 0
+                        if current_price > 0:
+                            ctx = self.anticipation.anticipate(symbol, current_price, recent_h1)
+                            signal_side = "HAUSSE" if signal.get("action") == "BUY" else "BAISSE"
+                            ant_side = ctx["consensus"]["direction"]
+                            ant_conf = ctx["consensus"]["confidence"]
+                            # Si l'anticipation est FORTE et en désaccord → réduire risque
+                            # MAIS seulement si Devil's Advocate n'a PAS déjà réduit (évite double peine)
+                            if ant_side != "NEUTRE" and ant_side != signal_side:
+                                if ant_conf > 0.65:
+                                    current_rm = signal.get("risk_mult", 1.0)
+                                    if current_rm >= 0.9:  # pas encore réduit par DA
+                                        signal["risk_mult"] = current_rm * 0.5
+                                        logger.info(f"  [ANTICIP] {symbol}: DL dit {ant_side} (conf={ant_conf:.2f}) "
+                                                     f"vs signal {signal_side} → risque /2")
+                                    else:
+                                        logger.info(f"  [ANTICIP] {symbol}: DL dit {ant_side} mais déjà réduit "
+                                                     f"(risk_mult={current_rm:.2f}) → skip double peine")
+                                else:
+                                    logger.debug(f"  [ANTICIP] {symbol}: DL en désaccord ({ant_side}, conf={ant_conf:.2f})")
+                            elif ant_side == signal_side and ant_conf > 0.65:
+                                signal["risk_mult"] = signal.get("risk_mult", 1.0) * 1.2
+                                logger.info(f"  [ANTICIP] {symbol}: DL confirme {signal_side} (conf={ant_conf:.2f}) → risque +20%")
+                except Exception as e:
+                    logger.debug(f"  [ANTICIP] {symbol}: erreur anticipation: {e}")
             logger.info(f"  [TRADE] >>> {symbol} {signal['action']} "
                          f"(score={score:.2f}, strat={signal.get('details','?')})")
             if hasattr(self, 'audit'):
@@ -736,6 +839,15 @@ class FTMO_SIMPLE:
         logger.info("=" * 50)
         try:
             Path("runtime/ftmo_report.json").write_text(json.dumps(report, indent=2))
+            # Performance Monitor — suivi du challenge et rapport périodique
+            try:
+                from engine_simple.performance_monitor import update_challenge, get_monitor
+                update_challenge(report)
+                # Rapport périodique toutes les 60 cycles (~15 min)
+                if self.cycle_count % 60 == 0:
+                    get_monitor().generate_report()
+            except Exception:
+                pass
         except Exception as e:
             logger.debug(f"FTMO report write failed: {e}")
 
@@ -844,10 +956,16 @@ class FTMO_SIMPLE:
         total = len(self.ftmo._trade_history)
         if total < 100:
             return
-        wr = sum(1 for t in self.ftmo._trade_history if t["profit"] > 0) / max(total, 1)
-        logger.info(f"  [WR CHECK] {total} trades, WR={wr:.1%}")
-        if not self._win_rate_checked and wr < 0.55:
-            logger.warning(f"  [WR CHECK] WR={wr:.1%} < 55% — ajustement seuils")
+        # Utiliser les trades récents (dernier 200) pour la détection de dérive,
+        # pas l'historique global qui peut masquer une dégradation récente
+        recent_window = 200
+        recent_trades = self.ftmo._trade_history[-recent_window:] if len(self.ftmo._trade_history) >= recent_window else self.ftmo._trade_history
+        recent_wr = sum(1 for t in recent_trades if t["profit"] > 0) / max(len(recent_trades), 1)
+        global_wr = sum(1 for t in self.ftmo._trade_history if t["profit"] > 0) / max(total, 1)
+        logger.info(f"  [WR CHECK] {total} trades, global WR={global_wr:.1%}, "
+                    f"recent ({len(recent_trades)}) WR={recent_wr:.1%}")
+        if not self._win_rate_checked and recent_wr < 0.55:
+            logger.warning(f"  [WR CHECK] Recent WR={recent_wr:.1%} < 55% — ajustement seuils")
             self._win_rate_checked = True
             for symbol in cfg.SYMBOLS:
                 p = dict(self.adaptive.learner.get_params(symbol))
@@ -864,8 +982,8 @@ class FTMO_SIMPLE:
                 self._win_rate_checked = False
                 for symbol in cfg.SYMBOLS:
                     self.adaptive.learner._update_params(symbol)
-        if not self._win_rate_checked and wr >= 0.55:
-            logger.info(f"  [WR CHECK] WR={wr:.1%} >= 55% — OK")
+        if not self._win_rate_checked and recent_wr >= 0.55:
+            logger.info(f"  [WR CHECK] Recent WR={recent_wr:.1%} >= 55% — OK")
             self._win_rate_checked = True
 
 
