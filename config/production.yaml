@@ -10,11 +10,11 @@
 # Seuls les champs qui surchargent default.yaml sont listés ici.
 # ============================================================================
 
-# ── Trading ──────────────────────────────────────────────────────────────
+# ── Trading — Mode agressif ──────────────────────────────────────────────
 trading:
-  max_positions: 6
-  max_positions_per_symbol: 2
-  max_trades_per_day: 20
+  max_positions: 10
+  max_positions_per_symbol: 4
+  max_trades_per_day: 120
   max_signals_per_cycle: 10
 
 # ── Symbol Limits — Production ──────────────────────────────────────────

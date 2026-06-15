@@ -25,10 +25,10 @@ trading:
     - BTCUSD      # H1 — WR 74.6%, PF 1.17, DD 9.2% (backtest H4 avec coûts)
     - ETHUSD      # H4 — WR 70.5%, PF 1.03, DD 7.4% (remplace US500.cash PF=1.00)
 
-  # Limites globales FTMO
-  max_positions: 6              # 3 symboles × 2 max = 6 positions théoriques
-  max_positions_per_symbol: 2   # max 2 par symbole (corrélation)
-  max_trades_per_day: 20        # qualité > quantité (max théorique 30)
+  # Limites globales — Mode agressif (Juin 2026)
+  max_positions: 10             # 3 symboles, max ~3-4 positions par symbole
+  max_positions_per_symbol: 4   # max 4 par symbole (capture tous signaux)
+  max_trades_per_day: 120       # capture tous signaux (vs 30 théorique)
   max_signals_per_cycle: 10     # marge pour signaux simultanés
   max_orders_per_minute: 6      # 1 trade/min/symbole + marge
   lot_size: 0.05                # lot par défaut (overridden par symbol_limits)
