@@ -1,14 +1,67 @@
-# Surcharges production — valeurs agressives pour live
-# Ces valeurs écrasent config/default.yaml
----
+# ============================================================================
+# PRODUCTION OVERRIDES — 3 Actifs Calibrés (Juin 2026)
+# ============================================================================
+# XAUUSD H4 : WR 71.9%, PF 1.11, DD 9.7%  — risk_mult 1.00
+# BTCUSD H1 : WR 74.6%, PF 1.17, DD 9.2%  — risk_mult 0.65
+# ETHUSD H4  : WR 70.5%, PF 1.03, DD 7.4%  — risk_mult 0.50 (corrélé BTC 0.89)
+# US500.cash retiré 15 Juin : PF=1.00 après coûts (edge zéro)
+# ============================================================================
+# Fusionné avec default.yaml (deep merge).
+# Seuls les champs qui surchargent default.yaml sont listés ici.
+# ============================================================================
+
+# ── Trading ──────────────────────────────────────────────────────────────
 trading:
   max_positions: 6
-  max_signals_per_cycle: 3
+  max_positions_per_symbol: 2
+  max_trades_per_day: 20
+  max_signals_per_cycle: 10
 
+# ── Symbol Limits — Production ──────────────────────────────────────────
+# Surcharges par rapport à default.yaml
+symbol_limits:
+  # XAUUSD H4 — Calibration Juin 2026: H4 marge large, risk 1.00
+  XAUUSD:
+    timeframe: "H4"           # H4 (H1 = -$187K/12ans → HORS-JEU)
+    max_lot: 0.10
+    risk_mult: 1.00           # H4 DD 6.9% → marge large (était 0.80)
+    max_spread_points: 60     # élargi (était 40)
+    min_score: 0.55           # abaissé (était 0.60) — H4 moins de signaux
+    adx_thresh: 22
+    allow_buys: true
+    allow_shorts: true
+
+  # BTCUSD — Calibration Juin 2026: risk_mult 0.65 (PF 1.19 permet)
+  BTCUSD:
+    timeframe: "H1"           # H1 — crypto 24/7
+    max_lot: 0.03
+    risk_mult: 0.65           # ↑ de 0.50 (PF 1.19 + DD 5.6% → peut monter)
+    max_spread_points: 150
+    min_score: 0.60           # abaissé (était 0.65)
+    adx_thresh: 20
+    allow_buys: true
+    allow_shorts: true
+    max_daily_loss_pct_override: 0.015   # 1.5% daily loss (plus strict)
+    circuit_breaker_dd_pct_override: 0.06  # 6% DD → arrêt
+
+  # ETHUSD — Calibration Juin 2026: remplace US500.cash (PF=1.00 après coûts)
+  ETHUSD:
+    timeframe: "H4"           # H4 (backtest coûts: WR 70.5%, PF 1.03, DD 7.4%)
+    max_lot: 0.05             # prudent (volatilité ETH élevée)
+    risk_mult: 0.50           # corrélé BTC (0.89) → risque réduit
+    max_spread_points: 150    # spread large crypto
+    min_score: 0.60           # qualité > quantité
+    adx_thresh: 20
+    allow_buys: true
+    allow_shorts: true
+
+# ── Risk — Production ───────────────────────────────────────────────────
 risk:
   per_trade_pct: 0.004
   max_daily_loss_pct: 0.02
   max_dd_pct: 0.10
   min_rr_ratio: 2.0
-  cooldown_minutes: 30
+  cooldown_minutes: 15
+  auto_pause_losses: 5
   max_risk_amount: 800.0
+  circuit_breaker_dd_pct: 0.08

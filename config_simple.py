@@ -29,6 +29,8 @@ try:
     MAX_TRADES_PER_DAY: int = _cfg.trading.max_trades_per_day
     LOT_SIZE: float = _cfg.trading.lot_size
     MIN_TRADE_INTERVAL_SEC: int = _cfg.trading.min_trade_interval_sec
+    BATCH_INTERVAL_SEC: int = _cfg.trading.batch_interval_sec
+    HISTORY_LOOKBACK_DAYS: int = _cfg.trading.history_lookback_days
     MIN_SIGNAL_SCORE: float = _cfg.signal.min_score
     MAX_SIGNALS_PER_CYCLE: int = _cfg.trading.max_signals_per_cycle
     MAX_ORDERS_PER_MINUTE: int = _cfg.trading.max_orders_per_minute
@@ -50,11 +52,17 @@ try:
     MAX_SPREAD_POINTS: int = _cfg.risk.max_spread_points
     TRADING_START_HOUR: int = _cfg.trading.trading_start_hour
     TRADING_END_HOUR: int = _cfg.trading.trading_end_hour
+    DANGER_HOURS: list[int] = _cfg.trading.danger_hours
     RECALIBRATION_FREQUENCY: int = _cfg.risk.recalibration_frequency
     AUTO_PAUSE_LOSSES: int = _cfg.risk.auto_pause_losses
+    MAX_CORRELATED_EXPOSURE: float = _cfg.risk.max_correlated_exposure
+    CIRCUIT_BREAKER_DD_PCT: float = _cfg.risk.circuit_breaker_dd_pct
     CYCLE_SECONDS: int = _cfg.robot.cycle_seconds
     SYMBOL_LIMITS: dict[str, dict] = {
         sym: lim.model_dump(exclude_none=True) for sym, lim in _cfg.symbol_limits.items()
+    }
+    SYMBOL_TIMEFRAMES: dict[str, str] = {
+        sym: limits.get("timeframe", "H1") for sym, limits in SYMBOL_LIMITS.items()
     }
     # ML Pipeline config
     ML_EXPERIMENT_TRACKING: bool = _cfg.ml.experiment_tracking
@@ -62,51 +70,88 @@ try:
     CONCEPT_DRIFT: dict = _cfg.ml.concept_drift.model_dump()
     RETRAINING: dict = _cfg.ml.retraining.model_dump()
     __version__: str = _cfg.robot.version
+    NEWS_MINUTES_BEFORE: int = _cfg.news.minutes_before
+    NEWS_MINUTES_AFTER: int = _cfg.news.minutes_after
+
+    # ── Validation startup : détecter les dérives de configuration ──
+    _expected_ranges = {
+        "RISK_PER_TRADE": (0.001, 0.01, "risque par trade anormal"),
+        "MAX_DAILY_LOSS_PCT": (0.005, 0.05, "daily loss max hors plage FTMO"),
+        "MAX_DD_PCT": (0.03, 0.15, "drawdown max hors plage FTMO"),
+        "MIN_SIGNAL_SCORE": (0.20, 0.85, "signal score min anormal"),  # Mode MAX: 0.30
+        "MIN_RR_RATIO": (0.8, 5.0, "RR ratio min anormal"),  # Mode MAX: 1.0
+        "COOLDOWN_MINUTES": (1, 120, "cooldown anormal"),  # Mode MAX: 5 min
+    }
+    for _var, (_min, _max, _msg) in _expected_ranges.items():
+        _val = globals().get(_var)  # H-06: globals() seulement (locals() == globals() au module scope)
+        if _val is not None and not (_min <= _val <= _max):
+            logger.warning(f"[CONFIG] {_var}={_val} ({_msg}) — attendu entre {_min} et {_max}")
 
 except Exception as e:
     logger.critical(f"Erreur chargement config YAML: {e}")
-    logger.warning("Fallback: valeurs hardcodees minimales")
+    logger.warning("Fallback: valeurs hardcodees minimales — ⚠️ RISQUE les valeurs YAML sont perdues")
+    # C-04: Logger chaque valeur de fallback pour traçabilité
+    _fb_log = lambda name, val: logger.warning(f"  [FALLBACK] {name} = {val}")
     # Fallback minimal — ne devrait jamais arriver en production
-    MT5_LOGIN = 0
-    MT5_PASSWORD = ""
-    MT5_SERVER = ""
-    SYMBOLS = ["USDCAD", "GBPUSD", "USDCHF", "EURUSD", "AUDUSD"]
-    ROBOT_MAGIC = 999001
-    MAX_POSITIONS = 6
-    MAX_POSITIONS_PER_SYMBOL = 2
-    MAX_TRADES_PER_DAY = 5
-    LOT_SIZE = 0.05
-    MIN_TRADE_INTERVAL_SEC = 60
-    MIN_SIGNAL_SCORE = 0.65
-    MAX_SIGNALS_PER_CYCLE = 3
-    MAX_ORDERS_PER_MINUTE = 6
-    DAILY_PROFIT_LIMIT_PCT = 0.008
-    RISK_PER_TRADE = 0.004
-    RISK_SHORT_MULT = 1.0
-    MAX_DAILY_LOSS_PCT = 0.02
-    ZONE2_LOSS_PCT = 0.01
-    ZONE3_LOSS_PCT = 0.015
-    MAX_DD_PCT = 0.10
-    PROFIT_TARGET_PCT = 0.10
-    CONSISTENCY_MAX_PCT = 0.30
-    MIN_RR_RATIO = 2.0
-    ATR_MULTIPLIER = 1.5
-    COOLDOWN_MINUTES = 30
-    MIN_TRADING_DAYS = 10
-    MAX_TRADING_DAYS = 0
-    MAX_RISK_AMOUNT = 800.0
-    MAX_SPREAD_POINTS = 50
-    TRADING_START_HOUR = 0
-    TRADING_END_HOUR = 24
-    RECALIBRATION_FREQUENCY = 50
-    AUTO_PAUSE_LOSSES = 3
-    CYCLE_SECONDS = 15
+    MT5_LOGIN = 0; _fb_log("MT5_LOGIN", 0)
+    MT5_PASSWORD = ""; _fb_log("MT5_PASSWORD", "(masqué)")
+    MT5_SERVER = ""; _fb_log("MT5_SERVER", "(vide)")
+    SYMBOLS = ["XAUUSD", "BTCUSD", "ETHUSD"]; _fb_log("SYMBOLS", SYMBOLS)
+    ROBOT_MAGIC = 999001; _fb_log("ROBOT_MAGIC", 999001)
+    MAX_POSITIONS = 5; _fb_log("MAX_POSITIONS", 5)
+    MAX_POSITIONS_PER_SYMBOL = 2; _fb_log("MAX_POSITIONS_PER_SYMBOL", 2)
+    MAX_TRADES_PER_DAY = 30; _fb_log("MAX_TRADES_PER_DAY", 30)
+    LOT_SIZE = 0.05; _fb_log("LOT_SIZE", 0.05)
+    MIN_TRADE_INTERVAL_SEC = 30; _fb_log("MIN_TRADE_INTERVAL_SEC", 30)
+    BATCH_INTERVAL_SEC = 300; _fb_log("BATCH_INTERVAL_SEC", 300)
+    MIN_SIGNAL_SCORE = 0.30; _fb_log("MIN_SIGNAL_SCORE", 0.30)
+    MAX_SIGNALS_PER_CYCLE = 14; _fb_log("MAX_SIGNALS_PER_CYCLE", 14)
+    MAX_ORDERS_PER_MINUTE = 10; _fb_log("MAX_ORDERS_PER_MINUTE", 10)
+    DAILY_PROFIT_LIMIT_PCT = 0.008; _fb_log("DAILY_PROFIT_LIMIT_PCT", 0.008)
+    RISK_PER_TRADE = 0.004; _fb_log("RISK_PER_TRADE", 0.004)
+    RISK_SHORT_MULT = 1.0; _fb_log("RISK_SHORT_MULT", 1.0)
+    MAX_DAILY_LOSS_PCT = 0.02; _fb_log("MAX_DAILY_LOSS_PCT", 0.02)
+    ZONE2_LOSS_PCT = 0.012; _fb_log("ZONE2_LOSS_PCT", 0.012)
+    ZONE3_LOSS_PCT = 0.017; _fb_log("ZONE3_LOSS_PCT", 0.017)
+    MAX_DD_PCT = 0.10; _fb_log("MAX_DD_PCT", 0.10)
+    PROFIT_TARGET_PCT = 0.10; _fb_log("PROFIT_TARGET_PCT", 0.10)
+    CONSISTENCY_MAX_PCT = 0.30; _fb_log("CONSISTENCY_MAX_PCT", 0.30)
+    MIN_RR_RATIO = 2.0; _fb_log("MIN_RR_RATIO", 2.0)
+    ATR_MULTIPLIER = 1.5; _fb_log("ATR_MULTIPLIER", 1.5)
+    COOLDOWN_MINUTES = 15; _fb_log("COOLDOWN_MINUTES", 15)
+    MIN_TRADING_DAYS = 10; _fb_log("MIN_TRADING_DAYS", 10)
+    MAX_TRADING_DAYS = 0; _fb_log("MAX_TRADING_DAYS", 0)
+    MAX_RISK_AMOUNT = 800.0; _fb_log("MAX_RISK_AMOUNT", 800.0)
+    MAX_SPREAD_POINTS = 120; _fb_log("MAX_SPREAD_POINTS", 120)
+    TRADING_START_HOUR = 0; _fb_log("TRADING_START_HOUR", 0)
+    TRADING_END_HOUR = 24; _fb_log("TRADING_END_HOUR", 24)
+    RECALIBRATION_FREQUENCY = 50; _fb_log("RECALIBRATION_FREQUENCY", 50)
+    AUTO_PAUSE_LOSSES = 5; _fb_log("AUTO_PAUSE_LOSSES", 5)
+    MAX_CORRELATED_EXPOSURE = 1.5; _fb_log("MAX_CORRELATED_EXPOSURE", 1.5)
+    CIRCUIT_BREAKER_DD_PCT = 0.08; _fb_log("CIRCUIT_BREAKER_DD_PCT", 0.08)
+    CYCLE_SECONDS = 15; _fb_log("CYCLE_SECONDS", 15)
+    HISTORY_LOOKBACK_DAYS = 7; _fb_log("HISTORY_LOOKBACK_DAYS", 7)
     SYMBOL_LIMITS = {
-        "USDCAD": dict(max_lot=0.55, risk_mult=1.0, max_spread_points=50, adx_thresh=20, min_score=0.55),
-        "GBPUSD": dict(max_lot=0.55, risk_mult=1.0, max_spread_points=50, adx_thresh=22, min_score=0.55),
-        "USDCHF": dict(max_lot=0.55, risk_mult=0.8, max_spread_points=50, adx_thresh=18, min_score=0.55),
-        "EURUSD": dict(max_lot=0.35, risk_mult=0.8, max_spread_points=40, adx_thresh=18, min_score=0.65, allow_buys=True, allow_shorts=True, max_daily_trades=2, allow_ranging=False, dl_required=True),
-        "AUDUSD": dict(max_lot=0.35, risk_mult=0.8, max_spread_points=40, adx_thresh=18, min_score=0.60, allow_buys=True, allow_shorts=True, max_daily_trades=2, allow_ranging=False, dl_required=True),
+        # XAUUSD H4 (fallback YAML)
+        "XAUUSD": dict(max_lot=0.10, risk_mult=1.00, max_spread_points=60, adx_thresh=22, min_score=0.55,
+                       allow_buys=True, allow_shorts=True, momentum_period=20,
+                       sl_atr_trending=1.8, tp_atr_trending=5.0,
+                       sl_atr_ranging=1.5, tp_atr_ranging=3.5),
+        # BTCUSD H1 (fallback YAML)
+        "BTCUSD": dict(max_lot=0.03, risk_mult=0.65, max_spread_points=150, adx_thresh=20, min_score=0.60,
+                       allow_buys=True, allow_shorts=True, momentum_period=24,
+                       sl_atr_trending=3.0, tp_atr_trending=7.0,
+                       sl_atr_ranging=2.5, tp_atr_ranging=5.0),
+        # US500.cash H4 (fallback YAML)
+        "US500.cash": dict(max_lot=0.10, risk_mult=0.80, max_spread_points=40, adx_thresh=22, min_score=0.60,
+                           allow_buys=True, allow_shorts=True, momentum_period=20,
+                           sl_atr_trending=1.5, tp_atr_trending=4.0,
+                           sl_atr_ranging=1.2, tp_atr_ranging=3.0),
+    }
+    SYMBOL_TIMEFRAMES = {
+        "XAUUSD": "H4",
+        "BTCUSD": "H1",
+        "US500.cash": "H4",
     }
     ML_EXPERIMENT_TRACKING = False
     ML_TRACKING_URI = ""
@@ -120,6 +165,8 @@ except Exception as e:
         schedule_trades=500, log_mlflow=True,
     )
     __version__ = "3.2.0"
+    NEWS_MINUTES_BEFORE = 5
+    NEWS_MINUTES_AFTER = 5
 
 
 def reload_config() -> bool:
@@ -150,7 +197,9 @@ def _re_export():
     global CONSISTENCY_MAX_PCT, MIN_RR_RATIO, ATR_MULTIPLIER, COOLDOWN_MINUTES
     global MIN_TRADING_DAYS, MAX_TRADING_DAYS, MAX_RISK_AMOUNT, MAX_SPREAD_POINTS
     global TRADING_START_HOUR, TRADING_END_HOUR, RECALIBRATION_FREQUENCY
-    global AUTO_PAUSE_LOSSES, CYCLE_SECONDS, SYMBOL_LIMITS, __version__
+    global AUTO_PAUSE_LOSSES, MAX_CORRELATED_EXPOSURE, CIRCUIT_BREAKER_DD_PCT, CYCLE_SECONDS, HISTORY_LOOKBACK_DAYS, BATCH_INTERVAL_SEC
+    global SYMBOL_LIMITS, SYMBOL_TIMEFRAMES, __version__, DANGER_HOURS
+    global NEWS_MINUTES_BEFORE, NEWS_MINUTES_AFTER
     MT5_LOGIN = _cfg.secrets.mt5_login_int
     MT5_PASSWORD = _cfg.secrets.mt5_password
     MT5_SERVER = _cfg.secrets.mt5_server
@@ -161,6 +210,7 @@ def _re_export():
     MAX_TRADES_PER_DAY = _cfg.trading.max_trades_per_day
     LOT_SIZE = _cfg.trading.lot_size
     MIN_TRADE_INTERVAL_SEC = _cfg.trading.min_trade_interval_sec
+    BATCH_INTERVAL_SEC = _cfg.trading.batch_interval_sec
     MIN_SIGNAL_SCORE = _cfg.signal.min_score
     MAX_SIGNALS_PER_CYCLE = _cfg.trading.max_signals_per_cycle
     MAX_ORDERS_PER_MINUTE = _cfg.trading.max_orders_per_minute
@@ -182,8 +232,15 @@ def _re_export():
     MAX_SPREAD_POINTS = _cfg.risk.max_spread_points
     TRADING_START_HOUR = _cfg.trading.trading_start_hour
     TRADING_END_HOUR = _cfg.trading.trading_end_hour
+    DANGER_HOURS = _cfg.trading.danger_hours
     RECALIBRATION_FREQUENCY = _cfg.risk.recalibration_frequency
     AUTO_PAUSE_LOSSES = _cfg.risk.auto_pause_losses
+    MAX_CORRELATED_EXPOSURE = _cfg.risk.max_correlated_exposure
+    CIRCUIT_BREAKER_DD_PCT = _cfg.risk.circuit_breaker_dd_pct
     CYCLE_SECONDS = _cfg.robot.cycle_seconds
+    HISTORY_LOOKBACK_DAYS = _cfg.trading.history_lookback_days
     SYMBOL_LIMITS = {sym: lim.model_dump() for sym, lim in _cfg.symbol_limits.items()}
+    SYMBOL_TIMEFRAMES = {sym: limits.get("timeframe", "H1") for sym, limits in SYMBOL_LIMITS.items()}
     __version__ = _cfg.robot.version
+    NEWS_MINUTES_BEFORE = _cfg.news.minutes_before
+    NEWS_MINUTES_AFTER = _cfg.news.minutes_after

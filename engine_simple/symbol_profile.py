@@ -1,6 +1,6 @@
-"""Profil institutionnel des 4 symboles — connaissance approfondie pour le trading
+"""Profil institutionnel des 5 symboles — connaissance approfondie pour le trading
 
-Chaque paire a sa personnalité unique : sessions actives, volatilité typique,
+Chaque actif a sa personnalité unique : sessions actives, volatilité typique,
 comportement technique, spreads, corrélations. Ce module centralise cette
 connaissance pour optimiser les décisions de trading par symbole.
 
@@ -13,7 +13,8 @@ Usage:
 """
 from dataclasses import dataclass, field
 
-# ── Profils institutionnels des 4 paires ──
+# ── Profils institutionnels des 5 actifs ──
+# Juin 2026: ETHUSD ajouté (remplace US500.cash retiré pour PF=1.00)
 
 @dataclass
 class SymbolInstitutionalProfile:
@@ -143,11 +144,11 @@ PROFILES: dict[str, SymbolInstitutionalProfile] = {
         tp_atr_trending=6.0,                # TP plus large (gros moves)
 
         trailing_profile={
-            "RANGING":     [(1.0, 0.60), (2.0, 0.40), (3.0, 0.25), (5.0, 0.12)],
-            "TREND_UP":    [(1.0, 0.85), (2.0, 0.55), (3.0, 0.35), (5.0, 0.18)],
-            "TREND_DOWN":  [(1.0, 0.85), (2.0, 0.55), (3.0, 0.35), (5.0, 0.18)],
-            "HIGH_VOL":    [(1.0, 1.10), (2.0, 0.75), (3.0, 0.55), (5.0, 0.30)],
-            "LOW_VOL":     [(1.0, 0.45), (2.0, 0.30), (3.0, 0.18), (5.0, 0.08)],
+            "RANGING":     [(1.0, 0.35), (2.0, 0.25), (3.0, 0.15), (5.0, 0.08)],
+            "TREND_UP":    [(1.0, 0.55), (2.0, 0.35), (3.0, 0.20), (5.0, 0.10)],
+            "TREND_DOWN":  [(1.0, 0.55), (2.0, 0.35), (3.0, 0.20), (5.0, 0.10)],
+            "HIGH_VOL":    [(1.0, 0.80), (2.0, 0.55), (3.0, 0.35), (5.0, 0.18)],
+            "LOW_VOL":     [(1.0, 0.25), (2.0, 0.15), (3.0, 0.10), (5.0, 0.05)],
         },
 
         news_sensitivity="high",
@@ -249,6 +250,96 @@ PROFILES: dict[str, SymbolInstitutionalProfile] = {
 
         monthly_strength={1: 1.15, 3: 0.9, 7: 0.85, 9: 1.1, 12: 1.2},
     ),
+
+    "BTCUSD": SymbolInstitutionalProfile(
+        symbol="BTCUSD",
+        nickname="Bitcoin",
+        description="BTC/USD — crypto #1, volatilité extrême, 24/7, flash crashes",
+
+        avg_atr_pips=800.0,                     # ATR H1 ~600-1000pts (volatilité extrême)
+        atr_percentile_high=1200.0,
+        atr_percentile_low=400.0,
+        typical_spread_pts=80.0,                # spread crypto large
+        spread_warning_pts=200.0,
+
+        best_sessions=["all"],                   # crypto 24/7
+        avoid_sessions=[],
+        peak_hours_utc=[(0, 23)],
+
+        adx_trend_threshold=20.0,                # ADX moins fiable crypto
+        rsi_overbought=75.0,
+        rsi_oversold=25.0,
+        bb_std_dev=2.5,                          # Bandes très larges (extrême volatilité)
+        respects_levels=False,                   # crypto peu technique
+        trend_persistence="medium",
+
+        sl_atr_ranging=2.5,
+        sl_atr_trending=3.0,
+        tp_atr_ranging=5.0,
+        tp_atr_trending=7.0,
+
+        trailing_profile={
+            "RANGING":     [(1.0, 0.60), (2.0, 0.40), (3.0, 0.25), (5.0, 0.12)],
+            "TREND_UP":    [(1.0, 0.80), (2.0, 0.50), (3.0, 0.30), (5.0, 0.15)],
+            "TREND_DOWN":  [(1.0, 0.80), (2.0, 0.50), (3.0, 0.30), (5.0, 0.15)],
+            "HIGH_VOL":    [(1.0, 1.00), (2.0, 0.70), (3.0, 0.50), (5.0, 0.25)],
+            "LOW_VOL":     [(1.0, 0.40), (2.0, 0.30), (3.0, 0.15), (5.0, 0.08)],
+        },
+
+        news_sensitivity="medium",
+        intervention_risk=False,
+        gap_risk=True,                            # crypto gaps fréquents
+
+        base_weight=1.0,
+        spread_cost_factor=2.0,                   # spread cher
+
+        monthly_strength={1: 1.1, 3: 0.9, 6: 0.85, 11: 1.15, 12: 1.2},
+    ),
+
+    "ETHUSD": SymbolInstitutionalProfile(
+        symbol="ETHUSD",
+        nickname="Ether",
+        description="ETH/USD — crypto #2, volatile, corrélé BTCUSD (0.89), 24/7",
+
+        avg_atr_pips=50.0,                     # ATR H4 ~40-60pts
+        atr_percentile_high=80.0,
+        atr_percentile_low=25.0,
+        typical_spread_pts=80.0,               # spread crypto large
+        spread_warning_pts=150.0,
+
+        best_sessions=["all"],                  # crypto 24/7
+        avoid_sessions=[],
+        peak_hours_utc=[(0, 23)],
+
+        adx_trend_threshold=20.0,               # ADX moins fiable crypto
+        rsi_overbought=72.0,
+        rsi_oversold=28.0,
+        bb_std_dev=2.5,                         # Bandes larges (volatilité)
+        respects_levels=False,                  # crypto peu technique
+        trend_persistence="medium",
+
+        sl_atr_ranging=2.0,
+        sl_atr_trending=2.5,
+        tp_atr_ranging=4.0,
+        tp_atr_trending=6.0,
+
+        trailing_profile={
+            "RANGING":     [(1.0, 0.60), (2.0, 0.40), (3.0, 0.25), (5.0, 0.12)],
+            "TREND_UP":    [(1.0, 0.80), (2.0, 0.50), (3.0, 0.30), (5.0, 0.15)],
+            "TREND_DOWN":  [(1.0, 0.80), (2.0, 0.50), (3.0, 0.30), (5.0, 0.15)],
+            "HIGH_VOL":    [(1.0, 1.00), (2.0, 0.70), (3.0, 0.50), (5.0, 0.25)],
+            "LOW_VOL":     [(1.0, 0.40), (2.0, 0.30), (3.0, 0.15), (5.0, 0.08)],
+        },
+
+        news_sensitivity="medium",
+        intervention_risk=False,
+        gap_risk=True,                           # crypto gaps fréquents
+
+        base_weight=0.90,                        # poids réduit (corrélé BTC)
+        spread_cost_factor=2.0,                  # spread cher
+
+        monthly_strength={1: 1.1, 3: 0.9, 6: 0.85, 11: 1.15, 12: 1.2},
+    ),
 }
 
 
@@ -260,17 +351,21 @@ CORRELATION_GROUPS: dict[str, list[str]] = {
 }
 
 # Matrice de corrélation institutionnelle (estimation)
+# ETHUSD + BTCUSD ajoutés Juin 2026 — corrélation 0.89
 CORRELATION_MATRIX: dict[str, dict[str, float]] = {
     "USDCAD": {"USDCAD": 1.0, "GBPUSD": -0.55, "USDCHF": 0.55, "EURUSD": -0.50},
     "GBPUSD": {"USDCAD": -0.55, "GBPUSD": 1.0, "USDCHF": -0.50, "EURUSD": 0.70},
     "USDCHF": {"USDCAD": 0.55, "GBPUSD": -0.50, "USDCHF": 1.0, "EURUSD": -0.60},
     "EURUSD": {"USDCAD": -0.50, "GBPUSD": 0.70, "USDCHF": -0.60, "EURUSD": 1.0},
+    "BTCUSD": {"BTCUSD": 1.0, "ETHUSD": 0.89, "XAUUSD": 0.15},
+    "ETHUSD": {"ETHUSD": 1.0, "BTCUSD": 0.89, "XAUUSD": -0.10},
 }
 
 # Groupes pour la gestion de positions (max 1 trade par direction dans un groupe)
 POSITION_GROUPS: list[list[str]] = [
     ["USDCAD", "USDCHF"],       # Groupe USD-long: pas de longs simultanés
     ["EURUSD", "GBPUSD"],       # Groupe USD-short: pas de shorts simultanés
+    ["BTCUSD", "ETHUSD"],       # Groupe crypto: corrélation 0.89 → pas de trades same-direction
 ]
 
 

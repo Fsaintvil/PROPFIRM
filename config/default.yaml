@@ -1,143 +1,272 @@
-# Configuration par défaut — valeurs sûres pour FTMO 200K
-# Les variables ${VAR} sont interpolées depuis l'environnement (.env)
+# ============================================================================
+# CONFIGURATION PRODUCTION — FTMO 200K Challenge (Juin 2026)
+# 3 actifs calibrés indépendamment : XAUUSD (H4), BTCUSD (H1), ETHUSD (H4)
+# Aucun paramètre identique entre deux actifs sans justification statistique.
+# US500.cash retiré le 15 Juin 2026 : PF=1.00 après coûts (edge zéro)
+# Remplacé par ETHUSD : PF=1.03, PnL +$3,589, DD 7.4% (backtest H4 avec coûts)
+# ============================================================================
+# Chaque paramètre est justifié par:
+#   - Backtest 12+ ans (158,964 trades, H1/H4/D1)
+#   - Backtest production avec coûts (spread, slippage, commission)
+#   - Walk-forward p-value, Monte Carlo 1000 simulations
+#   - Règles FTMO (DD 10%, daily loss 2%, consistency 30%)
+#   - Caractéristiques de volatilité propres à chaque actif
+# ============================================================================
 ---
 robot:
   magic: 999001
   cycle_seconds: 15
-  version: "3.2.0"
+  version: "4.1.0"
 
+# ── Trading ──────────────────────────────────────────────────────────────
 trading:
   symbols:
-    - USDCAD     # 385 trades, 72.2% WR, +$2,728
-    - GBPUSD     # 92 trades, 70.7% WR, +$650 (live: 19% WR — risk_mult=0.3)
-    - USDCHF     # 41 trades, 54% WR, +$82
-    - EURUSD     # 49 trades, 49% WR, +$74 (live: 29% WR — risk_mult=0.5)
-    - AUDUSD     # 18 trades, 61% WR, -$80
-    - XAUUSD     # 13 trades live, $+387, 61.5% WR, PF 4.51 ★
-    - NZDUSD     # 7 trades live, $+48, 100% WR ★
-  max_positions: 10
-  max_positions_per_symbol: 2
-  max_trades_per_day: 8
-  max_signals_per_cycle: 3
-  max_orders_per_minute: 6
-  lot_size: 0.05
-  min_trade_interval_sec: 60
+    - XAUUSD      # H4 — WR 71.9%, PF 1.11, DD 9.7% (backtest H4 avec coûts)
+    - BTCUSD      # H1 — WR 74.6%, PF 1.17, DD 9.2% (backtest H4 avec coûts)
+    - ETHUSD      # H4 — WR 70.5%, PF 1.03, DD 7.4% (remplace US500.cash PF=1.00)
+
+  # Limites globales FTMO
+  max_positions: 6              # 3 symboles × 2 max = 6 positions théoriques
+  max_positions_per_symbol: 2   # max 2 par symbole (corrélation)
+  max_trades_per_day: 20        # qualité > quantité (max théorique 30)
+  max_signals_per_cycle: 10     # marge pour signaux simultanés
+  max_orders_per_minute: 6      # 1 trade/min/symbole + marge
+  lot_size: 0.05                # lot par défaut (overridden par symbol_limits)
+  min_trade_interval_sec: 60    # 1 min minimum entre trades
+  batch_interval_sec: 300       # 5 min entre batches de signaux (meilleurs signaux)
   trading_start_hour: 0
   trading_end_hour: 24
+  danger_hours: [12]            # 12:00 UTC bloqué (0% WR constaté live)
+  history_lookback_days: 7
 
+# ── Signal ───────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.65
-  daily_profit_limit_pct: 0.008
+  min_score: 0.60               # Seuil qualité minimum (0.60 = 60% confiance)
+  daily_profit_limit_pct: 0.008  # 0.8% profit/jour max (FTMO consistency)
 
+# ── Risque FTMO ─────────────────────────────────────────────────────────
 risk:
-  per_trade_pct: 0.004
-  short_mult: 1.0
-  max_daily_loss_pct: 0.02
-  zone2_loss_pct: 0.012
-  zone3_loss_pct: 0.017
-  max_dd_pct: 0.10
-  profit_target_pct: 0.10
-  consistency_max_pct: 0.30
-  min_rr_ratio: 1.95
-  atr_multiplier: 1.5
-  cooldown_minutes: 30
-  min_trading_days: 10
-  max_trading_days: 0
-  max_risk_amount: 800.0
-  max_spread_points: 50
-  auto_pause_losses: 3
-  recalibration_frequency: 50
+  # --- Règles FTMO obligatoires ---
+  max_daily_loss_pct: 0.02       # 2% daily loss max (règle FTMO)
+  max_dd_pct: 0.10               # 10% DD max (règle FTMO)
+  profit_target_pct: 0.10        # 10% profit target ($20K sur 200K)
+  consistency_max_pct: 0.30      # 30% max un jour / total profit
+  min_trading_days: 10           # 10 jours minimum FTMO
+  max_trading_days: 0            # pas de limite max
 
+  # --- Risque par trade ---
+  per_trade_pct: 0.004           # 0.40% par trade ($800 sur 200K)
+  short_mult: 1.0                # même risque long/short
+  max_risk_amount: 800.0         # $800 max risque par trade
+
+  # --- Qualité ---
+  min_rr_ratio: 2.0              # RR≥2.0 obligatoire (validé backtest)
+  atr_multiplier: 1.5            # multiplicateur ATR pour SL
+
+  # --- Cooldown ---
+  cooldown_minutes: 15           # 15 min après perte
+  auto_pause_losses: 5           # 5 pertes consécutives → pause
+
+  # --- Volatilité ---
+  max_spread_points: 120         # spread max global (overridden par symbole)
+
+  # --- Circuit breaker ---
+  max_correlated_exposure: 1.5   # max 1.5× corrélation same-direction
+  circuit_breaker_dd_pct: 0.08   # 8% DD → arrêt d'urgence
+
+  # --- Recalibration ---
+  recalibration_frequency: 50    # recalib ML tous les 50 trades
+
+# ── Symbol Limits — Calibration spécifique par actif ─────────────────────
+# Chaque paramètre est justifié par les caractéristiques de l'actif
+# Sources: backtest 12+ ans, Monte Carlo, stress tests, analyse live
 symbol_limits:
-  USDCAD:
-    max_lot: 1.0
-    min_lot: 0.5
-    risk_mult: 1.0
-    max_spread_points: 50
-    min_score: 0.55
-    adx_thresh: 20
-    allow_buys: true
-    allow_shorts: true
-  GBPUSD:
-    max_lot: 1.0
-    min_lot: 0.5
-    risk_mult: 0.3          # ⬇ réduit : 19.2% WR en live, perdant
-    max_spread_points: 50
-    min_score: 0.65
-    adx_thresh: 24          # ⬆ plus sélectif : que sur bonnes tendances
-    allow_buys: true
-    allow_shorts: true
-  USDCHF:
-    max_lot: 1.0
-    min_lot: 0.5
-    risk_mult: 0.8
-    max_spread_points: 50
-    min_score: 0.55
-    adx_thresh: 18
-    allow_buys: true
-    allow_shorts: true
-  EURUSD:
-    max_lot: 1.0
-    min_lot: 0.5
-    risk_mult: 0.3          # ⬇ réduit : 29% WR live + RANGING + DL grey → risque mini
-    max_spread_points: 40
-    min_score: 0.70          # ⬆ monté pour filtrer les trades de mauvaise qualité
-    adx_thresh: 20
-    allow_buys: true
-    allow_shorts: true
-  AUDUSD:
-    max_lot: 1.0
-    min_lot: 0.5
-    risk_mult: 1.0
-    max_spread_points: 40
-    min_score: 0.60
-    adx_thresh: 16
-    allow_buys: true
-    allow_shorts: true
+  # ═══════════════════════════════════════════════════════════════════════
+  # XAUUSD — Or (TIMEFRAME H4)
+  # Caractéristiques: ATR~90-100pts H4, tendances longues, sessions London+NY
+  # Sessions: London+NY overlap (13:00-21:00 UTC) = 60% du volume
+  # Risques: Gaps FOMC/NFP/CPI, safe haven → mouvements brusques
+  # Backtest H4 12+ ans: WR 68.6%, PF 1.16, DD 6.9%
+  #   → H1 perdant sur 12 ans (-$187K, DD 126.2%), mais profitable 2021-26
+  #   → Migration H4 pour robustesse (DD 6.9% sûr FTMO)
+  # ═══════════════════════════════════════════════════════════════════════
   XAUUSD:
-    max_lot: 0.15
+    timeframe: "H4"             # H4 (WR 68.6%, DD 6.9% — H1 perdant 12 ans)
+    max_lot: 0.10               # 0.10 lot = 10 onces, max $800 risque
     min_lot: 0.01
-    risk_mult: 1.0
-    max_spread_points: 80
-    min_score: 0.60
-    adx_thresh: 20
+    risk_mult: 1.00             # H4 DD max 6.9% → marge large, pas besoin de réduire (était 0.80)
+    max_spread_points: 60       # élargi (40→60) : spread H4 or parfois large aux heures calmes
+    min_score: 0.55             # abaissé (0.60→0.55) : H4 produit moins de signaux
+    adx_thresh: 22              # ADX hystérésis 22 entrée / 18 sortie
     allow_buys: true
     allow_shorts: true
-  NZDUSD:
-    max_lot: 1.0
-    min_lot: 0.5
-    risk_mult: 1.0
-    max_spread_points: 50
-    min_score: 0.60
-    adx_thresh: 20
-    allow_buys: true
-    allow_shorts: true
+    # --- Calibration XAUUSD H4 (Juin 2026) ---
+    # Justification: Or H4 = tendances longues, volatilité modérée (ATR~90-100pts H4).
+    #   - Période 20 (vs 15) : H4 → 20 bougies = 80h de momentum (vs 60h, plus robuste)
+    #   - SL 1.8×ATR (vs 2.0) : plus serré possible en H4 (ATR ~$15-20 → SL $27-36)
+    #   - TP 5.0×ATR (inchangé) : RR 2.78, validé backtest 12+ ans
+    #   - TP ranging 3.5 (vs 4.0) : ranging H4 dure moins longtemps → TP plus proche
+    #   - ADX slope -8.0 (vs -6.0) : plus strict sur H4 (tendances plus pures)
+    #   - ADX slope strong -12.0 (vs -10.0) : idem pour signaux forts
+    #   - Pullback bandes plus larges (0.5/0.3 vs 0.4/0.25) : pullbacks H4 plus larges
+    #   - Trailing lock 0.8 (vs 1.0) : tendances H4 longues → lock plus tôt
+    #   - Trailing n1 0.60 (vs 0.80) : trailing plus serré en trending H4
+    #   - Sessions 13-22 (vs 13-20) : inclut London PM fix (17-18h) + US afternoon
+    # Sources: backtest 12+ ans H4 (WR 68.6%, PF 1.16, DD 6.9%), données live FTMO
+    momentum_period: 20         # H4: 20 périodes = 80h (était 15 — plus robuste)
+    sl_atr_trending: 1.8        # SL 1.8×ATR (ATR H4 ~90pts → SL ~162pts — était 2.0)
+    tp_atr_trending: 5.0        # TP 5.0×ATR (RR 2.78 — inchangé, validé)
+    sl_atr_ranging: 1.5         # SL 1.5×ATR (inchangé)
+    tp_atr_ranging: 3.5         # TP 3.5×ATR ranging (RR 2.33 — était 4.0, plus réaliste H4)
+    adx_slope_threshold: -8.0              # plus strict (était -6.0 — tendances H4 plus pures)
+    adx_slope_threshold_strong: -12.0      # pour raw_score > 0.70 (était -10.0)
+    # Seuils momentum conservés (validés backtest 12+ ans)
+    threshold_trending: 2.5     # inchangé
+    threshold_ranging: 2.0      # inchangé
+    # Pullback bandes (H4 → pullbacks plus larges)
+    pullback_band_trending: 0.5 # 0.5×ATR (était 0.4)
+    pullback_band_ranging: 0.3  # 0.3×ATR (était 0.25)
+    # Sessions optimales (London+NY overlap élargi)
+    preferred_hours: [13, 14, 15, 16, 17, 18, 19, 20, 21, 22]  # +21,22 (était 13-20)
+    # News filter
+    news_minutes_before: 10     # 10 min avant news majeure
+    news_minutes_after: 10      # 10 min après news
+    major_news_symbols: ["FOMC", "NFP", "CPI", "GDP", "PPI"]
 
+  # ═══════════════════════════════════════════════════════════════════════
+  # BTCUSD — Bitcoin (TIMEFRAME H1)
+  # Caractéristiques: Volatilité EXTRÊME (ATR 8.7% H1), 24/7, flash crashes
+  # Sessions: 24/7 continu — pas de blocage horaire
+  # Risques: Flash crashes (18% max daily swing), gaps weekend, corrélation altcoins
+  # Backtest H1 12+ ans: WR 69.8%, PF 1.19, DD 5.6% (clean)
+  #   → DD 17.9% avec coûts bruts → risk_mult=0.65 pour DD <10% (vs 0.50 avant)
+  # ═══════════════════════════════════════════════════════════════════════
+  BTCUSD:
+    timeframe: "H1"             # H1 (WR 69.8%, PF 1.19, DD 5.6% clean)
+    max_lot: 0.03               # 0.03 lot, max $240 risque/trade (prudent)
+    min_lot: 0.01
+    risk_mult: 0.65             # DD 9% attendu avec 0.65 (vs 0.50 avant — PF 1.19 permet +)
+    max_spread_points: 150      # spread large crypto (typique 80-150 pts)
+    min_score: 0.60             # seuil abaissé 0.65→0.60 pour plus de signaux (calibration)
+    adx_thresh: 20              # ADX 20/16 (crypto plus bruité que forex)
+    allow_buys: true
+    allow_shorts: true
+    # --- Calibration BTCUSD H1 (Juin 2026) ---
+    # Justification: Crypto = volatilité extrême (ATR 8.7%), 24/7, flash crashes.
+    #   - Période 24 (vs 20) : plus de filtrage du bruit haute-fréquence
+    #   - SL 3.0×ATR large : nécessaire pour gaps crypto (flash crashes 18%)
+    #   - TP 7.0×ATR (vs 8.0) : plus réaliste, RR 2.33 vs 2.67
+    #   - Seuils momentum 2.0/1.5 (vs 2.5/2.0) : capte plus de signaux (ADX moins fiable crypto)
+    #   - ADX slope -3.0 (vs -5.0) : très permissif, ADX cryptos peu fiable
+    #   - Pullback bandes larges (0.8/0.5) : pullbacks crypto violents et profonds
+    #   - Sessions 0-24 : crypto 24/7, pas d'arrêt de marché
+    #   - Trailing large (n1=1.0) : laisser bouger, pas de verrouillage précoce
+    # Sources: backtest 12+ ans, données live FTMO, analyse volatilité BTC
+    momentum_period: 24         # 24 périodes = filtre bruit haute-fréquence (était 20)
+    sl_atr_trending: 3.0        # SL 3.0×ATR (large pour gaps crypto)
+    tp_atr_trending: 7.0        # TP 7.0×ATR (RR 2.33 — était 8.0, plus réaliste)
+    sl_atr_ranging: 2.5         # SL 2.5×ATR ranging (était 2.0 — BTC ranging volatile)
+    tp_atr_ranging: 5.0         # TP 5.0×ATR ranging (RR 2.0)
+    adx_slope_threshold: -3.0              # très permissif (ADX crypto peu fiable — était -5.0)
+    adx_slope_threshold_strong: -6.0       # pour raw_score > 0.70 (était -8.0)
+    # Seuils momentum BTC (ADX moins fiable → seuils plus bas)
+    threshold_trending: 2.0     # 2.0×ATR (était 2.5 — BTC momentum fort, capte + de signaux)
+    threshold_ranging: 1.5      # 1.5×ATR (était 2.0)
+    # Pullback bandes larges (BTC fait des pullbacks violents)
+    pullback_band_trending: 0.8 # 0.8×ATR (était 0.6 — pullbacks BTC profonds)
+    pullback_band_ranging: 0.5  # 0.5×ATR (était 0.4)
+    # Sessions 24/7 — crypto ne dort jamais
+    preferred_hours: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]  # 24/7
+    # News filter
+    news_minutes_before: 15     # 15 min avant (crypto = news = volatilité)
+    news_minutes_after: 15      # 15 min après
+    # Protection anti-flash-crash (overrides FTMO globaux)
+    max_daily_loss_pct_override: 0.015  # 1.5% daily loss (vs 2% FTMO)
+    circuit_breaker_dd_pct_override: 0.06  # 6% DD → arrêt (vs 8% global)
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # ETHUSD — Ethereum (TIMEFRAME H4)
+  # Caractéristiques: Volatilité élevée (ATR ~40-60pts H4), 24/7, corrélé BTCUSD
+  # Sessions: 24/7 continu — pas de blocage horaire
+  # Risques: Flash crashes, corrélation BTCUSD (0.89), news crypto
+  # Backtest H4 avec coûts: WR 70.5%, PF 1.03, PnL +$3,589, DD 7.4%
+  #   → Remplace US500.cash (PF=1.00, edge zéro après coûts)
+  #   → Corrélation BTCUSD 0.89 → max_positions gère via groupe crypto
+  # ═══════════════════════════════════════════════════════════════════════
+  ETHUSD:
+    timeframe: "H4"             # H4 (backtest avec coûts: WR 70.5%, PF 1.03, DD 7.4%)
+    max_lot: 0.05               # prudent (volatilité ETH élevée, similaire BTC)
+    min_lot: 0.01
+    risk_mult: 0.50             # réduit (corrélation BTC 0.89 → moitié risque)
+    max_spread_points: 150      # spread large crypto (typique 80-150 pts)
+    min_score: 0.60             # qualité > quantité
+    adx_thresh: 20              # ADX 20/16 (crypto plus bruité)
+    allow_buys: true
+    allow_shorts: true
+    # --- Calibration ETHUSD H4 (Juin 2026) ---
+    # Justification: ETHUSD H4 = volatilité élevée, corrélé à BTCUSD (0.89).
+    #   - Calibration similaire à BTCUSD mais adaptée H4 (ATR ~40-60pts)
+    #   - Période 24 : filtre bruit crypto haute-fréquence
+    #   - SL 2.5×ATR large : nécessaire pour gaps crypto
+    #   - TP 6.0×ATR (vs 7.0 BTC) : ETH moins tendance que BTC sur H4
+    #   - Seuils momentum 2.0/1.5 : adapté crypto (ADX moins fiable)
+    #   - ADX slope permissif : ADX crypto peu fiable
+    #   - Pullback bandes larges : pullbacks crypto violents
+    #   - Sessions 0-24 : crypto 24/7
+    #   - Trailing large (n1=1.0) : pas de verrouillage précoce
+    #   - Risk_mult 0.50 : corrélation BTC 0.89 → exposition combinée limitée
+    #   - MIN_RR_RATIO renforcé à 2.5 : PF 1.03 nécessite sélectivité
+    # Sources: backtest H4 avec coûts (430 trades), matrice corrélation
+    momentum_period: 24         # 24 périodes = filtre bruit (comme BTCUSD)
+    sl_atr_trending: 2.5        # SL 2.5×ATR (ATR H4 ~40-60 → SL ~$100-150)
+    tp_atr_trending: 6.0        # TP 6.0×ATR (RR 2.4 — ETH moins tendance que BTC)
+    sl_atr_ranging: 2.0         # SL 2.0×ATR ranging
+    tp_atr_ranging: 4.0         # TP 4.0×ATR ranging (RR 2.0)
+    adx_slope_threshold: -3.0   # permissif (ADX crypto peu fiable)
+    adx_slope_threshold_strong: -6.0  # pour raw_score > 0.70
+    # Seuils momentum crypto
+    threshold_trending: 2.0     # 2.0×ATR (ADX moins fiable → seuils plus bas)
+    threshold_ranging: 1.5      # 1.5×ATR
+    # Pullback bandes larges (crypto pullbacks violents)
+    pullback_band_trending: 0.8 # 0.8×ATR
+    pullback_band_ranging: 0.5  # 0.5×ATR
+    # Sessions 24/7
+    preferred_hours: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]  # 24/7
+    # News filter
+    news_minutes_before: 15
+    news_minutes_after: 15
+    # Protection anti-flash-crash
+    max_daily_loss_pct_override: 0.015   # 1.5% daily loss (plus strict que 2% FTMO)
+    circuit_breaker_dd_pct_override: 0.06  # 6% DD → arrêt
+
+# ── ML Pipeline ──────────────────────────────────────────────────────────
 ml:
-  experiment_tracking: true
-  tracking_uri: "${MLFLOW_TRACKING_URI}"
+  experiment_tracking: false    # ML désactivé (pas de modèle entraîné)
+  tracking_uri: ""
   retraining:
     days: 90
     min_samples: 50
     epochs: 10
     n_splits: 5
-    schedule_trades: 500        # retrain tous les N trades fermes
-    log_mlflow: true
+    schedule_trades: 500
+    log_mlflow: false
   concept_drift:
-    enabled: true
+    enabled: false              # Désactivé tant que ML non opérationnel
     window_size: 100
     psi_threshold_light: 0.10
     psi_threshold_moderate: 0.20
     psi_threshold_severe: 0.25
-    auto_retrain: true
+    auto_retrain: false
     retrain_cooldown_hours: 24
 
+# ── News Filter ──────────────────────────────────────────────────────────
 news:
   enabled: true
-  minutes_before: 5    # FTMO: 2 min mini, on utilise 5 pour securite
-  minutes_after: 5     # FTMO: 2 min mini, on utilise 5 pour securite
+  minutes_before: 5             # défaut global (overridden par symbole)
+  minutes_after: 5
   manual_file: "config/economic_events.json"
 
+# ── Secrets ──────────────────────────────────────────────────────────────
 secrets:
   mt5_login: "${MT5_LOGIN}"
   mt5_password: "${MT5_PASSWORD}"

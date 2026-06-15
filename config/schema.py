@@ -26,7 +26,7 @@ from typing import Any
 
 import yaml
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 load_dotenv()
 logger = logging.getLogger("robot.config")
@@ -41,16 +41,19 @@ class RobotConfig(BaseModel):
 
 
 class TradingConfig(BaseModel):
-    symbols: list[str] = Field(default_factory=lambda: ["USDCAD", "GBPUSD", "USDCHF"])
+    symbols: list[str] = Field(default_factory=lambda: ["XAUUSD", "BTCUSD", "ETHUSD"])
     max_positions: int = Field(default=6, ge=1, le=20)
     max_positions_per_symbol: int = Field(default=2, ge=1, le=5)
-    max_trades_per_day: int = Field(default=5, ge=1, le=20)
-    max_signals_per_cycle: int = Field(default=3, ge=1, le=10)
+    max_trades_per_day: int = Field(default=12, ge=1, le=200)  # 🔓 Mode MAX
+    max_signals_per_cycle: int = Field(default=7, ge=1, le=15)
     max_orders_per_minute: int = Field(default=6, ge=1, le=30)
     lot_size: float = Field(default=0.05, ge=0.01, le=10)
-    min_trade_interval_sec: int = Field(default=60, ge=10, le=3600)
-    trading_start_hour: int = Field(default=5, ge=0, le=23)
-    trading_end_hour: int = Field(default=18, ge=1, le=24)
+    min_trade_interval_sec: int = Field(default=30, ge=5, le=3600)  # 🔓 Mode MAX
+    batch_interval_sec: int = Field(default=300, ge=60, le=3600, description="Intervalle entre batches de signaux (secondes)")
+    trading_start_hour: int = Field(default=0, ge=0, le=23)
+    trading_end_hour: int = Field(default=24, ge=1, le=24)
+    danger_hours: list[int] = Field(default_factory=list, description="Heures UTC à éviter (ex: [12] = 0% WR à 12:00)")
+    history_lookback_days: int = Field(default=7, ge=1, le=365)
 
     @field_validator("trading_end_hour")
     @classmethod
@@ -82,12 +85,20 @@ class RiskConfig(BaseModel):
     max_trading_days: int = Field(default=0, ge=0)
     max_risk_amount: float = Field(default=800.0, ge=0.0)
     max_spread_points: int = Field(default=50, ge=10, le=200)
-    auto_pause_losses: int = Field(default=3, ge=1, le=10)
+    auto_pause_losses: int = Field(default=5, ge=1, le=10)
     recalibration_frequency: int = Field(default=50, ge=10, le=500)
+    max_correlated_exposure: float = Field(default=1.5, ge=1.0, le=5.0,
+        description="Limite d'exposition corrélée totale (somme des corrélations same-direction). "
+                    "1.5 = ~2 trades EUR/USD/GBP ou 3 trades décorrélés. "
+                    "Resserré Juin 2026 pour éviter pertes simultanées.")
+    circuit_breaker_dd_pct: float = Field(default=0.08, ge=0.02, le=0.15,
+        description="DD > ce seuil → shorts bloqués (protection drawdown FTMO)")
 
 
 class SymbolLimit(BaseModel):
-    max_lot: float = Field(default=0.55, ge=0.01, le=10)
+    model_config = ConfigDict(extra='allow')
+
+    max_lot: float = Field(default=0.10, ge=0.01, le=10)
     min_lot: float = Field(default=0.01, ge=0.01, le=10)
     risk_mult: float = Field(default=1.0, ge=0.0, le=3.0)
     max_spread_points: int = Field(default=50, ge=10, le=500)
@@ -98,6 +109,29 @@ class SymbolLimit(BaseModel):
     max_daily_trades: int | None = Field(default=None, ge=1, le=10)
     allow_ranging: bool | None = Field(default=None)
     dl_required: bool | None = Field(default=None)
+    # Champs étendus (production calibration per-symbol)
+    momentum_period: int | None = Field(default=None, ge=5, le=100)
+    sl_atr_trending: float | None = Field(default=None, ge=0.5, le=6.0)
+    tp_atr_trending: float | None = Field(default=None, ge=1.0, le=15.0)
+    sl_atr_ranging: float | None = Field(default=None, ge=0.5, le=5.0)
+    tp_atr_ranging: float | None = Field(default=None, ge=1.0, le=10.0)
+    adx_slope_threshold: float | None = Field(default=None, ge=-20.0, le=0.0)
+    adx_slope_threshold_strong: float | None = Field(default=None, ge=-20.0, le=0.0)
+    max_daily_loss_pct_override: float | None = Field(default=None, ge=0.005, le=0.05)
+    circuit_breaker_dd_pct_override: float | None = Field(default=None, ge=0.02, le=0.15)
+    # Nouveaux champs calibration production (Juin 2026)
+    threshold_trending: float | None = Field(default=None, ge=1.0, le=4.0,
+        description="Seuil momentum en trending (×ATR). Ex: 2.5 = XAUUSD H4")
+    threshold_ranging: float | None = Field(default=None, ge=1.0, le=4.0,
+        description="Seuil momentum en ranging (×ATR). Ex: 1.5 = BTCUSD H1")
+    pullback_band_trending: float | None = Field(default=None, ge=0.1, le=2.0,
+        description="Bande pullback en trending (×ATR). Ex: 0.5 = XAUUSD H4")
+    pullback_band_ranging: float | None = Field(default=None, ge=0.1, le=2.0,
+        description="Bande pullback en ranging (×ATR). Ex: 0.3 = XAUUSD H4")
+    preferred_hours: list[int] | None = Field(default=None,
+        description="Heures de trading préférées (UTC). Ex: [13-22] = XAUUSD London+NY")
+    news_minutes_before: int | None = Field(default=None, ge=0, le=60)
+    news_minutes_after: int | None = Field(default=None, ge=0, le=60)
 
 
 class SecretsConfig(BaseModel):
@@ -141,12 +175,20 @@ class MLConfig(BaseModel):
     concept_drift: ConceptDriftConfig = ConceptDriftConfig()
 
 
+class NewsConfig(BaseModel):
+    enabled: bool = True
+    minutes_before: int = Field(default=15, ge=0, le=60)
+    minutes_after: int = Field(default=15, ge=0, le=60)
+    manual_file: str = "config/economic_events.json"
+
+
 class ConfigSchema(BaseModel):
     robot: RobotConfig = RobotConfig()
     trading: TradingConfig = TradingConfig()
     signal: SignalConfig = SignalConfig()
     risk: RiskConfig = RiskConfig()
     ml: MLConfig = MLConfig()
+    news: NewsConfig = NewsConfig()
     symbol_limits: dict[str, SymbolLimit] = Field(default_factory=dict)
     secrets: SecretsConfig = SecretsConfig()
     _env_name: str = "default"
@@ -156,11 +198,21 @@ class ConfigSchema(BaseModel):
     def ensure_default_symbols(self):
         if not self.symbol_limits:
             defaults = {
-                "USDCAD": SymbolLimit(max_lot=0.55, risk_mult=1.0, max_spread_points=50),
-                "GBPUSD": SymbolLimit(max_lot=0.55, risk_mult=1.0, max_spread_points=50),
-                "USDCHF": SymbolLimit(max_lot=0.55, risk_mult=0.8, max_spread_points=50),
-                "EURUSD": SymbolLimit(max_lot=0.55, risk_mult=0.0, max_spread_points=50,
-                                       allow_buys=False, allow_shorts=False),
+                "XAUUSD": SymbolLimit(max_lot=0.10, risk_mult=1.00, max_spread_points=60,
+                                      momentum_period=20, sl_atr_trending=1.8, tp_atr_trending=5.0,
+                                      sl_atr_ranging=1.5, tp_atr_ranging=3.5,
+                                      threshold_trending=2.5, threshold_ranging=2.0,
+                                      pullback_band_trending=0.5, pullback_band_ranging=0.3),
+                "BTCUSD": SymbolLimit(max_lot=0.03, risk_mult=0.65, max_spread_points=150,
+                                      momentum_period=24, sl_atr_trending=3.0, tp_atr_trending=7.0,
+                                      sl_atr_ranging=2.5, tp_atr_ranging=5.0,
+                                      threshold_trending=2.0, threshold_ranging=1.5,
+                                      pullback_band_trending=0.8, pullback_band_ranging=0.5),
+                "US500.cash": SymbolLimit(max_lot=0.10, risk_mult=0.80, max_spread_points=40,
+                                          momentum_period=20, sl_atr_trending=1.5, tp_atr_trending=4.0,
+                                          sl_atr_ranging=1.2, tp_atr_ranging=3.0,
+                                          threshold_trending=2.0, threshold_ranging=1.5,
+                                          pullback_band_trending=0.3, pullback_band_ranging=0.2),
             }
             self.symbol_limits = defaults
         for sym in self.trading.symbols:
