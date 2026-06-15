@@ -44,7 +44,7 @@ symbol_limits:
     max_daily_loss_pct_override: 0.015   # 1.5% daily loss (plus strict)
     circuit_breaker_dd_pct_override: 0.06  # 6% DD → arrêt
 
-  # ETHUSD — Calibration Juin 2026: remplace US500.cash (PF=1.00 après coûts)
+  # ETHUSD — Calibration Juin 2026
   ETHUSD:
     timeframe: "H4"           # H4 (backtest coûts: WR 70.5%, PF 1.03, DD 7.4%)
     max_lot: 0.05             # prudent (volatilité ETH élevée)
@@ -52,6 +52,17 @@ symbol_limits:
     max_spread_points: 150    # spread large crypto
     min_score: 0.60           # qualité > quantité
     adx_thresh: 20
+    allow_buys: true
+    allow_shorts: true
+
+  # US500.cash — Réactivé mode agressif (PF=1.00 après coûts, edge faible)
+  US500.cash:
+    timeframe: "H4"
+    max_lot: 0.10
+    risk_mult: 0.50           # moitié risque (edge proche zéro)
+    max_spread_points: 40
+    min_score: 0.60
+    adx_thresh: 22
     allow_buys: true
     allow_shorts: true
 

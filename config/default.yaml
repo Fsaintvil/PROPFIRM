@@ -23,7 +23,8 @@ trading:
   symbols:
     - XAUUSD      # H4 — WR 71.9%, PF 1.11, DD 9.7% (backtest H4 avec coûts)
     - BTCUSD      # H1 — WR 74.6%, PF 1.17, DD 9.2% (backtest H4 avec coûts)
-    - ETHUSD      # H4 — WR 70.5%, PF 1.03, DD 7.4% (remplace US500.cash PF=1.00)
+    - ETHUSD      # H4 — WR 70.5%, PF 1.03, DD 7.4% (backtest H4 avec coûts)
+    - US500.cash  # H4 — WR 72.3%, PF 1.00 après coûts (edge proche zéro mais inclus)
 
   # Limites globales — Mode agressif (Juin 2026)
   max_positions: 10             # 3 symboles, max ~3-4 positions par symbole
@@ -238,6 +239,40 @@ symbol_limits:
     # Protection anti-flash-crash
     max_daily_loss_pct_override: 0.015   # 1.5% daily loss (plus strict que 2% FTMO)
     circuit_breaker_dd_pct_override: 0.06  # 6% DD → arrêt
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # US500.cash — S&P 500 Index (TIMEFRAME H4)
+  # Caractéristiques: Volatilité modérée (VIX-dependent), sessions US limitées
+  # Sessions: 14:30-21:00 UTC (marché US), gap overnight possible
+  # Risques: Earnings surprises, FOMC, VIX spikes, sessions courtes
+  # Backtest H4 avec coûts: WR 72.3%, PF 1.00, PnL -$124, DD 5.4%
+  #   → Edge proche zéro mais inclus en mode agressif (capture tous signaux)
+  # ═══════════════════════════════════════════════════════════════════════
+  US500.cash:
+    timeframe: "H4"             # H4 (PF 1.00 après coûts)
+    max_lot: 0.10               # lot modéré
+    min_lot: 0.01
+    risk_mult: 0.50             # réduit (PF=1.00 — edge faible → risque moitié)
+    max_spread_points: 40       # serré (indice très liquide)
+    min_score: 0.60             # qualité > quantité
+    adx_thresh: 22              # ADX hystérésis 22/18
+    allow_buys: true
+    allow_shorts: true
+    # --- Calibration US500.cash H4 (Juin 2026 — mode agressif) ---
+    momentum_period: 20
+    sl_atr_trending: 1.5
+    tp_atr_trending: 4.0
+    sl_atr_ranging: 1.2
+    tp_atr_ranging: 3.0
+    adx_slope_threshold: -5.0
+    adx_slope_threshold_strong: -8.0
+    threshold_trending: 2.0
+    threshold_ranging: 1.5
+    pullback_band_trending: 0.3
+    pullback_band_ranging: 0.2
+    preferred_hours: [13, 14, 15, 16, 17, 18, 19, 20, 21]
+    news_minutes_before: 20
+    news_minutes_after: 20
 
 # ── ML Pipeline ──────────────────────────────────────────────────────────
 ml:

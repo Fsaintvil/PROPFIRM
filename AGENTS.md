@@ -147,7 +147,7 @@ CONSISTENCY_MAX_PCT = 0.30  # max 30% jour / total (FTMO 1-Step)
 XAUUSD:    max_lot=0.10, risk_mult=0.80, max_spread=80pts, min_score=0.60, adx=22  ★ WR 73.0%, PnL +$218K, PF 1.32
 BTCUSD:    max_lot=0.05, risk_mult=0.80, max_spread=120pts, min_score=0.60, adx=20  ★ WR 75.9%, PnL +$202K, PF 1.50
 ETHUSD:    max_lot=0.05, risk_mult=0.50, max_spread=150pts, min_score=0.60, adx=20  ★ WR 70.5%, PnL +$3.6K, PF 1.03 (H4 costs)
-US500.cash: RETIRÉ 15 Juin 2026 — PF=1.00 après coûts (edge zéro)
+US500.cash: max_lot=0.10, risk_mult=0.50, max_spread=40pts, min_score=0.60, adx=22  ★ WR 72.3%, PF=1.00 (mode agressif)
 ```
 
 > ⚠️ **SOLUSD retiré** (data H1 trop courte depuis 04/2025 seulement, WR 77.3% prometteur mais insuffisamment backtesté).

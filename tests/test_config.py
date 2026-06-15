@@ -26,10 +26,11 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # 3 actifs calibrés (XAUUSD H4, BTCUSD, ETHUSD — US500.cash retiré PF=1.00)
-    assert len(cfg.trading.symbols) == 3
+    # 4 actifs calibrés (mode agressif — US500.cash réactivé)
+    assert len(cfg.trading.symbols) == 4
     assert "XAUUSD" in cfg.trading.symbols
     assert "ETHUSD" in cfg.trading.symbols
+    assert "US500.cash" in cfg.trading.symbols
     assert cfg.risk.per_trade_pct == 0.004
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 2.0  # RR≥2.0 (validé backtest)
