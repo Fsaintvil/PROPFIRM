@@ -28,7 +28,7 @@ trading:
   # Limites globales — Mode agressif (Juin 2026)
   max_positions: 10             # 3 symboles, max ~3-4 positions par symbole
   max_positions_per_symbol: 4   # max 4 par symbole (capture tous signaux)
-  max_trades_per_day: 120       # capture tous signaux (vs 30 théorique)
+  max_trades_per_day: 40        # capture tous signaux
   max_signals_per_cycle: 10     # marge pour signaux simultanés
   max_orders_per_minute: 6      # 1 trade/min/symbole + marge
   lot_size: 0.05                # lot par défaut (overridden par symbol_limits)

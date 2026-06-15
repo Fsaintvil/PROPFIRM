@@ -14,7 +14,7 @@
 trading:
   max_positions: 10
   max_positions_per_symbol: 4
-  max_trades_per_day: 120
+  max_trades_per_day: 40
   max_signals_per_cycle: 10
 
 # ── Symbol Limits — Production ──────────────────────────────────────────
