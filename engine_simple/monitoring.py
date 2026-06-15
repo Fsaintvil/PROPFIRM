@@ -166,7 +166,7 @@ class HealthServer:
     def start(self):
         _HealthHandler.metrics_collector = self.metrics
         _HealthHandler.extra_health = self.health_check
-        self._server = HTTPServer(("0.0.0.0", self.port), _HealthHandler)
+        self._server = HTTPServer(("127.0.0.1", self.port), _HealthHandler)
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
         logger.info(f"[MONITORING] Health endpoint: http://0.0.0.0:{self.port}/health")
@@ -207,7 +207,11 @@ def setup_structured_logging(log_dir="logs", app_name="robot"):
     json_handler.setFormatter(JsonFormatter())
     json_handler.setLevel(logging.INFO)
     root_logger = logging.getLogger()
-    root_logger.addHandler(json_handler)
+    # Éviter la duplication des handlers (cause de fuite mémoire)
+    if not any(isinstance(h, logging.handlers.RotatingFileHandler)
+               and h.baseFilename == json_handler.baseFilename
+               for h in root_logger.handlers):
+        root_logger.addHandler(json_handler)
     return json_handler
 
 

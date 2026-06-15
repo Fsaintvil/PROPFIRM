@@ -173,7 +173,8 @@ class RetrainingPipeline:
         n = len(X)
         n_val = max(1, int(n * val_split))
         idx = np.arange(n)
-        np.random.shuffle(idx)
+        # PAS de shuffle — les séries temporelles doivent rester ordonnées
+        # Le split temporel préserve l'ordre chronologique
         X_shuf, y_shuf = X[idx], y[idx]
 
         X_train, y_train = X_shuf[:-n_val], y_shuf[:-n_val]
@@ -297,7 +298,7 @@ class RetrainingPipeline:
                     dl_key = f"{symbol}_wf_{i}"
                     if len(Xtr) < 32 or len(Xva) < 10:
                         continue
-                    result = self.train_dl(symbol, Xtr, ytr, val_split=0.0, epochs=epochs)
+                    result = self.train_dl(symbol, Xtr, ytr, val_split=0.2, epochs=epochs)
                     if result.get("trained"):
                         model = result["model"]
                         model.eval()
@@ -358,8 +359,8 @@ class RetrainingPipeline:
         try:
             cur = self.journal.conn.execute("SELECT COUNT(*) FROM trades")
             journal_count = cur.fetchone()[0]
-        except (sqlite3.Error, AttributeError):
-            pass
+        except (sqlite3.Error, AttributeError) as e:
+            logger.warning(f"[RETRAIN] Journal count failed: {e}")
         return {
             "production_models": [os.path.basename(m) for m in models],
             "backup_models": len(backups),

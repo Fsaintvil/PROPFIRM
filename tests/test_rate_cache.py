@@ -4,7 +4,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import tempfile
-import time
+from unittest.mock import patch
 
 import pytest
 
@@ -17,7 +17,7 @@ def cache():
     tmp.close()
     c = RateCache(db_path=tmp.name, default_ttl=15)
     yield c
-    c.clear()
+    c.close()
     os.unlink(tmp.name)
 
 
@@ -37,9 +37,11 @@ def test_set_and_get_rates(cache):
 
 def test_rates_expire(cache):
     data = [(1, 1.1, 1.102, 1.098, 1.1, 1000)]
-    cache.set_rates("EURUSD", "H1", 100, data, ttl=0)
-    time.sleep(0.01)
-    result = cache.get_rates("EURUSD", "H1", 100)
+    with patch("engine_simple.rate_cache.time.time") as mock_time:
+        mock_time.return_value = 1000.0
+        cache.set_rates("EURUSD", "H1", 100, data, ttl=0)
+        mock_time.return_value = 1001.0  # advance clock past expiry
+        result = cache.get_rates("EURUSD", "H1", 100)
     assert result is None
 
 
@@ -58,9 +60,11 @@ def test_set_and_get_volatility(cache):
 
 def test_volatility_expires(cache):
     data = {"cur": 1.1}
-    cache.set_volatility("EURUSD", data, ttl=0)
-    time.sleep(0.01)
-    result = cache.get_volatility("EURUSD")
+    with patch("engine_simple.rate_cache.time.time") as mock_time:
+        mock_time.return_value = 1000.0
+        cache.set_volatility("EURUSD", data, ttl=0)
+        mock_time.return_value = 1001.0  # advance clock past expiry
+        result = cache.get_volatility("EURUSD")
     assert result is None
 
 
@@ -87,3 +91,4 @@ def test_multiple_symbols_isolation(cache):
     gbp = cache.get_rates("GBPUSD", "H1", 100)
     assert eur[0]["rate"] == 1.1
     assert gbp[0]["rate"] == 1.25
+

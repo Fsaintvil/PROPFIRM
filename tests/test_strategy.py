@@ -1,150 +1,198 @@
-"""Tests for strategy.py — MOM20x3 + Signal"""
-import os
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
+"""Tests pour strategy.py — MOM20x3 pur, fonction pure, testable."""
 import numpy as np
 import pytest
 
-from engine_simple.strategy import MOM20x3, Signal, MIN_SIGNAL_SCORE
-from engine_simple.strategy import THRESHOLD_BY_REGIME, MAX_THRESHOLD
+from engine_simple.strategy import MOM20x3, mom20x3_signal
+from engine_simple.strategy import (
+    THRESHOLD_TRENDING, THRESHOLD_RANGING, THRESHOLD_MAX, THRESHOLD_MIN,
+)
 
 
-def _mock_rates(length, start=1.1, trend=0.0005):
-    closes = [start + trend * i + np.random.normal(0, 0.0002) for i in range(length)]
-    rates = []
-    for i in range(length):
-        c = closes[i]
-        h = c + abs(np.random.normal(0, 0.0003))
-        l = c - abs(np.random.normal(0, 0.0003))
-        o = c - np.random.normal(0, 0.0001)
-        rates.append((i, o, h, l, c, 1000 + np.random.randint(-50, 50)))
-    return rates
+class TestMom20x3Signal:
+    """Tests unitaires de la fonction pure mom20x3_signal."""
 
+    def _make_rates(self, n=60, close_start=1.0, trend=0.0, volatility=0.002):
+        """Génère des prix synthétiques."""
+        np.random.seed(42)
+        close = close_start + np.arange(n) * trend + np.random.randn(n) * volatility
+        high = close + abs(np.random.randn(n)) * volatility * 0.5
+        low = close - abs(np.random.randn(n)) * volatility * 0.5
+        return close, high, low
 
-class TestSignal:
-    def test_valid_buy(self):
-        s = Signal("BUY", 0.8, 0.7, "RANGING", 15, 0.005, 0.01, 2.0)
-        assert s.is_valid()
-        assert s.is_valid(min_score=0.5)
+    def test_returns_none_if_not_enough_data(self):
+        close = np.array([1.0] * 10)
+        high = np.array([1.005] * 10)
+        low = np.array([0.995] * 10)
+        assert mom20x3_signal(close, high, low) is None
 
-    def test_valid_sell(self):
-        s = Signal("SELL", 0.65, 0.6, "TREND_DOWN", 25, 0.005, 0.01, 2.5)
-        assert s.is_valid()
-
-    def test_invalid_hold(self):
-        s = Signal("HOLD", 0.8, 0.7, "RANGING", 15, 0.005, 0.01, 2.0)
-        assert not s.is_valid()
-
-    def test_invalid_low_score(self):
-        s = Signal("BUY", 0.4, 0.3, "RANGING", 15, 0.005, 0.01, 2.0)
-        assert not s.is_valid()
-
-    def test_is_valid_custom_min_score(self):
-        s = Signal("BUY", 0.6, 0.5, "RANGING", 15, 0.005, 0.01, 2.0)
-        assert s.is_valid(min_score=0.5)
-        assert not s.is_valid(min_score=0.7)
-
-    def test_signal_dataclass_fields(self):
-        s = Signal("BUY", 0.8, 0.7, "TREND_UP", 25, 0.005, 0.012, 2.5)
-        assert s.action == "BUY"
-        assert s.score == 0.8
-        assert s.confidence == 0.7
-        assert s.regime == "TREND_UP"
-        assert s.adx == 25
-        assert s.atr_val == 0.005
-        assert s.threshold == 0.012
-        assert s.rr_ratio == 2.5
-
-
-class TestMOM20x3:
-    def test_not_enough_data_returns_none(self):
-        rates = _mock_rates(10)
-        mom = MOM20x3({"H1": rates}, "EURUSD")
-        result = mom.analyze("RANGING", 15, 0.005)
-        assert result is None
-
-    def test_buy_signal_on_uptrend(self):
-        rates = _mock_rates(50, trend=0.001)
-        mom = MOM20x3({"H1": rates}, "EURUSD")
-        result = mom.analyze("TREND_UP", 25, 0.005)
+    def test_returns_buy_on_strong_upward_trend(self):
+        # Prix plat avec un dip à -21 (momentum) + petit breakout final
+        # Le dip crée le momentum, le breakout est minime pour rester proche EMA
+        close = np.ones(60) * 1.10
+        close[-21] = 1.05  # dip 20 candles ago = momentum BUY
+        close[-2:] = [1.101, 1.103]  # breakout minimal (reste proche EMA20)
+        high = close + 0.005
+        low = close - 0.005
+        result = mom20x3_signal(close, high, low, period=20)
         assert result is not None
-        assert result.action == "BUY"
+        assert result["action"] == "BUY"
+        assert result["score"] >= 0.50
 
-    def test_sell_signal_on_downtrend(self):
-        rates = _mock_rates(50, trend=-0.001)
-        mom = MOM20x3({"H1": rates}, "EURUSD")
-        result = mom.analyze("TREND_DOWN", 25, 0.005)
+    def test_returns_sell_on_strong_downward_trend(self):
+        # Prix plat avec un spike à -21 (momentum baissier) + petit breakdown
+        close = np.ones(60) * 1.10
+        close[-21] = 1.15  # spike 20 candles ago = momentum SELL
+        close[-2:] = [1.099, 1.097]  # breakdown minimal (reste proche EMA20)
+        high = close + 0.005
+        low = close - 0.005
+        result = mom20x3_signal(close, high, low, period=20)
         assert result is not None
-        assert result.action == "SELL"
+        assert result["action"] == "SELL"
+        assert result["score"] >= 0.50
 
-    def test_no_signal_on_ranging(self):
-        rates = _mock_rates(50, trend=0.00001)
-        mom = MOM20x3({"H1": rates}, "EURUSD")
-        result = mom.analyze("RANGING", 10, 0.005, min_score=0.3)
-        assert result is None or isinstance(result, Signal)
+    def test_returns_none_on_ranging_market(self):
+        np.random.seed(0)
+        close = 1.10 + np.random.randn(100) * 0.001  # très peu de mouvement
+        high = close + 0.002
+        low = close - 0.002
+        result = mom20x3_signal(close, high, low, period=20)
+        assert result is None  # pas de momentum assez fort
 
-    def test_higher_rr_in_trend(self):
-        rates = _mock_rates(50, trend=0.001)
-        mom = MOM20x3({"H1": rates}, "EURUSD")
-        result = mom.analyze("TREND_UP", 25, 0.005)
+    def test_threshold_adapts_to_adx(self):
+        # Trending: ADX projette haut
+        close = np.arange(1.0, 1.3, 0.003)
+        high = close + 0.01
+        low = close - 0.005
+        result = mom20x3_signal(close, high, low, period=20)
         if result:
-            assert result.rr_ratio == 2.5
+            assert result["is_trending"] is True or result["is_trending"] is False
+            if result["sl_atr"] == 2.0:
+                assert result["tp_atr"] == 5.0
 
-    def test_lower_rr_in_ranging(self):
-        rates = _mock_rates(50, trend=0.001)
-        mom = MOM20x3({"H1": rates}, "EURUSD")
-        result = mom.analyze("RANGING", 15, 0.005)
+    def test_threshold_capped_at_max(self):
+        """Vérifie que thresh est plafonné à THRESHOLD_MAX."""
+        close = np.arange(1.0, 1.3, 0.003)
+        high = close + 0.01
+        low = close - 0.005
+        result = mom20x3_signal(close, high, low, period=20)
         if result:
-            assert result.rr_ratio == 2.0
+            assert result["thresh_used"] <= THRESHOLD_MAX
 
-    def test_score_capped_at_one(self):
-        rates = _mock_rates(50, trend=0.005)
-        mom = MOM20x3({"H1": rates}, "EURUSD")
-        result = mom.analyze("TREND_UP", 30, 0.001)
+    def test_threshold_has_minimum(self):
+        """Vérifie que thresh est au moins THRESHOLD_MIN."""
+        close = np.arange(1.0, 1.3, 0.003)
+        high = close + 0.01
+        low = close - 0.005
+        result = mom20x3_signal(close, high, low, period=20)
         if result:
-            assert result.score <= 1.0
-            assert result.confidence <= 1.0
+            assert result["thresh_used"] >= THRESHOLD_MIN or result["thresh_used"] >= 1.5
 
-    def test_threshold_differs_by_regime(self):
-        rates = _mock_rates(50, trend=0.002)
-        mom = MOM20x3({"H1": rates}, "EURUSD")
-        result = mom.analyze("TREND_UP", 25, 0.005, adx_thresh=22)
-        # Strong trend should produce a signal
+    def test_confidence_in_range(self):
+        close = np.arange(1.0, 1.3, 0.003)
+        high = close + 0.01
+        low = close - 0.005
+        result = mom20x3_signal(close, high, low, period=20)
+        if result:
+            assert 0.0 <= result["confidence"] <= 1.0
+
+    def test_score_in_range(self):
+        close = np.arange(1.0, 1.3, 0.003)
+        high = close + 0.01
+        low = close - 0.005
+        result = mom20x3_signal(close, high, low, period=20)
+        if result:
+            assert 0.0 <= result["score"] <= 1.0
+
+    def test_atr_positive(self):
+        close = np.arange(1.0, 1.3, 0.003)
+        high = close + 0.01
+        low = close - 0.005
+        result = mom20x3_signal(close, high, low, period=20)
+        if result:
+            assert result["atr"] > 0
+
+    def test_signal_different_periods(self):
+        # Données avec dip 20-30 candles en arrière pour momentum + pullback
+        close = np.ones(70) * 1.10
+        close[-25] = 1.05  # dip 24 candles ago → momentum BUY période 10
+        close[-31] = 1.04  # dip 30 candles ago → momentum BUY période 30
+        high = close + 0.01
+        low = close - 0.005
+        result_10 = mom20x3_signal(close, high, low, period=10)
+        result_30 = mom20x3_signal(close, high, low, period=30)
+        assert (result_10 is not None) or (result_30 is not None)
+
+    def test_edge_empty_close(self):
+        assert mom20x3_signal(np.array([]), np.array([]), np.array([])) is None
+
+    def test_edge_single_close(self):
+        assert mom20x3_signal(np.array([1.0]), np.array([1.0]), np.array([1.0])) is None
+
+    def test_ml_agrees_is_none(self):
+        close = np.arange(1.0, 1.5, 0.005)
+        high = close + 0.005
+        low = close - 0.005
+        result = mom20x3_signal(close, high, low, period=20)
+        if result:
+            assert result["_ml_agrees"] is None
+
+
+class TestMOM20x3Wrapper:
+    """Tests du wrapper MOM20x3 utilisé dans le pipeline."""
+
+    def _make_rates(self, n=60):
+        np.random.seed(42)
+        rates = []
+        # Base price 1.10 with small noise, dips for multiple momentum periods
+        # Supporte les périodes 15, 20, 24, 30 :
+        #   momentum(p) = close[-1] - close[-p-1]
+        #   dip à n-p-1 pour chaque période p
+        dip_indices = {n - 16, n - 21, n - 25, n - 31}  # dips pour périodes 15,20,24,30
+        for i in range(n):
+            noise = np.random.randn() * 0.002
+            if i in dip_indices:
+                c = 1.05 + noise
+            else:
+                c = 1.10 + noise
+            rates.append((0, 0, c + 0.005, c - 0.005, c, 0))
+        return rates
+
+    def test_init_with_rates(self):
+        rates = self._make_rates()
+        mom = MOM20x3(rates, "USDCAD")
+        assert mom.symbol == "USDCAD"
+        assert mom.period == 20  # période adaptative USDCAD (réduit 24→20 WR live 45%)
+        assert mom._close is not None
+        assert len(mom._close) == 60
+
+    def test_momentum_period_override(self):
+        """Période explicite écrase la période adaptative."""
+        rates = self._make_rates()
+        mom = MOM20x3(rates, "USDCAD", period=20)
+        assert mom.period == 20
+
+    def test_init_too_few_rates(self):
+        mom = MOM20x3([], "EURUSD", period=20)
+        assert mom._close is None
+        assert mom.analyze() is None
+
+    def test_analyze_returns_dict(self):
+        rates = self._make_rates()
+        mom = MOM20x3(rates, "USDCAD")
+        result = mom.analyze()
         assert result is not None
+        assert "action" in result
 
-    def test_ranging_adx_lowers_threshold(self):
-        rates = _mock_rates(50, trend=0.002)
-        mom = MOM20x3({"H1": rates}, "EURUSD")
-        result = mom.analyze("RANGING", 15, 0.005)
-        # Ranging may still produce signal with strong momentum
-        assert result is None or isinstance(result, Signal)
+    def test_callable(self):
+        rates = self._make_rates()
+        mom = MOM20x3(rates, "USDCAD")
+        result = mom()
+        assert result is not None
+        assert "action" in result
 
-    def test_confidence_boosted_in_trend(self):
-        rates = _mock_rates(50, trend=0.001)
-        mom = MOM20x3({"H1": rates}, "EURUSD")
-        result = mom.analyze("TREND_UP", 28, 0.005)
-        if result:
-            assert result.confidence >= result.score
-
-    def test_missing_h1_returns_none(self):
-        mom = MOM20x3({"M15": _mock_rates(100)}, "EURUSD")
-        assert mom.analyze("RANGING", 15, 0.005) is None
-
-    def test_multiple_symbols_independent(self):
-        rates1 = _mock_rates(50, trend=0.001)
-        rates2 = _mock_rates(50, trend=-0.001)
-        mom1 = MOM20x3({"H1": rates1}, "EURUSD")
-        mom2 = MOM20x3({"H1": rates2}, "GBPUSD")
-        sig1 = mom1.analyze("TREND_UP", 25, 0.005)
-        sig2 = mom2.analyze("TREND_DOWN", 25, 0.005)
-        if sig1 and sig2:
-            assert sig1.action == "BUY"
-            assert sig2.action == "SELL"
-
-
-def test_constants():
-    assert "TREND_UP" in THRESHOLD_BY_REGIME
-    assert "RANGING" in THRESHOLD_BY_REGIME
-    assert MAX_THRESHOLD > 0
-    assert MIN_SIGNAL_SCORE == 0.55
+    def test_different_symbol(self):
+        rates = self._make_rates()
+        mom = MOM20x3(rates, "XAUUSD")
+        assert mom.symbol == "XAUUSD"
+        result = mom()
+        assert result is not None

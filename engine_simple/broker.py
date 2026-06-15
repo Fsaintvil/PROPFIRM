@@ -73,13 +73,14 @@ class Broker:
       - Health check proactif
     """
 
-    def __init__(self, mt5_connector, audit=None):
+    def __init__(self, mt5_connector, audit=None, max_connect_attempts=5):
         self._mt5 = mt5_connector
         self.audit = audit
         self.latency = LatencyTracker()
         self._connected = False
         self._reconnect_attempts = 0
         self._max_backoff = 60
+        self._max_connect_attempts = max_connect_attempts
         self._base_delay = 0.1
         self._last_health_check = 0
         self._health_check_interval = 30
@@ -96,7 +97,9 @@ class Broker:
 
     def connect(self):
         delay = self._base_delay
-        for attempt in range(1, 6):
+        attempt = 0
+        while attempt < self._max_connect_attempts:
+            attempt += 1
             t0 = time.time()
             ok = self._mt5.connect()
             self.latency.record("connect", time.time() - t0)
@@ -108,11 +111,14 @@ class Broker:
                 logger.info(f"[BROKER] Connecte (attempt {attempt})")
                 return True
             self._reconnect_attempts += 1
-            actual_delay = min(delay * (2 ** (attempt - 1)), self._max_backoff)
-            logger.warning(f"[BROKER] Echec connexion #{attempt}, retry dans {actual_delay:.1f}s")
+            actual_delay = min(delay * (2 ** (min(attempt - 1, 10))), self._max_backoff)
+            if attempt <= 5 or attempt % 5 == 0:
+                logger.warning(f"[BROKER] Echec connexion #{attempt}, retry dans {actual_delay:.1f}s")
             time.sleep(actual_delay)
-        self._connected = False
-        logger.error("[BROKER] Connexion echouee apres 5 tentatives")
+        logger.critical(
+            f"[BROKER] Connexion MT5 impossible apres {self._max_connect_attempts} tentatives "
+            f"({self._max_backoff}s max backoff) — abandon"
+        )
         return False
 
     def disconnect(self):
@@ -141,9 +147,11 @@ class Broker:
             ok = False
         self._connected = False
         self._consecutive_failures += 1
-        if self._consecutive_failures >= self._max_failures:
-            logger.critical(f"[BROKER] {self._consecutive_failures} echecs consecutifs — reconnexion")
-            return self.reconnect()
+        if self._consecutive_failures >= self._max_failures and self._consecutive_failures % 5 == 0:
+            logger.warning(f"[BROKER] {self._consecutive_failures} echecs consecutifs — tentative reconnexion")
+            # Tentative de reconnexion mais n'escalade pas l'échec
+            if self.reconnect():
+                return True
         return False
 
     def _check_rate_limit(self):

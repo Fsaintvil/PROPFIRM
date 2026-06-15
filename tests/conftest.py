@@ -90,9 +90,10 @@ torch_mod.FloatTensor = MagicMock(return_value=MagicMock())
 
 # ── Mock MetaTrader5 ──
 mt5_mod = MockModule("MetaTrader5")
-mt5_mod.TIMEFRAME_H1 = 16385
-mt5_mod.TIMEFRAME_M15 = 16387
+mt5_mod.TIMEFRAME_M1 = 1
 mt5_mod.TIMEFRAME_M5 = 16389
+mt5_mod.TIMEFRAME_M15 = 16387
+mt5_mod.TIMEFRAME_H1 = 16385
 mt5_mod.TIMEFRAME_H4 = 16386
 mt5_mod.TIMEFRAME_D1 = 16408
 mt5_mod.ORDER_TYPE_BUY = 0
@@ -101,6 +102,7 @@ mt5_mod.TRADE_ACTION_DEAL = 1
 mt5_mod.TRADE_ACTION_SLTP = 5
 mt5_mod.ORDER_FILLING_IOC = 2
 mt5_mod.ORDER_TIME_GTC = 0
+mt5_mod.ORDER_TIME_DAY = 1
 _tick = MagicMock(ask=1.1, bid=1.099)
 _tick.time = time.time()
 mt5_mod.symbol_info_tick = MagicMock(return_value=_tick)

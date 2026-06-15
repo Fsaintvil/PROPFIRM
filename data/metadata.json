@@ -1,0 +1,245 @@
+{
+  "downloads": [
+    {
+      "symbol": "USDCAD",
+      "timeframe": "H1",
+      "candles": 100000,
+      "from": "2010-04-27 23:00:00",
+      "to": "2026-06-03 16:00:00",
+      "days": 5880
+    },
+    {
+      "symbol": "USDCAD",
+      "timeframe": "D1",
+      "candles": 6805,
+      "from": "2000-03-29 00:00:00",
+      "to": "2026-06-03 00:00:00",
+      "days": 9562
+    },
+    {
+      "symbol": "GBPUSD",
+      "timeframe": "H1",
+      "candles": 100000,
+      "from": "2010-04-15 22:00:00",
+      "to": "2026-06-03 16:00:00",
+      "days": 5892
+    },
+    {
+      "symbol": "GBPUSD",
+      "timeframe": "D1",
+      "candles": 6803,
+      "from": "2000-03-29 00:00:00",
+      "to": "2026-06-03 00:00:00",
+      "days": 9562
+    },
+    {
+      "symbol": "EURUSD",
+      "timeframe": "H1",
+      "candles": 100000,
+      "from": "2010-04-27 13:00:00",
+      "to": "2026-06-03 16:00:00",
+      "days": 5881
+    },
+    {
+      "symbol": "EURUSD",
+      "timeframe": "D1",
+      "candles": 6804,
+      "from": "2000-03-29 00:00:00",
+      "to": "2026-06-03 00:00:00",
+      "days": 9562
+    },
+    {
+      "symbol": "USDCHF",
+      "timeframe": "H1",
+      "candles": 100000,
+      "from": "2010-04-27 00:00:00",
+      "to": "2026-06-03 16:00:00",
+      "days": 5881
+    },
+    {
+      "symbol": "USDCHF",
+      "timeframe": "D1",
+      "candles": 6803,
+      "from": "2000-03-29 00:00:00",
+      "to": "2026-06-03 00:00:00",
+      "days": 9562
+    },
+    {
+      "symbol": "AUDUSD",
+      "timeframe": "H1",
+      "candles": 100000,
+      "from": "2010-04-27 13:00:00",
+      "to": "2026-06-03 16:00:00",
+      "days": 5881
+    },
+    {
+      "symbol": "AUDUSD",
+      "timeframe": "D1",
+      "candles": 6803,
+      "from": "2000-03-29 00:00:00",
+      "to": "2026-06-03 00:00:00",
+      "days": 9562
+    },
+    {
+      "symbol": "USDCAD",
+      "timeframe": "M15",
+      "candles": 100000,
+      "from": "2022-05-26 17:00:00",
+      "to": "2026-06-04 02:00:00",
+      "days": 1469
+    },
+    {
+      "symbol": "USDCAD",
+      "timeframe": "H1",
+      "candles": 100000,
+      "from": "2010-04-28 09:00:00",
+      "to": "2026-06-04 02:00:00",
+      "days": 5880
+    },
+    {
+      "symbol": "USDCAD",
+      "timeframe": "H4",
+      "candles": 40764,
+      "from": "2000-03-29 12:00:00",
+      "to": "2026-06-04 00:00:00",
+      "days": 9562
+    },
+    {
+      "symbol": "USDCAD",
+      "timeframe": "D1",
+      "candles": 6806,
+      "from": "2000-03-29 00:00:00",
+      "to": "2026-06-04 00:00:00",
+      "days": 9563
+    },
+    {
+      "symbol": "GBPUSD",
+      "timeframe": "M15",
+      "candles": 100000,
+      "from": "2022-05-26 18:30:00",
+      "to": "2026-06-04 02:00:00",
+      "days": 1469
+    },
+    {
+      "symbol": "GBPUSD",
+      "timeframe": "H1",
+      "candles": 100000,
+      "from": "2010-04-16 08:00:00",
+      "to": "2026-06-04 02:00:00",
+      "days": 5892
+    },
+    {
+      "symbol": "GBPUSD",
+      "timeframe": "H4",
+      "candles": 40732,
+      "from": "2000-03-29 12:00:00",
+      "to": "2026-06-04 00:00:00",
+      "days": 9562
+    },
+    {
+      "symbol": "GBPUSD",
+      "timeframe": "D1",
+      "candles": 6804,
+      "from": "2000-03-29 00:00:00",
+      "to": "2026-06-04 00:00:00",
+      "days": 9563
+    },
+    {
+      "symbol": "EURUSD",
+      "timeframe": "M15",
+      "candles": 100000,
+      "from": "2022-05-26 18:45:00",
+      "to": "2026-06-04 02:00:00",
+      "days": 1469
+    },
+    {
+      "symbol": "EURUSD",
+      "timeframe": "H1",
+      "candles": 100000,
+      "from": "2010-04-27 23:00:00",
+      "to": "2026-06-04 02:00:00",
+      "days": 5881
+    },
+    {
+      "symbol": "EURUSD",
+      "timeframe": "H4",
+      "candles": 40768,
+      "from": "2000-03-29 12:00:00",
+      "to": "2026-06-04 00:00:00",
+      "days": 9562
+    },
+    {
+      "symbol": "EURUSD",
+      "timeframe": "D1",
+      "candles": 6805,
+      "from": "2000-03-29 00:00:00",
+      "to": "2026-06-04 00:00:00",
+      "days": 9563
+    },
+    {
+      "symbol": "USDCHF",
+      "timeframe": "M15",
+      "candles": 100000,
+      "from": "2022-05-26 15:45:00",
+      "to": "2026-06-04 02:00:00",
+      "days": 1469
+    },
+    {
+      "symbol": "USDCHF",
+      "timeframe": "H1",
+      "candles": 100000,
+      "from": "2010-04-27 10:00:00",
+      "to": "2026-06-04 02:00:00",
+      "days": 5881
+    },
+    {
+      "symbol": "USDCHF",
+      "timeframe": "H4",
+      "candles": 40758,
+      "from": "2000-03-29 12:00:00",
+      "to": "2026-06-04 00:00:00",
+      "days": 9562
+    },
+    {
+      "symbol": "USDCHF",
+      "timeframe": "D1",
+      "candles": 6804,
+      "from": "2000-03-29 00:00:00",
+      "to": "2026-06-04 00:00:00",
+      "days": 9563
+    },
+    {
+      "symbol": "AUDUSD",
+      "timeframe": "M15",
+      "candles": 100000,
+      "from": "2022-05-26 17:30:00",
+      "to": "2026-06-04 02:00:00",
+      "days": 1469
+    },
+    {
+      "symbol": "AUDUSD",
+      "timeframe": "H1",
+      "candles": 100000,
+      "from": "2010-04-27 23:00:00",
+      "to": "2026-06-04 02:00:00",
+      "days": 5881
+    },
+    {
+      "symbol": "AUDUSD",
+      "timeframe": "H4",
+      "candles": 40758,
+      "from": "2000-03-29 12:00:00",
+      "to": "2026-06-04 00:00:00",
+      "days": 9562
+    },
+    {
+      "symbol": "AUDUSD",
+      "timeframe": "D1",
+      "candles": 6804,
+      "from": "2000-03-29 00:00:00",
+      "to": "2026-06-04 00:00:00",
+      "days": 9563
+    }
+  ],
+  "last_update": "2026-06-04T01:03:59.697719"
+}

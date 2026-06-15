@@ -83,7 +83,7 @@ class TestBroker:
 
     def test_connect_failure(self, mock_mt5):
         mock_mt5.connect = MagicMock(return_value=False)
-        b = Broker(mock_mt5)
+        b = Broker(mock_mt5, max_connect_attempts=3)
         assert b.connect() is False
         assert b.is_connected is False
 
@@ -109,7 +109,7 @@ class TestBroker:
     def test_health_check_disconnected_triggers_reconnect(self, mock_mt5):
         mock_mt5.health_check = MagicMock(return_value=False)
         mock_mt5.connect = MagicMock(return_value=False)
-        b = Broker(mock_mt5)
+        b = Broker(mock_mt5, max_connect_attempts=2)
         b._connected = True
         b._consecutive_failures = 4
         b._max_failures = 5
@@ -132,7 +132,7 @@ class TestBroker:
 
     def test_call_raises_when_disconnected(self, mock_mt5):
         mock_mt5.connect = MagicMock(return_value=False)
-        b = Broker(mock_mt5)
+        b = Broker(mock_mt5, max_connect_attempts=1)
         b._connected = False
         with pytest.raises(ConnectionError, match="MT5 deconnecte"):
             b.get_rates("EURUSD")

@@ -26,14 +26,21 @@ class RateCache:
         self._path = str(db_path or DB_PATH)
         self._default_ttl = default_ttl
         Path(self._path).parent.mkdir(parents=True, exist_ok=True)
+        self._get_connection = sqlite3.connect(self._path, timeout=5, check_same_thread=False)
+        self._get_connection.execute("PRAGMA journal_mode=WAL")  # C-03: WAL mode
+        self._get_connection.execute("PRAGMA busy_timeout=5000")  # H-03: timeout contention
         self._init_db()
 
-    def _conn(self):
-        return sqlite3.connect(self._path, timeout=5)
+    def _get_conn(self):
+        try:
+            self._get_connection.execute("SELECT 1")
+        except (sqlite3.Error, AttributeError):
+            self._get_connection = sqlite3.connect(self._path, timeout=5, check_same_thread=False)
+        return self._get_connection
 
     def _init_db(self):
         try:
-            with self._conn() as c:
+            with self._get_conn() as c:
                 c.execute("""
                     CREATE TABLE IF NOT EXISTS rates (
                         key TEXT PRIMARY KEY,
@@ -64,7 +71,7 @@ class RateCache:
     def get_rates(self, symbol, tf, count):
         key = f"{symbol}_{tf}_{count}"
         try:
-            with self._conn() as c:
+            with self._get_conn() as c:
                 row = c.execute("SELECT data, expires_at FROM rates WHERE key=?", (key,)).fetchone()
                 if row and row[1] > time.time():
                     return self._deserialize(row[0])
@@ -76,7 +83,7 @@ class RateCache:
         key = f"{symbol}_{tf}_{count}"
         ttl = self._default_ttl if ttl is None else ttl
         try:
-            with self._conn() as c:
+            with self._get_conn() as c:
                 c.execute("INSERT OR REPLACE INTO rates VALUES (?,?,?)",
                           (key, self._serialize(data), time.time() + ttl))
         except (sqlite3.Error, TypeError) as e:
@@ -84,7 +91,7 @@ class RateCache:
 
     def get_volatility(self, symbol):
         try:
-            with self._conn() as c:
+            with self._get_conn() as c:
                 row = c.execute("SELECT data, expires_at FROM volatility WHERE symbol=?", (symbol,)).fetchone()
                 if row and row[1] > time.time():
                     return self._deserialize(row[0])
@@ -94,7 +101,7 @@ class RateCache:
 
     def set_volatility(self, symbol, data, ttl=60):
         try:
-            with self._conn() as c:
+            with self._get_conn() as c:
                 c.execute("INSERT OR REPLACE INTO volatility VALUES (?,?,?)",
                           (symbol, self._serialize(data), time.time() + ttl))
         except (sqlite3.Error, TypeError) as e:
@@ -102,7 +109,7 @@ class RateCache:
 
     def purge_expired(self):
         try:
-            with self._conn() as c:
+            with self._get_conn() as c:
                 c.execute("DELETE FROM rates WHERE expires_at < ?", (time.time(),))
                 c.execute("DELETE FROM volatility WHERE expires_at < ?", (time.time(),))
         except sqlite3.Error as e:
@@ -110,8 +117,15 @@ class RateCache:
 
     def clear(self):
         try:
-            with self._conn() as c:
+            with self._get_conn() as c:
                 c.execute("DELETE FROM rates")
                 c.execute("DELETE FROM volatility")
         except sqlite3.Error as e:
             logger.debug(f"Clear failed: {e}")
+
+    def close(self):
+        """Ferme la connexion SQLite (appelé par le test fixture et stop())."""
+        try:
+            self._get_connection.close()
+        except (sqlite3.Error, AttributeError) as e:
+            logger.warning(f"RateCache close failed: {e}")

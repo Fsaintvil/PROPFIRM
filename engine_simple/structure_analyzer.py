@@ -59,7 +59,7 @@ def detect_bos(h1_high, h1_low, h1_close, window=5):
     ll = np.asarray(h1_low, dtype=float)
 
     if len(hh) < window * 2 + 2:
-        return None, None
+        return None, None, None
 
     recent_high = np.max(hh[-window:])
     prev_high = np.max(hh[-(window * 2):-window])
@@ -67,12 +67,14 @@ def detect_bos(h1_high, h1_low, h1_close, window=5):
     prev_low = np.min(ll[-(window * 2):-window])
 
     if recent_low < prev_low and recent_high < prev_high:
-        return "BEARISH", round(recent_low, 6)
+        idx = int(np.argmin(ll[-window:]) + len(ll) - window)
+        return "BEARISH", round(recent_low, 6), idx
 
     if recent_high > prev_high and recent_low > prev_low:
-        return "BULLISH", round(recent_high, 6)
+        idx = int(np.argmax(hh[-window:]) + len(hh) - window)
+        return "BULLISH", round(recent_high, 6), idx
 
-    return None, None
+    return None, None, None
 
 
 def detect_choch(h1_high, h1_low, h1_close, window=5):
@@ -80,7 +82,7 @@ def detect_choch(h1_high, h1_low, h1_close, window=5):
     ll = np.asarray(h1_low, dtype=float)
 
     if len(hh) < window * 4:
-        return None, None
+        return None, None, None
 
     n = len(hh)
     mid = n // 2
@@ -99,12 +101,14 @@ def detect_choch(h1_high, h1_low, h1_close, window=5):
     second_ll = np.min(second_low_half)
 
     if was_up and second_ll < first_ll_min:
-        return "BEARISH", round(second_ll, 6)
+        idx = int(np.argmin(second_low_half) + mid)
+        return "BEARISH", round(second_ll, 6), idx
 
     if was_down and second_hh > first_hh_max:
-        return "BULLISH", round(second_hh, 6)
+        idx = int(np.argmax(second_half) + mid)
+        return "BULLISH", round(second_hh, 6), idx
 
-    return None, None
+    return None, None, None
 
 
 def detect_mss(h1_high, h1_low, h1_close, window=5):
@@ -113,7 +117,7 @@ def detect_mss(h1_high, h1_low, h1_close, window=5):
     n = len(hh)
 
     if n < window * 3:
-        return None, None
+        return None, None, None
 
     recent_highs = [np.max(hh[i:i + window]) for i in range(-window * 3, -window + 1, window)
                     if len(hh[i:i + window]) > 0]
@@ -121,34 +125,39 @@ def detect_mss(h1_high, h1_low, h1_close, window=5):
                    if len(ll[i:i + window]) > 0]
 
     if len(recent_highs) < 3 or len(recent_lows) < 3:
-        return None, None
+        return None, None, None
 
     if recent_highs[-1] > recent_highs[-2] and recent_lows[-1] <= recent_lows[-2]:
-        return "BULLISH_MSS", round(recent_highs[-1], 6)
+        idx = int(np.argmax(hh[-window:]) + n - window)
+        return "BULLISH_MSS", round(recent_highs[-1], 6), idx
 
     if recent_lows[-1] < recent_lows[-2] and recent_highs[-1] >= recent_highs[-2]:
-        return "BEARISH_MSS", round(recent_lows[-1], 6)
+        idx = int(np.argmin(ll[-window:]) + n - window)
+        return "BEARISH_MSS", round(recent_lows[-1], 6), idx
 
-    return None, None
+    return None, None, None
 
 
-def structure_exit_signal(position_type, h1_high, h1_low, h1_close, window=5):
-    bos_type, level = detect_bos(h1_high, h1_low, h1_close, window)
+def structure_exit_signal(position_type, h1_high, h1_low, h1_close, window=5, h1_time=None):
+    """Retourne (should_exit, reason, candle_idx).
+    candle_idx = index dans le tableau de la bougie qui a cassé la structure
+    (None si pas de break). Permet de comparer avec le temps d'ouverture."""
+    bos_type, level, bos_idx = detect_bos(h1_high, h1_low, h1_close, window)
     if position_type == 0 and bos_type == "BEARISH":
-        return True, f"BEARISH_BOS @ {level}"
+        return True, f"BEARISH_BOS @ {level}", bos_idx
     if position_type == 1 and bos_type == "BULLISH":
-        return True, f"BULLISH_BOS @ {level}"
+        return True, f"BULLISH_BOS @ {level}", bos_idx
 
-    mss_type, mss_level = detect_mss(h1_high, h1_low, h1_close, window)
+    mss_type, mss_level, mss_idx = detect_mss(h1_high, h1_low, h1_close, window)
     if position_type == 0 and mss_type == "BEARISH_MSS":
-        return True, f"BEARISH_MSS @ {mss_level}"
+        return True, f"BEARISH_MSS @ {mss_level}", mss_idx
     if position_type == 1 and mss_type == "BULLISH_MSS":
-        return True, f"BULLISH_MSS @ {mss_level}"
+        return True, f"BULLISH_MSS @ {mss_level}", mss_idx
 
-    choch_type, choch_level = detect_choch(h1_high, h1_low, h1_close, window * 2)
+    choch_type, choch_level, choch_idx = detect_choch(h1_high, h1_low, h1_close, window * 2)
     if position_type == 0 and choch_type == "BEARISH":
-        return True, f"BEARISH_CHOCH @ {choch_level}"
+        return True, f"BEARISH_CHOCH @ {choch_level}", choch_idx
     if position_type == 1 and choch_type == "BULLISH":
-        return True, f"BULLISH_CHOCH @ {choch_level}"
+        return True, f"BULLISH_CHOCH @ {choch_level}", choch_idx
 
-    return False, None
+    return False, None, None

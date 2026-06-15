@@ -1,3 +1,7 @@
+# NOTE: MetaTrader5 ne fonctionne que sous Windows.
+# Ce Dockerfile est fourni pour la structure et les dépendances logicielles,
+# mais le robot de trading ne peut PAS être exécuté dans ce conteneur Linux.
+# Utilisez ce Docker uniquement pour les étapes offline (calibration, retraining).
 # Multi-stage Docker build for MT5 FTMO Robot
 # Stage 1: Base — Python 3.10 slim
 FROM python:3.10-slim AS base

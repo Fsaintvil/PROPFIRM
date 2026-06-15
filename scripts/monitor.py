@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
@@ -134,6 +135,16 @@ def heartbeat_age():
         return float("inf")
 
 
+# Pattern pour détecter les vrais messages ERROR/CRITICAL dans les logs
+# Formate: "2026-06-10 10:21:23,108 - robot - ERROR - message"
+# Ne PAS matcher les JSON audit_trail contenant "status": "ERROR"
+_LOG_ERROR_RE = re.compile(r' - (ERROR|CRITICAL) - ')
+_LOG_WARN_RE = re.compile(r' - WARNING - ')
+
+# Cache des erreurs déjà vues pour éviter les doublons
+_seen_log_errors = set()
+
+
 def last_log_errors(lines=100):
     log_path = BASE / "logs" / "simple_robot.log"
     if not log_path.exists():
@@ -141,8 +152,8 @@ def last_log_errors(lines=100):
     try:
         text = log_path.read_text(encoding="utf-8", errors="replace")
         entries = text.strip().split("\n")[-lines:]
-        errors = [line for line in entries if "ERROR" in line or "CRITICAL" in line]
-        warnings = [line for line in entries if "WARNING" in line]
+        errors = [line for line in entries if _LOG_ERROR_RE.search(line)]
+        warnings = [line for line in entries if _LOG_WARN_RE.search(line)]
         return errors[-5:], warnings[-5:]
     except Exception:
         return [], []
@@ -228,7 +239,13 @@ def main():
     last_report_time = 0
     restart_count = 0
 
+    # Backoff exponentiel: chaque échec augmente le délai
+    _last_restart_time = 0
+    _backoff_delay = 10  # secondes, double à chaque échec
+    _max_backoff = 600   # 10 min max
+
     first_run = True
+    _reported_errors = set()  # déduplication: on ne signale chaque erreur qu'une fois
 
     while True:
         try:
@@ -243,22 +260,43 @@ def main():
 
             if proc is None or hb > HEARTBEAT_TIMEOUT:
                 reason = "process not found" if proc is None else f"heartbeat stale ({hb:.0f}s)"
+
+                # Backoff exponentiel: attendre plus longtemps entre les restarts
+                time_since_last = now - _last_restart_time
+                if time_since_last < _backoff_delay:
+                    logger.debug(f"Backoff: attend {_backoff_delay - time_since_last:.0f}s avant restart")
+                    time.sleep(5)
+                    continue
+
                 logger.warning(f"Robot down: {reason}")
-                send_alert(f"MONITOR: Robot arrete ({reason}). Redemarrage...")
+                send_alert(f"MONITOR: Robot arrete ({reason}). Redemarrage... (backoff={_backoff_delay}s)")
                 stop_robot()
                 time.sleep(RESTART_DELAY)
                 start_robot()
                 restart_count += 1
+                _last_restart_time = time.time()
+                _backoff_delay = min(_backoff_delay * 2, _max_backoff)  # double, max 10 min
+                if _backoff_delay > 60:
+                    send_alert(f"MONITOR: {restart_count}e restart — backoff={_backoff_delay}s (MT5 peut etre indisponible)")
                 time.sleep(10)
                 if restart_count > 5:
                     send_alert(f"MONITOR: {restart_count} redemarrages en 24h - verifier le robot")
                     restart_count = 0
+            else:
+                # Reset backoff si le robot tourne
+                _backoff_delay = 10
 
             errors, warnings = last_log_errors()
             if errors:
-                for e in errors:
+                new_errors = [e for e in errors if e not in _reported_errors]
+                for e in new_errors:
+                    _reported_errors.add(e)
                     logger.warning(f"Log ERROR: {e[:200]}")
-                send_alert(f"MONITOR: {len(errors)} erreurs dans les logs\n{errors[-1][:300]}")
+                if new_errors:
+                    send_alert(f"MONITOR: {len(new_errors)} nouvelle(s) erreur(s) dans les logs\n{new_errors[-1][:300]}")
+                # Nettoyer le cache des erreurs vues (max 100)
+                if len(_reported_errors) > 100:
+                    _reported_errors.clear()
 
             if now - last_report_time > 3600:
                 report = read_report()

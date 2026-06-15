@@ -126,6 +126,59 @@ class MetaLearner:
 
     def should_recalibrate(self) -> bool:
         return self.trades_since_recal >= self.recalibration_freq
+    
+    def initialize_from_history(self, trade_history: list[dict]) -> None:
+        """PHASE 2.2: Initialiser les traces à partir des trades historiques.
+        
+        Simule des prédictions pour les modèles MOM20x3, DL_LSTM, LGB basées
+        sur l'historique réel pour bootstrapper les poids du Meta-Learner.
+        """
+        if not trade_history or len(trade_history) == 0:
+            logger.info("[META] Historique vide — initialisation par défaut")
+            return
+        
+        # MOM20x3 a toujours généré le signal → on assume qu'il a raison 100%
+        # DL_LSTM + LGB : on assume une performance moyenne (50-60%)
+        logger.info(f"[META] Initialisation à partir de {len(trade_history)} trades")
+        
+        for trade in trade_history[-200:]:  # Derniers 200 trades seulement
+            symbol = trade.get("symbol", "UNKNOWN")
+            regime = trade.get("regime", "RANGING")
+            profit = trade.get("profit", 0)
+            correct = profit > 0
+            
+            # MOM20x3: assume tout le crédit (il a généré les signaux)
+            self.trackers["MOM20x3"].record(regime, symbol, correct)
+            
+            # DL_LSTM: assume 55% de précision (légèrement meilleur que random)
+            import random
+            random.seed(hash((trade.get("ticket", 0), "DL")) % (2**31))
+            dl_correct = random.random() < 0.55
+            self.trackers["DL_LSTM"].record(regime, symbol, dl_correct)
+            
+            # LGB: assume 50% de précision (random)
+            random.seed(hash((trade.get("ticket", 0), "LGB")) % (2**31))
+            lgb_correct = random.random() < 0.50
+            self.trackers["LGB"].record(regime, symbol, lgb_correct)
+        
+        logger.info(f"[META] Initialisation complétée — "
+                   f"MOM20x3 {self.trackers['MOM20x3'].global_stats}, "
+                   f"DL_LSTM {self.trackers['DL_LSTM'].global_stats}, "
+                   f"LGB {self.trackers['LGB'].global_stats}")
+    
+    def get_calibration_status(self) -> dict:
+        """Retourne l'état de calibration du Meta-Learner."""
+        return {
+            "trades_recorded": self.trades_since_recal,
+            "models": {
+                name: {
+                    "total_trades": tracker.global_stats["total"],
+                    "win_rate": tracker.win_rate(),
+                    "weight": self.get_weights("RANGING").get(name, 0),  # Exemple avec RANGING
+                }
+                for name, tracker in self.trackers.items()
+            }
+        }
 
     def save_state(self, path: str = "runtime/meta_learner.json") -> None:
         try:
@@ -137,8 +190,8 @@ class MetaLearner:
                 }
             with open(path, "w") as f:
                 json.dump(data, f)
-        except (OSError, TypeError):
-            pass
+        except (OSError, TypeError) as e:
+            logger.warning(f"[META] Save state failed: {e}")
 
     def load_state(self, path: str = "runtime/meta_learner.json") -> None:
         try:
@@ -147,11 +200,18 @@ class MetaLearner:
             for name, tracker_data in data.items():
                 if name in self.trackers:
                     tracker = self.trackers[name]
+                    # Restore global_stats (wins/losses/total) — critical pour le suivi
+                    gs = tracker_data.get("global_stats", {})
+                    if gs:
+                        tracker.global_stats.update({
+                            k: int(v) for k, v in gs.items()
+                        })
+                    # Restore regime_penalty
                     tracker.regime_penalty.update(
                         {k: float(v) for k, v in tracker_data.get("regime_penalty", {}).items()}
                     )
-        except (FileNotFoundError, json.JSONDecodeError, KeyError, ValueError):
-            pass
+        except (FileNotFoundError, json.JSONDecodeError, KeyError, ValueError) as e:
+            logger.warning(f"[META] Load state failed: {e}")
 
     def recalibrate(self) -> None:
         self.trades_since_recal = 0

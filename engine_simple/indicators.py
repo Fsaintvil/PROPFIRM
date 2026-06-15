@@ -282,13 +282,20 @@ def rsi_divergence(close, rsi_values, lookback=20):
     return {"bullish": bullish, "bearish": bearish, "strength": min(1, abs(strength))}
 
 
-def adx(high, low, close, period=14):
-    """Average Directional Index (ADX) — Wilder smoothing"""
+def _adx_arrays(high, low, close, period=14):
+    """Calcule les arrays complets ADX, +DI, -DI alignés sur la longueur d'entrée.
+    
+    Returns:
+        tuple[np.ndarray, np.ndarray, np.ndarray]: (adx_arr, pdi_arr, mdi_arr)
+        alignés sur len(high). Les premières `period*2` valeurs sont NaN.
+    """
     h = np.asarray(high, dtype=float)
     lo = np.asarray(low, dtype=float)
     c = np.asarray(close, dtype=float)
-    if len(h) < period * 2:
-        return 0.0
+    n = len(h)
+    if n < period * 2:
+        return (np.full(n, np.nan), np.full(n, np.nan), np.full(n, np.nan))
+
     up = h[1:] - h[:-1]
     down = lo[:-1] - lo[1:]
     plus_dm = np.where((up > down) & (up > 0), up, 0)
@@ -296,6 +303,7 @@ def adx(high, low, close, period=14):
     tr = np.maximum(h[1:] - lo[1:],
                     np.maximum(np.abs(h[1:] - c[:-1]),
                                np.abs(lo[1:] - c[:-1])))
+
     # Wilder smoothing
     pds = np.zeros(len(tr))
     mds = np.zeros(len(tr))
@@ -307,26 +315,55 @@ def adx(high, low, close, period=14):
         pds[i] = (pds[i - 1] * (period - 1) + plus_dm[i]) / period
         mds[i] = (mds[i - 1] * (period - 1) + minus_dm[i]) / period
         trs[i] = (trs[i - 1] * (period - 1) + tr[i]) / period
-    # Compute final PDI, MDI, DX using last smoothed values
-    tr_final = trs[-1]
-    if tr_final <= 1e-10:
-        return 0.0
-    # Array DX for second smoothing
-    dx_arr = np.zeros(len(trs))
-    for i in range(period - 1, len(trs)):
-        if trs[i] <= 1e-10:
-            dx_arr[i] = 0.0
-        else:
-            pdi_i = 100.0 * pds[i] / trs[i]
-            mdi_i = 100.0 * mds[i] / trs[i]
-            dx_arr[i] = 100.0 * abs(pdi_i - mdi_i) / max(pdi_i + mdi_i, 0.001)
+
+    # PDI / MDI per bar (safe division)
+    trs_safe = np.where(trs > 1e-10, trs, np.nan)
+    pdi_arr_raw = np.where(trs > 1e-10, 100.0 * pds / trs_safe, 0.0)
+    mdi_arr_raw = np.where(trs > 1e-10, 100.0 * mds / trs_safe, 0.0)
+
+    # DX array (safe division)
+    di_sum = pdi_arr_raw + mdi_arr_raw
+    di_sum_safe = np.where(di_sum > 0.001, di_sum, np.nan)
+    dx_arr = np.where((trs > 1e-10) & (di_sum > 0.001),
+                      100.0 * np.abs(pdi_arr_raw - mdi_arr_raw) / di_sum_safe,
+                      0.0)
 
     # Second Wilder smoothing on DX
-    adx_arr = np.zeros(len(dx_arr))
-    adx_arr[period - 1] = np.mean(dx_arr[period - 1:period * 2 - 1])
+    adx_arr_raw = np.zeros(len(dx_arr))
+    adx_arr_raw[period - 1] = np.mean(dx_arr[period - 1:period * 2 - 1])
     for i in range(period, len(dx_arr)):
-        adx_arr[i] = (adx_arr[i - 1] * (period - 1) + dx_arr[i]) / period
-    return float(adx_arr[-1])
+        adx_arr_raw[i] = (adx_arr_raw[i - 1] * (period - 1) + dx_arr[i]) / period
+
+    # Pad front with NaN to align with original length (offset = 1 from tr vs h)
+    pad = np.full(n - len(adx_arr_raw), np.nan)
+    return (np.concatenate([pad, adx_arr_raw]),
+            np.concatenate([pad, pdi_arr_raw]),
+            np.concatenate([pad, mdi_arr_raw]))
+
+
+def adx(high, low, close, period=14):
+    """Average Directional Index (ADX) — Wilder smoothing.
+    
+    Returns:
+        tuple[float, float, float]: (adx, plus_di, minus_di) dernières valeurs.
+        ou (0.0, 0.0, 0.0) si pas assez de données.
+    """
+    adx_arr, pdi_arr, mdi_arr = _adx_arrays(high, low, close, period)
+    # Filtrer les NaN
+    valid = ~np.isnan(adx_arr)
+    if not np.any(valid):
+        return (0.0, 0.0, 0.0)
+    return (float(adx_arr[valid][-1]), float(pdi_arr[valid][-1]), float(mdi_arr[valid][-1]))
+
+
+def adx_arrays(high, low, close, period=14):
+    """ADX avec arrays complets — idéal pour backtests O(n).
+    
+    Returns:
+        tuple[np.ndarray, np.ndarray, np.ndarray]: (adx_arr, plus_di_arr, minus_di_arr)
+        alignés sur len(high). Les premières ~28 valeurs sont NaN.
+    """
+    return _adx_arrays(high, low, close, period)
 
 
 def market_regime_features(high, low, close, volume, period=50):

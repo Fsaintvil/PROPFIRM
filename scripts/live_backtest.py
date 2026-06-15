@@ -316,7 +316,7 @@ def run_backtest():
                 ll = np.array([r[3] for r in h1], dtype=float)
                 cc = np.array([r[4] for r in h1], dtype=float)
                 from engine_simple.indicators import adx as calc_adx
-                adx_val = calc_adx(hh, ll, cc)
+                adx_val = calc_adx(hh, ll, cc)[0]
                 if adx_val is None or np.isnan(adx_val):
                     continue
                 is_ranging = adx_val < 20

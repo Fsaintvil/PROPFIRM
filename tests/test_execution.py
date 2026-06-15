@@ -3,7 +3,7 @@ import os
 import sys
 import time
 from datetime import datetime
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ["LOG_LEVEL"] = "CRITICAL"
@@ -31,6 +31,7 @@ def make_mock_mt5():
     mock.ORDER_TYPE_SELL = 1
     mock.ORDER_FILLING_IOC = 2
     mock.ORDER_TIME_GTC = 0
+    mock.ORDER_TIME_DAY = 1
     mock.calc_profit.return_value = -50.0
     return mock
 
@@ -67,14 +68,15 @@ class TestTradeExecutor:
         result.price = 1.09585
         mt5.order_send.return_value = result
         executor = TradeExecutor(mt5, ftmo, journal, tracker, signals, adaptive)
-        executor.execute("EURUSD", {"action": "BUY", "score": 0.70, "confidence": 0.5,
+        executor.execute("XAUUSD", {"action": "BUY", "score": 0.70, "confidence": 0.5,
             "atr": 0.005, "sl_atr": 2.0, "tp_atr": 4.0, "risk_mult": 1.0,
             "is_ranging": False, "_regime": "RANGING", "rates": {}})
         assert mt5.order_send.called
         args, kwargs = mt5.order_send.call_args
         req = args[0]
-        assert req["symbol"] == "EURUSD"
+        assert req["symbol"] == "XAUUSD"
         assert req["type"] == 0
+        # XAUUSD max_lot=0.10, ftmo retourne 0.05 → pas de clamp
         assert req["volume"] == 0.05
 
     def test_execute_rr_too_low(self):
@@ -132,15 +134,15 @@ class TestPositionTracker:
         adaptive = MagicMock()
         pos_cache = MagicMock()
         pos_cache.get.return_value = [
-            MagicMock(ticket=1, magic=cfg.ROBOT_MAGIC, type=0, symbol="EURUSD",
-                     price_open=1.10, sl=1.095, volume=0.05, comment="ADAPT_RAN",
+            MagicMock(ticket=1, magic=cfg.ROBOT_MAGIC, type=0, symbol="XAUUSD",
+                     price_open=2350.0, sl=2348.0, volume=0.1, comment="ADAPT_RAN",
                      profit=0)
         ]
         tracker = PositionTracker(ftmo, journal, adaptive, pos_cache, mt5=mt5)
         tracker.init_tickets()
         tracker.track_new()
         assert 1 in tracker._position_meta
-        assert tracker._position_meta[1]["symbol"] == "EURUSD"
+        assert tracker._position_meta[1]["symbol"] == "XAUUSD"
         assert tracker._position_meta[1]["regime"] == "RAN"
 
     def test_detect_closed_position(self):
@@ -218,10 +220,13 @@ class TestATRTrailing:
         result.retcode = 10009
         mt5.update_sl.return_value = result
         pos = self._make_buy_pos(current=1.1080)  # profit = 0.008, 1.6 ATR > 1.0
+        original_sl = pos.sl
         ftmo._check_step_trailing(pos)
         assert mt5.update_sl.called
         new_sl = mt5.update_sl.call_args[0][1]
-        assert new_sl > pos.sl
+        assert new_sl > original_sl
+        # Verify position.sl is synced after successful update
+        assert pos.sl == new_sl
 
     def test_trailing_respects_regime_levels(self):
         mt5 = make_mock_mt5()
@@ -247,10 +252,13 @@ class TestATRTrailing:
         result.retcode = 10009
         mt5.update_sl.return_value = result
         pos = self._make_sell_pos(current=1.0920)  # profit = 0.008, 1.6 ATR > 1.0
+        original_sl = pos.sl
         ftmo._check_step_trailing(pos)
         assert mt5.update_sl.called
         new_sl = mt5.update_sl.call_args[0][1]
-        assert new_sl < pos.sl  # trailing down for sell
+        assert new_sl < original_sl  # trailing down for sell
+        # Verify position.sl is synced after successful update
+        assert pos.sl == new_sl
 
     def test_trailing_does_not_move_sl_backward_buy(self):
         mt5 = make_mock_mt5()
@@ -261,7 +269,8 @@ class TestATRTrailing:
         ftmo._check_step_trailing(pos)
         assert mt5.update_sl.called is False
 
-    def test_trailing_high_vol_wide_dist(self):
+    @patch("random.uniform", return_value=0.0)
+    def test_trailing_high_vol_wide_dist(self, mock_rand):
         mt5 = make_mock_mt5()
         ftmo = make_ftmo(mt5)
         ftmo._get_atr = MagicMock(return_value=0.005)

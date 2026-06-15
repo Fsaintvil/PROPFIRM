@@ -11,13 +11,13 @@ from engine_simple.trade_journal import TradeJournal
 
 
 @pytest.fixture
-def journal():
+def journal(tmp_path):
     import engine_simple.trade_journal as tj
-    orig_path = tj.DB_PATH
+    orig_db = tj.DB_PATH
     tj.DB_PATH = ":memory:"
-    j = TradeJournal()
+    j = TradeJournal(csv_path=str(tmp_path / "test_trades.csv"))
     yield j
-    tj.DB_PATH = orig_path
+    tj.DB_PATH = orig_db
 
 
 def make_time(days_ago=1, hour=0):

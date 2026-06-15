@@ -1,0 +1,31 @@
+{
+  "description": "Evenements economiques a haut-impact — dates connues (2026). Utilise comme override du calendrier genere automatiquement.",
+  "source": "Banques centrales, bureaux de statistiques nationaux",
+  "notes": "Les evenements approximatifs (NFP=1er vendredi, CPI~13) sont generes automatiquement. Seules les dates FERMES sont listees ici.",
+  "events": [
+    {"name": "FOMC Rate Decision", "time": "2026-06-17T18:00:00", "impact": "high"},
+    {"name": "FOMC Minutes", "time": "2026-07-08T18:00:00", "impact": "high"},
+    {"name": "FOMC Rate Decision", "time": "2026-07-29T18:00:00", "impact": "high"},
+    {"name": "FOMC Rate Decision", "time": "2026-09-16T18:00:00", "impact": "high"},
+    {"name": "FOMC Rate Decision", "time": "2026-11-04T18:00:00", "impact": "high"},
+    {"name": "FOMC Rate Decision", "time": "2026-12-16T18:00:00", "impact": "high"},
+    {"name": "BOE Rate Decision", "time": "2026-06-18T11:00:00", "impact": "high"},
+    {"name": "BOE Rate Decision", "time": "2026-08-06T11:00:00", "impact": "high"},
+    {"name": "BOE Rate Decision", "time": "2026-09-17T11:00:00", "impact": "high"},
+    {"name": "BOE Rate Decision", "time": "2026-11-05T11:00:00", "impact": "high"},
+    {"name": "BOE Rate Decision", "time": "2026-12-17T11:00:00", "impact": "high"},
+    {"name": "ECB Rate Decision", "time": "2026-06-11T12:15:00", "impact": "high"},
+    {"name": "ECB Rate Decision", "time": "2026-07-16T12:15:00", "impact": "high"},
+    {"name": "ECB Rate Decision", "time": "2026-09-10T12:15:00", "impact": "high"},
+    {"name": "ECB Rate Decision", "time": "2026-10-22T12:15:00", "impact": "high"},
+    {"name": "ECB Rate Decision", "time": "2026-12-10T12:15:00", "impact": "high"},
+    {"name": "BOC Rate Decision", "time": "2026-06-03T14:00:00", "impact": "high"},
+    {"name": "BOC Rate Decision", "time": "2026-07-15T14:00:00", "impact": "high"},
+    {"name": "BOC Rate Decision", "time": "2026-09-09T14:00:00", "impact": "high"},
+    {"name": "BOC Rate Decision", "time": "2026-10-28T14:00:00", "impact": "high"},
+    {"name": "BOC Rate Decision", "time": "2026-12-09T14:00:00", "impact": "high"},
+    {"name": "SNB Rate Decision", "time": "2026-06-18T07:30:00", "impact": "high"},
+    {"name": "SNB Rate Decision", "time": "2026-09-24T07:30:00", "impact": "high"},
+    {"name": "SNB Rate Decision", "time": "2026-12-10T07:30:00", "impact": "high"}
+  ]
+}

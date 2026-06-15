@@ -21,12 +21,19 @@ class MT5Connector:
         self.connected = False
 
     def connect(self):
-        if not mt5.initialize():
-            logger.error("MT5 initialization failed")
+        if not mt5.initialize(timeout=30000, portable=True):
+            logger.error("MT5 initialization failed (timeout 30s)")
             return False
         if not mt5.login(self.login, password=self.password, server=self.server):
             logger.error("MT5 login failed")
             return False
+        # Activer Market Watch pour tous les symboles du robot
+        try:
+            import config_simple as cfg
+            for sym in cfg.SYMBOLS:
+                mt5.symbol_select(sym, True)
+        except Exception:
+            pass
         self.connected = True
         info = mt5.account_info()
         if info is not None:
@@ -67,11 +74,16 @@ class MT5Connector:
         return mt5.symbol_info_tick(symbol)
 
     def get_rates(self, symbol, timeframe, count=100):
-        tf_map = {
-            "M5": mt5.TIMEFRAME_M5, "M15": mt5.TIMEFRAME_M15,
-            "H1": mt5.TIMEFRAME_H1, "H4": mt5.TIMEFRAME_H4, "D1": mt5.TIMEFRAME_D1
-        }
-        return mt5.copy_rates_from_pos(symbol, tf_map.get(timeframe, mt5.TIMEFRAME_H1), 0, count)
+        # Accepte string ("M1", "H1") ou int (mt5.TIMEFRAME_M1)
+        if isinstance(timeframe, int):
+            tf = timeframe
+        else:
+            tf_map = {
+                "M1": mt5.TIMEFRAME_M1, "M5": mt5.TIMEFRAME_M5, "M15": mt5.TIMEFRAME_M15,
+                "H1": mt5.TIMEFRAME_H1, "H4": mt5.TIMEFRAME_H4, "D1": mt5.TIMEFRAME_D1
+            }
+            tf = tf_map.get(timeframe, mt5.TIMEFRAME_H1)
+        return mt5.copy_rates_from_pos(symbol, tf, 0, count)
 
     def get_rates_multi_tf(self, symbol, timeframes, count=100):
         result = {}
@@ -93,6 +105,9 @@ class MT5Connector:
 
     def close_position(self, position):
         tick = mt5.symbol_info_tick(position.symbol)
+        if tick is None:
+            logger.error(f"Cannot close {position.symbol}: tick is None (market closed?)")
+            return None
         ct = 1 if position.type == 0 else 0
         price = tick.ask if ct == 0 else tick.bid
         req = dict(action=mt5.TRADE_ACTION_DEAL, symbol=position.symbol,
@@ -102,11 +117,37 @@ class MT5Connector:
 
     def update_sl(self, position, new_sl):
         req = dict(action=mt5.TRADE_ACTION_SLTP, position=position.ticket,
-            sl=new_sl, tp=position.tp, magic=self.magic)
+            symbol=position.symbol, sl=new_sl, tp=position.tp, magic=self.magic)
         return mt5.order_send(req)
 
     def get_account_info(self):
         return mt5.account_info()
+
+    def ping(self) -> bool:
+        """Keepalive : vérifie la connexion MT5, tente un appel léger.
+        Retourne True si la connexion est active."""
+        try:
+            info = mt5.terminal_info()
+            if info is None:
+                return False
+            return bool(info.connected)
+        except (RuntimeError, OSError, TypeError):
+            return False
+
+    def reconnect(self) -> bool:
+        """Tente une reconnexion complète à MT5."""
+        logger.info("[MT5] Tentative de reconnexion...")
+        try:
+            mt5.shutdown()
+        except Exception:
+            pass
+        import time as _time
+        _time.sleep(2)
+        if self.connect():
+            logger.info("[MT5] Reconnexion réussie")
+            return True
+        logger.error("[MT5] Échec de reconnexion")
+        return False
 
     def get_history(self, from_time, to_time):
         return mt5.history_deals_get(from_time, to_time)

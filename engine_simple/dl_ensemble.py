@@ -37,13 +37,14 @@ try:
 
     class AttentionLSTMNet(nn.Module):
         """"LSTM + Multi-Head Self-Attention (ALFA-style architecture)."""
-        def __init__(self, input_size, hidden_size=64, num_layers=2, num_heads=4):
+        def __init__(self, input_size, hidden_size=64, num_layers=2, num_heads=4, dropout=0.3):
             super().__init__()
+            lstm_dropout = dropout if num_layers > 1 else 0
             self.lstm = nn.LSTM(input_size, hidden_size, num_layers,
-                                batch_first=True, dropout=0.2, bidirectional=False)
+                                batch_first=True, dropout=lstm_dropout, bidirectional=False)
             self.attention = MultiHeadSelfAttention(hidden_size, num_heads)
             self.layer_norm = nn.LayerNorm(hidden_size)
-            self.dropout = nn.Dropout(0.3)
+            self.dropout = nn.Dropout(dropout)
             self.fc1 = nn.Linear(hidden_size, 32)
             self.fc2 = nn.Linear(32, 1)
             self.sigmoid = nn.Sigmoid()
@@ -103,9 +104,15 @@ class DLEnsemble:
         self._training_thread = None
         self._model_lock = threading.Lock()
         self.available = TORCH_AVAILABLE
+        self._degenerate = False  # flag: modèle dégénéré (sortie constante)
+        self._score_history = deque(maxlen=50)  # tracking variance des scores
         if self.available:
             self._load_pretrained()
-            logger.info("DL Ensemble ready (PyTorch LSTM)")
+            if not self.models:
+                logger.warning("[DL] Aucun modele pre-entraine trouve — DL desactive")
+                self.available = False
+            else:
+                logger.info("DL Ensemble ready (PyTorch LSTM)")
 
     def _load_pretrained(self):
         import glob as glob_mod
@@ -184,7 +191,7 @@ class DLEnsemble:
         return arr
 
     def predict(self, symbol, rates_dict):
-        if not self.available:
+        if not self.available or self._degenerate:
             return None
         tf_scores = []
         for tf in ["H1", "M15", "M5"]:
@@ -218,10 +225,19 @@ class DLEnsemble:
         avg_direction = sum(s["buy_prob"] * weights.get(s["tf"], 0.1) for s in tf_scores) / total_w
         avg_score = sum(s["score"] * weights.get(s["tf"], 0.1) for s in tf_scores) / total_w
         action = "BUY" if avg_direction > 0.50 else "SELL"
-        return {
+        result = {
             "action": action, "score": round(avg_score, 3),
             "buy_prob": round(avg_direction, 3), "tfs": len(tf_scores),
         }
+        # ★ Détection de dégénérescence : score variance < 0.01 → modèle mort
+        self._score_history.append(avg_score)
+        if len(self._score_history) >= 20:
+            variance = np.std(list(self._score_history))
+            if variance < 0.005:
+                logger.warning(f"[DL] MODELE DEGENERE detecte (variance={variance:.4f} sur {len(self._score_history)} preds) — DL desactive")
+                self._degenerate = True
+                return None
+        return result
 
     def record_trade(self, symbol, features_before, profit_r):
         if not self.available:

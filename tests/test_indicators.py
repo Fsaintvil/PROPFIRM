@@ -5,6 +5,8 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import numpy as np
 
+np.random.seed(42)
+
 from engine_simple.indicators import (
     anchored_vwap,
     atr,
@@ -344,3 +346,4 @@ def run():
 if __name__ == "__main__":
     success = run()
     sys.exit(0 if success else 1)
+

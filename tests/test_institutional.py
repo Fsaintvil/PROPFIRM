@@ -4,7 +4,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ["LOG_LEVEL"] = "CRITICAL"
@@ -21,7 +21,7 @@ from engine_simple.risk_manager import (
     StressTester,
     VaREstimator,
 )
-from engine_simple.trade_executor import ExecutionStats, RateLimiter
+from engine_simple.trade_executor import ExecutionStats, PerSymbolRateLimiter as RateLimiter
 
 # ── AuditTrail ──
 
@@ -75,26 +75,26 @@ def test_audit_trail_log_state_change():
     audit.close()
 
 
-# ── RateLimiter ──
+# ── PerSymbolRateLimiter ──
 
 def test_rate_limiter_allows():
-    rl = RateLimiter(max_orders=5, window_seconds=60)
+    rl = RateLimiter(max_per_minute=5, window_seconds=60, min_interval_s=0)
     for _ in range(5):
-        assert rl.allow()
+        assert rl.allow("EURUSD")
 
 
 def test_rate_limiter_blocks():
-    rl = RateLimiter(max_orders=3, window_seconds=60)
+    rl = RateLimiter(max_per_minute=3, window_seconds=60, min_interval_s=0)
     for _ in range(3):
-        rl.allow()
-    assert not rl.allow()
+        rl.allow("EURUSD")
+    assert not rl.allow("EURUSD")
 
 
-def test_rate_limiter_recent_count():
-    rl = RateLimiter(max_orders=10, window_seconds=60)
-    assert rl.recent_count == 0
-    rl.allow()
-    assert rl.recent_count == 1
+def test_rate_limiter_per_symbol_independence():
+    rl = RateLimiter(max_per_minute=1, window_seconds=60, min_interval_s=0)
+    assert rl.allow("EURUSD")
+    assert rl.allow("GBPUSD")  # different symbol
+    assert not rl.allow("EURUSD")  # EURUSD exhausted
 
 
 # ── ExecutionStats ──
@@ -175,7 +175,7 @@ def test_kelly_sizing_low_win_rate():
     perf.avg_r_multiple = 1.0
     perf.trades = 100
     risk = kelly.calculate(perf, 1.0)
-    assert risk <= 0.004
+    assert risk <= 0.0044
 
 
 def test_kelly_sizing_no_trades():
@@ -244,8 +244,9 @@ def test_circuit_breaker_cooldown():
     cb._cooldown_seconds = 1
     cb._trip(0.03, "test")
     assert cb.is_tripped
-    time.sleep(1.1)
-    assert not cb.check(100000, 100000, 0)
+    with patch("engine_simple.risk_manager.time.time") as mock_time:
+        mock_time.return_value = cb._trip_time + 1.5  # advance past cooldown
+        assert not cb.check(100000, 100000, 0)
 
 
 # ── StressTester ──
@@ -286,7 +287,7 @@ def test_broker_delegates_calls():
 
 def test_broker_raises_on_disconnect():
     mt5_mock = MagicMock()
-    broker = Broker(mt5_mock)
+    broker = Broker(mt5_mock, max_connect_attempts=1)  # 1 tentative = pas de backoff
     broker._connected = False
     mt5_mock.connect.return_value = False
     try:

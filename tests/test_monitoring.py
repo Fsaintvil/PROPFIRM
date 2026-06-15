@@ -87,7 +87,18 @@ def test_health_server_endpoints():
     m.inc("trades_total", {"test": "1"})
     server = HealthServer(port=9091, metrics=m, health_check=lambda: {"status": "ok", "balance": 1000})
     server.start()
-    time.sleep(0.3)
+    # poll for server readiness (max 3s)
+    import socket
+    for _ in range(30):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1)
+                s.connect(('localhost', 9091))
+            break
+        except (ConnectionRefusedError, OSError):
+            time.sleep(0.1)
+    else:
+        raise RuntimeError('HealthServer did not start in 3s')
 
     # Test health endpoint
     conn = HTTPConnection("localhost", 9091, timeout=5)

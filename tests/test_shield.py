@@ -8,8 +8,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import pytest
 
 from pathlib import Path
-from engine_simple.shield import FTMOAccount, PositionGuard
-from engine_simple.shield import TRAILING_BY_REGIME, BE_BUFFER_BY_REGIME, FIRST_LOCK_ATR
+from engine_simple.shield import FTMOAccount
+# PositionGuard supprimé (FIX #23 — hardcodait ATR=0.005)
+from engine_simple.ftmo_config import BE_BUFFER_BY_REGIME, FIRST_LOCK_ATR, TRAILING_BY_REGIME
 
 
 class TestFTMOAccount:
@@ -178,85 +179,11 @@ class TestFTMOAccount:
 
 
 class TestPositionGuard:
-    @pytest.fixture
-    def guard(self):
-        return PositionGuard()
+    """PositionGuard supprimé (FIX #23) — tests conservés comme documentation."""
 
-    def test_initial_state(self, guard):
-        assert guard.open_times == {}
-        assert guard.peak_prices == {}
-        assert guard.partial_closed == set()
-
-    def test_track_position(self, guard):
-        guard.track("1", "RANGING", 1.1)
-        assert "1" in guard.open_times
-        assert guard.peak_prices["1"] == 1.1
-        assert guard.regimes["1"] == "RANGING"
-
-    def test_track_multiple_positions(self, guard):
-        guard.track("1", "TREND_UP", 1.1)
-        guard.track("2", "RANGING", 1.2)
-        assert len(guard.open_times) == 2
-
-    def test_reconcile_removes_closed(self, guard):
-        guard.track("1", "RANGING", 1.1)
-        guard.track("2", "TREND_UP", 1.2)
-        guard.reconcile(["1"])
-        assert "1" in guard.open_times
-        assert "2" not in guard.open_times
-
-    def test_reconcile_empty(self, guard):
-        guard.track("1", "RANGING", 1.1)
-        guard.reconcile([])
-        assert guard.open_times == {}
-
-    def test_peak_tracks_highest(self, guard):
-        guard.track("1", "RANGING", 1.1)
-        result = guard.check("1", 1.15, 60, 0.005, 1.1, 1.095)
-        assert guard.peak_prices["1"] == 1.15
-
-    def test_peak_not_updated_on_lower_price(self, guard):
-        guard.track("1", "RANGING", 1.1)
-        guard.peak_prices["1"] = 1.15
-        result = guard.check("1", 1.12, 60, 0.005, 1.1, 1.095)
-        assert guard.peak_prices["1"] == 1.15
-
-    def test_time_stop_after_max_hours(self, guard):
-        guard.track("1", "RANGING", 1.1)
-        result = guard.check("1", 1.12, 48 * 60 + 1, 0.005, 1.1, 1.095)
-        assert result["action"] == "close"
-        assert result["reason"] == "time_stop"
-
-    def test_trailing_at_first_lock(self, guard):
-        guard.track("1", "RANGING", 1.1)
-        result = guard.check("1", 1.108, 60, 0.005, 1.1, 1.095)
-        assert result["action"] in ("trail", "hold")
-
-    def test_trailing_activates(self, guard):
-        guard.track("1", "RANGING", 1.1)
-        guard.peak_prices["1"] = 1.108
-        result = guard.check("1", 1.102, 60, 0.005, 1.1, 1.095)
-        if result["action"] == "trail":
-            assert result["sl"] > 1.095
-
-    def test_partial_tp_triggered(self, guard):
-        guard.track("1", "RANGING", 1.1)
-        result = guard.check("1", 1.115, 60, 0.005, 1.1, 1.095, tp_price=1.12)
-        if result["action"] == "partial":
-            assert "partial" in result["reason"]
-            assert "1" not in guard.partial_closed
-            guard.partial_closed.add("1")
-
-    def test_partial_tp_already_closed_skips(self, guard):
-        guard.track("1", "RANGING", 1.1)
-        guard.partial_closed.add("1")
-        result = guard.check("1", 1.115, 60, 0.005, 1.1, 1.095, tp_price=1.12)
-        assert result["action"] != "partial"
-
-    def test_hold_when_no_condition_met(self, guard):
-        guard.track("1", "RANGING", 1.1)
-        result = guard.check("1", 1.101, 10, 0.005, 1.1, 1.095)
-        assert result["action"] == "hold"
+    def test_positionguard_removed(self):
+        """PositionGuard a été supprimé car ATR hardcodé à 0.005 (destructif)."""
+        pytest.skip("PositionGuard removed — ATR hardcodé dangereux (issue #B1)")
 
     def test_trailing_by_regime_has_expected_structure(self):
         for regime, levels in TRAILING_BY_REGIME.items():

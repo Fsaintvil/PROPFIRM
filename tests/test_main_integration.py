@@ -28,6 +28,7 @@ def make_mock_mt5():
     mock.ORDER_TYPE_SELL = 1
     mock.ORDER_FILLING_IOC = 2
     mock.ORDER_TIME_GTC = 0
+    mock.ORDER_TIME_DAY = 1
     mock.calc_profit.return_value = -50.0
     return mock
 
@@ -63,7 +64,10 @@ class TestFTMOCycle:
         with patch('engine_simple.ftmo_protector.datetime') as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch('engine_simple.ftmo_protector.is_news_blocked', return_value=(False, [])):
-                ok, reason = ftmo.can_trade("USDCHF", signal={"action": "BUY", "score": 0.70})
+                ok, reason = ftmo.can_trade("USDCHF", signal={
+                    "action": "BUY", "score": 0.70,
+                    "sl": 0.7800, "tp": 0.7900,
+                })
                 assert ok, f"Expected OK, got: {reason}"
 
     def test_rejected_when_daily_loss_exceeded(self):
@@ -78,7 +82,10 @@ class TestFTMOCycle:
         with patch('engine_simple.ftmo_protector.datetime') as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch('engine_simple.ftmo_protector.is_news_blocked', return_value=(False, [])):
-                ok, reason = ftmo.can_trade("USDCHF", signal={"action": "BUY", "score": 0.70})
+                ok, reason = ftmo.can_trade("USDCHF", signal={
+                    "action": "BUY", "score": 0.70,
+                    "sl": 0.7800, "tp": 0.7900,
+                })
                 assert not ok
                 assert "daily loss" in reason.lower()
 
@@ -89,11 +96,13 @@ class TestFTMOCycle:
         with patch('engine_simple.ftmo_protector.datetime') as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch('engine_simple.ftmo_protector.is_news_blocked', return_value=(False, [])):
-                ok, reason = ftmo.can_trade("USDCHF", signal={"action": "BUY", "score": 0.70},
-                                            positions=[MagicMock(magic=cfg.ROBOT_MAGIC, symbol="USDCHF",
-                                                                 type=0, ticket=1),
-                                                       MagicMock(magic=cfg.ROBOT_MAGIC, symbol="USDCHF",
-                                                                 type=0, ticket=2)])
+                ok, reason = ftmo.can_trade("USDCHF", signal={
+                    "action": "BUY", "score": 0.70,
+                    "sl": 0.7800, "tp": 0.7900,
+                }, positions=[MagicMock(magic=cfg.ROBOT_MAGIC, symbol="USDCHF",
+                                        type=0, ticket=1),
+                              MagicMock(magic=cfg.ROBOT_MAGIC, symbol="USDCHF",
+                                        type=0, ticket=2)])
                 assert ok, f"Expected OK (correlation check passes for positions list), got: {reason}"
 
     def test_calculate_lot_basic(self):
@@ -131,6 +140,7 @@ class TestFTMOCycle:
                 ok, reason = ftmo.can_trade("USDCHF", signal={
                     "action": "BUY", "score": 0.70,
                     "atr_pct": 3.0, "atr_median_14": 0.5,
+                    "sl": 0.7800, "tp": 0.7900,
                 })
                 assert not ok
                 assert "Volatility" in reason
@@ -139,12 +149,17 @@ class TestFTMOCycle:
         mt5 = make_mock_mt5()
         ftmo = make_ftmo(mt5)
         ftmo.initial_balance = 200000
+        # Profit target = 10% = $20k ; consistency block dès 80% = $16k
+        ftmo.daily_pnl_by_date = {"2026-05-26": 12000, "2026-05-27": 8000}  # $20k realized
         ftmo.consistency_violated = True
         mt5.get_account_info.return_value = MagicMock(equity=220000)
         with patch('engine_simple.ftmo_protector.datetime') as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch('engine_simple.ftmo_protector.is_news_blocked', return_value=(False, [])):
-                ok, reason = ftmo.can_trade("USDCHF", signal={"action": "BUY", "score": 0.70})
+                ok, reason = ftmo.can_trade("USDCHF", signal={
+                    "action": "BUY", "score": 0.70,
+                    "sl": 0.7800, "tp": 0.7900,
+                })
                 assert not ok
                 assert "consistency" in reason.lower()
 

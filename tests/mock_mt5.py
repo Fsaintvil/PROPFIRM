@@ -75,6 +75,7 @@ class MockMT5Server:
         self.ORDER_TYPE_SELL = 1
         self.ORDER_FILLING_IOC = 1
         self.ORDER_TIME_GTC = 0
+        self.ORDER_TIME_DAY = 1
 
     def set_price(self, symbol, bid, ask):
         self._prices[symbol] = (bid, ask)

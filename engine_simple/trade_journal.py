@@ -1,18 +1,29 @@
-"""TradeJournal — stockage SQLite des trades avec stats."""
+"""TradeJournal — stockage SQLite + CSV des trades avec stats."""
+import csv
+import logging
+import os
 import sqlite3
 import threading
-from datetime import datetime, timedelta
+
+logger = logging.getLogger(__name__)
 
 DB_PATH = "runtime/trading_journal.db"
+CSV_PATH = "runtime/trades_log.csv"
 
 _lock = threading.Lock()
+_csv_lock = threading.Lock()
 
 
 class TradeJournal:
-    def __init__(self, max_age_days: int = 365):
+    def __init__(self, max_age_days: int = 365, csv_path: str | None = None):
+        """csv_path: chemin CSV optionnel (par défaut CSV_PATH global).
+        Utiliser un chemin temporaire dans les tests pour ne pas polluer le fichier live."""
         self.max_age_days = max_age_days
+        self.csv_path = csv_path or CSV_PATH
         with _lock:
             self._conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+            self._conn.execute("PRAGMA journal_mode=WAL")  # C-03: WAL mode
+            self._conn.execute("PRAGMA busy_timeout=5000")  # évite contention
             self._conn.execute("""
                 CREATE TABLE IF NOT EXISTS trades (
                     ticket TEXT PRIMARY KEY,
@@ -44,6 +55,40 @@ class TradeJournal:
                     self._conn.execute(f"ALTER TABLE trades ADD COLUMN {col} {coltype}")
             self._conn.commit()
 
+    def _write_csv_backup(self, trade: dict) -> None:
+        """Écriture CSV redondante — backup si SQLite échoue, consultation facile."""
+        try:
+            csv_cols = [
+                "timestamp", "symbol", "direction", "volume",
+                "entry_price", "sl_price", "tp_price", "exit_price",
+                "sl_atr", "tp_atr", "pnl", "reason", "duration_h", "atr_h1",
+            ]
+            row = {
+                "timestamp": trade.get("exit_time", trade.get("entry_time", "")),
+                "symbol": trade.get("symbol", ""),
+                "direction": trade.get("action", ""),
+                "volume": trade.get("lot", 0.0),
+                "entry_price": trade.get("entry_price", 0.0),
+                "sl_price": trade.get("sl", trade.get("sl_price", "")),
+                "tp_price": trade.get("tp", trade.get("tp_price", "")),
+                "exit_price": trade.get("exit_price", 0.0),
+                "sl_atr": trade.get("sl_atr", ""),
+                "tp_atr": trade.get("tp_atr", ""),
+                "pnl": trade.get("profit", 0.0),
+                "reason": "closed",
+                "duration_h": round(trade.get("duration_min", 0) / 60, 2),
+                "atr_h1": trade.get("atr", 0.0),
+            }
+            file_exists = os.path.isfile(self.csv_path)
+            with _csv_lock:
+                with open(self.csv_path, "a", newline="", encoding="utf-8") as f:
+                    writer = csv.DictWriter(f, fieldnames=csv_cols)
+                    if not file_exists:
+                        writer.writeheader()
+                    writer.writerow(row)
+        except Exception as e:
+            logger.warning(f"CSV backup write failed: {e}")
+
     def record_trade(self, trade: dict) -> None:
         with _lock:
             self._conn.execute("""
@@ -61,6 +106,8 @@ class TradeJournal:
                 trade["duration_min"],
             ))
             self._conn.commit()
+        # Backup CSV (hors du lock SQLite pour éviter contention)
+        self._write_csv_backup(trade)
 
     _record_counter: int = 0
 
@@ -76,6 +123,8 @@ class TradeJournal:
             "lot": trade.get("lot", 0.0),
             "entry_price": trade.get("entry_price", trade.get("entry", 0.0)),
             "exit_price": trade.get("exit_price", trade.get("tp", 0.0)),
+            "sl": trade.get("sl", trade.get("sl_price", 0.0)),
+            "tp": trade.get("tp", trade.get("tp_price", 0.0)),
             "profit": trade.get("profit", 0.0),
             "rr": trade.get("rr", 0.0),
             "regime": trade.get("regime", trade.get("reason", "")),

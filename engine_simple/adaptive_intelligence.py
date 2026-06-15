@@ -2,8 +2,8 @@ import logging
 import os
 from collections import deque
 from datetime import datetime
+from pathlib import Path
 
-import joblib
 import numpy as np
 
 from engine_simple.dl_ensemble import DLEnsemble
@@ -40,7 +40,11 @@ class MarketRegime:
             return "RANGING", {"adx": 20, "vol_percentile": 0.5, "structure_trend": "unknown"}
 
         # Hook _adx pour compatibilité tests (peut être patché)
-        adx_val = self._adx(highs, lows, closes)
+        _adx_result = self._adx(highs, lows, closes)
+        if isinstance(_adx_result, (int, float)):
+            adx_val = float(_adx_result)
+        else:
+            adx_val, _, _ = _adx_result
 
         # Délégation au nouveau détecteur
         regime, meta = self._detector.detect(highs, lows, closes, adx_val=adx_val)
@@ -80,16 +84,153 @@ class MarketRegime:
 
 
 class OnlineLearner:
-    def __init__(self, window=200):
+    def __init__(self, window=200, state_path=None):
         self.window = window
         self.history = {}
         self.adapted_params = {}
+        self._state_path = state_path
+        self._batch_mode = False  # True → skip save_state() jusqu'à flush()
+        if self._state_path:
+            self._load_state()
+
+    def batch_mode(self, active=True):
+        """Active/désactive le mode batch. En mode batch, save_state() est
+        un no-op. Appeler flush() pour sauvegarder une fois à la fin."""
+        self._batch_mode = active
+
+    def flush(self):
+        """Force la sauvegarde si en mode batch."""
+        if self._batch_mode:
+            self._batch_mode = False
+            self.save_state()
+            self._batch_mode = True
+
+    # ── Persistance disque ──────────────────────────────────────────
+    STATE_FILENAME = "runtime/online_learner_state.json"
+
+    def save_state(self, path=None):
+        path = path or self._state_path or self.STATE_FILENAME
+        try:
+            data = {
+                "window": self.window,
+                "history": {sym: list(h) for sym, h in self.history.items()},
+                "adapted_params": self.adapted_params,
+            }
+            import json, time as _time
+            path = str(path)
+            Path(path).parent.mkdir(parents=True, exist_ok=True)
+            # Écriture atomique : tmp + rename
+            tmp = path + f".tmp.{_time.time()}"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, default=str)
+            import os as _os
+            _os.replace(tmp, path)
+        except Exception as e:
+            logger.debug(f"[OnlineLearner] save_state failed: {e}")
+
+    def _load_state(self, path=None):
+        path = path or self._state_path or self.STATE_FILENAME
+        try:
+            import json
+            path = str(path)
+            if not Path(path).exists():
+                # Pas de state disque → nettoyer le lock seed pour permettre re-seed
+                seed_csv = Path("runtime/online_learner_seed.csv")
+                if seed_csv.exists():
+                    lock = seed_csv.with_suffix(".lock")
+                    if lock.exists():
+                        try:
+                            lock.unlink()
+                            logger.info("[OnlineLearner] Lock seed nettoyé (state.json absent)")
+                        except Exception:
+                            pass
+                return
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            loaded_window = data.get("window", self.window)
+            if loaded_window != self.window:
+                logger.info(f"[OnlineLearner] window {loaded_window} != config {self.window} — using loaded")
+                self.window = loaded_window
+            self.history = {}
+            for sym, trades in data.get("history", {}).items():
+                self.history[sym] = deque(trades[-self.window:], maxlen=self.window)
+            self.adapted_params = data.get("adapted_params", {})
+            n_trades = sum(len(h) for h in self.history.values())
+            logger.info(f"[OnlineLearner] État restauré: {len(self.history)} symboles, {n_trades} trades")
+        except Exception as e:
+            logger.warning(f"[OnlineLearner] load_state failed: {e}")
+            self.history = {}
+            self.adapted_params = {}
+
+    def seed_from_csv(self, csv_path: str = "runtime/online_learner_seed.csv"):
+        """Pré-remplit l'OnlineLearner depuis un fichier CSV de seed.
+        Les trades seed n'écrasent PAS les trades existants (import unique).
+        """
+        import csv
+        path = Path(csv_path)
+        if not path.exists():
+            logger.info(f"[OnlineLearner] seed CSV {csv_path} non trouvé — skip")
+            return
+        # Vérifier si déjà seedé (fichier seed lock)
+        lock = path.with_suffix(".lock")
+        if lock.exists():
+            logger.info(f"[OnlineLearner] Seed déjà appliqué ({lock}) — skip")
+            return
+        count = 0
+        with open(path, "r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                sym = row.get("symbol", "").strip()
+                if not sym:
+                    continue
+                try:
+                    r_mul = float(row.get("r_multiple", 0))
+                except (ValueError, TypeError):
+                    r_mul = 0
+                regime = row.get("direction", "?")[:5]  # BUY/SELL comme proxy de régime
+                if sym not in self.history:
+                    self.history[sym] = deque(maxlen=self.window)
+                self.history[sym].append({"r": r_mul, "regime": regime})
+                count += 1
+        # Recalculer les paramètres pour chaque symbole
+        for sym in list(self.history.keys()):
+            self._update_params(sym)
+        # Marquer seed comme appliqué
+        try:
+            lock.write_text("done")
+        except Exception:
+            pass
+        # Persister immédiatement pour que le seed survive aux redémarrages
+        try:
+            self.save_state()
+            logger.info(f"[OnlineLearner] État seedé persisté sur disque")
+        except Exception as e:
+            logger.warning(f"[OnlineLearner] Échec persistance seed: {e}")
+        logger.info(f"[OnlineLearner] Seed: {count} trades chargés depuis {csv_path}")
+
+    # ── Enregistrement ──────────────────────────────────────────────
 
     def record_trade(self, symbol, r_multiple, regime):
         if symbol not in self.history:
             self.history[symbol] = deque(maxlen=self.window)
         self.history[symbol].append({"r": r_multiple, "regime": regime})
         self._update_params(symbol)
+        if not self._batch_mode:
+            self.save_state()
+
+    def record_trades_batch(self, symbol, trades):
+        """Ajoute plusieurs trades d'un coup sans sauvegarder entre chaque."""
+        if symbol not in self.history:
+            self.history[symbol] = deque(maxlen=self.window)
+        for t in trades:
+            self.history[symbol].append(t)
+        self._update_params(symbol)
+        if not self._batch_mode:
+            self.save_state()
+
+    def set_params_direct(self, symbol, params_dict):
+        """Définit directement adapted_params sans recalcul (pour restauration)."""
+        self.adapted_params[symbol] = params_dict
 
     def get_params(self, symbol, base_thresh=3.0):
         if symbol not in self.adapted_params:
@@ -100,9 +241,25 @@ class OnlineLearner:
         h = list(self.history.get(symbol, []))
         if len(h) < self.window // 2:
             return
-        rr = np.array([t["r"] for t in h])
+        # Filtrer les trades avec régime valide (IGNORE les trades UNKNOWN/?)
+        # Permissif: seed data utilise direction comme proxy de régime (BUY/SELL) + HIST pour trades historiques
+        valid_regimes = {"RANGING", "TREND_UP", "TREND_DOWN", "HIGH_VOL", "LOW_VOL", "HIST", "RAN", "BUY", "SELL"}
+        h_valid = [t for t in h if t.get("regime", "") in valid_regimes]
+        
+        # Si moins de 5 trades valides ou si la majorité des trades sont invalides,
+        # on garde le paramétrage par défaut (ne pas apprendre sur des données pourries)
+        if len(h_valid) < 5 or (len(h) > 0 and len(h_valid) / len(h) < 0.3):
+            # Trop peu de trades fiables → adapted_params par défaut
+            logger.info(f"[OnlineLearner] {symbol}: {len(h_valid)}/{len(h)} régimes valides "
+                       f"— skip apprentissage (données insuffisantes)")
+            if symbol in self.adapted_params:
+                del self.adapted_params[symbol]
+            return
+        
+        rr = np.array([t["r"] for t in h_valid])
         wr = np.mean(rr > 0)
         expectancy = np.mean(rr)
+        logger.info(f"[OnlineLearner] {symbol}: {len(h_valid)} trades valides, WR={wr:.1%}, expectancy={expectancy:.2f}")
         thresh = 2.5
         risk_mult = 1.0
         if wr < 0.70:
@@ -141,17 +298,27 @@ class AdaptiveEngine:
     def __init__(self, mt5, calibration_path=None):
         self.mt5 = mt5
         self.regime = MarketRegime()
-        self.learner = OnlineLearner()
+        # OnlineLearner persistant : charge l'état depuis le disque,
+        # puis seed depuis les fichiers Excel historiques si premier démarrage
+        self.learner = OnlineLearner(window=200, state_path=OnlineLearner.STATE_FILENAME)
+        self.learner.seed_from_csv("runtime/online_learner_seed.csv")
         self.meta = MetaLearner(recalibration_freq=50)
+        self.meta.load_state()  # restaure les trackers depuis meta_learner.json
         self.dl = DLEnsemble()
         # ML Ensemble (RF/XGB/LGBM) désactivé — info-only à 45%, 581 MB RAM pour rien
         self.ml = None
         self.lgb = None  # LightGBM désactivé (poids=0)
         self._dl_grey_zone = False  # flag pour risk/2 entre 0.50-0.60
-        logger.info(f"Meta-Learner ready, tracking {len(self.meta.get_model_names())} models")
+        # Bilan ML explicite : l'opérateur sait exactement ce qui tourne
+        dl_status = "AVAILABLE" if self.dl.available else "DISABLED (no models)"
+        logger.info(f"Meta-Learner ready, tracking {len(self.meta.get_model_names())} models | "
+                    f"DL={dl_status} | LGB=DISABLED | Ensemble=DISABLED")
         self.calibration_path = calibration_path
         if calibration_path:
             self._load_calibration(calibration_path)
+        # Sync meta_learner.json immédiatement pour que les diagnostics externes
+        # (check_calibration.py, AGENTS.md) trouvent les données au bon format
+        self.meta.save_state()
         if WalkForwardValidator is not None:
             self.validator = WalkForwardValidator(snapshot_interval=50)
             logger.info("Walk-Forward Validator ready")
@@ -164,11 +331,27 @@ class AdaptiveEngine:
             logger.warning(f"  [CAL] Calibration file not found: {path}")
             return
         try:
-            state = joblib.load(path)
+            # SÉCURITÉ: joblib.load = pickle RCE (C-01). Migré vers JSON sécurisé.
+            # Vérification que le fichier n'est pas modifié avant chargement.
+            if not os.path.exists(path):
+                return
+            stat = os.stat(path)
+            if stat.st_size > 10 * 1024 * 1024:  # >10MB = suspect
+                logger.error(f"  [CAL] Fichier calibration trop volumineux ({stat.st_size} bytes) — refusé")
+                return
+            import json
+            with open(path, "r") as f:
+                raw = f.read()
+            if len(raw) > 50 * 1024 * 1024:  # 50MB max safe JSON
+                logger.error("  [CAL] Calibration JSON >50MB — refusé")
+                return
+            state = json.loads(raw)
             mc = state.get("meta_calibration", {})
-            mc_calibrated = mc.get("meta_calibration", mc)
+            # ← FIX: backward compat — supporte ancien double-nesting ET nouveau format plat
+            if "meta_calibration" in mc and isinstance(mc["meta_calibration"], dict):
+                mc = mc["meta_calibration"]
             # Restore MetaLearner trackers
-            for name, tdata in mc_calibrated.get("meta_trackers", {}).items():
+            for name, tdata in mc.get("meta_trackers", {}).items():
                 if name in self.meta.trackers:
                     t = self.meta.trackers[name]
                     for stat_key, stat_val in tdata.items():
@@ -177,19 +360,19 @@ class AdaptiveEngine:
                             store.clear()
                             store.update(stat_val)
             # Restore regime performance + penalties
-            rp = mc_calibrated.get("meta_regime_performance", {})
+            rp = mc.get("meta_regime_performance", {})
             if rp:
                 self.meta.regime_performance.clear()
                 for k, v in rp.items():
                     self.meta.regime_performance[k] = v
-            rp_penalty = mc_calibrated.get("meta_regime_penalty", {})
+            rp_penalty = mc.get("meta_regime_penalty", {})
             if rp_penalty:
                 for model_name, penalties in rp_penalty.items():
                     t = self.meta.trackers.get(model_name)
                     if t:
                         for regime, penalty in penalties.items():
                             t.regime_penalty[regime] = penalty
-            self.meta.trades_since_recal = mc_calibrated.get("meta_trades_since_recal", 0)
+            self.meta.trades_since_recal = mc.get("meta_trades_since_recal", 0)
             # Restore OnlineLearner history
             ol = state.get("online_history", {})
             for sym, hist_list in ol.items():
@@ -198,9 +381,11 @@ class AdaptiveEngine:
                     self.learner.history[sym].append(h)
                 self.learner._update_params(sym)
             counts = sum(len(v) for v in state.get("online_history", {}).values())
-            n_trackers = len(mc_calibrated.get("meta_trackers", {}))
+            n_trackers = len(mc.get("meta_trackers", {}))
             logger.info(f"  [CAL] Loaded calibration: MetaLearner {n_trackers} "
                         f"trackers, OnlineLearner {counts} records")
+            # Sync meta_learner.json après chargement réussi
+            self.meta.save_state()
         except (KeyError, ValueError, TypeError, AttributeError, OSError) as e:
             logger.warning(f"  [CAL] Failed to load calibration: {e}")
 
@@ -225,12 +410,20 @@ class AdaptiveEngine:
                 "meta_trades_since_recal": self.meta.trades_since_recal,
             }
             state = {
-                "meta_calibration": {"meta_calibration": mc},
+                "meta_calibration": mc,  # ← FIX: pas de double-nesting
+                "meta_trackers": {        # ← FIX: exposition directe pour diagnostic
+                    name: dict(tracker.global_stats)
+                    for name, tracker in self.meta.trackers.items()
+                },
                 "online_history": {
                     sym: list(h) for sym, h in self.learner.history.items()
                 },
             }
-            joblib.dump(state, self.calibration_path)
+            import json
+            with open(self.calibration_path, "w") as f:
+                json.dump(state, f, indent=2, default=str)
+            # Sync meta_learner.json en parallèle
+            self.meta.save_state()
         except (OSError, KeyError, ValueError, TypeError) as e:
             logger.warning(f"  [CAL] Failed to save calibration: {e}")
 
@@ -257,7 +450,7 @@ class AdaptiveEngine:
                         dl_label = f"{dl_result['action']} ({dl_result['buy_prob']:.3f})"
                     logger.info(f"  [VIGIL] {symbol}: regime={regime} DL={dl_label} ADX={meta['adx']:.0f}")
             except (ValueError, TypeError, IndexError, AttributeError) as e:
-                logger.debug(f"  [VIGIL] {symbol}: DL error: {e}")
+                logger.warning(f"  [VIGIL] {symbol}: DL error: {e}")
         return {"symbol": symbol, "regime": regime, "regime_meta": meta,
                 "dl_action": dl_result["action"] if dl_result else None,
                 "dl_score": dl_result["score"] if dl_result else None,
@@ -336,7 +529,7 @@ class AdaptiveEngine:
                         dl_agrees = dl_result.get("action", "HOLD") == signal.get("action", "HOLD")
                         logger.info(f"  [DL] {symbol}: {dl_result['action']} (score={dl_score:.3f}, agree={dl_agrees})")
             except (ValueError, TypeError, IndexError, AttributeError, KeyError) as e:
-                logger.debug(f"  [DL] {symbol}: predict error: {e}")
+                logger.warning(f"  [DL] {symbol}: predict error: {e}")
 
 
         # Meta-Learner: combine predictions (≥ 2 modèles suffit: MOM20x3 + DL LSTM)
@@ -497,16 +690,21 @@ class AdaptiveEngine:
 
     def save_calibration(self):
         self._save_calibration()
+        self.meta.save_state()  # persist separate meta_learner.json
 
-    def record_result(self, symbol, r_multiple, regime=None, dl_features=None):
+    def record_result(self, symbol, r_multiple, regime=None, dl_features=None, batch=False):
         self.learner.record_trade(symbol, r_multiple, regime)
+        if not batch:
+            self._save_calibration()  # persistence immédiate après chaque trade réel
         if dl_features is not None and self.dl.available:
             self.dl.record_trade(symbol, dl_features, r_multiple)
 
     def record_meta_result(self, symbol, regime, predictions_outcomes):
         self.meta.record_trade(symbol, regime, predictions_outcomes)
-        for mname, correct in predictions_outcomes.items():
-            self.validator.record(mname, correct, regime, symbol)
+        if self.validator is not None:
+            for mname, correct in predictions_outcomes.items():
+                self.validator.record(mname, correct, regime, symbol)
+        self._save_calibration()  # persistence après chaque meta trade
 
     def train_dl_if_ready(self):
         if self.dl.available:

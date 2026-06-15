@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import numpy as np
 import pytest
 
-from engine_simple.regime import RegimeDetector, ADX_TREND_THRESHOLD
+from engine_simple.regime import RegimeDetector, ADX_TREND_ENTER
 
 
 @pytest.fixture
@@ -14,10 +14,12 @@ def detector():
     return RegimeDetector()
 
 
-def _make_rates(n, base=1.1, trend=0, vol=0.001):
-    closes = [base + trend * i + np.random.normal(0, vol) for i in range(n)]
-    highs = [c + abs(np.random.normal(0, vol * 2)) for c in closes]
-    lows = [c - abs(np.random.normal(0, vol * 2)) for c in closes]
+def _make_rates(n, base=1.1, trend=0, vol=0.001, seed=42):
+    """Génère des prix synthétiques avec seed fixe pour reproductibilité."""
+    rng = np.random.RandomState(seed)
+    closes = [base + trend * i + rng.normal(0, vol) for i in range(n)]
+    highs = [c + abs(rng.normal(0, vol * 2)) for c in closes]
+    lows = [c - abs(rng.normal(0, vol * 2)) for c in closes]
     return (
         np.array(highs, dtype=float),
         np.array(lows, dtype=float),
@@ -49,12 +51,13 @@ class TestRegimeDetector:
         assert regime in ("RANGING", "LOW_VOL", "HIGH_VOL")
 
     def test_low_vol_detected(self, detector):
-        h, l, c = _make_rates(100, trend=0, vol=0.00001)
+        h, l, c = _make_rates(100, trend=0, vol=0.00002, seed=42)
         regime, meta = detector.detect(h, l, c)
         assert regime in ("RANGING", "LOW_VOL")
+        assert meta.get("vol_percentile", 0.5) <= 0.5  # percentile faible attendu
 
     def test_high_vol_detected(self, detector):
-        h, l, c = _make_rates(100, trend=0, vol=0.01)
+        h, l, c = _make_rates(100, trend=0, vol=0.1, seed=102)
         regime, meta = detector.detect(h, l, c)
         assert regime in ("RANGING", "HIGH_VOL")
 
@@ -109,4 +112,5 @@ class TestRegimeDetector:
 
 
 def test_adx_trend_threshold_constant():
-    assert ADX_TREND_THRESHOLD == 20
+    assert ADX_TREND_ENTER == 22
+

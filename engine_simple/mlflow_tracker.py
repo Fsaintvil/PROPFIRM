@@ -133,5 +133,5 @@ class MLflowTracker:
                 import mlflow.sklearn
                 mlflow.pytorch.autolog()
                 mlflow.sklearn.autolog()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("MLflow autolog failed: %s", e)

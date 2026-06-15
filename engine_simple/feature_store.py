@@ -11,6 +11,8 @@ class FeatureStore:
         if parent:
             os.makedirs(parent, exist_ok=True)
         self.conn = sqlite3.connect(path)
+        self.conn.execute("PRAGMA journal_mode=WAL")  # C-03: WAL mode
+        self.conn.execute("PRAGMA busy_timeout=5000")  # évite contention
         self.conn.execute("""
             CREATE TABLE IF NOT EXISTS features (
                 ticket INTEGER PRIMARY KEY,

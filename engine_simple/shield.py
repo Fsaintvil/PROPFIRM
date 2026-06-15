@@ -1,36 +1,21 @@
-"""Protection FTMO — moteur de risque challenge
+"""Protection FTMO — FTMOAccount (état du challenge).
 
-FTMOAccount : état du challenge (DD, daily loss, consistance, min jours)
-PositionGuard : trailing ATR, partial TP, time-stop
+FTMOAccount : état du challenge (DD, daily loss, consistance, min jours).
+PositionGuard SUPPRIMÉ (FIX #23 — hardcodait ATR=0.005 = stop-out garanti).
 """
 import json
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 logger = logging.getLogger("shield")
-
-TRAILING_BY_REGIME = {
-    "TREND_UP":    [(1.00, 0.80), (2.00, 0.50), (3.00, 0.30), (5.00, 0.15)],
-    "TREND_DOWN":  [(1.00, 0.80), (2.00, 0.50), (3.00, 0.30), (5.00, 0.15)],
-    "RANGING":     [(1.00, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
-    "HIGH_VOL":    [(1.00, 1.00), (2.00, 0.70), (3.00, 0.50), (5.00, 0.25)],
-    "LOW_VOL":     [(1.00, 0.40), (2.00, 0.25), (3.00, 0.15), (5.00, 0.08)],
-}
-
-BE_BUFFER_BY_REGIME = {
-    "TREND_UP": 0.60, "TREND_DOWN": 0.60,
-    "RANGING": 0.80, "HIGH_VOL": 1.00, "LOW_VOL": 0.50,
-}
-
-FIRST_LOCK_ATR = 1.0
 
 
 class FTMOAccount:
     """État du challenge FTMO : DD, daily loss, consistance, min jours."""
 
-    STATE_PATH = Path("runtime/robot_state.json")
+    STATE_PATH = Path("runtime/shield_state.json")
 
     def __init__(self, initial_balance: float, peak_equity: float, current_balance: float):
         self.initial_balance = initial_balance
@@ -133,7 +118,26 @@ class FTMOAccount:
             "daily_start_equity": self.daily_start_equity,
         }
         self.STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        self.STATE_PATH.write_text(json.dumps(data, default=str))
+        # Écriture atomique : temp puis rename
+        tmp = self.STATE_PATH.with_suffix(".tmp")
+        tmp.write_text(json.dumps(data, default=str))
+        tmp.replace(self.STATE_PATH)
+        # H-01: Synchronisation croisée avec robot_state.json
+        try:
+            _main_state_path = Path("runtime/robot_state.json")
+            if _main_state_path.exists():
+                main_data = json.loads(_main_state_path.read_text())
+                main_data["status"] = self.status
+                main_data["consecutive_losses"] = self.consecutive_losses
+                main_data["total_profit"] = self.total_profit
+                main_data["total_trades"] = self.total_trades
+                main_data["trading_days"] = list(self.trading_days)
+                main_data["daily_pnl"] = {str(k): v for k, v in self.daily_pnl.items()}
+                main_tmp = _main_state_path.with_suffix(".tmp")
+                main_tmp.write_text(json.dumps(main_data, default=str))
+                main_tmp.replace(_main_state_path)
+        except Exception as e:
+            logger.debug(f"[SHIELD] Sync vers robot_state.json ignoré: {e}")
 
     @classmethod
     def load(cls) -> "FTMOAccount | None":
@@ -158,71 +162,4 @@ class FTMOAccount:
             return None
 
 
-class PositionGuard:
-    """Surveillance des positions : trailing ATR, partial TP, time-stop."""
 
-    MAX_POSITION_HOURS = 48
-
-    def __init__(self):
-        self.open_times: dict[str, datetime] = {}
-        self.peak_prices: dict[str, float] = {}
-        self.partial_closed: set[str] = set()
-        self.regimes: dict[str, str] = {}
-        self.max_profit_mult: dict[str, float] = {}
-
-    def track(self, ticket: str, regime: str, entry_price: float) -> None:
-        self.open_times[ticket] = datetime.utcnow()
-        self.peak_prices[ticket] = entry_price
-        self.partial_closed.discard(ticket)
-        self.regimes[ticket] = regime
-        self.max_profit_mult[ticket] = 0.0
-
-    def reconcile(self, tickets: list[str]) -> None:
-        known = set(tickets)
-        for t in list(self.open_times.keys()):
-            if t not in known:
-                del self.open_times[t]
-                self.peak_prices.pop(t, None)
-                self.partial_closed.discard(t)
-                self.regimes.pop(t, None)
-                self.max_profit_mult.pop(t, None)
-
-    def check(self, ticket: str, price: float, age_minutes: float,
-              atr_val: float, entry_price: float, sl_price: float,
-              tp_price: float | None = None) -> dict:
-        regime = self.regimes.get(ticket, "RANGING")
-        peak = self.peak_prices.get(ticket, entry_price)
-        if price > peak:
-            self.peak_prices[ticket] = price
-            peak = price
-
-        profit_dist = abs(peak - entry_price) if entry_price > 0 else 0
-        profit_atr = profit_dist / max(atr_val, 1e-10)
-        self.max_profit_mult[ticket] = max(self.max_profit_mult.get(ticket, 0), profit_atr)
-        dist_from_peak = abs(peak - price)
-
-        # Time-stop
-        if age_minutes > self.MAX_POSITION_HOURS * 60:
-            return {"action": "close", "reason": "time_stop", "sl": sl_price}
-
-        # Partial TP (50% à 60% du TP)
-        if ticket not in self.partial_closed and tp_price:
-            progress = (price - entry_price) / (tp_price - entry_price) if abs(tp_price - entry_price) > 1e-10 else 0
-            if abs(progress) > 0.60:
-                be_buffer = BE_BUFFER_BY_REGIME.get(regime, 0.80)
-                be_sl = entry_price + be_buffer * atr_val * (1 if price > entry_price else -1)
-                return {"action": "partial", "reason": "partial_tp_60", "sl": be_sl}
-
-        # Trailing stop
-        if profit_atr >= FIRST_LOCK_ATR:
-            levels = TRAILING_BY_REGIME.get(regime, TRAILING_BY_REGIME["RANGING"])
-            trail_mult = levels[-1][1]
-            for threshold, mult in levels:
-                if profit_atr >= threshold:
-                    trail_mult = mult
-            new_sl = peak - trail_mult * atr_val
-            if dist_from_peak > trail_mult * atr_val:
-                if new_sl > sl_price:
-                    return {"action": "trail", "reason": "trailing", "sl": new_sl}
-
-        return {"action": "hold", "reason": "", "sl": sl_price}

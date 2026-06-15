@@ -156,17 +156,4 @@ def find_imbalances(h1_high, h1_low, h1_close, lookback=20):
     return imbalances
 
 
-def detect_swept_fvg(fvgs, current_low, current_high):
-    swept = []
-    for f in fvgs:
-        if f["type"] == "BULL":
-            if current_low <= f["bottom"]:
-                swept.append({**f, "swept": True})
-            else:
-                swept.append({**f, "swept": False})
-        elif f["type"] == "BEAR":
-            if current_high >= f["top"]:
-                swept.append({**f, "swept": True})
-            else:
-                swept.append({**f, "swept": False})
-    return swept
+

@@ -29,7 +29,8 @@ class PreTradeChecklist:
         checks = []
         all_pass = True
 
-        can_trade, reason = self.ftmo.can_trade(symbol)
+        # Pré-vérification SANS signal : skip DANGER_HOURS (vérifié plus tard avec le signal)
+        can_trade, reason = self.ftmo.can_trade(symbol, check_danger_hours=False)
         checks.append({
             "rule": "can_trade",
             "pass": can_trade,
@@ -158,17 +159,18 @@ class StressTester:
             "flash_crash_2pct": {"move_pct": -0.02, "label": "Flash crash -2%"},
         }
 
-    def run(self, symbol, entry, sl, lot, atr, price):
+    def run(self, symbol, entry, sl, lot, atr, price, action="BUY"):
+        direction = 1 if action.upper() == "BUY" else -1
         results = {}
         for name, scenario in self.scenarios.items():
             move = scenario["move_sigma"] * atr if "move_sigma" in scenario else price * scenario["move_pct"]
             new_price = price + move
-            pnl = (new_price - entry) * lot * 100000 if new_price > entry else (entry - new_price) * lot * 100000
+            pnl = (new_price - entry) * direction * lot * 100000
             hits_sl = (move < 0 and new_price <= sl) or (move > 0 and new_price >= sl)
             results[name] = {
                 "pnl_estimate": round(pnl, 2),
                 "hits_sl": hits_sl,
-                "worst_case": min(pnl, (sl - entry) * lot * 100000),
+                "worst_case": (sl - entry) * direction * lot * 100000,
             }
         return results
 
@@ -198,10 +200,14 @@ class CircuitBreaker:
         while self._pnl_snapshots and now - self._pnl_snapshots[0][0] > self.window_minutes * 60:
             self._pnl_snapshots.popleft()
 
-    def check(self, current_equity, reference_equity, consecutive_losses):
+    def check(self, current_equity, reference_equity, consecutive_losses, ftmo=None):
         if self._tripped:
             if time.time() - self._trip_time > self._cooldown_seconds:
                 self._tripped = False
+                # NE PAS reset ftmo.consecutive_losses — le FTMO Protector a son propre
+                # mécanisme d'auto-pause (AUTO_PAUSE_LOSSES). Si le circuit breaker
+                # reset ce compteur, les pertes historiques sont perdues et le premier
+                # trade après cooldown repart sans protection.
                 logger.info("[CIRCUIT BREAKER] Reset apres cooldown")
                 return False
             return True
@@ -251,14 +257,14 @@ class RiskManager:
     def calculate_position_risk(self, symbol_perf, rr):
         return self.kelly.calculate(symbol_perf, rr)
 
-    def check_circuit(self, equity, reference, consecutive_losses):
-        return self.circuit_breaker.check(equity, reference, consecutive_losses)
+    def check_circuit(self, equity, reference, consecutive_losses, ftmo=None):
+        return self.circuit_breaker.check(equity, reference, consecutive_losses, ftmo=ftmo)
 
     def estimate_var(self, position_value):
         return self.var_estimator.parametric_var(position_value)
 
-    def stress_test(self, symbol, entry, sl, lot, atr, price):
-        return self.stress_tester.run(symbol, entry, sl, lot, atr, price)
+    def stress_test(self, symbol, entry, sl, lot, atr, price, action="BUY"):
+        return self.stress_tester.run(symbol, entry, sl, lot, atr, price, action=action)
 
     def update(self, equity, reference):
         self.circuit_breaker.update(equity, reference)

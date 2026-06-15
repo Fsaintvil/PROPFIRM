@@ -55,7 +55,7 @@ class TestDetectBOS:
         h = np.linspace(1.15, 1.10, 20, dtype=float)
         l = h - 0.005
         c = (h + l) / 2
-        bos_type, level = detect_bos(h, l, c, window=5)
+        bos_type, level, _ = detect_bos(h, l, c, window=5)
         assert bos_type == "BEARISH"
         assert level is not None
 
@@ -63,7 +63,7 @@ class TestDetectBOS:
         h = np.linspace(1.10, 1.15, 20, dtype=float)
         l = h - 0.005
         c = (h + l) / 2
-        bos_type, level = detect_bos(h, l, c, window=5)
+        bos_type, level, _ = detect_bos(h, l, c, window=5)
         assert bos_type == "BULLISH"
         assert level is not None
 
@@ -71,7 +71,7 @@ class TestDetectBOS:
         h = np.array([1.10, 1.11], dtype=float)
         l = np.array([1.09, 1.10], dtype=float)
         c = np.array([1.095, 1.105], dtype=float)
-        bos_type, level = detect_bos(h, l, c, window=5)
+        bos_type, level, _ = detect_bos(h, l, c, window=5)
         assert bos_type is None
 
     def test_no_bos_on_noisy_data(self):
@@ -79,7 +79,7 @@ class TestDetectBOS:
         h = 1.10 + np.random.randn(30) * 0.01
         l = h - 0.005
         c = (h + l) / 2
-        bos_type, level = detect_bos(h, l, c, window=5)
+        bos_type, level, _ = detect_bos(h, l, c, window=5)
         assert bos_type is None
 
 
@@ -92,7 +92,7 @@ class TestDetectCHoCH:
                       1.02, 1.01, 1.00, 0.99, 0.98, 0.97], dtype=float)
         l = h - 0.01
         c = (h + l) / 2
-        choch_type, level = detect_choch(h, l, c, window=5)
+        choch_type, level, _ = detect_choch(h, l, c, window=5)
         assert choch_type == "BEARISH"
 
     def test_bullish_choch(self):
@@ -102,21 +102,21 @@ class TestDetectCHoCH:
                       1.13, 1.14, 1.15, 1.16, 1.17, 1.18, 1.19], dtype=float)
         l = h - 0.01
         c = (h + l) / 2
-        choch_type, level = detect_choch(h, l, c, window=5)
+        choch_type, level, _ = detect_choch(h, l, c, window=5)
         assert choch_type == "BULLISH"
 
     def test_no_choch_on_trend(self):
         h = np.linspace(1.10, 1.15, 60, dtype=float)
         l = h - 0.005
         c = (h + l) / 2
-        choch_type, level = detect_choch(h, l, c, window=5)
+        choch_type, level, _ = detect_choch(h, l, c, window=5)
         assert choch_type is None
 
     def test_no_choch_on_short_data(self):
         h = np.array([1.10, 1.11], dtype=float)
         l = np.array([1.09, 1.10], dtype=float)
         c = np.array([1.095, 1.105], dtype=float)
-        choch_type, level = detect_choch(h, l, c, window=5)
+        choch_type, level, _ = detect_choch(h, l, c, window=5)
         assert choch_type is None
 
 
@@ -126,7 +126,7 @@ class TestStructureExitSignal:
         h = np.linspace(1.15, 1.10, 20, dtype=float)
         l = h - 0.005
         c = (h + l) / 2
-        should_exit, reason = structure_exit_signal(0, h, l, c, window=5)
+        should_exit, reason, _ = structure_exit_signal(0, h, l, c, window=5)
         assert should_exit is True
         assert "BEARISH_BOS" in reason
 
@@ -134,7 +134,7 @@ class TestStructureExitSignal:
         h = np.linspace(1.10, 1.15, 20, dtype=float)
         l = h - 0.005
         c = (h + l) / 2
-        should_exit, reason = structure_exit_signal(1, h, l, c, window=5)
+        should_exit, reason, _ = structure_exit_signal(1, h, l, c, window=5)
         assert should_exit is True
         assert "BULLISH_BOS" in reason
 
@@ -142,12 +142,12 @@ class TestStructureExitSignal:
         h = np.linspace(1.10, 1.15, 20, dtype=float)
         l = h - 0.005
         c = (h + l) / 2
-        should_exit, _ = structure_exit_signal(0, h, l, c, window=5)
+        should_exit, _, _ = structure_exit_signal(0, h, l, c, window=5)
         assert should_exit is False
 
     def test_no_exit_on_short_data(self):
         h = np.array([1.10, 1.11], dtype=float)
         l = np.array([1.09, 1.10], dtype=float)
         c = np.array([1.095, 1.105], dtype=float)
-        should_exit, _ = structure_exit_signal(0, h, l, c, window=5)
+        should_exit, _, _ = structure_exit_signal(0, h, l, c, window=5)
         assert should_exit is False
