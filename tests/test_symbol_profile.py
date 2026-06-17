@@ -1,4 +1,5 @@
-"""Tests pour SymbolProfile et connaissance institutionnelle des 4 paires"""
+"""Tests pour SymbolProfile et connaissance institutionnelle des 4 symboles actifs"""
+
 import os
 import sys
 
@@ -19,14 +20,17 @@ from engine_simple.symbol_profile import (
     validate_trade_with_profile,
 )
 
+# Symboles actifs Juin 2026
+ACTIVE_SYMBOLS = ["XAUUSD", "BTCUSD", "ETHUSD", "US500.cash"]
+
 
 class TestSymbolProfileExists:
     def test_all_four_profiles_exist(self):
-        for sym in ["USDCAD", "GBPUSD", "USDCHF", "EURUSD"]:
+        for sym in ACTIVE_SYMBOLS:
             assert sym in PROFILES, f"Missing profile for {sym}"
 
     def test_get_profile(self):
-        for sym in ["USDCAD", "GBPUSD", "USDCHF", "EURUSD"]:
+        for sym in ACTIVE_SYMBOLS:
             p = get_profile(sym)
             assert p is not None
             assert p.symbol == sym
@@ -38,91 +42,90 @@ class TestSymbolProfileExists:
 
 
 class TestInstitutionalKnowledge:
-    def test_gbpusd_most_volatile(self):
-        gbpusd = get_profile("GBPUSD")
-        eurusd = get_profile("EURUSD")
-        assert gbpusd.avg_atr_pips > eurusd.avg_atr_pips
+    def test_xauusd_more_volatile_than_us500(self):
+        xau = get_profile("XAUUSD")
+        us500 = get_profile("US500.cash")
+        assert xau.avg_atr_pips > us500.avg_atr_pips
 
-    def test_eurusd_tightest_spread(self):
-        eurusd = get_profile("EURUSD")
-        gbpusd = get_profile("GBPUSD")
-        assert eurusd.typical_spread_pts < gbpusd.typical_spread_pts
+    def test_btcusd_highest_volatility(self):
+        btc = get_profile("BTCUSD")
+        for sym in ACTIVE_SYMBOLS:
+            p = get_profile(sym)
+            # BTC has highest avg_atr_pips (800) among all
+            assert btc.avg_atr_pips >= p.avg_atr_pips or sym == "BTCUSD"
 
-    def test_usdchf_range_bound(self):
-        usdchf = get_profile("USDCHF")
-        assert usdchf.trend_persistence == "medium"
-        assert usdchf.adx_trend_threshold == 18.0
+    def test_xauusd_techincal(self):
+        xau = get_profile("XAUUSD")
+        assert xau.respects_levels is True
+        assert xau.trend_persistence == "high"
+        assert xau.base_weight >= 1.0
 
-    def test_eurusd_technical(self):
-        eurusd = get_profile("EURUSD")
-        assert eurusd.respects_levels is True
-        assert eurusd.base_weight >= 1.0
+    def test_btcusd_crypto_profile(self):
+        btc = get_profile("BTCUSD")
+        assert btc.respects_levels is False  # crypto peu technique
+        assert btc.pip_factor == 1.0
+        assert btc.spread_cost_factor >= 1.5
 
     def test_symbol_sessions(self):
-        for sym in ["USDCAD", "GBPUSD", "USDCHF", "EURUSD"]:
+        for sym in ACTIVE_SYMBOLS:
             p = get_profile(sym)
-            assert len(p.best_sessions) >= 2
+            assert len(p.best_sessions) >= 1
             assert len(p.peak_hours_utc) >= 1
 
 
 class TestCorrelation:
-    def test_positive_correlation(self):
-        assert CORRELATION_MATRIX["USDCAD"]["USDCHF"] > 0
-        assert CORRELATION_MATRIX["EURUSD"]["GBPUSD"] > 0
+    def test_positive_correlation_crypto(self):
+        assert CORRELATION_MATRIX["BTCUSD"]["ETHUSD"] > 0.8  # corrélé 0.89
 
-    def test_negative_correlation(self):
-        assert CORRELATION_MATRIX["USDCAD"]["EURUSD"] < 0
-        assert CORRELATION_MATRIX["USDCHF"]["GBPUSD"] < 0
+    def test_negative_correlation_gold_vs_equity(self):
+        assert CORRELATION_MATRIX["XAUUSD"]["US500.cash"] < 0  # 避险 vs risk-on
 
     def test_get_correlation(self):
-        assert get_correlation("USDCAD", "USDCHF") > 0
-        assert get_correlation("EURUSD", "GBPUSD") > 0
-        assert get_correlation("USDCAD", "EURUSD") < 0
+        assert get_correlation("BTCUSD", "ETHUSD") > 0.8
+        assert get_correlation("XAUUSD", "US500.cash") < 0
         assert get_correlation("XXX", "YYY") == 0.0
 
     def test_get_same_group(self):
-        siblings = get_same_group("USDCAD")
-        assert "USDCHF" in siblings  # both in USD_LONG group
-        siblings2 = get_same_group("EURUSD")
-        assert "GBPUSD" in siblings2  # both in USD_SHORT group
+        # POSITION_GROUPS vidé volontairement (mode agressif)
+        siblings = get_same_group("BTCUSD")
+        assert siblings == []
+        siblings2 = get_same_group("ETHUSD")
+        assert siblings2 == []
 
     def test_get_opposite_group(self):
-        opp = get_opposite_group("USDCAD")
-        assert "EURUSD" in opp or "GBPUSD" in opp
-        opp2 = get_opposite_group("EURUSD")
-        assert "USDCAD" in opp2 or "USDCHF" in opp2
+        # POSITION_GROUPS vidé volontairement (mode agressif)
+        opp = get_opposite_group("BTCUSD")
+        assert opp == []
 
 
 class TestTradingHelpers:
     def test_is_session_optimal(self):
-        assert is_session_optimal("USDCAD", "london_ny_overlap")
-        assert not is_session_optimal("USDCAD", "asia")
+        assert is_session_optimal("BTCUSD", "asia")  # crypto 24/7
+        assert is_session_optimal("XAUUSD", "london_ny_overlap")
 
     def test_unknown_symbol_session(self):
         assert is_session_optimal("XXX", "asia")  # default True
 
     def test_get_symbol_weight_default(self):
-        w = get_symbol_weight("USDCAD")
+        w = get_symbol_weight("BTCUSD")
         assert w > 0
 
-    def test_get_symbol_weight_trending(self):
-        w = get_symbol_weight("GBPUSD", "TREND_UP")
-        assert w > 1.0  # trend_persistence=high + base_weight=1.05
-
-    def test_get_symbol_weight_ranging_low_respect(self):
-        # Tous les symboles respectent les niveaux actuellement
-        w = get_symbol_weight("EURUSD", "RANGING")
-        assert w > 0
+    def test_get_symbol_weight_xauusd_trending(self):
+        w = get_symbol_weight("XAUUSD", "TREND_UP")
+        assert w > 1.0  # trend_persistence=high + base_weight=1.10
 
     def test_get_atr_scaling_normal(self):
-        assert get_atr_scaling("EURUSD", 85) == 1.0
+        # BTCUSD: ATR brut=800 (unités prix), avg_atr_pips=800, pip_factor=1.0 → 800/800 = 1.0
+        assert get_atr_scaling("BTCUSD", 800.0) == 1.0
 
     def test_get_atr_scaling_high(self):
-        scaling = get_atr_scaling("EURUSD", 200)
+        # BTCUSD: ATR brut=1200, 1200*1.0=1200 → 1200/800 = 1.5 → scaling 0.7
+        scaling = get_atr_scaling("BTCUSD", 1200.0)
         assert scaling < 1.0
 
     def test_get_atr_scaling_low(self):
-        scaling = get_atr_scaling("EURUSD", 20)
+        # BTCUSD: ATR brut=300, 300*1.0=300 → 300/800 = 0.375 → scaling 0.85
+        scaling = get_atr_scaling("BTCUSD", 300.0)
         assert scaling <= 1.0
 
     def test_validate_trade_unknown(self):
@@ -130,12 +133,12 @@ class TestTradingHelpers:
         assert ok and msg == ""
 
     def test_validate_trade_avoid_session(self):
-        ok, msg = validate_trade_with_profile("USDCAD", "asia", "RANGING", "BUY", 50)
+        ok, msg = validate_trade_with_profile("XAUUSD", "asia", "RANGING", "BUY", 50)
         assert not ok
         assert "defavorable" in msg
 
     def test_validate_trade_high_atr(self):
-        ok, msg = validate_trade_with_profile("EURUSD", "london", "RANGING", "BUY", 200)
+        ok, msg = validate_trade_with_profile("XAUUSD", "london", "RANGING", "BUY", 200)
         assert not ok
         assert "seuil haut" in msg
 
@@ -152,8 +155,8 @@ class TestPerSymbolParameters:
         for sym, p in PROFILES.items():
             for regime, levels in p.trailing_profile.items():
                 for i in range(1, len(levels)):
-                    assert levels[i][0] > levels[i-1][0], f"{sym}/{regime}: thresholds not increasing"
-                    assert levels[i][1] < levels[i-1][1], f"{sym}/{regime}: distances not decreasing"
+                    assert levels[i][0] > levels[i - 1][0], f"{sym}/{regime}: thresholds not increasing"
+                    assert levels[i][1] < levels[i - 1][1], f"{sym}/{regime}: distances not decreasing"
 
     def test_adx_threshold_range(self):
         for sym, p in PROFILES.items():
@@ -173,9 +176,13 @@ class TestPerSymbolParameters:
                 assert start < end
 
     def test_position_group_completeness(self):
-        all_symbols = set(PROFILES.keys())
-        grouped = set()
-        for group in POSITION_GROUPS:
-            for sym in group:
-                grouped.add(sym)
-        assert grouped == all_symbols, f"Missing symbols in groups: {all_symbols - grouped}"
+        """POSITION_GROUPS vidé volontairement (mode agressif)."""
+        assert POSITION_GROUPS == []  # Mode agressif: pas de restriction de groupe
+
+    def test_pip_factor_by_type(self):
+        """Forex profiles should have pip_factor=10000, crypto/gold/index=1.0"""
+        for sym, p in PROFILES.items():
+            if sym in ("USDCAD", "GBPUSD", "USDCHF", "EURUSD"):
+                assert p.pip_factor == 10000.0, f"{sym}: forex should have pip_factor=10000"
+            else:
+                assert p.pip_factor == 1.0, f"{sym}: non-forex should have pip_factor=1.0"

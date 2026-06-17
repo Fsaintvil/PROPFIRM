@@ -6,6 +6,7 @@ CORRECTIFS HAUTE COUR D'AUDIT (Juin 2026):
   - FIX #5: Circuit breaker de fréquence — max 1 trade/min/symbole
   - FIX #8: Rate limiter par symbole (plus de scalping en rafale)
 """
+
 import logging
 import time
 
@@ -14,7 +15,7 @@ import config_simple as cfg
 logger = logging.getLogger("executor")
 
 # Intervalle minimum entre deux trades sur le MÊME symbole (secondes)
-MIN_SYMBOL_INTERVAL_S = 300  # 5 minutes
+MIN_SYMBOL_INTERVAL_S = 60  # 1 minute (mode agressif pour accumuler positions sur signal fort)
 
 
 class PerSymbolRateLimiter:
@@ -28,8 +29,7 @@ class PerSymbolRateLimiter:
     est contourné (cf bug doublons Juin 2026).
     """
 
-    def __init__(self, max_per_minute: int = 1, window_seconds: int = 60,
-                 min_interval_s: int | None = None):
+    def __init__(self, max_per_minute: int = 1, window_seconds: int = 60, min_interval_s: int | None = None):
         self.max_per_minute = max_per_minute
         self.window_seconds = window_seconds
         self._min_interval = MIN_SYMBOL_INTERVAL_S if min_interval_s is None else min_interval_s
@@ -43,10 +43,7 @@ class PerSymbolRateLimiter:
         # nettoyage ne vide la liste avant le check d'intervalle minimum.
         cleanup_window = max(self.window_seconds, self._min_interval)
         if symbol in self._symbol_timestamps:
-            self._symbol_timestamps[symbol] = [
-                t for t in self._symbol_timestamps[symbol]
-                if now - t < cleanup_window
-            ]
+            self._symbol_timestamps[symbol] = [t for t in self._symbol_timestamps[symbol] if now - t < cleanup_window]
         else:
             self._symbol_timestamps[symbol] = []
 
@@ -102,6 +99,7 @@ class GlobalRateLimiter:
 
 class ExecutionStats:
     """Statistiques d'exécution : taux de succès, latence, slippage."""
+
     def __init__(self):
         self.records: list[dict] = []
         self.total_attempts = 0
@@ -157,9 +155,7 @@ class OrderValidator:
     MIN_RR = cfg.MIN_RR_RATIO  # de la config (1.95); ±5% jitter SL/TP est incorporé
 
     @staticmethod
-    def validate(symbol: str, action: str, lot: float,
-                 price: float, sl: float, tp: float,
-                 symbol_info) -> str | None:
+    def validate(symbol: str, action: str, lot: float, price: float, sl: float, tp: float, symbol_info) -> str | None:
         # REFUS ABSOLU si SL ou TP est None ou 0
         if sl is None or tp is None:
             return "SL ou TP non défini — REFUSÉ"
@@ -200,7 +196,9 @@ class TradeExecutor:
         self.adaptive = adaptive
         self.audit = audit
         # Rate limiter par symbole: max 1 trade/min/symbole + 5min intervalle
-        self.rate_limiter = PerSymbolRateLimiter(max_per_minute=1, window_seconds=60)  # 1 trade/min/symbole max
+        self.rate_limiter = PerSymbolRateLimiter(
+            max_per_minute=2, window_seconds=60
+        )  # Mode modéré: 2 trades/min/symbole (était 1)
         # Rate limiter global : max 1 ordre toutes les 10s (évite retcode 10018)
         self.global_rate_limiter = GlobalRateLimiter(min_interval_s=10)
 
@@ -209,37 +207,23 @@ class TradeExecutor:
             return signal.get(key, default)
         return getattr(signal, key, default)
 
-    def _confirm_position(self, symbol, action, max_retries=3):
-        """Vérifie qu'une position a bien été créée après order_send retcode=10009."""
-        for i in range(max_retries):
-            import time
-            time.sleep(0.2)
-            positions = self.mt5.get_positions()
-            if positions:
-                for p in positions:
-                    if p.symbol == symbol and p.magic == 999001:
-                        if (action == "BUY" and p.type == 0) or (action == "SELL" and p.type == 1):
-                            logger.debug(f"  [CONFIRM] {symbol} {action}: position {p.ticket} confirmée (tentative {i+1})")
-                            return True
-            logger.debug(f"  [CONFIRM] {symbol} {action}: position pas encore visible (tentative {i+1})")
-        logger.warning(f"  [CONFIRM] {symbol} {action}: POSITION NON CONFIRMÉE après {max_retries} tentatives!")
-        return False
-
     def execute(self, symbol, signal):
         action = self._get_signal_value(signal, "action")
 
-        # Vérification doublon en PREMIER (ne consomme PAS le rate limiter)
+        # Vérification doublon — permet jusqu'à N positions selon la confidence
+        # max_per_symbol = 3 si conf>85%, 2 si conf>70%, 1 sinon (défini dans main.py)
+        max_per_symbol = self._get_signal_value(signal, "max_per_symbol", 1)
         all_positions = self.mt5.get_positions()
         existing = [p for p in all_positions if p.symbol == symbol] if all_positions else []
         if existing:
             sig_type = 0 if action == "BUY" else 1  # POSITION_TYPE_BUY=0, SELL=1
-            for pos in existing:
-                if pos.type == sig_type:
-                    logger.debug(
-                        f"[DOUBLON] {symbol}: position {action} déjà ouverte "
-                        f"(ticket={pos.ticket}) — skip"
-                    )
-                    return None
+            same_dir_count = sum(1 for p in existing if p.type == sig_type)
+            if same_dir_count >= max_per_symbol:
+                logger.debug(
+                    f"[DOUBLON] {symbol}: déjà {same_dir_count} position(s) {action} "
+                    f"(max={max_per_symbol}, ticket={existing[0].ticket}) — skip"
+                )
+                return None
 
         price = self._get_signal_value(signal, "entry_price")
         if price is None or price == 0:
@@ -272,7 +256,9 @@ class TradeExecutor:
         # Mode dégradé (WR < 40%) : lot minimum = 0.01
         is_degraded = self._get_signal_value(signal, "_degraded", False)
         lot_quality = 0.01 if is_degraded else 1.0
-        lot = self._calc_lot(symbol, price, sl, quality=lot_quality)
+        # FIX C1: passer le risk_mult du signal au calculate_lot
+        signal_rm = self._get_signal_value(signal, "risk_mult")
+        lot = self._calc_lot(symbol, price, sl, quality=lot_quality, signal_risk_mult=signal_rm)
 
         # Validation avant envoi (avec symbol_info pour vérifier volume_max broker)
         info = self.mt5.get_symbol_info(symbol)
@@ -298,18 +284,19 @@ class TradeExecutor:
             result = self._place_order(symbol, action, lot, price, sl, tp, regime)
         finally:
             # Si l'ordre a échoué, on libère les rate limiters
-            if result is None or (hasattr(result, 'retcode') and result.retcode != 10009):
+            if result is None or (hasattr(result, "retcode") and result.retcode != 10009):
                 self.rate_limiter.release(symbol)
                 self.global_rate_limiter.release()
 
         return result
 
-    def _calc_lot(self, symbol, entry, sl, quality=1.0):
-        lot = self.ftmo.calculate_lot(symbol, entry, sl, quality=quality)
+    def _calc_lot(self, symbol, entry, sl, quality=1.0, signal_risk_mult=None):
+        lot = self.ftmo.calculate_lot(symbol, entry, sl, quality=quality, signal_risk_mult=signal_risk_mult)
         if lot is not None and lot > 0:
             # 🔒 Sûreté redondante : clamp à max_lot depuis la config module-level
             try:
                 import config_simple as _cfg
+
                 _sym_cfg = _cfg.SYMBOL_LIMITS.get(symbol, {})
                 _max = _sym_cfg.get("max_lot", 10.0)
                 _min = _sym_cfg.get("min_lot", 0.01)
@@ -325,24 +312,36 @@ class TradeExecutor:
         return 0.01
 
     REGIME_TO_SHORT = {
-        "TREND_UP": "TRE", "TREND_DOWN": "DOW", "RANGING": "RAN",
-        "HIGH_VOL": "HIG", "LOW_VOL": "LOW",
+        "TREND_UP": "TRE",
+        "TREND_DOWN": "DOW",
+        "RANGING": "RAN",
+        "HIGH_VOL": "HIG",
+        "LOW_VOL": "LOW",
     }
 
     def _place_order(self, symbol, action, lot, price, sl, tp, regime="RANGING"):
         import MetaTrader5 as mt5
+
         # Ensure symbol is in Market Watch (crypto non-standard symbols need this)
         try:
             mt5.symbol_select(symbol, True)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"[SYMBOL_SELECT] {symbol}: activation Market Watch échouée: {e}")
+        # Get symbol info for slippage calculation
+        info = self.mt5.get_symbol_info(symbol)
         direction = 0 if action == "BUY" else 1
         regime_short = self.REGIME_TO_SHORT.get(regime.upper(), "RAN")
         comment = f"ADAPT_{regime_short}"
         req = dict(
-            action=mt5.TRADE_ACTION_DEAL, symbol=symbol, volume=lot,
-            type=direction, price=price, sl=sl, tp=tp,
-            deviation=20, magic=999001,
+            action=mt5.TRADE_ACTION_DEAL,
+            symbol=symbol,
+            volume=lot,
+            type=direction,
+            price=price,
+            sl=sl,
+            tp=tp,
+            deviation=20,
+            magic=cfg.ROBOT_MAGIC,
             type_filling=mt5.ORDER_FILLING_IOC,
             type_time=mt5.ORDER_TIME_DAY,
             comment=comment,
@@ -352,11 +351,21 @@ class TradeExecutor:
             logger.info(f"PlaceOrder OK: {symbol} {action} {lot}@{price} SL={sl} TP={tp}")
         elif result and result.retcode in (10006, 10018, 10025):
             # Retry with RETURN filling on requote/too many requests/connection lost
+            # M20: limiter le slippage — vérifier le prix de fill avant d'accepter
             logger.warning(f"PlaceOrder: {symbol} retcode={result.retcode}, retry with RETURN filling")
             req["type_filling"] = mt5.ORDER_FILLING_RETURN
             result = self.mt5.order_send(req)
             if result and result.retcode == 10009:
-                logger.info(f"PlaceOrder RETRY OK: {symbol} {action} {lot}@{price}")
+                # Vérifier slippage: prix de fill vs prix demandé
+                fill_price = getattr(result, "price", price)
+                slippage_pts = abs(fill_price - price) / info.point if info and info.point else 0
+                max_slippage_pts = 20  # max 20 points de slippage sur le retry
+                if slippage_pts > max_slippage_pts:
+                    logger.warning(f"PlaceOrder RETRY SLIPPAGE {symbol}: {slippage_pts:.0f}pts > {max_slippage_pts}max")
+                else:
+                    logger.info(
+                        f"PlaceOrder RETRY OK: {symbol} {action} {lot}@{fill_price} (slip={slippage_pts:.0f}pts)"
+                    )
             elif result:
                 logger.warning(f"PlaceOrder RETRY FAILED {symbol}: retcode={result.retcode}")
         elif result:

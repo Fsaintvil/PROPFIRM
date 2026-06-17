@@ -27,11 +27,11 @@ TRAILING_BY_SYMBOL = {
     #   En ranging: large pour éviter faux signaux
     # ═══════════════════════════════════════════════════════════════════════
     "XAUUSD": {
-        "TREND_UP":    [(0.80, 0.60), (2.00, 0.40), (3.00, 0.25), (5.00, 0.10)],
-        "TREND_DOWN":  [(0.80, 0.60), (2.00, 0.40), (3.00, 0.25), (5.00, 0.10)],
-        "RANGING":     [(0.80, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
-        "HIGH_VOL":    [(0.80, 0.80), (2.00, 0.55), (3.00, 0.40), (5.00, 0.20)],
-        "LOW_VOL":     [(0.80, 0.35), (2.00, 0.22), (3.00, 0.15), (5.00, 0.08)],
+        "TREND_UP": [(0.80, 0.60), (2.00, 0.40), (3.00, 0.25), (5.00, 0.10)],
+        "TREND_DOWN": [(0.80, 0.60), (2.00, 0.40), (3.00, 0.25), (5.00, 0.10)],
+        "RANGING": [(0.80, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
+        "HIGH_VOL": [(0.80, 0.80), (2.00, 0.55), (3.00, 0.40), (5.00, 0.20)],
+        "LOW_VOL": [(0.80, 0.35), (2.00, 0.22), (3.00, 0.15), (5.00, 0.08)],
     },
     # ═══════════════════════════════════════════════════════════════════════
     # BTCUSD H1 — Bitcoin (Juin 2026)
@@ -41,11 +41,11 @@ TRAILING_BY_SYMBOL = {
     #   Flash crashes nécessitent un trailing lâche
     # ═══════════════════════════════════════════════════════════════════════
     "BTCUSD": {
-        "TREND_UP":    [(1.50, 1.00), (3.00, 0.70), (4.00, 0.50), (6.00, 0.30)],
-        "TREND_DOWN":  [(1.50, 1.00), (3.00, 0.70), (4.00, 0.50), (6.00, 0.30)],
-        "RANGING":     [(1.50, 0.75), (3.00, 0.55), (4.00, 0.40), (6.00, 0.20)],
-        "HIGH_VOL":    [(1.50, 1.20), (3.00, 0.90), (4.00, 0.65), (6.00, 0.35)],
-        "LOW_VOL":     [(1.50, 0.60), (3.00, 0.40), (4.00, 0.25), (6.00, 0.12)],
+        "TREND_UP": [(1.50, 1.00), (3.00, 0.70), (4.00, 0.50), (6.00, 0.30)],
+        "TREND_DOWN": [(1.50, 1.00), (3.00, 0.70), (4.00, 0.50), (6.00, 0.30)],
+        "RANGING": [(1.50, 0.75), (3.00, 0.55), (4.00, 0.40), (6.00, 0.20)],
+        "HIGH_VOL": [(1.50, 1.20), (3.00, 0.90), (4.00, 0.65), (6.00, 0.35)],
+        "LOW_VOL": [(1.50, 0.60), (3.00, 0.40), (4.00, 0.25), (6.00, 0.12)],
     },
     # ═══════════════════════════════════════════════════════════════════════
     # US500.cash H4 — S&P 500 (Juin 2026 — MIGRÉ DE H1)
@@ -54,21 +54,44 @@ TRAILING_BY_SYMBOL = {
     #   Trailing plus serré qu'en H1 (H4 moins de bruit)
     # ═══════════════════════════════════════════════════════════════════════
     "US500.cash": {
-        "TREND_UP":    [(0.80, 0.50), (2.00, 0.30), (3.00, 0.20), (5.00, 0.10)],
-        "TREND_DOWN":  [(0.80, 0.50), (2.00, 0.30), (3.00, 0.20), (5.00, 0.10)],
-        "RANGING":     [(0.80, 0.40), (2.00, 0.25), (3.00, 0.15), (5.00, 0.08)],
-        "HIGH_VOL":    [(0.80, 0.70), (2.00, 0.50), (3.00, 0.35), (5.00, 0.20)],
-        "LOW_VOL":     [(0.80, 0.30), (2.00, 0.18), (3.00, 0.12), (5.00, 0.06)],
+        "TREND_UP": [(0.80, 0.50), (2.00, 0.30), (3.00, 0.20), (5.00, 0.10)],
+        "TREND_DOWN": [(0.80, 0.50), (2.00, 0.30), (3.00, 0.20), (5.00, 0.10)],
+        "RANGING": [(0.80, 0.40), (2.00, 0.25), (3.00, 0.15), (5.00, 0.08)],
+        "HIGH_VOL": [(0.80, 0.70), (2.00, 0.50), (3.00, 0.35), (5.00, 0.20)],
+        "LOW_VOL": [(0.80, 0.30), (2.00, 0.18), (3.00, 0.12), (5.00, 0.06)],
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # ETHUSD H4 — Ethereum (Juin 2026 — réactivé)
+    # Trailing crypto adapté H4
+    # ═══════════════════════════════════════════════════════════════════════
+    "ETHUSD": {
+        "TREND_UP": [(1.20, 0.90), (2.50, 0.60), (3.50, 0.40), (5.50, 0.25)],
+        "TREND_DOWN": [(1.20, 0.90), (2.50, 0.60), (3.50, 0.40), (5.50, 0.25)],
+        "RANGING": [(1.20, 0.65), (2.50, 0.45), (3.50, 0.30), (5.50, 0.18)],
+        "HIGH_VOL": [(1.20, 1.10), (2.50, 0.80), (3.50, 0.55), (5.50, 0.30)],
+        "LOW_VOL": [(1.20, 0.50), (2.50, 0.35), (3.50, 0.20), (5.50, 0.10)],
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # EURUSD H1 — Euro/Dollar (Juin 2026 — nouveau symbole, DEUX DIRECTIONS)
+    # Trailing forex standard, lock modéré, trailing serré
+    #   Trailing adapté forex H1
+    # ═══════════════════════════════════════════════════════════════════════
+    "EURUSD": {
+        "TREND_UP": [(0.80, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
+        "TREND_DOWN": [(0.80, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
+        "RANGING": [(0.80, 0.40), (2.00, 0.25), (3.00, 0.15), (5.00, 0.08)],
+        "HIGH_VOL": [(0.80, 0.70), (2.00, 0.50), (3.00, 0.35), (5.00, 0.20)],
+        "LOW_VOL": [(0.80, 0.30), (2.00, 0.18), (3.00, 0.12), (5.00, 0.06)],
     },
 }
 
 # Fallback par défaut (ancien comportement)
 TRAILING_BY_REGIME = {
-    "TREND_UP":    [(1.00, 0.80), (2.00, 0.50), (3.00, 0.30), (5.00, 0.15)],
-    "TREND_DOWN":  [(1.00, 0.80), (2.00, 0.50), (3.00, 0.30), (5.00, 0.15)],
-    "RANGING":     [(1.00, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
-    "HIGH_VOL":    [(1.00, 1.00), (2.00, 0.70), (3.00, 0.50), (5.00, 0.25)],
-    "LOW_VOL":     [(1.00, 0.40), (2.00, 0.25), (3.00, 0.15), (5.00, 0.08)],
+    "TREND_UP": [(1.00, 0.80), (2.00, 0.50), (3.00, 0.30), (5.00, 0.15)],
+    "TREND_DOWN": [(1.00, 0.80), (2.00, 0.50), (3.00, 0.30), (5.00, 0.15)],
+    "RANGING": [(1.00, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
+    "HIGH_VOL": [(1.00, 1.00), (2.00, 0.70), (3.00, 0.50), (5.00, 0.25)],
+    "LOW_VOL": [(1.00, 0.40), (2.00, 0.25), (3.00, 0.15), (5.00, 0.08)],
 }
 
 
@@ -88,25 +111,39 @@ def get_trailing_for_symbol(symbol: str, regime: str) -> list:
 
 BE_BUFFER_BY_SYMBOL = {
     "XAUUSD": {
-        "TREND_UP": 0.55,   # or: buffer serré en trending
+        "TREND_UP": 0.55,  # or: buffer serré en trending
         "TREND_DOWN": 0.55,
-        "RANGING": 0.75,    # ranging: plus large
-        "HIGH_VOL": 0.90,   # haute vol: très large
-        "LOW_VOL": 0.45,    # basse vol: serré
+        "RANGING": 0.75,  # ranging: plus large
+        "HIGH_VOL": 0.90,  # haute vol: très large
+        "LOW_VOL": 0.45,  # basse vol: serré
     },
     "BTCUSD": {
-        "TREND_UP": 0.70,   # crypto: buffer large
+        "TREND_UP": 0.70,  # crypto: buffer large
         "TREND_DOWN": 0.70,
-        "RANGING": 0.85,    # ranging: très large
-        "HIGH_VOL": 1.10,   # haute vol: extrêmement large
-        "LOW_VOL": 0.50,    # basse vol: standard
+        "RANGING": 0.85,  # ranging: très large
+        "HIGH_VOL": 1.10,  # haute vol: extrêmement large
+        "LOW_VOL": 0.50,  # basse vol: standard
     },
     "US500.cash": {
-        "TREND_UP": 0.60,   # indice: standard
+        "TREND_UP": 0.60,  # indice: standard
         "TREND_DOWN": 0.60,
-        "RANGING": 0.80,    # ranging: large
-        "HIGH_VOL": 1.00,   # haute vol: très large
-        "LOW_VOL": 0.50,    # basse vol: serré
+        "RANGING": 0.80,  # ranging: large
+        "HIGH_VOL": 1.00,  # haute vol: très large
+        "LOW_VOL": 0.50,  # basse vol: serré
+    },
+    "ETHUSD": {
+        "TREND_UP": 0.65,  # crypto H4: standard
+        "TREND_DOWN": 0.65,
+        "RANGING": 0.80,  # ranging: large
+        "HIGH_VOL": 1.05,  # haute vol: très large
+        "LOW_VOL": 0.45,  # basse vol: serré
+    },
+    "EURUSD": {
+        "TREND_UP": 0.55,  # forex: buffer standard
+        "TREND_DOWN": 0.55,
+        "RANGING": 0.75,  # ranging: large
+        "HIGH_VOL": 0.90,  # haute vol: très large
+        "LOW_VOL": 0.40,  # basse vol: serré
     },
 }
 
@@ -132,25 +169,62 @@ def get_be_buffer_for_symbol(symbol: str, regime: str) -> float:
 ATR_CACHE_TTL = 60
 
 # Seuils de trailing par défaut
-FIRST_LOCK_ATR = 1.0  # premier lock du trailing (fallback si symbole non trouvé)
+FIRST_LOCK_ATR = (
+    0.5  # premier lock du trailing (fallback si symbole non trouvé) — Juin 2026: baissé de 1.0 pour accélérer fermeture
+)
+
+# Per-symbol risk_mult cap: Juin 2026 — EURUSD ajouté
+RISK_MULT_CAP = {"XAUUSD": 1.25, "BTCUSD": 1.00, "US500.cash": 1.15, "ETHUSD": 1.00, "EURUSD": 1.00}
+
+# Per-symbol max positions (total BUY+SELL) — EURUSD ajouté
+MAX_POS_PER_SYMBOL = {
+    "XAUUSD": 4,
+    "BTCUSD": 4,
+    "US500.cash": 4,
+    "ETHUSD": 4,
+    "EURUSD": 4,
+}  # Capacité augmentée pour multi-positions
+
+# ============================================================================
+# DD THRESHOLDS — Risk reduction levels
+# ============================================================================
+DD_REDUCE_THRESHOLD = 0.05  # 5% DD → risk × (1 - dd_peak)
+DD_CRITICAL_THRESHOLD = 0.07  # 7% DD → risk × 0.20 (aggressive reduction)
+DD_AUTODISABLE_THRESHOLD = 0.20  # 20% WR → auto-disable symbol
+
+# ============================================================================
+# TIME-STOP — Maximum position hold duration
+# ============================================================================
+MAX_POSITION_HOLD_HOURS = 12  # hours before time-stop
+TIME_STOP_MIN_PROFIT_ATR = 0.5  # minimum profit in ATR to trigger time-stop
+
+# ============================================================================
+# PULLBACK FILTER — Score threshold for pullback enforcement
+# ============================================================================
+PULLBACK_FILTER_SCORE_THRESHOLD = (
+    0.60  # Scénario A: abaissé 0.65→0.60 pour +20% trades (plus de signaux passent sans pullback)
+)
 
 # Premier lock par symbole — Juin 2026 Calibration
 # XAUUSD H4: 0.8×ATR (tendances H4 longues → protéger tôt)
 # BTCUSD H1: 1.5×ATR (crypto volatile → laisser respirer)
 # US500.cash H4: 0.8×ATR (H4 → lock tôt)
+# Premier lock par symbole — Juin 2026 Calibration (EURUSD ajouté)
 FIRST_LOCK_BY_SYMBOL = {
     "XAUUSD": 0.8,
     "BTCUSD": 1.5,
     "US500.cash": 0.8,
+    "ETHUSD": 1.2,
+    "EURUSD": 0.8,  # forex H1: lock standard (comme US500)
 }
 
 
 def get_first_lock_atr(symbol: str) -> float:
     """Retourne le premier lock ATR pour un symbole donné.
-    
+
     Args:
         symbol: nom du symbole (ex: "XAUUSD")
-    
+
     Returns:
         float: premier lock en multiples d'ATR (ex: 0.8 pour XAUUSD)
     """

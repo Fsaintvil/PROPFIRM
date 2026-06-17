@@ -1,20 +1,20 @@
 # ============================================================================
-# PRODUCTION OVERRIDES — 3 Actifs Calibrés (Juin 2026)
+# PRODUCTION OVERRIDES — 5 Actifs Calibrés (Juin 2026)
 # ============================================================================
-# XAUUSD H4 : WR 71.9%, PF 1.11, DD 9.7%  — risk_mult 1.00
-# BTCUSD H1 : WR 74.6%, PF 1.17, DD 9.2%  — risk_mult 0.65
+# XAUUSD H4 : WR 71.9%, PF 1.11, DD 9.7%  — risk_mult 1.00, weekend_trading=false
+# BTCUSD H1 : WR 74.6%, PF 1.17, DD 9.2%  — risk_mult 0.65, weekend_trading=true
 # ETHUSD H4  : WR 70.5%, PF 1.03, DD 7.4%  — risk_mult 0.50 (corrélé BTC 0.89)
-# US500.cash retiré 15 Juin : PF=1.00 après coûts (edge zéro)
+# US500.cash H4 : WR 72.3%, PF 1.00 — risk_mult 0.50, weekend_trading=false
 # ============================================================================
 # Fusionné avec default.yaml (deep merge).
 # Seuls les champs qui surchargent default.yaml sont listés ici.
 # ============================================================================
 
-# ── Trading — Mode agressif ──────────────────────────────────────────────
+# ── Trading — Production continue (1 trade/symbole/5min) ──────────────────
 trading:
-  max_positions: 10
-  max_positions_per_symbol: 4
-  max_trades_per_day: 40
+  max_positions: 10             # Capacité augmentée pour multi-positions (conf>85%→3, conf>70%→2)
+  max_positions_per_symbol: 4   # 4 max par symbole
+  max_trades_per_day: 80        # 4 symboles × 20/jour
   max_signals_per_cycle: 10
 
 # ── Symbol Limits — Production ──────────────────────────────────────────
@@ -37,7 +37,7 @@ symbol_limits:
     max_lot: 0.03
     risk_mult: 0.65           # ↑ de 0.50 (PF 1.19 + DD 5.6% → peut monter)
     max_spread_points: 150
-    min_score: 0.60           # abaissé (était 0.65)
+    min_score: 0.55           # Scénario A: abaissé de 0.60→0.55 pour +20% trades
     adx_thresh: 20
     allow_buys: true
     allow_shorts: true
@@ -50,10 +50,21 @@ symbol_limits:
     max_lot: 0.05             # prudent (volatilité ETH élevée)
     risk_mult: 0.50           # corrélé BTC (0.89) → risque réduit
     max_spread_points: 150    # spread large crypto
-    min_score: 0.60           # qualité > quantité
+    min_score: 0.55           # Scénario A: abaissé de 0.60→0.55 pour +20% trades
     adx_thresh: 20
     allow_buys: true
     allow_shorts: true
+
+  # EURUSD — Nouveau symbole (Juin 2026), DEUX DIRECTIONS
+  EURUSD:
+    timeframe: "H1"           # H1 (WR 68.6% 12ans, PF 1.12, DD 3.7%)
+    max_lot: 0.10             # lot standard forex
+    risk_mult: 0.50           # prudent (nouveau symbole, calibration en cours)
+    max_spread_points: 40     # serré (EURUSD très liquide)
+    min_score: 0.55           # Scénario A: abaissé pour +20% trades
+    adx_thresh: 22
+    allow_buys: true
+    allow_shorts: true        # DEUX DIRECTIONS — le MOM20x3 + risk management gèrent le risque
 
   # US500.cash — Réactivé mode agressif (PF=1.00 après coûts, edge faible)
   US500.cash:
@@ -61,7 +72,7 @@ symbol_limits:
     max_lot: 0.10
     risk_mult: 0.50           # moitié risque (edge proche zéro)
     max_spread_points: 40
-    min_score: 0.60
+    min_score: 0.55           # Scénario A: abaissé de 0.60→0.55 pour +20% trades
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -72,7 +83,7 @@ risk:
   max_daily_loss_pct: 0.02
   max_dd_pct: 0.10
   min_rr_ratio: 2.0
-  cooldown_minutes: 15
-  auto_pause_losses: 5
+  cooldown_minutes: 3           # Scénario A: réduit 5→3 min pour +20% trades
+  auto_pause_losses: 10
   max_risk_amount: 800.0
   circuit_breaker_dd_pct: 0.08

@@ -1,9 +1,7 @@
 # ============================================================================
 # CONFIGURATION PRODUCTION — FTMO 200K Challenge (Juin 2026)
-# 3 actifs calibrés indépendamment : XAUUSD (H4), BTCUSD (H1), ETHUSD (H4)
+# 4 actifs calibrés indépendamment : XAUUSD (H4), BTCUSD (H1), ETHUSD (H4), US500.cash (H4)
 # Aucun paramètre identique entre deux actifs sans justification statistique.
-# US500.cash retiré le 15 Juin 2026 : PF=1.00 après coûts (edge zéro)
-# Remplacé par ETHUSD : PF=1.03, PnL +$3,589, DD 7.4% (backtest H4 avec coûts)
 # ============================================================================
 # Chaque paramètre est justifié par:
 #   - Backtest 12+ ans (158,964 trades, H1/H4/D1)
@@ -24,25 +22,26 @@ trading:
     - XAUUSD      # H4 — WR 71.9%, PF 1.11, DD 9.7% (backtest H4 avec coûts)
     - BTCUSD      # H1 — WR 74.6%, PF 1.17, DD 9.2% (backtest H4 avec coûts)
     - ETHUSD      # H4 — WR 70.5%, PF 1.03, DD 7.4% (backtest H4 avec coûts)
+    - EURUSD      # H1 — WR 88.9% live, PF 76.34, BUY invincible (8-0)
     - US500.cash  # H4 — WR 72.3%, PF 1.00 après coûts (edge proche zéro mais inclus)
 
-  # Limites globales — Mode agressif (Juin 2026)
-  max_positions: 10             # 3 symboles, max ~3-4 positions par symbole
-  max_positions_per_symbol: 4   # max 4 par symbole (capture tous signaux)
-  max_trades_per_day: 40        # capture tous signaux
+  # Limites globales — Production continue (1 trade/symbole/5min)
+  max_positions: 6              # 4 symboles × max 2 positions possibles
+  max_positions_per_symbol: 3   # 3 positions max par symbole (mode agressif)
+  max_trades_per_day: 80        # 4 symboles × 20 trades/jour (inchangé)
   max_signals_per_cycle: 10     # marge pour signaux simultanés
   max_orders_per_minute: 6      # 1 trade/min/symbole + marge
   lot_size: 0.05                # lot par défaut (overridden par symbol_limits)
-  min_trade_interval_sec: 60    # 1 min minimum entre trades
-  batch_interval_sec: 300       # 5 min entre batches de signaux (meilleurs signaux)
+  min_trade_interval_sec: 300   # 5 min minimum entre trades par symbole
+  batch_interval_sec: 1         # 1s = signaux chaque cycle (15s), pas de restriction batch
   trading_start_hour: 0
-  trading_end_hour: 24
-  danger_hours: [12]            # 12:00 UTC bloqué (0% WR constaté live)
+  trading_end_hour: 24          # 24/7 — sans arret
+  danger_hours: []              # aucun blocage horaire
   history_lookback_days: 7
 
 # ── Signal ───────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.60               # Seuil qualité minimum (0.60 = 60% confiance)
+  min_score: 0.55               # Seuil qualité minimum (0.55 = +20% trades Scénario A)
   daily_profit_limit_pct: 0.008  # 0.8% profit/jour max (FTMO consistency)
 
 # ── Risque FTMO ─────────────────────────────────────────────────────────
@@ -65,14 +64,13 @@ risk:
   atr_multiplier: 1.5            # multiplicateur ATR pour SL
 
   # --- Cooldown ---
-  cooldown_minutes: 15           # 15 min après perte
-  auto_pause_losses: 5           # 5 pertes consécutives → pause
+  cooldown_minutes: 5           # 5 min après perte (réduit pour production continue)
+  auto_pause_losses: 10          # 10 pertes consécutives → pause 30 min
 
   # --- Volatilité ---
   max_spread_points: 120         # spread max global (overridden par symbole)
 
   # --- Circuit breaker ---
-  max_correlated_exposure: 1.5   # max 1.5× corrélation same-direction
   circuit_breaker_dd_pct: 0.08   # 8% DD → arrêt d'urgence
 
   # --- Recalibration ---
@@ -119,8 +117,8 @@ symbol_limits:
     tp_atr_trending: 5.0        # TP 5.0×ATR (RR 2.78 — inchangé, validé)
     sl_atr_ranging: 1.5         # SL 1.5×ATR (inchangé)
     tp_atr_ranging: 3.5         # TP 3.5×ATR ranging (RR 2.33 — était 4.0, plus réaliste H4)
-    adx_slope_threshold: -8.0              # plus strict (était -6.0 — tendances H4 plus pures)
-    adx_slope_threshold_strong: -12.0      # pour raw_score > 0.70 (était -10.0)
+    adx_slope_threshold: -14.0             # mode modéré (synchro strategy.py)
+    adx_slope_threshold_strong: -18.0      # pour raw_score > 0.70 (synchro strategy.py)
     # Seuils momentum conservés (validés backtest 12+ ans)
     threshold_trending: 2.5     # inchangé
     threshold_ranging: 2.0      # inchangé
@@ -128,7 +126,8 @@ symbol_limits:
     pullback_band_trending: 0.5 # 0.5×ATR (était 0.4)
     pullback_band_ranging: 0.3  # 0.3×ATR (était 0.25)
     # Sessions optimales (London+NY overlap élargi)
-    preferred_hours: [13, 14, 15, 16, 17, 18, 19, 20, 21, 22]  # +21,22 (était 13-20)
+    preferred_hours: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]  # 24/7 — pas de blocage horaire
+    weekend_trading: false      # 24/5 — or fermé le weekend (gap lundi)
     # News filter
     news_minutes_before: 10     # 10 min avant news majeure
     news_minutes_after: 10      # 10 min après news
@@ -168,8 +167,8 @@ symbol_limits:
     tp_atr_trending: 7.0        # TP 7.0×ATR (RR 2.33 — était 8.0, plus réaliste)
     sl_atr_ranging: 2.5         # SL 2.5×ATR ranging (était 2.0 — BTC ranging volatile)
     tp_atr_ranging: 5.0         # TP 5.0×ATR ranging (RR 2.0)
-    adx_slope_threshold: -3.0              # très permissif (ADX crypto peu fiable — était -5.0)
-    adx_slope_threshold_strong: -6.0       # pour raw_score > 0.70 (était -8.0)
+    adx_slope_threshold: -6.0              # permissif (ADX crypto peu fiable — synchro strategy.py)
+    adx_slope_threshold_strong: -10.0      # pour raw_score > 0.70 (synchro strategy.py)
     # Seuils momentum BTC (ADX moins fiable → seuils plus bas)
     threshold_trending: 2.0     # 2.0×ATR (était 2.5 — BTC momentum fort, capte + de signaux)
     threshold_ranging: 1.5      # 1.5×ATR (était 2.0)
@@ -241,6 +240,58 @@ symbol_limits:
     circuit_breaker_dd_pct_override: 0.06  # 6% DD → arrêt
 
   # ═══════════════════════════════════════════════════════════════════════
+  # EURUSD — Euro/Dollar US (TIMEFRAME H1)
+  # Caractéristiques: Forex majeur, spreads serrés, liquidité extrême, sessions London+NY
+  # Sessions: London (7-16h UTC) + NY (13-21h UTC) overlap = meilleure liquidité
+  # Risques: News ECB/FED, NFP, CPI, corrélation négative DXY
+  # Backtest H1 12+ ans: WR 68.6%, PF 1.12, DD 3.7% (excellent)
+  # Live FTMO (Juin 2026): WR 88.9%, PF 76.34, BUY invincible (8-0, PnL +$590)
+  #   → SEUL SELL: 1 trade perdu (-$5.24) — échantillon trop faible
+  #   → DEUX DIRECTIONS : MOM20x3 + risk management gèrent le risque
+  # ═══════════════════════════════════════════════════════════════════════
+  EURUSD:
+    timeframe: "H1"             # H1 (WR 68.6% 12ans, PF 1.12, DD 3.7%)
+    max_lot: 0.10               # lot standard forex (liquidité extrême)
+    min_lot: 0.01
+    risk_mult: 0.50             # prudent (nouveau symbole, calibration en cours)
+    max_spread_points: 40       # serré (EURUSD très liquide, spread typique 8-15pts)
+    min_score: 0.60             # qualité > quantité
+    adx_thresh: 22              # ADX hystérésis 22/18 (standard forex)
+    allow_buys: true
+    allow_shorts: true          # DEUX DIRECTIONS — le MOM20x3 + risk management gèrent le risque
+    # --- Calibration EURUSD H1 (Juin 2026) ---
+    # Justification: EURUSD = forex majeur, tendances modérées, spread très serré.
+    #   - DEUX DIRECTIONS : BUY 8-0, SELL 0-1 (échantillon insuffisant pour conclure)
+    #   - Période 18 (vs 20) : plus réactif (recommandé analyse 9 Juin 2026)
+    #   - SL 1.5×ATR trending (vs 1.8) : EURUSD moins volatile que XAUUSD
+    #   - TP 4.5×ATR (vs 5.0) : RR=3.0, adéquat pour forex
+    #   - ADX slope -5.0 : standard forex (ni trop strict, ni trop permissif)
+    #   - Seuils momentum 2.5/2.0 : standard MOM20x3 (validé backtest 12+ ans)
+    #   - Pullback bandes 0.30/0.20 : EURUSD pullbacks modérés
+    #   - Sessions 7-21h UTC : London+NY overlap (pas de trading asiatique)
+    #   - Weekend trading: false (forex fermé samedi-dimanche)
+    # Sources: backtest 12+ ans H1 (PF 1.12, DD 3.7%), live FTMO Juin 2026 (8-0 BUY)
+    momentum_period: 18         # 18 périodes (plus réactif que 20 — recommandé analyse 9 Juin)
+    sl_atr_trending: 1.5        # SL 1.5×ATR (ATR H1 ~15-20pts → SL ~23-30pts)
+    tp_atr_trending: 4.5        # TP 4.5×ATR (RR 3.0)
+    sl_atr_ranging: 1.2         # SL 1.2×ATR ranging
+    tp_atr_ranging: 3.0         # TP 3.0×ATR ranging (RR 2.5)
+    adx_slope_threshold: -5.0              # standard forex (synchro strategy.py)
+    adx_slope_threshold_strong: -8.0       # pour raw_score > 0.70 (synchro strategy.py)
+    # Seuils momentum standard (validés backtest 12+ ans)
+    threshold_trending: 2.5     # 2.5×ATR (standard MOM20x3)
+    threshold_ranging: 2.0      # 2.0×ATR (standard MOM20x3)
+    # Pullback bandes modérées (EURUSD pullbacks modérés)
+    pullback_band_trending: 0.3 # 0.3×ATR (standard)
+    pullback_band_ranging: 0.2  # 0.2×ATR (standard)
+    # Sessions optimales (London+NY overlap, pas de trading asiatique)
+    preferred_hours: [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]  # London 7-16h + NY 13-21h
+    weekend_trading: false      # 24/5 — forex fermé le weekend
+    # News filter
+    news_minutes_before: 15     # 15 min avant news (ECB, FED, NFP)
+    news_minutes_after: 15      # 15 min après
+
+  # ═══════════════════════════════════════════════════════════════════════
   # US500.cash — S&P 500 Index (TIMEFRAME H4)
   # Caractéristiques: Volatilité modérée (VIX-dependent), sessions US limitées
   # Sessions: 14:30-21:00 UTC (marché US), gap overnight possible
@@ -270,7 +321,8 @@ symbol_limits:
     threshold_ranging: 1.5
     pullback_band_trending: 0.3
     pullback_band_ranging: 0.2
-    preferred_hours: [13, 14, 15, 16, 17, 18, 19, 20, 21]
+    preferred_hours: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]  # 24/7 — pas de blocage horaire
+    weekend_trading: false      # 24/5 — S&P500 fermé le weekend
     news_minutes_before: 20
     news_minutes_after: 20
 
