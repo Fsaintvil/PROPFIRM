@@ -4,7 +4,8 @@
 # XAUUSD H4 : WR 71.9%, PF 1.11, DD 9.7%  — risk_mult 1.00, weekend_trading=false
 # BTCUSD H1 : WR 74.6%, PF 1.17, DD 9.2%  — risk_mult 0.65, weekend_trading=true
 # ETHUSD H4  : WR 70.5%, PF 1.03, DD 7.4%  — risk_mult 0.50 (corrélé BTC 0.89)
-# US500.cash H4 : WR 72.3%, PF 1.00 — risk_mult 0.50, weekend_trading=false
+# EURUSD H1  : WR 88.2% live, PF 10.6 — risk_mult 2.00 (boost dilution consistency)
+# US500.cash DÉSACTIVÉ 19 Juin 2026 (PF=0.24 live, WR=46.9%)
 # ============================================================================
 # Fusionné avec default.yaml (deep merge).
 # Seuls les champs qui surchargent default.yaml sont listés ici.
@@ -12,10 +13,11 @@
 
 # ── Trading — Production continue (1 trade/symbole/5min) ──────────────────
 trading:
-  max_positions: 10             # Capacité augmentée pour multi-positions (conf>85%→3, conf>70%→2)
+  max_positions: 12             # Capacité augmentée pour multi-positions (conf>85%→4, conf>70%→3)
   max_positions_per_symbol: 4   # 4 max par symbole
   max_trades_per_day: 80        # 4 symboles × 20/jour
   max_signals_per_cycle: 10
+  history_lookback_days: 3          # P2: réduit 7→3 jours (moins de contamination historique)
 
 # ── Symbol Limits — Production ──────────────────────────────────────────
 # Surcharges par rapport à default.yaml
@@ -26,7 +28,7 @@ symbol_limits:
     max_lot: 0.10
     risk_mult: 1.00           # H4 DD 6.9% → marge large (était 0.80)
     max_spread_points: 60     # élargi (était 40)
-    min_score: 0.55           # abaissé (était 0.60) — H4 moins de signaux
+    min_score: 0.60           # P3: remonté 0.55→0.60 (filtrer signaux faibles, WR=35.6%)
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -44,7 +46,7 @@ symbol_limits:
     max_daily_loss_pct_override: 0.015   # 1.5% daily loss (plus strict)
     circuit_breaker_dd_pct_override: 0.06  # 6% DD → arrêt
 
-  # ETHUSD — Calibration Juin 2026
+  # ETHUSD — BUY-ONLY Temporaire (SELL WR=30.8% toxique)
   ETHUSD:
     timeframe: "H4"           # H4 (backtest coûts: WR 70.5%, PF 1.03, DD 7.4%)
     max_lot: 0.05             # prudent (volatilité ETH élevée)
@@ -53,29 +55,29 @@ symbol_limits:
     min_score: 0.55           # Scénario A: abaissé de 0.60→0.55 pour +20% trades
     adx_thresh: 20
     allow_buys: true
-    allow_shorts: true
+    allow_shorts: true        # 🔓 DÉBLOQUÉ — SELL WR 30.8% meilleur que BUY 25%
 
   # EURUSD — Nouveau symbole (Juin 2026), DEUX DIRECTIONS
   EURUSD:
     timeframe: "H1"           # H1 (WR 68.6% 12ans, PF 1.12, DD 3.7%)
     max_lot: 0.10             # lot standard forex
-    risk_mult: 0.50           # prudent (nouveau symbole, calibration en cours)
+    risk_mult: 2.00           # ↑ boost pour diluer consistency FTMO (WR 88% live, PF 10.6)
     max_spread_points: 40     # serré (EURUSD très liquide)
-    min_score: 0.55           # Scénario A: abaissé pour +20% trades
+    min_score: 0.70           # 🔧 18 Juin: remonté 0.55→0.70 (WR 92.6% biaisé par 3 outliers)
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true        # DEUX DIRECTIONS — le MOM20x3 + risk management gèrent le risque
 
-  # US500.cash — Réactivé mode agressif (PF=1.00 après coûts, edge faible)
-  US500.cash:
-    timeframe: "H4"
-    max_lot: 0.10
-    risk_mult: 0.50           # moitié risque (edge proche zéro)
-    max_spread_points: 40
-    min_score: 0.55           # Scénario A: abaissé de 0.60→0.55 pour +20% trades
-    adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+  # US500.cash — DÉSACTIVÉ le 19 Juin 2026 (PF=0.24 live, WR=46.9%)
+  # US500.cash:
+  #   timeframe: "H4"
+  #   max_lot: 0.05
+  #   risk_mult: 0.25
+  #   max_spread_points: 40
+  #   min_score: 0.60
+  #   adx_thresh: 22
+  #   allow_buys: true
+  #   allow_shorts: true
 
 # ── Risk — Production ───────────────────────────────────────────────────
 risk:

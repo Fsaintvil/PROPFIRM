@@ -59,6 +59,9 @@ from engine_simple.dashboard import Dashboard, generate_report as dash_report
 from engine_simple.vwap_analyzer import VWAPAnalyzer, analyze as vwap_analyze_fn
 from engine_simple.market_profile import MarketProfile, analyze as mp_analyze
 
+# ── P1: Signal Pipeline — filtrage multi-couches extrait de _scan_signals ──
+from engine_simple.signal_pipeline import SignalPipeline
+
 warnings.filterwarnings("ignore", message="X does not have valid feature names")
 
 STATE_FILE = "runtime/robot_state.json"
@@ -104,8 +107,9 @@ def _acquire_lock():
     """PID lock — atomic file creation (empêche les instances dupliquées)"""
     pid = os.getpid()
 
-    # 🔒 Double vérification : scanner TOUS les processus python* qui exécutent main.py
-    # (couvre python.exe ET pythonw.exe, même si le PID lock est stale)
+    # 🔒 Vérification secondaire : scanner les processus python* qui exécutent main.py
+    # via PowerShell. Non-bloquante : ne fait qu'un warning si un zombie est détecté,
+    # car le vrai verrou est le fichier PID + OpenProcess ci-dessous.
     try:
         import subprocess
 
@@ -125,10 +129,10 @@ def _acquire_lock():
             if line and line.isdigit():
                 existing_pid = int(line)
                 if existing_pid != pid:
-                    logger.critical(
-                        f"PID lock: instance dupliquée détectée (PID {existing_pid}) via scan processus — abandon"
+                    logger.warning(
+                        f"PID lock: instance détectée (PID {existing_pid}) via scan —"
+                        " vérification par OpenProcess ci-dessous"
                     )
-                    sys.exit(1)
     except Exception as e:
         logger.debug(f"PID lock: scan processus auxiliaire ignoré ({e})")
 
@@ -421,6 +425,7 @@ class FTMO_SIMPLE:
         )
         if self._state.get("peak_equity"):
             self.ftmo.peak_equity = self._state["peak_equity"]
+            self.ftmo.challenge.peak_equity = self._state["peak_equity"]  # Sync challenge tracker
         if "consecutive_losses" in self._state:
             self.ftmo.consecutive_losses = self._state["consecutive_losses"]
         if self._state.get("partial_closed"):
@@ -452,34 +457,73 @@ class FTMO_SIMPLE:
             # CRITICAL: set on challenge._trade_history directly, not ftmo._trade_history
             # because ftmo._trade_history is an alias that gets disconnected on reassignment
             th_raw = self._state["trade_history"]
+            active_symbols = set(cfg.SYMBOLS)
             self.ftmo.challenge._trade_history = []
+            skipped = 0
             for t in th_raw:
+                sym = t.get("symbol", "")
+                if sym not in active_symbols:
+                    skipped += 1
+                    continue
                 try:
                     time_val = t.get("time", "")
                     if isinstance(time_val, str):
                         time_val = datetime.fromisoformat(time_val)
                     self.ftmo.challenge._trade_history.append(
                         {
-                            "symbol": t.get("symbol", ""),
+                            "symbol": sym,
                             "profit": t.get("profit", 0),
                             "time": time_val,
                         }
                     )
                 except (ValueError, TypeError):
                     pass
+            if skipped:
+                logger.info(f"[STATE] Filtrés {skipped} trades de symboles inactifs à la restauration")
             # Re-establish the alias
             self.ftmo._trade_history = self.ftmo.challenge._trade_history
-            logger.info(f"[STATE] Restored {len(self.ftmo.challenge._trade_history)} trade_history records")
+            logger.info(
+                f"[STATE] Restored {len(self.ftmo.challenge._trade_history)} trade_history records (symboles actifs)"
+            )
+            # Also rebuild trading_days and daily_pnl_by_date from filtered history
+            # to avoid contamination from skipped trades in the reconstruction below
         if self._state.get("daily_pnl_by_date"):
-            self.ftmo.daily_pnl_by_date = {}
+            self.ftmo.daily_pnl_by_date.clear()
             for k, v in self._state["daily_pnl_by_date"].items():
                 with contextlib.suppress(ValueError):
                     self.ftmo.daily_pnl_by_date[datetime.strptime(k, "%Y-%m-%d").date()] = v
         if self._state.get("trading_days_list"):
-            self.ftmo.trading_days = set()
+            self.ftmo.trading_days.clear()
             for d in self._state["trading_days_list"]:
                 with contextlib.suppress(ValueError):
                     self.ftmo.trading_days.add(datetime.strptime(d, "%Y-%m-%d").date())
+        # 🔒 FIX v2: Reconstruire trading_days + daily_pnl_by_date depuis trade_history
+        # trade_history est la source de vérité car elle persiste 500 trades (vs.
+        # daily_pnl_by_date/trading_days_list qui ne couvrent que la session courante
+        # et sont perdus au redémarrage). Cette reconstruction remplace les valeurs
+        # chargées depuis daily_pnl_by_date/trading_days_list quand trade_history existe.
+        # ⚠️ Utiliser clear()/update() au lieu de = pour préserver les alias
+        #    (self.ftmo.trading_days = self.challenge.trading_days via alias dans ftmo_protector.py:59)
+        if hasattr(self, "ftmo") and self.ftmo._trade_history:
+            self.ftmo.trading_days.clear()
+            self.ftmo.daily_pnl_by_date.clear()
+            for t in self.ftmo._trade_history:
+                try:
+                    time_val = t.get("time")
+                    if isinstance(time_val, datetime):
+                        d = time_val.date()
+                    elif isinstance(time_val, str):
+                        d = datetime.fromisoformat(time_val).date()
+                    else:
+                        continue
+                    self.ftmo.trading_days.add(d)
+                    self.ftmo.daily_pnl_by_date[d] = self.ftmo.daily_pnl_by_date.get(d, 0) + t.get("profit", 0)
+                except (ValueError, TypeError, AttributeError):
+                    pass
+            logger.info(
+                f"[STATE] Reconstruit {len(self.ftmo.trading_days)} jours trading, "
+                f"{len(self.ftmo.daily_pnl_by_date)} daily_pnl depuis trade_history"
+            )
         if self._state.get("daily_stats"):
             self.ftmo.daily_stats = self._state["daily_stats"]
         _dse = self._state.get("daily_start_equity")
@@ -518,6 +562,27 @@ class FTMO_SIMPLE:
         )
         self.risk_manager = RiskManager(self.ftmo, audit=self.audit)
 
+        # P1: Signal Pipeline — filtrage multi-couches extrait de _scan_signals
+        self.pipeline = SignalPipeline(
+            mt5=self.mt5,
+            ftmo=self.ftmo,
+            adaptive=self.adaptive,
+            market_memory=self.market_memory,
+            session_filter=self.session_filter,
+            news_filter=self.news_filter,
+            strategy_selector=self.strategy_selector,
+            volume_profile=self.volume_profile,
+            order_flow=self.order_flow,
+            mtf_confirm=self.mtf_confirm,
+            market_profile=self.market_profile,
+            vwap_analyzer=self.vwap_analyzer,
+            risk_manager=self.risk_manager,
+            config=cfg,
+            symbol_limits=cfg.SYMBOL_LIMITS,
+            symbol_timeframes=cfg.SYMBOL_TIMEFRAMES,
+        )
+        logger.info("[SIGNAL_PIPELINE] Chargé — 12 phases de filtrage (P1)")
+
         # Modules refactorisés (strategy/regime) — monitoring parallèle
         self._regime_detector = RegimeDetector()
         self.pos_manager = PositionManager(
@@ -538,6 +603,13 @@ class FTMO_SIMPLE:
         self._last_vol_check = 0
         self._vol_cache = RateCache()
         self._vol_symbol_idx = 0
+
+        # MT5 Terminal restart watchdog
+        self._last_mt5_restart_attempt = 0
+        self._mt5_restart_count = 0
+
+        # Log throttling: track cycle count of last log per category
+        self._log_throttle = {"ol_thresh": 0, "degraded": {}, "limit": {}}
 
     def _health_status(self):
         try:
@@ -579,6 +651,32 @@ class FTMO_SIMPLE:
             logger.warning(
                 f"[BROKER] MT5 indisponible, skipping cycles (down depuis {time.time() - self._mt5_down_since:.0f}s)"
             )
+        # MT5 Terminal restart watchdog: si down > 300s, tenter restart du terminal
+        mt5_down_for = time.time() - self._mt5_down_since
+        if mt5_down_for > 300 and hasattr(self, "_last_mt5_restart_attempt"):
+            since_last_restart = time.time() - self._last_mt5_restart_attempt
+            if since_last_restart > 600 and self._mt5_restart_count < 3:
+                self._last_mt5_restart_attempt = time.time()
+                self._mt5_restart_count += 1
+                logger.warning(
+                    f"[BROKER] MT5 down depuis {mt5_down_for:.0f}s — tentative #{self._mt5_restart_count} "
+                    f"de redémarrage du terminal MT5"
+                )
+                try:
+                    import subprocess
+
+                    # Tuer le processus MT5 terminal
+                    subprocess.run("taskkill /F /IM terminal64.exe 2>nul", shell=True, timeout=10)
+                    time.sleep(3)
+                    # Relancer MT5 via le raccourci
+                    mt5_path = os.environ.get("MT5_TERMINAL_PATH", "")
+                    if mt5_path:
+                        subprocess.Popen([mt5_path], shell=True)
+                        logger.info("[BROKER] Terminal MT5 relancé")
+                    else:
+                        logger.warning("[BROKER] MT5_TERMINAL_PATH non défini dans .env")
+                except Exception as e:
+                    logger.error(f"[BROKER] Échec redémarrage terminal MT5: {e}")
         return False
 
     def _heartbeat(self):
@@ -724,6 +822,9 @@ class FTMO_SIMPLE:
                 self._last_cycle_time = time.time()
                 continue
 
+            # Toujours écrire le heartbeat, même si MT5 est down (évite faux positif watchdog)
+            self._heartbeat()
+
             if not self._health_check():
                 # MT5 down — skip ce cycle au lieu de stopper le robot
                 mt5_down_for = time.time() - getattr(self, "_mt5_down_since", time.time())
@@ -735,8 +836,6 @@ class FTMO_SIMPLE:
                 )
                 time.sleep(5)
                 continue
-
-            self._heartbeat()
             self._pos_cache.invalidate()
 
             # Circuit breaker — MONITORING ONLY (ne bloque jamais le trading)
@@ -945,6 +1044,8 @@ class FTMO_SIMPLE:
     def _manage_positions(self):
         self.pos_manager.manage_positions()
 
+    # DÉPRÉCIÉ: remplacé par signal_pipeline._phase1_mom20x3() (P1 Juin 2026)
+    # Conservé pour fallback manuel ou debug. Ne plus appeler depuis _scan_signals.
     def _get_mom20x3_signal(self, symbol):
         """Génère un signal MOM20x3 avec filtres ADX slope / +DI/-DI + OL params.
         Timeframe par symbole depuis config: XAUUSD=H4, BTCUSD=H1, US500.cash=H1."""
@@ -968,12 +1069,20 @@ class FTMO_SIMPLE:
                 if ol_thresh < base_trending:
                     ol_thresh_trending = ol_thresh
                     ol_thresh_ranging = max(1.5, ol_thresh - 0.5)
-                    logger.info(
-                        f"  [OL-THRESH] {symbol}: OL thresh={ol_thresh} → "
-                        f"custom trending={ol_thresh_trending}, ranging={ol_thresh_ranging}"
-                    )
+                    # Throttle: log 1/60 cycles max (évite spam ~2,940 lignes/jour)
+                    if self.cycle_count - self._log_throttle.get("ol_thresh", 0) >= 60:
+                        self._log_throttle["ol_thresh"] = self.cycle_count
+                        logger.info(
+                            f"  [OL-THRESH] {symbol}: OL thresh={ol_thresh} → "
+                            f"custom trending={ol_thresh_trending}, ranging={ol_thresh_ranging}"
+                        )
                 else:
-                    logger.debug(f"  [OL-THRESH] {symbol}: OL thresh={ol_thresh} >= base={base_trending} → using base")
+                    # Throttle: log 1/60 cycles max
+                    if self.cycle_count - self._log_throttle.get("ol_thresh", 0) >= 60:
+                        self._log_throttle["ol_thresh"] = self.cycle_count
+                        logger.debug(
+                            f"  [OL-THRESH] {symbol}: OL thresh={ol_thresh} >= base={base_trending} → using base"
+                        )
                 ol_risk_mult = ol_params.get("risk_mult", 1.0)
             except Exception as e:
                 logger.debug(f"  [OL] {symbol}: params fallback to defaults ({e})")
@@ -1123,363 +1232,37 @@ class FTMO_SIMPLE:
         for s in stale:
             del self._last_signals[s]
 
-        # Collect all valid signals across symbols first
+        # P1: Déléguer le filtrage multi-couches au SignalPipeline
         candidates = []
         degraded_symbols = self._state.get("degraded_symbols", {})
         for symbol in cfg.SYMBOLS:
-            # FTMO + Risk pre-trade check (SANS signal — danger_hours skip ici,
-            # vérifié plus tard dans can_trade() avec le signal + bypass score≥0.80)
-            pre_ok, pre_checks = self.risk_manager.pre_trade(symbol)
-            if not pre_ok:
-                failed = [c["rule"] for c in pre_checks if not c["pass"]]
-                logger.debug(f"  [PRECHECK] {symbol}: echec {failed}")
+            try:
+                result = self.pipeline.process(
+                    symbol=symbol,
+                    cycle_count=self.cycle_count,
+                    degraded_symbols=degraded_symbols,
+                    sym_dir_counts=sym_dir_counts,
+                    sym_total_counts=sym_total_counts,
+                    config_limits=MAX_POS_PER_SYMBOL,
+                    last_signals=self._last_signals,
+                    log_throttle=self._log_throttle,
+                )
+            except Exception as e:
+                logger.exception(f"[PIPELINE] {symbol}: erreur dans le pipeline: {e}")
                 continue
-
-            # Signal: MOM20x3 pur en priorité, ICT/SMC désactivé (déprécié juin 2026).
-            # La couche ICT produisait trop de faux signaux (killzone, FVG, OB).
-            # Le MOM20x3 pur est plus robuste (ADX + momentum + DI).
-            signal = self._get_mom20x3_signal(symbol)
-            # ICT désactivé : signal = self._get_ict_signal(symbol) if signal is None else signal
-            if signal is None:
+            if result is None:
                 continue
-
-            # Mode dégradé : symbole avec WR < 40% → lot minimum (0.01 au lieu de désactiver)
-            if symbol in degraded_symbols:
-                signal["_degraded"] = True
-                logger.debug(f"  [DEGRADED] {symbol}: mode lot minimum (WR < 40%)")
-
-            score = signal.get("score", 0.6)
+            signal = result.signal
+            score = result.score
             # Stocker une COPIE pour éviter mutation cumulative du risk_mult
             self._last_signals[symbol] = {"signal": dict(signal), "score": score, "cycle": self.cycle_count}
-
-            # ADX threshold: adaptatif selon le régime + bypass sur score élevé
-            signal_adx = signal.get("adx", 0)
-            sym_cfg = cfg.SYMBOL_LIMITS.get(symbol, {})
-            signal_score = signal.get("score", 0.6)
-
-            # Fix #3: score MOM20x3 ≥ 0.80 → bypass ADX MAIS avec seuil minimum
-            # 🔒 FIX C3: bypass interdit si ADX < 15 (marché sans tendance = faux signal)
-            ADX_BYPASS_MIN = 15
-            if signal_score >= 0.80 and signal_adx >= ADX_BYPASS_MIN:
-                logger.debug(
-                    f"  [ADX] {symbol}: bypass (score={signal_score:.2f} >= 0.80, ADX={signal_adx:.1f} >= {ADX_BYPASS_MIN})"
-                )
-            elif signal_score >= 0.80 and signal_adx < ADX_BYPASS_MIN:
-                logger.info(
-                    f"  [ADX] {symbol}: bypass REFUSÉ (score={signal_score:.2f} >= 0.80 MAIS ADX={signal_adx:.1f} < {ADX_BYPASS_MIN} → range pur)"
-                )
-                continue
-            else:
-                # Fix #2: ADX adaptatif — abaissé en RANGING/LOW_VOL
-                # NOTE: on override le _regime du signal (structure H1 ICT) avec l'ADX réel
-                # car en marché rangeant, la structure détecte parfois un faux TREND_UP/DOWN
-                regime = "RANGING" if signal_adx < 22 else signal.get("_regime", "RANGING")
-                adx_thresh = sym_cfg.get("adx_thresh", 20)
-                if regime in ("RANGING", "LOW_VOL"):
-                    adx_thresh = min(adx_thresh, 12)  # abaissé à 12 pour signaux ICT en range
-                if signal_adx < adx_thresh:
-                    logger.info(
-                        f"  [ADX] {symbol}: ADX={signal_adx:.1f} < {adx_thresh} (score={signal_score:.2f}, regime={signal.get('_regime', '?')}), skip"
-                    )
-                    continue
-            logger.debug(
-                f"  [SIGNAL] {symbol}: score={signal['score']:.2f}, "
-                f"conf={signal['confidence']:.2f}, action={signal['action']}, "
-                f"strat={signal.get('details', '?')}, "
-                f"+DI={signal.get('plus_di', '?'):>5} -DI={signal.get('minus_di', '?'):>5} "
-                f"slope={signal.get('adx_slope', '?'):>5}"
-            )
-
-            # PHASE 5: SessionFilter — vérifier si la session est active
-            if self.session_filter:
-                hour_utc = datetime.now(timezone.utc).hour
-                session_score = self.session_filter.get_session_score(symbol, hour_utc)
-                if session_score < 0.3:
-                    logger.debug(f"  [SESSION] {symbol}: score {session_score:.2f} < 0.3 → session inactive, skip")
-                    continue
-                signal["session_score"] = session_score
-
-            # ── Phase 8: News Filter — vérifier événements économiques ──
-            news_blocked, news_reason = self.news_filter.is_news_blocked(symbol)
-            if news_blocked:
-                logger.debug(f"  [NEWS] {symbol}: {news_reason} → skip")
-                continue
-
-            # ── Phase 7: Strategy Selector — adapter params par régime ──
-            regime = signal.get("_regime", "RANGING")
-            sig_action_temp = signal.get("action", "BUY")
-            adjusted_regime = self.strategy_selector.get_regime_for_signal(regime, sig_action_temp)
-            strat_params = self.strategy_selector.get_params(
-                symbol, adjusted_regime, adx=signal_adx, atr_pct=signal.get("atr_pct", 0.5)
-            )
-
-            # Vérifier si le score est suffisant pour ce régime
-            should_trade, trade_reason = self.strategy_selector.should_trade(
-                symbol, adjusted_regime, signal_score, signal_adx
-            )
-            if not should_trade:
-                logger.debug(f"  [STRAT_SEL] {symbol}: {trade_reason} → skip")
-                continue
-
-            # Appliquer le threshold adjustment du régime
-            signal["strat_params"] = strat_params.to_dict() if hasattr(strat_params, "to_dict") else strat_params
-
-            # ── Phase 9: Volume Profile — ajustement score selon POC/VAH/VAL ──
-            try:
-                tf_vp = cfg.SYMBOL_TIMEFRAMES.get(symbol, "H1")
-                recent_vp = self.mt5.get_rates(symbol, tf_vp, count=100)
-                if recent_vp is not None and len(recent_vp) >= 50:
-                    if not isinstance(recent_vp, _pd.DataFrame):
-                        _cols = ["time", "open", "high", "low", "close", "volume", "spread", "real_volume"]
-                        _ncols = min(len(_cols), len(recent_vp[0]) if len(recent_vp) > 0 else len(_cols))
-                        recent_vp = _pd.DataFrame(
-                            [list(r)[:_ncols] for r in recent_vp],
-                            columns=_cols[:_ncols],
-                        )
-                    vp_levels = self.volume_profile.analyze(recent_vp)
-                    if vp_levels.poc is not None:
-                        current_price = signal.get("entry_price", 0)
-                        if current_price == 0:
-                            tick = self.mt5.get_tick(symbol)
-                            current_price = tick.ask if tick else 0
-                        if current_price > 0:
-                            # Near POC → boost score (high volume = strong level)
-                            dist_poc = abs(current_price - vp_levels.poc) / current_price * 100
-                            if dist_poc < 0.1:
-                                signal["score"] = min(0.95, signal["score"] * 1.1)
-                                signal["vp_boost"] = "POC"
-                                logger.debug(f"  [VP] {symbol}: prix près du POC ({dist_poc:.3f}%) → score +10%")
-                            # Near VAH/VAL → potential reversal zone
-                            elif vp_levels.vah and current_price > vp_levels.vah * 0.999:
-                                if signal.get("action") == "BUY":
-                                    signal["score"] *= 0.9  # Resistance above
-                                    signal["vp_boost"] = "VAH_RESISTANCE"
-                                    logger.debug(f"  [VP] {symbol}: prix ≈ VAH → score -10% (résistance)")
-                            elif vp_levels.val and current_price < vp_levels.val * 1.001:
-                                if signal.get("action") == "SELL":
-                                    signal["score"] *= 0.9  # Support below
-                                    signal["vp_boost"] = "VAL_SUPPORT"
-                                    logger.debug(f"  [VP] {symbol}: prix ≈ VAL → score -10% (support)")
-                            signal["vp_poc"] = vp_levels.poc
-                            signal["vp_vah"] = vp_levels.vah
-                            signal["vp_val"] = vp_levels.val
-            except Exception as e:
-                logger.debug(f"  [VP] {symbol}: erreur VolumeProfile: {e}")
-
-            # ── Phase 10: Order Flow — ticks réels MT5 + divergence delta ──
-            try:
-                sig_action = signal.get("action", "BUY")
-                # Priorité : ticks réels MT5, fallback barres OHLCV
-                flow_metrics = self.order_flow.analyze_ticks_from_mt5(self.mt5, symbol, count=1000)
-                if flow_metrics is None or flow_metrics.total_volume == 0:
-                    # Fallback barres
-                    tf_of = cfg.SYMBOL_TIMEFRAMES.get(symbol, "H1")
-                    recent_of = self.mt5.get_rates(symbol, tf_of, count=100)
-                    if recent_of is not None and len(recent_of) >= 20:
-                        if not isinstance(recent_of, _pd.DataFrame):
-                            _cols_of = ["time", "open", "high", "low", "close", "volume", "spread", "real_volume"]
-                            _ncols_of = min(len(_cols_of), len(recent_of[0]) if len(recent_of) > 0 else len(_cols_of))
-                            recent_of = _pd.DataFrame(
-                                [list(r)[:_ncols_of] for r in recent_of],
-                                columns=_cols_of[:_ncols_of],
-                            )
-                        flow_metrics = self.order_flow.analyze_bars(recent_of)
-
-                if flow_metrics and flow_metrics.total_volume > 0:
-                    flow_adj = self.order_flow.get_flow_adjustment(flow_metrics, sig_action)
-                    if flow_adj["score_adj"] != 1.0:
-                        old_score = signal["score"]
-                        signal["score"] = min(0.95, max(0.3, signal["score"] * flow_adj["score_adj"]))
-                        signal["flow_adj"] = flow_adj["score_adj"]
-                        signal["flow_divergence"] = flow_adj.get("divergence")
-                        signal["flow_absorption"] = flow_adj.get("absorption")
-                        signal["flow_tick_data"] = flow_adj.get("is_tick_data", False)
-                        logger.debug(
-                            f"  [FLOW] {symbol}: adj={flow_adj['score_adj']:.3f} "
-                            f"(delta={flow_adj.get('net_delta', 0):.0f}, "
-                            f"div={flow_adj.get('divergence', 'none')}) "
-                            f"→ score {old_score:.3f}→{signal['score']:.3f}"
-                        )
-                        if signal["score"] < cfg.MIN_SIGNAL_SCORE:
-                            logger.debug(
-                                f"  [FLOW] {symbol}: score {signal['score']:.3f} < {cfg.MIN_SIGNAL_SCORE} → skip"
-                            )
-                            continue
-            except Exception as e:
-                logger.debug(f"  [FLOW] {symbol}: erreur OrderFlow: {e}")
-
-            # ── Phase 11: MTF Confirmation — vérifier TF supérieur ──
-            try:
-                tf_signal = cfg.SYMBOL_TIMEFRAMES.get(symbol, "H1")
-                # Get higher TF data
-                higher_tfs = {"H1": "H4", "H4": "D1", "D1": "W1"}
-                tf_higher = higher_tfs.get(tf_signal)
-                if tf_higher:
-                    recent_higher = self.mt5.get_rates(symbol, tf_higher, count=100)
-                    if recent_higher is not None and len(recent_higher) >= 50:
-                        if not isinstance(recent_higher, _pd.DataFrame):
-                            _cols = ["time", "open", "high", "low", "close", "volume", "spread", "real_volume"]
-                            _ncols = min(len(_cols), len(recent_higher[0]) if len(recent_higher) > 0 else len(_cols))
-                            recent_higher = _pd.DataFrame(
-                                [list(r)[:_ncols] for r in recent_higher],
-                                columns=_cols[:_ncols],
-                            )
-                        mtf_confirmed, mtf_factor = self.mtf_confirm.confirm(
-                            None, recent_higher, signal.get("action", "BUY")
-                        )
-                        if mtf_factor != 1.0:
-                            old_score = signal["score"]
-                            signal["score"] = max(0.3, min(0.95, signal["score"] * mtf_factor))
-                            signal["mtf_factor"] = mtf_factor
-                            logger.debug(
-                                f"  [MTF] {symbol}: TF supérieur {'confirme' if mtf_factor > 1 else 'contredit'} "
-                                f"(factor={mtf_factor:.2f}) → score {old_score:.2f}→{signal['score']:.2f}"
-                            )
-            except Exception as e:
-                logger.debug(f"  [MTF] {symbol}: erreur MTFConfirm: {e}")
-
-            # ── Phase 12: Market Profile — Initial Balance + TAP + session type ──
-            try:
-                tf_mp = cfg.SYMBOL_TIMEFRAMES.get(symbol, "H1")
-                mp_data = self.mt5.get_rates(symbol, tf_mp, count=100)
-                if mp_data is not None and len(mp_data) >= 10:
-                    if not isinstance(mp_data, _pd.DataFrame):
-                        _cols_m = ["time", "open", "high", "low", "close", "volume", "spread", "real_volume"]
-                        _ncols_m = min(len(_cols_m), len(mp_data[0]) if len(mp_data) > 0 else len(_cols_m))
-                        mp_data = _pd.DataFrame(
-                            [list(r)[:_ncols_m] for r in mp_data],
-                            columns=_cols_m[:_ncols_m],
-                        )
-                    mp_result = self.market_profile.analyze(mp_data, signal_action=signal.get("action"))
-                    mp_adj = mp_result.get("score_adj", 1.0)
-                    if mp_adj != 1.0:
-                        old_score = signal["score"]
-                        signal["score"] = max(0.3, min(0.95, signal["score"] * mp_adj))
-                        signal["mp_adj"] = mp_adj
-                        signal["mp_session_type"] = mp_result.get("session_type")
-                        signal["mp_ib_direction"] = mp_result.get("ib_direction")
-                        signal["mp_price_in_ib"] = mp_result.get("price_in_ib")
-                        logger.debug(
-                            f"  [MP] {symbol}: session={mp_result.get('session_type')}, "
-                            f"ib_dir={mp_result.get('ib_direction')}, adj={mp_adj:.3f} "
-                            f"→ score {old_score:.3f}→{signal['score']:.3f}"
-                        )
-                        if signal["score"] < cfg.MIN_SIGNAL_SCORE:
-                            logger.debug(
-                                f"  [MP] {symbol}: score {signal['score']:.3f} < {cfg.MIN_SIGNAL_SCORE} → skip"
-                            )
-                            continue
-            except Exception as e:
-                logger.debug(f"  [MP] {symbol}: erreur MarketProfile: {e}")
-
-            # ── Phase 13: VWAP Premium/Discount — ajustement selon zone ──
-            try:
-                tf_vwap = cfg.SYMBOL_TIMEFRAMES.get(symbol, "H1")
-                vwap_data = self.mt5.get_rates(symbol, tf_vwap, count=100)
-                if vwap_data is not None and len(vwap_data) >= 20:
-                    if not isinstance(vwap_data, _pd.DataFrame):
-                        _cols_v = ["time", "open", "high", "low", "close", "volume", "spread", "real_volume"]
-                        _ncols_v = min(len(_cols_v), len(vwap_data[0]) if len(vwap_data) > 0 else len(_cols_v))
-                        vwap_data = _pd.DataFrame(
-                            [list(r)[:_ncols_v] for r in vwap_data],
-                            columns=_cols_v[:_ncols_v],
-                        )
-                    vwap_result = self.vwap_analyzer.analyze(vwap_data)
-                    vwap_adj = vwap_result.get("score_adj", 1.0)
-                    if vwap_adj != 1.0:
-                        old_score = signal["score"]
-                        signal["score"] = max(0.3, min(0.95, signal["score"] * vwap_adj))
-                        signal["vwap_adj"] = vwap_adj
-                        signal["vwap_zone"] = vwap_result.get("zone")
-                        signal["vwap_price"] = vwap_result.get("vwap")
-                        signal["vwap_reason"] = vwap_result.get("reason")
-                        logger.debug(
-                            f"  [VWAP] {symbol}: zone={vwap_result.get('zone')}, "
-                            f"adj={vwap_adj:.3f}, raison={vwap_result.get('reason')} "
-                            f"→ score {old_score:.3f}→{signal['score']:.3f}"
-                        )
-                        if signal["score"] < cfg.MIN_SIGNAL_SCORE:
-                            logger.debug(
-                                f"  [VWAP] {symbol}: score {signal['score']:.3f} < {cfg.MIN_SIGNAL_SCORE} → skip"
-                            )
-                            continue
-            except Exception as e:
-                logger.debug(f"  [VWAP] {symbol}: erreur VWAPAnalyzer: {e}")
-
-            # ── Phase 14: Adaptive Params — ajuster risk_mult selon performance ──
-            try:
-                if symbol not in self._adaptive_params:
-                    from engine_simple.adaptive_params import AdaptiveParameters
-
-                    self._adaptive_params[symbol] = AdaptiveParameters(symbol)
-                ap = self._adaptive_params[symbol]
-                adapted = ap.get_adapted_params()
-                if adapted.sample_size >= 20:
-                    # Appliquer risk_mult adaptatif (multiplier, pas remplacer)
-                    current_rm = signal.get("risk_mult", 1.0)
-                    signal["risk_mult"] = current_rm * adapted.risk_mult
-                    signal["adaptive_params"] = adapted.to_dict()
-                    logger.debug(
-                        f"  [ADAPTIVE] {symbol}: WR={adapted.win_rate:.1%}, "
-                        f"risk_mult={adapted.risk_mult:.2f} → signal risk={signal['risk_mult']:.2f}"
-                    )
-            except Exception as e:
-                logger.debug(f"  [ADAPTIVE] {symbol}: erreur: {e}")
-
-            # Per-direction position limit: dynamique selon la confidence du signal
-            #   conf > 85% → max 3 positions/symbole (jusqu'à 3 dans la même direction)
-            #   conf > 70% → max 2 positions/symbole
-            #   sinon      → max 1 position/symbole (comportement par défaut)
-            sig_action = signal.get("action")
-            sig_dir = 0 if sig_action == "BUY" else 1 if sig_action == "SELL" else None
-            sig_conf = signal.get("confidence", 0.0)
-
-            if sig_conf > 0.85:
-                max_per_symbol = 4
-            elif sig_conf > 0.70:
-                max_per_symbol = 3
-            else:
-                max_per_symbol = 1
-
-            # Plafonner au hard-limit de la config (sécurité)
-            hard_limit = MAX_POS_PER_SYMBOL.get(symbol, cfg.MAX_POSITIONS_PER_SYMBOL)
-            max_per_symbol = min(max_per_symbol, hard_limit)
-
-            # Injecter dans le signal pour que le TradeExecutor l'utilise
-            signal["max_per_symbol"] = max_per_symbol
-
-            # PHASE 6: PortfolioController — vérifier corrélation et exposition
+            # PortfolioController — vérifier corrélation et exposition
             if self.portfolio_controller:
-                can_open, reason = self.portfolio_controller.can_open_position(symbol, sig_action, [])
+                can_open, reason = self.portfolio_controller.can_open_position(symbol, signal.get("action", "BUY"), [])
                 if not can_open:
                     logger.debug(f"  [PORTFOLIO] {symbol}: {reason}")
                     continue
-
-            # Vérifier la limite dans la direction du signal
-            if sig_dir is not None:
-                dir_count = sym_dir_counts.get((symbol, sig_dir), 0)
-                if dir_count >= max_per_symbol:
-                    logger.debug(
-                        f"  [LIMIT] {symbol}: déjà {dir_count} position(s) {sig_action} "
-                        f"(max={max_per_symbol}, conf={sig_conf:.2f})"
-                    )
-                    continue
-
-            # Vérifier la limite TOTALE par symbole (BUY+SELL combinés)
-            # max total = max_per_symbol (même direction) × 2 (les deux sens)
-            max_pos_total = min(max_per_symbol * 2, hard_limit * 2, cfg.MAX_POSITIONS)
-            total_count = sym_total_counts.get(symbol, 0)
-            if total_count >= max_pos_total:
-                logger.debug(
-                    f"  [LIMIT] {symbol}: déjà {total_count} position(s) totales "
-                    f"(max={max_pos_total}, conf={sig_conf:.2f})"
-                )
-                continue
-
-            # Feed features to concept drift detector
-            candidates.append((signal["score"], symbol, signal, positions))
-            # Ne pas faire de check MAX_POSITIONS ici — la liste positions est figée
-            # Le vrai check est fait après chaque exécution dans la boucle d'exec
+            candidates.append((score, symbol, signal, positions))
 
         # Save signal debug info — seulement tous les 5 cycles (évite I/O excessif)
         if self.cycle_count % 5 == 0:
@@ -1505,58 +1288,7 @@ class FTMO_SIMPLE:
                 logger.debug(f"  [FTMO FINAL] {symbol}: {reason}")
                 continue
 
-            # Anticipation Engine: vérifier que le DL confirme la direction
-            if hasattr(self, "anticipation") and self.anticipation is not None:
-                try:
-                    tf_ae = cfg.SYMBOL_TIMEFRAMES.get(symbol, "H1")
-                    recent_ae = self.mt5.get_rates(symbol, tf_ae, count=60)
-                    if recent_ae is not None and len(recent_ae) > 10:
-                        # Convertir les rates MT5 (liste de tuples) en DataFrame
-                        # si ce n'en est pas déjà un (market_memory attend un DataFrame).
-                        if not isinstance(recent_ae, _pd.DataFrame):
-                            _cols = ["time", "open", "high", "low", "close", "volume", "spread", "real_volume"]
-                            # Prendre seulement les colonnes disponibles
-                            _ncols = min(len(_cols), len(recent_ae[0]) if len(recent_ae) > 0 else len(_cols))
-                            recent_ae = _pd.DataFrame(
-                                [list(r)[:_ncols] for r in recent_ae],
-                                columns=_cols[:_ncols],
-                            )
-                        current_price = signal.get("entry_price", 0)
-                        if current_price == 0:
-                            tick = self.mt5.get_tick(symbol)
-                            current_price = tick.ask if tick else 0
-                        if current_price > 0:
-                            ctx = self.anticipation.anticipate(symbol, current_price, recent_ae)
-                            signal_side = "HAUSSE" if signal.get("action") == "BUY" else "BAISSE"
-                            ant_side = ctx["consensus"]["direction"]
-                            ant_conf = ctx["consensus"]["confidence"]
-                            # Si l'anticipation est FORTE et en désaccord → réduire risque
-                            # MAIS seulement si Devil's Advocate n'a PAS déjà réduit (évite double peine)
-                            if ant_side != "NEUTRE" and ant_side != signal_side:
-                                if ant_conf > 0.65:
-                                    current_rm = signal.get("risk_mult", 1.0)
-                                    if current_rm >= 0.9:  # pas encore réduit par DA
-                                        signal["risk_mult"] = current_rm * 0.5
-                                        logger.info(
-                                            f"  [ANTICIP] {symbol}: DL dit {ant_side} (conf={ant_conf:.2f}) "
-                                            f"vs signal {signal_side} → risque /2"
-                                        )
-                                    else:
-                                        logger.info(
-                                            f"  [ANTICIP] {symbol}: DL dit {ant_side} mais déjà réduit "
-                                            f"(risk_mult={current_rm:.2f}) → skip double peine"
-                                        )
-                                else:
-                                    logger.debug(
-                                        f"  [ANTICIP] {symbol}: DL en désaccord ({ant_side}, conf={ant_conf:.2f})"
-                                    )
-                            elif ant_side == signal_side and ant_conf > 0.65:
-                                signal["risk_mult"] = signal.get("risk_mult", 1.0) * 1.2
-                                logger.info(
-                                    f"  [ANTICIP] {symbol}: DL confirme {signal_side} (conf={ant_conf:.2f}) → risque +20%"
-                                )
-                except Exception as e:
-                    logger.debug(f"  [ANTICIP] {symbol}: erreur anticipation: {e}")
+            # P7: Anticipation Engine SUPPRIMÉ (DL désactivé, code mort)
             # [SIGNAL] = signal validé AVANT exécution (debug, pas un trade réel)
             logger.debug(
                 f"  [SIGNAL] >>> {symbol} {signal['action']} (score={score:.2f}, strat={signal.get('details', '?')})"
@@ -1581,7 +1313,7 @@ class FTMO_SIMPLE:
                 kelly_factor = max(0.3, min(1.5, kelly_risk / cfg.RISK_PER_TRADE))  # borné [0.3, 1.5]
                 signal["risk_mult"] = signal.get("risk_mult", 1.0) * kelly_factor
                 # 🔒 FIX M2: Cap final du risk_mult par symbole (après toutes les multiplications)
-                _FINAL_CAP = {"XAUUSD": 1.25, "BTCUSD": 1.00, "US500.cash": 1.15, "ETHUSD": 1.00}
+                _FINAL_CAP = {"XAUUSD": 1.50, "BTCUSD": 1.25, "US500.cash": 1.30, "ETHUSD": 1.20, "EURUSD": 2.00}
                 cap = _FINAL_CAP.get(symbol, 1.0)
                 if signal["risk_mult"] > cap:
                     logger.info(f"  [RISK] {symbol}: risk_mult {signal['risk_mult']:.3f} capé à {cap} (post-Kelly)")
@@ -1882,6 +1614,15 @@ class FTMO_SIMPLE:
                 continue
 
             sym_wr = sum(1 for t in sym_trades if t["profit"] > 0) / len(sym_trades)
+
+            # 🔧 18 Juin 2026: Geler la période si WR < 40% (mode dégradé)
+            # Empêche l'oscillation 22→20→18→reset→22 observée sur ETHUSD
+            if sym_wr < 0.40:
+                logger.debug(
+                    f"[PHASE 3] {symbol}: WR={sym_wr:.1%} < 40% → gel période (mode dégradé, pas d'ajustement)"
+                )
+                continue
+
             current_period = SYMBOL_MOMENTUM_PERIODS.get(symbol, 20)
             new_period = current_period
 

@@ -96,7 +96,7 @@ except Exception as e:
     _fb_log("MT5_PASSWORD", "(masqué)")
     MT5_SERVER = ""
     _fb_log("MT5_SERVER", "(vide)")
-    SYMBOLS = ["XAUUSD", "BTCUSD", "ETHUSD", "EURUSD", "US500.cash"]
+    SYMBOLS = ["XAUUSD", "BTCUSD", "ETHUSD", "EURUSD"]  # US500.cash désactivé 19 Juin (PF=0.24)
     _fb_log("SYMBOLS", SYMBOLS)
     ROBOT_MAGIC = 999001
     _fb_log("ROBOT_MAGIC", 999001)
@@ -219,7 +219,7 @@ except Exception as e:
             adx_thresh=20,
             min_score=0.60,
             allow_buys=True,
-            allow_shorts=True,
+            allow_shorts=False,  # 🔴 BUY-ONLY — SELL WR 30.8% toxique
             momentum_period=24,
             sl_atr_trending=2.5,
             tp_atr_trending=6.0,
