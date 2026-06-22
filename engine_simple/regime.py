@@ -1,4 +1,5 @@
 """Détection de régime de marché : ADX, pente MA, percentile volatilité."""
+
 import logging
 
 import numpy as np
@@ -7,20 +8,56 @@ from engine_simple.indicators import adx, atr
 
 logger = logging.getLogger("regime")
 
-ADX_TREND_ENTER = 22   # Seuil pour entrer en mode TREND (hystérésis)
-ADX_TREND_EXIT = 18    # Seuil pour sortir du mode TREND (hystérésis)
+# Valeurs par défaut (utilisées si le symbole n'a pas de adx_thresh dans la config)
+ADX_TREND_ENTER_DEFAULT = 22  # Seuil pour entrer en mode TREND (hystérésis)
+ADX_TREND_EXIT_DEFAULT = 18  # Seuil pour sortir du mode TREND (hystérésis)
+
+# Alias de compatibilité pour les tests existants
+ADX_TREND_ENTER = ADX_TREND_ENTER_DEFAULT
+ADX_TREND_EXIT = ADX_TREND_EXIT_DEFAULT
+HYSTERESIS_OFFSET = 4  # Décalage entrée/sortie (22→18 = 4 points par défaut)
 SLOPE_BULLISH = 0.002
 SLOPE_BEARISH = -0.002
 # Volatilité basée sur ratio ATR/prix fixe (pas percentile instable sur peu d'échantillons)
 VOL_HIGH_RATIO = 0.015  # ATR > 1.5% du prix = HIGH_VOL
-VOL_LOW_RATIO = 0.003   # ATR < 0.3% du prix = LOW_VOL
+VOL_LOW_RATIO = 0.003  # ATR < 0.3% du prix = LOW_VOL
 
 
 class RegimeDetector:
-    """Détecte le régime en fonction de ADX, pente MA20, et volatilité relative."""
+    """Détecte le régime en fonction de ADX, pente MA20, et volatilité relative.
+    _prev_regime est stocké par symbole (dict) pour éviter la cross-contamination."""
 
-    def detect(self, high: np.ndarray, low: np.ndarray, close: np.ndarray,
-               adx_val: float | None = None) -> tuple[str, dict]:
+    _prev_regime: dict[str, str] = {}
+
+    def _get_adx_thresholds(self, symbol: str) -> tuple[float, float]:
+        """Retourne (enter_threshold, exit_threshold) pour un symbole donné.
+
+        Lit adx_thresh depuis la config SYMBOL_LIMITS (YAML).
+        Ex: BTCUSD adx_thresh=20 → enter=20, exit=16 (hysteresis de 4 points).
+        Fallback: enter=22, exit=18 si le symbole n'est pas dans la config.
+        """
+        try:
+            import config_simple as _cfg
+
+            sym_limits = _cfg.SYMBOL_LIMITS.get(symbol, {})
+            if isinstance(sym_limits, dict):
+                adx_thresh = sym_limits.get("adx_thresh")
+                if adx_thresh is not None and adx_thresh > 0:
+                    enter = float(adx_thresh)
+                    exit_ = max(enter - HYSTERESIS_OFFSET, 5.0)  # plancher 5
+                    return enter, exit_
+        except Exception:
+            pass
+        return ADX_TREND_ENTER_DEFAULT, ADX_TREND_EXIT_DEFAULT
+
+    def detect(
+        self,
+        high: np.ndarray,
+        low: np.ndarray,
+        close: np.ndarray,
+        adx_val: float | None = None,
+        symbol: str = "_default",
+    ) -> tuple[str, dict]:
         if len(close) < 30:
             return "RANGING", {"adx": 0, "atr": 0, "slope": 0}
 
@@ -40,17 +77,20 @@ class RegimeDetector:
         ma20_prev = np.mean(close[-40:-20]) if len(close) >= 40 else ma20
         slope = (ma20 - ma20_prev) / max(ma20_prev, 1e-4)
 
-        # Hystérésis ADX : on utilise _prev_regime stocké pour éviter le bouncing
-        prev_regime = getattr(self, '_prev_regime', "RANGING")
+        # Seuils ADX par symbole (lit adx_thresh depuis la config YAML)
+        adx_enter, adx_exit = self._get_adx_thresholds(symbol)
+
+        # Hystérésis ADX : stocké par symbole pour éviter bouncing + cross-contamination
+        prev_regime = self._prev_regime.get(symbol, "RANGING")
         is_trending = prev_regime in ("TREND_UP", "TREND_DOWN")
 
         if is_trending:
-            # En mode TREND, on sort si ADX < ADX_TREND_EXIT
-            if adx_val < ADX_TREND_EXIT:
+            # En mode TREND, on sort si ADX < adx_exit
+            if adx_val < adx_exit:
                 is_trending = False
         else:
-            # En mode RANGING, on entre si ADX >= ADX_TREND_ENTER
-            if adx_val >= ADX_TREND_ENTER:
+            # En mode RANGING, on entre si ADX >= adx_enter
+            if adx_val >= adx_enter:
                 is_trending = True
 
         # Décision
@@ -68,10 +108,11 @@ class RegimeDetector:
         else:
             regime = "RANGING"
 
-        self._prev_regime = regime
+        self._prev_regime[symbol] = regime
 
         return regime, {
-            "adx": adx_val, "atr": atr_val,
+            "adx": adx_val,
+            "atr": atr_val,
             "atr_pct": atr_pct,
             "slope": slope,
             "vol_percentile": atr_pct / 0.01,  # ratio transformé pour compatibilité (0.01 = 1% = 50e percentile)

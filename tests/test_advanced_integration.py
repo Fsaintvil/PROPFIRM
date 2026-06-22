@@ -267,6 +267,7 @@ def test_full_signal_to_execution_flow():
 
 # ── Shield integration tests ──
 
+@pytest.mark.skip(reason="shield.py moved to retired/ml_modules/")
 def test_shield_ftmo_account_with_integration():
     """FTMOAccount state tracking via test trades."""
     from engine_simple.shield import FTMOAccount
@@ -281,6 +282,7 @@ def test_shield_ftmo_account_with_integration():
     assert acc.peak_equity == 200550
 
 
+@pytest.mark.skip(reason="shield.py moved to retired/ml_modules/")
 def test_shield_ftmo_account_recovery():
     """FTMOAccount handles loss streak and recovery."""
     from engine_simple.shield import FTMOAccount

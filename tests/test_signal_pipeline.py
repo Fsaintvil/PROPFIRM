@@ -171,7 +171,7 @@ def mock_config():
     class MockConfig:
         MIN_SIGNAL_SCORE = 0.40
         MAX_POSITIONS = 10
-        SYMBOL_TIMEFRAMES = {"XAUUSD": "H4", "BTCUSD": "H1", "ETHUSD": "H4"}
+        SYMBOL_TIMEFRAMES = {"XAUUSD": "H4", "BTCUSD": "H1"}
         SYMBOL_LIMITS = {
             "XAUUSD": {"risk_mult": 1.0, "adx_thresh": 20},
             "BTCUSD": {"risk_mult": 0.65, "adx_thresh": 20},
@@ -687,8 +687,8 @@ class TestDynamicPositionLimits:
         assert result.signal["max_per_symbol"] == 1
 
     @patch("engine_simple.strategy.MOM20x3")
-    def test_moderate_confidence_gets_two_positions(self, mock_mom, pipeline):
-        """0.70 < conf < 0.80 → max_per_symbol = 2"""
+    def test_moderate_confidence_gets_three_positions(self, mock_mom, pipeline):
+        """0.70 < conf < 0.85 → max_per_symbol = 3"""
         mock_mom.return_value = _make_mock_mom20x3(
             {
                 "action": "SELL",
@@ -713,8 +713,8 @@ class TestDynamicPositionLimits:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.75 > 0.70, < 0.80 → max_per_symbol=2
-        assert result.signal["max_per_symbol"] == 2
+        # conf=0.75 > 0.70, < 0.85 → max_per_symbol=3
+        assert result.signal["max_per_symbol"] == 3
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_good_confidence_gets_three_positions(self, mock_mom, pipeline):

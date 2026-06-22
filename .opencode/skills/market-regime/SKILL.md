@@ -1,6 +1,6 @@
 ---
 name: market-regime
-description: Détection de régimes de marché — ADX/ATR/MA, classification en 5 regimes (TREND_UP/DOWN, RANGING, HIGH_VOL, LOW_VOL), adaptation SL/TP/risque par régime. Utilise market_regime.py.
+description: Détection de régimes de marché — ADX/ATR/MA, classification en 5 regimes (TREND_UP/DOWN, RANGING, HIGH_VOL, LOW_VOL), adaptation SL/TP/risque par régime. Utilise regime.py.
 ---
 
 # Market Regime Skill
@@ -34,7 +34,7 @@ ma_slope = (ma_short[-1] - ma_short[-5]) / ma_short[-5]
 | RANGING | ADX<18 | 1.5×ATR | 4.0×ATR | 100% |
 | LOW_VOL | ATR%<0.3% | 1.5×ATR | 4.0×ATR | 100% |
 
-**Note :** Le MarketRegime utilise ADX hystérésis (entrée 22, sortie 18), tandis que les seuils de signal MOM20x3 utilisent ADX≥25. C'est délibéré — le régime sert à ajuster le risque, pas à générer des signaux.
+**Note :** Le MarketRegime utilise ADX hystérésis (entrée 22, sortie 18), et les seuils de signal MOM20x3 utilisent ADX≥22 (unifié). C'est délibéré — le régime sert à ajuster le risque, pas à générer des signaux.
 
 ### Trailing ATR par régime
 | Régime | 1er lock | N1 | N2 | N3 | N4 |
@@ -82,7 +82,7 @@ Observations basées sur les 3 symboles actifs (XAUUSD, BTCUSD, US500.cash) :
 - ADX est un oscillateur retardé — il peut mettre plusieurs bougies à détecter un changement de régime
 - HIGH_VOL a priorité sur TREND (vérifié en premier dans le code)
 - Le régime de référence est calculé sur l'USD index, PAS par symbole individuellement
-- La corrélation entre cryptos (BTC, SOL, LNK, BNB) >0.70 peut créer des régimes simultanés — les trades sont limités par la règle de corrélation (max 2/direction/groupe)
+- La corrélation entre cryptos (BTCUSD, ETHUSD, corrélés 0.89) peut créer des régimes simultanés — les trades sont limités par la règle de corrélation (max 2/direction/groupe)
 - En période de LOW_VOL prolongée, le trailing est très serré (0.40×ATR au N1) → plus de sorties rapides
 - Le régime RANGING (ADX<18) génère des trades mais avec RR plus faible (1.5×/4.0× au lieu de 2.0×/5.0×)
 - **12:00 UTC = trou noir** — 0% WR historique sur forex. Surveillance active sur les 3 symboles (XAUUSD, BTCUSD, US500.cash)
@@ -90,20 +90,18 @@ Observations basées sur les 3 symboles actifs (XAUUSD, BTCUSD, US500.cash) :
 - Le bypass score ≥ 0.80 peut laisser passer des trades en range serré — risque de faux breakout
 
 ## Fichiers clés
-- `engine_simple/market_regime.py` — détection régime
+- `engine_simple/regime.py` — détection régime
 - `engine_simple/ftmo_protector.py` — trailing ATR par régime
-- `engine_simple/position_tracker.py` — partial TP par régime
+- `engine_simple/trailer.py` — trailing + partial TP
 - `main.py` — boucle de détection et application
 
 ## Tests
 ```powershell
 python -m pytest tests/test_market_regime.py -v
-python -m pytest tests/test_position_tracker.py -v
+python -m pytest tests/test_ftmo_protector.py -v
 ```
 
 ## Agents concernés
-- `@market-philosopher` — questionne la logique économique des régimes
-- `@adversarial-trader` — teste les changements de régime brutaux
 - `@optimizer` — ajuste les seuils par régime
-- `@alpha-researcher` — analyse la performance par régime
 - `@quant-auditor` — valide statistiquement les régimes
+- `@signal-engine` — intègre le régime dans les signaux

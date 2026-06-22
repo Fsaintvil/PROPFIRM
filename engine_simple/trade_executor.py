@@ -15,7 +15,10 @@ import config_simple as cfg
 logger = logging.getLogger("executor")
 
 # Intervalle minimum entre deux trades sur le MÊME symbole (secondes)
-MIN_SYMBOL_INTERVAL_S = 60  # 1 minute (mode agressif pour accumuler positions sur signal fort)
+# 30s = permet jusqu'à 2 trades/min/symbole si le signal est assez fort
+# pour être regénéré 2 cycles plus tard. Évite le blocage XAUUSD qui génère
+# un signal valide (score 0.83) toutes les 15s mais était bloqué 3 fois/4.
+MIN_SYMBOL_INTERVAL_S = 30  # 30s (↓ 60→30 Juin 2026: +de chances pour signaux forts consécutifs)
 
 
 class PerSymbolRateLimiter:
@@ -201,6 +204,11 @@ class TradeExecutor:
         )  # Mode modéré: 2 trades/min/symbole (était 1)
         # Rate limiter global : max 1 ordre toutes les 10s (évite retcode 10018)
         self.global_rate_limiter = GlobalRateLimiter(min_interval_s=10)
+        # 🐛 FIX 19 Juin: Market-closed cooldown — évite flood WARNING XAUUSD
+        # Quand MT5 retourne retcode=10018 (Market closed), on bloque le symbole
+        # pendant MARKET_CLOSED_COOLDOWN_S secondes avant de réessayer.
+        self._market_closed_cooldowns: dict[str, float] = {}
+        self.MARKET_CLOSED_COOLDOWN_S = 120  # 2 min de pause après marché fermé
 
     def _get_signal_value(self, signal, key, default=None):
         if isinstance(signal, dict):
@@ -224,6 +232,21 @@ class TradeExecutor:
                     f"(max={max_per_symbol}, ticket={existing[0].ticket}) — skip"
                 )
                 return None
+
+            # 🔧 18 Juin 2026: Vérifier entrée à prix identique (vrai doublon)
+            # Des positions au même prix ±0.01% ouvertes à <60s d'intervalle sont des doublons
+            # 🔧 FIX C3 19 Juin: seuil resserré 0.01%→0.005% pour catch les entrées quasi-identiques
+            price = self._get_signal_value(signal, "entry_price")
+            if price is not None and price > 0:
+                for pos in existing:
+                    if pos.type == sig_type:
+                        price_diff_pct = abs(pos.price_open - price) / max(price, 0.0001) * 100
+                        if price_diff_pct < 0.005:  # moins de 0.005% d'écart = même niveau
+                            logger.warning(
+                                f"[DOUBLON] {symbol}: entrée {price:.5f} identique "
+                                f"à pos #{pos.ticket} ({pos.price_open:.5f}, diff={price_diff_pct:.3f}%) → skip"
+                            )
+                            return None
 
         price = self._get_signal_value(signal, "entry_price")
         if price is None or price == 0:
@@ -265,6 +288,11 @@ class TradeExecutor:
         err = OrderValidator.validate(symbol, action, lot, price, sl, tp, info)
         if err:
             logger.warning(f"{symbol}: validation echouee: {err}")
+            return None
+
+        # 🐛 FIX 19 Juin: Market-closed cooldown — pas de flood si marché fermé
+        if self._is_market_closed(symbol):
+            logger.debug(f"[MARKET CLOSED] {symbol}: en cooldown (retcode=10018 récent), skip")
             return None
 
         # Rate limiter GLOBAL en premier — évite de consommer un slot per-symbol pour rien
@@ -322,6 +350,11 @@ class TradeExecutor:
     def _place_order(self, symbol, action, lot, price, sl, tp, regime="RANGING"):
         import MetaTrader5 as mt5
 
+        # 🐛 FIX 19 Juin: Double-check market closed — même si execute() a raté le check
+        if self._is_market_closed(symbol):
+            logger.debug(f"[MARKET CLOSED] {symbol}: cooldown actif dans _place_order, pas d'envoi")
+            return None
+
         # Ensure symbol is in Market Watch (crypto non-standard symbols need this)
         try:
             mt5.symbol_select(symbol, True)
@@ -346,13 +379,31 @@ class TradeExecutor:
             type_time=mt5.ORDER_TIME_DAY,
             comment=comment,
         )
+        logger.debug(
+            f"[ORDER REQ] {symbol} {action} lot={lot:.3f} price={price:.5f} "
+            f"SL={sl:.5f} TP={tp:.5f} dev=20 fill=IOC digits={info.digits if info else '?'} "
+            f"point={info.point if info else '?'}"
+        )
         result = self.mt5.order_send(req)
         if result and result.retcode == 10009:
             logger.info(f"PlaceOrder OK: {symbol} {action} {lot}@{price} SL={sl} TP={tp}")
         elif result and result.retcode in (10006, 10018, 10025):
+            # 🐛 FIX 19 Juin: Si marché fermé (10018), activer le cooldown
+            if result.retcode == 10018:
+                self._set_market_closed(symbol)
+                comment = getattr(result, "comment", "?") or "?"
+                logger.warning(
+                    f"[MARKET CLOSED] {symbol}: retcode=10018 ({comment}) — "
+                    f"cooldown {self.MARKET_CLOSED_COOLDOWN_S}s activé, pas de retry"
+                )
+                return result  # Pas de retry — le marché est fermé
+
             # Retry with RETURN filling on requote/too many requests/connection lost
             # M20: limiter le slippage — vérifier le prix de fill avant d'accepter
-            logger.warning(f"PlaceOrder: {symbol} retcode={result.retcode}, retry with RETURN filling")
+            comment = getattr(result, "comment", "?") or "?"
+            logger.warning(
+                f"PlaceOrder: {symbol} retcode={result.retcode} comment={comment}, retry with RETURN filling"
+            )
             req["type_filling"] = mt5.ORDER_FILLING_RETURN
             result = self.mt5.order_send(req)
             if result and result.retcode == 10009:
@@ -367,9 +418,31 @@ class TradeExecutor:
                         f"PlaceOrder RETRY OK: {symbol} {action} {lot}@{fill_price} (slip={slippage_pts:.0f}pts)"
                     )
             elif result:
-                logger.warning(f"PlaceOrder RETRY FAILED {symbol}: retcode={result.retcode}")
+                comment = getattr(result, "comment", "?") or "?"
+                logger.warning(f"PlaceOrder RETRY FAILED {symbol}: retcode={result.retcode} comment={comment}")
         elif result:
-            logger.warning(f"PlaceOrder FAILED {symbol}: retcode={result.retcode}")
+            comment = getattr(result, "comment", "?") or "?"
+            logger.warning(f"PlaceOrder FAILED {symbol}: retcode={result.retcode} comment={comment}")
         else:
             logger.warning(f"PlaceOrder FAILED {symbol}: no result")
         return result
+
+    # 🐛 FIX 19 Juin: Market-closed cooldown — arrête le flood XAUUSD
+    def _is_market_closed(self, symbol: str) -> bool:
+        """Vérifie si le symbole est en cooldown pour marché fermé."""
+        import time
+
+        if symbol in self._market_closed_cooldowns:
+            remaining = time.time() - self._market_closed_cooldowns[symbol]
+            if remaining < self.MARKET_CLOSED_COOLDOWN_S:
+                return True
+            else:
+                # Cooldown expiré, nettoyer
+                del self._market_closed_cooldowns[symbol]
+        return False
+
+    def _set_market_closed(self, symbol: str) -> None:
+        """Active le cooldown pour marché fermé sur ce symbole."""
+        import time
+
+        self._market_closed_cooldowns[symbol] = time.time()

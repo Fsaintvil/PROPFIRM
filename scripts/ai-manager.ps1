@@ -1,4 +1,4 @@
-param(
+﻿param(
     [switch]$Status,
     [switch]$Stop
 )
@@ -214,7 +214,8 @@ while ($true) {
         $logSize = (Get-Item $LOG).Length
         if ($logSize -gt 5MB) {
             $sizeMb = [math]::Round($logSize/1MB, 1)
-            Log "Rotation log ai_manager (${sizeMb}MB)"
+            $sizeMbStr = $sizeMb.ToString() + "MB"
+            Log "Rotation log ai_manager ($sizeMbStr)"
             Move-Item $LOG "$LOG.old" -Force
         }
     }

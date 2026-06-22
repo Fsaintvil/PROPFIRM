@@ -91,17 +91,26 @@ if ($pid -and (Get-Process -Id $pid -ErrorAction SilentlyContinue)) {
         }
     }
     
-    # 9. Démarrer le moniteur (sauf si --NoMonitor)
+    # 9. Démarrer le Agent Daemon (sauf si --NoMonitor)
     if (-not $NoMonitor) {
-        Log "📊 Démarrage du moniteur..."
-        Start-Process -FilePath "python.exe" -ArgumentList "scripts\monitor.py" -WorkingDirectory $BASE -NoNewWindow -PassThru -RedirectStandardOutput "$LOG_DIR\monitor.log" -RedirectStandardError "$LOG_DIR\monitor.log" | Out-Null
-        Start-Sleep -Seconds 2
-        Log "✅ Moniteur démarré"
+        Log "🤖 Démarrage du Agent Daemon (Trading Intelligence Council)..."
+        Start-Process -FilePath "python.exe" -ArgumentList "scripts\agent_daemon.py" -WorkingDirectory $BASE -NoNewWindow -PassThru -RedirectStandardOutput "$LOG_DIR\agent_daemon_out.log" -RedirectStandardError "$LOG_DIR\agent_daemon_out.log" | Out-Null
+        Start-Sleep -Seconds 3
+        
+        # Vérifier que le daemon répond
+        $daemonStatus = "$RUNTIME\agent_status.json"
+        if (Test-Path $daemonStatus) {
+            $status = Get-Content $daemonStatus | ConvertFrom-Json
+            Log "✅ Agent Daemon démarré (cycle $($status.cycle), niveau $($status.global_level))"
+        } else {
+            Log "✅ Agent Daemon démarré"
+        }
     }
     
     Log ""
     Log "=== RÉSUMÉ ==="
-    Log "  PID: $pid"
+    Log "  Robot PID: $pid"
+    Log "  Agent Daemon: ACTIF (9 agents du Trading Intelligence Council)"
     Log "  Logs: $LOG"
     Log "  Commandes:"
     Log "    .\scripts\robot.ps1 -Status    → Voir l'état"

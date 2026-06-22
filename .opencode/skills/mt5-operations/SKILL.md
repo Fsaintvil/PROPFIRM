@@ -1,6 +1,6 @@
 ---
 name: mt5-operations
-description: Infrastructure MT5 — connexion, reconnection, API error handling, OrderValidator, PerSymbolRateLimiter, PID lock, retry logic. Utilise mt5_connector.py et order_validator.py.
+description: Infrastructure MT5 — connexion, reconnection, API error handling, PerSymbolRateLimiter, PID lock, retry logic. Utilise mt5_connector.py et trade_executor.py.
 ---
 
 # MT5 Operations Skill
@@ -75,7 +75,7 @@ def place_order(max_retries=3):
 
 ### OrderValidator
 - Vérifie SL/TP présents
-- Vérifie spread < max_spread_points (120 pts, augmenté pour crypto BTC/SOL/LNK/BNB)
+- Vérifie spread < max_spread_points (120 pts pour BTCUSD, 150 pts pour ETHUSD)
 - Vérifie lot dans limites
 - Vérifie RR ≥ 2.0
 - Vérifie direction (buy/short allowed)
@@ -168,20 +168,16 @@ L'ancien code supposait `list` et plantait sur `'numpy.ndarray' object has no at
 
 ## Fichiers clés
 - `engine_simple/mt5_connector.py` — connexion, reconnection
-- `engine_simple/order_validator.py` — validation ordres
-- `engine_simple/rate_limiter.py` — PerSymbolRateLimiter
+- `engine_simple/trade_executor.py` — exécution, RateLimiter, validation
 - `main.py:240-280` — _ensure_connection() dans la boucle
 
 ## Tests
 ```powershell
 python -m pytest tests/test_mt5_connector.py -v
-python -m pytest tests/test_order_validator.py -v
-python -m pytest tests/test_rate_limiter.py -v
+python -m pytest tests/test_trade_executor.py -v
 ```
 
 ## Agents concernés
-- `@mt5-infrastructure-auditor` — audite la résilience
-- `@monitor-agent` — surveille la connexion
+- `@system-monitor` — surveille la connexion
 - `@auto-fixer` — corrige les bugs d'infra
-- `@performance-engineer` — mesure les temps de cycle
-- `@security-auditor` — chasse les fuites mémoire
+- `@risk-compliance` — vérifie les limites de trading

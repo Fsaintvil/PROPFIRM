@@ -7,15 +7,16 @@ Usage:
 
     # Accès comme attributs
     cfg.robot.magic          # 999001
-    cfg.trading.symbols      # ["USDCAD", "GBPUSD", "USDCHF"]
+    cfg.trading.symbols      # ["XAUUSD", "BTCUSD", "ETHUSD", "US500.cash"]
     cfg.risk.per_trade_pct   # 0.004
-    cfg.symbol_limits.USDCAD.max_lot  # 0.55
+    cfg.symbol_limits.XAUUSD.max_lot  # 0.10
     cfg.secrets.mt5_login    # lu depuis .env
 
 Compatibilité avec config_simple.py:
     cfg = load_config()
     cfg.as_flat_dict()  # -> {"ROBOT_MAGIC": 999001, "RISK_PER_TRADE": 0.004, ...}
 """
+
 import logging
 import os
 import re
@@ -34,22 +35,25 @@ logger = logging.getLogger("robot.config")
 
 # ── Modèles Pydantic ──
 
+
 class RobotConfig(BaseModel):
     magic: int = 999001
     cycle_seconds: int = Field(default=15, ge=5, le=120)
-    version: str = "2.5.0"
+    version: str = "4.1.0"
 
 
 class TradingConfig(BaseModel):
-    symbols: list[str] = Field(default_factory=lambda: ["XAUUSD", "BTCUSD", "ETHUSD", "US500.cash"])
-    max_positions: int = Field(default=6, ge=1, le=20)
+    symbols: list[str] = Field(default_factory=lambda: ["XAUUSD", "BTCUSD", "US500.cash"])
+    max_positions: int = Field(default=4, ge=1, le=20)
     max_positions_per_symbol: int = Field(default=2, ge=1, le=5)
-    max_trades_per_day: int = Field(default=12, ge=1, le=200)  # 🔓 Mode MAX
-    max_signals_per_cycle: int = Field(default=7, ge=1, le=15)
-    max_orders_per_minute: int = Field(default=6, ge=1, le=30)
+    max_trades_per_day: int = Field(default=80, ge=1, le=200)
+    max_signals_per_cycle: int = Field(default=10, ge=1, le=20)
+    max_orders_per_minute: int = Field(default=6, ge=1, le=20)
     lot_size: float = Field(default=0.05, ge=0.01, le=10)
-    min_trade_interval_sec: int = Field(default=30, ge=5, le=3600)  # 🔓 Mode MAX
-    batch_interval_sec: int = Field(default=300, ge=60, le=3600, description="Intervalle entre batches de signaux (secondes)")
+    min_trade_interval_sec: int = Field(default=300, ge=5, le=3600)
+    batch_interval_sec: int = Field(
+        default=1, ge=1, le=3600, description="Intervalle entre batches de signaux (secondes)"
+    )
     trading_start_hour: int = Field(default=0, ge=0, le=23)
     trading_end_hour: int = Field(default=24, ge=1, le=24)
     danger_hours: list[int] = Field(default_factory=list, description="Heures UTC à éviter (ex: [12] = 0% WR à 12:00)")
@@ -65,7 +69,7 @@ class TradingConfig(BaseModel):
 
 
 class SignalConfig(BaseModel):
-    min_score: float = Field(default=0.65, ge=0.0, le=1.0)
+    min_score: float = Field(default=0.60, ge=0.0, le=1.0)
     daily_profit_limit_pct: float = Field(default=0.008, ge=0.0, le=0.05)
 
 
@@ -73,30 +77,35 @@ class RiskConfig(BaseModel):
     per_trade_pct: float = Field(default=0.004, ge=0.001, le=0.02)
     short_mult: float = Field(default=1.0, ge=0.1, le=2.0)
     max_daily_loss_pct: float = Field(default=0.02, ge=0.005, le=0.05)
-    zone2_loss_pct: float = Field(default=0.01, ge=0.005, le=0.03)
-    zone3_loss_pct: float = Field(default=0.015, ge=0.01, le=0.04)
+    zone2_loss_pct: float = Field(default=0.012, ge=0.005, le=0.03)
+    zone3_loss_pct: float = Field(default=0.017, ge=0.01, le=0.04)
     max_dd_pct: float = Field(default=0.10, ge=0.02, le=0.15)
     profit_target_pct: float = Field(default=0.10, ge=0.02, le=0.20)
     consistency_max_pct: float = Field(default=0.30, ge=0.1, le=0.5)
     min_rr_ratio: float = Field(default=2.0, ge=1.0, le=10.0)
     atr_multiplier: float = Field(default=1.5, ge=0.5, le=5.0)
-    cooldown_minutes: int = Field(default=30, ge=5, le=240)
+    cooldown_minutes: int = Field(default=5, ge=1, le=240)
     min_trading_days: int = Field(default=10, ge=1, le=60)
     max_trading_days: int = Field(default=0, ge=0)
     max_risk_amount: float = Field(default=800.0, ge=0.0)
-    max_spread_points: int = Field(default=50, ge=10, le=200)
-    auto_pause_losses: int = Field(default=5, ge=1, le=10)
+    max_spread_points: int = Field(default=120, ge=10, le=300)
+    auto_pause_losses: int = Field(default=10, ge=1, le=20)
     recalibration_frequency: int = Field(default=50, ge=10, le=500)
-    max_correlated_exposure: float = Field(default=1.5, ge=1.0, le=5.0,
+    max_correlated_exposure: float = Field(
+        default=1.5,
+        ge=1.0,
+        le=5.0,
         description="Limite d'exposition corrélée totale (somme des corrélations same-direction). "
-                    "1.5 = ~2 trades EUR/USD/GBP ou 3 trades décorrélés. "
-                    "Resserré Juin 2026 pour éviter pertes simultanées.")
-    circuit_breaker_dd_pct: float = Field(default=0.08, ge=0.02, le=0.15,
-        description="DD > ce seuil → shorts bloqués (protection drawdown FTMO)")
+        "1.5 = ~2 trades EUR/USD/GBP ou 3 trades décorrélés. "
+        "Resserré Juin 2026 pour éviter pertes simultanées.",
+    )
+    circuit_breaker_dd_pct: float = Field(
+        default=0.08, ge=0.02, le=0.15, description="DD > ce seuil → shorts bloqués (protection drawdown FTMO)"
+    )
 
 
 class SymbolLimit(BaseModel):
-    model_config = ConfigDict(extra='allow')
+    model_config = ConfigDict(extra="allow")
 
     max_lot: float = Field(default=0.10, ge=0.01, le=10)
     min_lot: float = Field(default=0.01, ge=0.01, le=10)
@@ -120,18 +129,26 @@ class SymbolLimit(BaseModel):
     max_daily_loss_pct_override: float | None = Field(default=None, ge=0.005, le=0.05)
     circuit_breaker_dd_pct_override: float | None = Field(default=None, ge=0.02, le=0.15)
     # Nouveaux champs calibration production (Juin 2026)
-    threshold_trending: float | None = Field(default=None, ge=1.0, le=4.0,
-        description="Seuil momentum en trending (×ATR). Ex: 2.5 = XAUUSD H4")
-    threshold_ranging: float | None = Field(default=None, ge=1.0, le=4.0,
-        description="Seuil momentum en ranging (×ATR). Ex: 1.5 = BTCUSD H1")
-    pullback_band_trending: float | None = Field(default=None, ge=0.1, le=2.0,
-        description="Bande pullback en trending (×ATR). Ex: 0.5 = XAUUSD H4")
-    pullback_band_ranging: float | None = Field(default=None, ge=0.1, le=2.0,
-        description="Bande pullback en ranging (×ATR). Ex: 0.3 = XAUUSD H4")
-    preferred_hours: list[int] | None = Field(default=None,
-        description="Heures de trading préférées (UTC). Ex: [13-22] = XAUUSD London+NY")
+    threshold_trending: float | None = Field(
+        default=None, ge=1.0, le=4.0, description="Seuil momentum en trending (×ATR). Ex: 2.5 = XAUUSD H4"
+    )
+    threshold_ranging: float | None = Field(
+        default=None, ge=1.0, le=4.0, description="Seuil momentum en ranging (×ATR). Ex: 1.5 = BTCUSD H1"
+    )
+    pullback_band_trending: float | None = Field(
+        default=None, ge=0.1, le=2.0, description="Bande pullback en trending (×ATR). Ex: 0.5 = XAUUSD H4"
+    )
+    pullback_band_ranging: float | None = Field(
+        default=None, ge=0.1, le=2.0, description="Bande pullback en ranging (×ATR). Ex: 0.3 = XAUUSD H4"
+    )
+    preferred_hours: list[int] | None = Field(
+        default=None, description="Heures de trading préférées (UTC). Ex: [13-22] = XAUUSD London+NY"
+    )
     news_minutes_before: int | None = Field(default=None, ge=0, le=60)
     news_minutes_after: int | None = Field(default=None, ge=0, le=60)
+    weekend_trading: bool = Field(
+        default=True, description="True = 24/7 (BTCUSD, ETHUSD), False = 24/5 (XAUUSD, pas de weekend)"
+    )
 
 
 class SecretsConfig(BaseModel):
@@ -198,21 +215,48 @@ class ConfigSchema(BaseModel):
     def ensure_default_symbols(self):
         if not self.symbol_limits:
             defaults = {
-                "XAUUSD": SymbolLimit(max_lot=0.10, risk_mult=1.00, max_spread_points=60,
-                                      momentum_period=20, sl_atr_trending=1.8, tp_atr_trending=5.0,
-                                      sl_atr_ranging=1.5, tp_atr_ranging=3.5,
-                                      threshold_trending=2.5, threshold_ranging=2.0,
-                                      pullback_band_trending=0.5, pullback_band_ranging=0.3),
-                "BTCUSD": SymbolLimit(max_lot=0.03, risk_mult=0.65, max_spread_points=150,
-                                      momentum_period=24, sl_atr_trending=3.0, tp_atr_trending=7.0,
-                                      sl_atr_ranging=2.5, tp_atr_ranging=5.0,
-                                      threshold_trending=2.0, threshold_ranging=1.5,
-                                      pullback_band_trending=0.8, pullback_band_ranging=0.5),
-                "US500.cash": SymbolLimit(max_lot=0.10, risk_mult=0.80, max_spread_points=40,
-                                          momentum_period=20, sl_atr_trending=1.5, tp_atr_trending=4.0,
-                                          sl_atr_ranging=1.2, tp_atr_ranging=3.0,
-                                          threshold_trending=2.0, threshold_ranging=1.5,
-                                          pullback_band_trending=0.3, pullback_band_ranging=0.2),
+                "XAUUSD": SymbolLimit(
+                    max_lot=0.10,
+                    risk_mult=1.00,
+                    max_spread_points=60,
+                    momentum_period=20,
+                    sl_atr_trending=1.8,
+                    tp_atr_trending=5.0,
+                    sl_atr_ranging=1.5,
+                    tp_atr_ranging=3.5,
+                    threshold_trending=2.5,
+                    threshold_ranging=2.0,
+                    pullback_band_trending=0.5,
+                    pullback_band_ranging=0.3,
+                ),
+                "BTCUSD": SymbolLimit(
+                    max_lot=0.03,
+                    risk_mult=0.65,
+                    max_spread_points=150,
+                    momentum_period=24,
+                    sl_atr_trending=3.0,
+                    tp_atr_trending=7.0,
+                    sl_atr_ranging=2.5,
+                    tp_atr_ranging=5.0,
+                    threshold_trending=2.0,
+                    threshold_ranging=1.5,
+                    pullback_band_trending=0.8,
+                    pullback_band_ranging=0.5,
+                ),
+                "US500.cash": SymbolLimit(
+                    max_lot=0.10,
+                    risk_mult=0.80,
+                    max_spread_points=40,
+                    momentum_period=20,
+                    sl_atr_trending=1.5,
+                    tp_atr_trending=4.0,
+                    sl_atr_ranging=1.2,
+                    tp_atr_ranging=3.0,
+                    threshold_trending=2.0,
+                    threshold_ranging=1.5,
+                    pullback_band_trending=0.3,
+                    pullback_band_ranging=0.2,
+                ),
             }
             self.symbol_limits = defaults
         for sym in self.trading.symbols:
@@ -249,9 +293,11 @@ _env_pattern = re.compile(r"\$\{([^}]+)\}")
 
 def _interpolate(value: Any) -> Any:
     if isinstance(value, str):
+
         def _replacer(m):
             var_name = m.group(1)
             return os.getenv(var_name, "")
+
         return _env_pattern.sub(_replacer, value)
     if isinstance(value, dict):
         return {k: _interpolate(v) for k, v in value.items()}
@@ -261,6 +307,7 @@ def _interpolate(value: Any) -> Any:
 
 
 # ── Loader ──
+
 
 @lru_cache(maxsize=4)
 def _load_yaml(path: Path) -> dict:
@@ -312,12 +359,28 @@ def check_config_changed(env: str = "production", config_dir: Path | None = None
         config_dir = Path(__file__).parent
     cached_mtimes = _CONFIG_MTIME.get(env)
     if not cached_mtimes:
+        logger.debug(f"[HOT-RELOAD] _CONFIG_MTIME empty for env={env}")
         return False
     default_path = config_dir / "default.yaml"
     env_path = config_dir / f"{env}.yaml"
-    if default_path.stat().st_mtime != cached_mtimes.get("default", 0):
+    current_default_mtime = default_path.stat().st_mtime
+    current_env_mtime = env_path.stat().st_mtime if env_path.exists() else 0
+    cached_default = cached_mtimes.get("default", 0)
+    cached_env = cached_mtimes.get("env", 0)
+    default_changed = current_default_mtime != cached_default
+    env_changed = current_env_mtime != cached_env
+    if default_changed or env_changed:
+        logger.debug(
+            f"[HOT-RELOAD] CHANGÉ: default={'OUI' if default_changed else 'non'} "
+            f"(cur={current_default_mtime:.6f} vs cached={cached_default:.6f}), "
+            f"env={'OUI' if env_changed else 'non'} "
+            f"(cur={current_env_mtime:.6f} vs cached={cached_env:.6f})"
+        )
         return True
-    return bool(env_path.exists() and env_path.stat().st_mtime != cached_mtimes.get("env", 0))
+    logger.debug(
+        f"[HOT-RELOAD] PAS CHANGÉ: default mtime={current_default_mtime:.6f} env mtime={current_env_mtime:.6f}"
+    )
+    return False
 
 
 def hot_reload(env: str = "production", config_dir: Path | None = None) -> ConfigSchema | None:

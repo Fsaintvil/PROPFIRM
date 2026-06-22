@@ -119,7 +119,7 @@ python -c "import psutil; print(f'RAM: {psutil.Process().memory_info().rss/1024/
 | Challenge Lag | J+15 < 30% target | Augmenter risque symboles forts |
 | **Memory High** | RAM > 1.5 GB | Warning logger (toutes les 15 min) |
 | **Memory Critical** | RAM > 2.0 GB | Alerte logger (toutes les 15 min) |
-| **Council VETO** | risk-marshal pose veto | Stop immédiat des trades |
+| **Council VETO** | risk-compliance pose veto | Stop immédiat des trades |
 | **Council CRITICAL** | Un agent signale CRITICAL | Investigation immédiate |
 
 ## Pièges connus
@@ -143,8 +143,6 @@ cd C:\Users\saint\Documents\MT5_FTMO_IA.7 && python -m pytest tests/ -q
 ```
 
 ## Agents concernés
-- `@monitor-agent` — gardien 24/7
-- `@log-analyst` — analyse les logs
+- `@system-monitor` — gardien 24/7 (logs, mémoire, processus)
 - `@cio` — reçoit les rapports
-- `@performance-engineer` — mesure la santé système
-- `@mt5-infrastructure-auditor` — audite l'infra
+- `@risk-compliance` — veto et conformité

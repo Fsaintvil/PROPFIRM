@@ -144,6 +144,5 @@ python -m pytest tests/test_walk_forward_validator.py -v
 
 ## Agents concernés
 - `@quant-auditor` — validation statistique, overfitting
-- `@alpha-researcher` — analyse des edges par symbole
-- `@devils-advocate` — remet en cause les résultats trop beaux
 - `@optimizer` — utilise les résultats pour ajuster les paramètres
+- `@risk-compliance` — évalue l'impact sur le risk management

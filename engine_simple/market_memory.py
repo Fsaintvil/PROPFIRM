@@ -8,6 +8,7 @@ Fournit au robot :
   - Pattern matching DTW (Dynamic Time Warping) + patterns chartistes
   - Structure de marché multi-timeframe avec zones de value
 """
+
 import logging
 import time
 from pathlib import Path
@@ -21,7 +22,7 @@ DATA_DIR = Path("data")
 FEATURES_DIR = DATA_DIR / "features"
 CACHE_DIR = DATA_DIR / "cache"
 
-SYMBOLS = ["XAUUSD", "BTCUSD", "ETHUSD"]
+SYMBOLS = ["XAUUSD", "BTCUSD", "US500.cash"]
 TIMEFRAMES_TIERS = {
     "fast": "M15",
     "medium": "H1",
@@ -32,6 +33,7 @@ TIMEFRAMES_TIERS = {
 # ============================================================
 # 1. MARKET PROFILE — Empreinte statistique multi-timeframe
 # ============================================================
+
 
 class MarketProfile:
     """Profil statistique complet d'un symbole sur 4 timeframes."""
@@ -226,6 +228,7 @@ class MarketProfile:
 # 2. MARKET STRUCTURE — Niveaux clés multi-timeframe
 # ============================================================
 
+
 class MarketStructure:
     """Niveaux de support/résistance et structure du marché multi-TF."""
 
@@ -260,22 +263,26 @@ class MarketStructure:
         times = df["timestamp"].values
 
         for i in range(window, len(df) - window):
-            if high[i] == max(high[i - window:i + window + 1]):
-                strength = "major" if high[i] == max(high[max(0, i - window * 4):i + window * 4 + 1]) else "minor"
-                self.swing_highs[tf].append({
-                    "price": float(high[i]),
-                    "time": str(pd.Timestamp(times[i]))[:16],
-                    "strength": strength,
-                    "timeframe": tf,
-                })
-            if low[i] == min(low[i - window:i + window + 1]):
-                strength = "major" if low[i] == min(low[max(0, i - window * 4):i + window * 4 + 1]) else "minor"
-                self.swing_lows[tf].append({
-                    "price": float(low[i]),
-                    "time": str(pd.Timestamp(times[i]))[:16],
-                    "strength": strength,
-                    "timeframe": tf,
-                })
+            if high[i] == max(high[i - window : i + window + 1]):
+                strength = "major" if high[i] == max(high[max(0, i - window * 4) : i + window * 4 + 1]) else "minor"
+                self.swing_highs[tf].append(
+                    {
+                        "price": float(high[i]),
+                        "time": str(pd.Timestamp(times[i]))[:16],
+                        "strength": strength,
+                        "timeframe": tf,
+                    }
+                )
+            if low[i] == min(low[i - window : i + window + 1]):
+                strength = "major" if low[i] == min(low[max(0, i - window * 4) : i + window * 4 + 1]) else "minor"
+                self.swing_lows[tf].append(
+                    {
+                        "price": float(low[i]),
+                        "time": str(pd.Timestamp(times[i]))[:16],
+                        "strength": strength,
+                        "timeframe": tf,
+                    }
+                )
 
         major_h = len([s for s in self.swing_highs[tf] if s["strength"] == "major"])
         major_l = len([s for s in self.swing_lows[tf] if s["strength"] == "major"])
@@ -289,10 +296,24 @@ class MarketStructure:
             # Niveaux annuels
             df["year"] = df["timestamp"].dt.year
             for year, group in df.groupby("year"):
-                levels.append({"price": float(group["high"].max()), "type": "resistance",
-                               "source": f"annual_high_{int(year)}", "strength": "major", "timeframe": tf})
-                levels.append({"price": float(group["low"].min()), "type": "support",
-                               "source": f"annual_low_{int(year)}", "strength": "major", "timeframe": tf})
+                levels.append(
+                    {
+                        "price": float(group["high"].max()),
+                        "type": "resistance",
+                        "source": f"annual_high_{int(year)}",
+                        "strength": "major",
+                        "timeframe": tf,
+                    }
+                )
+                levels.append(
+                    {
+                        "price": float(group["low"].min()),
+                        "type": "support",
+                        "source": f"annual_low_{int(year)}",
+                        "strength": "major",
+                        "timeframe": tf,
+                    }
+                )
 
             # Niveaux psychologiques
             px_range = (df["low"].min(), df["high"].max())
@@ -301,50 +322,113 @@ class MarketStructure:
                 psych_levels = np.arange(
                     np.floor(px_range[0] / magnitude) * magnitude,
                     np.ceil(px_range[1] / magnitude) * magnitude + magnitude,
-                    max(magnitude, 0.0001)
+                    max(magnitude, 0.0001),
                 )
                 for pl in psych_levels:
-                    levels.append({"price": float(pl), "type": "psychological",
-                                   "source": "round_number", "strength": "medium", "timeframe": tf})
+                    levels.append(
+                        {
+                            "price": float(pl),
+                            "type": "psychological",
+                            "source": "round_number",
+                            "strength": "medium",
+                            "timeframe": tf,
+                        }
+                    )
 
         elif tf == "H4":
             # Niveaux mensuels/trimestriels
             df["month"] = df["timestamp"].dt.month
             df["year"] = df["timestamp"].dt.year
             for (year, month), group in df.groupby(["year", "month"]):
-                levels.append({"price": float(group["high"].max()), "type": "resistance",
-                               "source": f"monthly_high_{int(year)}_{int(month)}", "strength": "medium", "timeframe": tf})
-                levels.append({"price": float(group["low"].min()), "type": "support",
-                               "source": f"monthly_low_{int(year)}_{int(month)}", "strength": "medium", "timeframe": tf})
+                levels.append(
+                    {
+                        "price": float(group["high"].max()),
+                        "type": "resistance",
+                        "source": f"monthly_high_{int(year)}_{int(month)}",
+                        "strength": "medium",
+                        "timeframe": tf,
+                    }
+                )
+                levels.append(
+                    {
+                        "price": float(group["low"].min()),
+                        "type": "support",
+                        "source": f"monthly_low_{int(year)}_{int(month)}",
+                        "strength": "medium",
+                        "timeframe": tf,
+                    }
+                )
 
         elif tf == "H1":
             # Niveaux hebdomadaires
             df["week"] = df["timestamp"].dt.isocalendar().week.astype(int)
             df["year"] = df["timestamp"].dt.year
             for (year, week), group in df.groupby(["year", "week"]):
-                levels.append({"price": float(group["high"].max()), "type": "resistance",
-                               "source": f"weekly_high_{int(year)}_w{int(week)}", "strength": "medium", "timeframe": tf})
-                levels.append({"price": float(group["low"].min()), "type": "support",
-                               "source": f"weekly_low_{int(year)}_w{int(week)}", "strength": "medium", "timeframe": tf})
+                levels.append(
+                    {
+                        "price": float(group["high"].max()),
+                        "type": "resistance",
+                        "source": f"weekly_high_{int(year)}_w{int(week)}",
+                        "strength": "medium",
+                        "timeframe": tf,
+                    }
+                )
+                levels.append(
+                    {
+                        "price": float(group["low"].min()),
+                        "type": "support",
+                        "source": f"weekly_low_{int(year)}_w{int(week)}",
+                        "strength": "medium",
+                        "timeframe": tf,
+                    }
+                )
 
             # Niveaux récents (dernières 2000H ~ 3 mois)
             recent = df.tail(2000)
             for offset in [0, 100, 500, 1000]:
                 chunk = recent.tail(max(100, len(recent) - offset)).head(100)
                 if len(chunk) > 0:
-                    levels.append({"price": float(chunk["high"].max()), "type": "resistance",
-                                   "source": f"recent_high_{offset}", "strength": "minor", "timeframe": tf})
-                    levels.append({"price": float(chunk["low"].min()), "type": "support",
-                                   "source": f"recent_low_{offset}", "strength": "minor", "timeframe": tf})
+                    levels.append(
+                        {
+                            "price": float(chunk["high"].max()),
+                            "type": "resistance",
+                            "source": f"recent_high_{offset}",
+                            "strength": "minor",
+                            "timeframe": tf,
+                        }
+                    )
+                    levels.append(
+                        {
+                            "price": float(chunk["low"].min()),
+                            "type": "support",
+                            "source": f"recent_low_{offset}",
+                            "strength": "minor",
+                            "timeframe": tf,
+                        }
+                    )
 
         elif tf == "M15":
             # Niveaux quotidiens récents
             df["day"] = df["timestamp"].dt.date
             for day, group in list(df.groupby("day"))[-90:]:  # 90 derniers jours
-                levels.append({"price": float(group["high"].max()), "type": "resistance",
-                               "source": f"daily_high_{day}", "strength": "minor", "timeframe": tf})
-                levels.append({"price": float(group["low"].min()), "type": "support",
-                               "source": f"daily_low_{day}", "strength": "minor", "timeframe": tf})
+                levels.append(
+                    {
+                        "price": float(group["high"].max()),
+                        "type": "resistance",
+                        "source": f"daily_high_{day}",
+                        "strength": "minor",
+                        "timeframe": tf,
+                    }
+                )
+                levels.append(
+                    {
+                        "price": float(group["low"].min()),
+                        "type": "support",
+                        "source": f"daily_low_{day}",
+                        "strength": "minor",
+                        "timeframe": tf,
+                    }
+                )
 
         self.key_levels.extend(levels)
 
@@ -374,14 +458,16 @@ class MarketStructure:
             types = [l["type"] for l in related]
             strengths = [l["strength"] for l in related]
             sources = [l["source"] for l in related]
-            merged.append({
-                "price": round(c, 5),
-                "type": "resistance" if "resistance" in types else "support",
-                "strength": "major" if "major" in strengths else "medium" if "medium" in strengths else "minor",
-                "source": sources[0],
-                "count": len(related),
-                "timeframes": list(set(l["timeframe"] for l in related if "timeframe" in l)),
-            })
+            merged.append(
+                {
+                    "price": round(c, 5),
+                    "type": "resistance" if "resistance" in types else "support",
+                    "strength": "major" if "major" in strengths else "medium" if "medium" in strengths else "minor",
+                    "source": sources[0],
+                    "count": len(related),
+                    "timeframes": list(set(l["timeframe"] for l in related if "timeframe" in l)),
+                }
+            )
         self.key_levels = merged
 
     def _find_value_zones(self):
@@ -398,12 +484,14 @@ class MarketStructure:
 
         for price, vol_ratio in vol_profile.items():
             if vol_ratio > 0.7:
-                self.value_zones.append({
-                    "price": float(price),
-                    "type": "high_value",
-                    "strength": "major" if vol_ratio > 0.85 else "medium",
-                    "volume_ratio": float(vol_ratio),
-                })
+                self.value_zones.append(
+                    {
+                        "price": float(price),
+                        "type": "high_value",
+                        "strength": "major" if vol_ratio > 0.85 else "medium",
+                        "volume_ratio": float(vol_ratio),
+                    }
+                )
 
         logger.debug(f"  {self.symbol}: {len(self.value_zones)} zones de value détectées")
 
@@ -459,6 +547,7 @@ class MarketStructure:
 # 3. PATTERN MATCHER — DTW + Chart Patterns
 # ============================================================
 
+
 class PatternMatcher:
     """Reconnaissance de patterns : DTW + Chartistes + Similarité."""
 
@@ -479,8 +568,9 @@ class PatternMatcher:
                 dtw[i, j] = cost + min(dtw[i - 1, j], dtw[i, j - 1], dtw[i - 1, j - 1])
         return np.sqrt(dtw[n, m])
 
-    def find_similar_dtw(self, recent: pd.DataFrame, n_results: int = 5,
-                         tf: str = "H1", use_dtw: bool = False) -> list[dict]:
+    def find_similar_dtw(
+        self, recent: pd.DataFrame, n_results: int = 5, tf: str = "H1", use_dtw: bool = False
+    ) -> list[dict]:
         """
         Trouve les N séquences historiques les plus similaires.
         recent: les dernières 20-120 bougies
@@ -505,7 +595,7 @@ class PatternMatcher:
             return []
 
         for i in range(0, len(all_close) - window, step):
-            chunk = all_close[i:i + window]
+            chunk = all_close[i : i + window]
             chunk_norm = (chunk - chunk[0]) / chunk[0]
 
             if use_dtw:
@@ -534,16 +624,18 @@ class PatternMatcher:
                 max_run = 0
 
             std_norm = max(np.std(recent_norm), 0.0001)
-            results.append({
-                "similarity": round(1 - dist / (2 * std_norm), 3),
-                "distance": round(dist, 5),
-                "index": int(idx),
-                "timestamp": str(df.iloc[idx]["timestamp"]),
-                "future_return_pct": round(future_return, 2),
-                "future_max_run_pct": round(max_run, 2),
-                "future_max_dd_pct": round(max_dd, 2),
-                "direction": "HAUSSE" if future_return > 0 else "BAISSE",
-            })
+            results.append(
+                {
+                    "similarity": round(1 - dist / (2 * std_norm), 3),
+                    "distance": round(dist, 5),
+                    "index": int(idx),
+                    "timestamp": str(df.iloc[idx]["timestamp"]),
+                    "future_return_pct": round(future_return, 2),
+                    "future_max_run_pct": round(max_run, 2),
+                    "future_max_dd_pct": round(max_dd, 2),
+                    "direction": "HAUSSE" if future_return > 0 else "BAISSE",
+                }
+            )
 
         return results
 
@@ -575,82 +667,92 @@ class PatternMatcher:
                 continue
             h_segment = high[-lookback:]
             l_segment = low[-lookback:]
-            h_max1 = np.max(h_segment[:lookback // 2])
-            h_max2 = np.max(h_segment[lookback // 2:])
-            h_max1_idx = np.argmax(h_segment[:lookback // 2])
-            h_max2_idx = np.argmax(h_segment[lookback // 2:]) + lookback // 2
+            h_max1 = np.max(h_segment[: lookback // 2])
+            h_max2 = np.max(h_segment[lookback // 2 :])
+            h_max1_idx = np.argmax(h_segment[: lookback // 2])
+            h_max2_idx = np.argmax(h_segment[lookback // 2 :]) + lookback // 2
 
-            l_min1 = np.min(l_segment[:lookback // 2])
-            l_min2 = np.min(l_segment[lookback // 2:])
+            l_min1 = np.min(l_segment[: lookback // 2])
+            l_min2 = np.min(l_segment[lookback // 2 :])
 
             # Double Top : deux sommets proches
             if abs(h_max1 - h_max2) / h_max1 < 0.002 and h_max2_idx - h_max1_idx > lookback // 4:
-                neckline = min(l_segment[h_max1_idx:h_max2_idx + 1])
-                patterns.append({
-                    "pattern": "double_top",
-                    "strength": "major" if abs(h_max1 - neckline) / neckline > 0.01 else "minor",
-                    "price1": float(h_max1),
-                    "price2": float(h_max2),
-                    "neckline": float(neckline),
-                    "target": float(neckline - (h_max1 - neckline)),
-                    "timeframe": "H1",
-                })
+                neckline = min(l_segment[h_max1_idx : h_max2_idx + 1])
+                patterns.append(
+                    {
+                        "pattern": "double_top",
+                        "strength": "major" if abs(h_max1 - neckline) / neckline > 0.01 else "minor",
+                        "price1": float(h_max1),
+                        "price2": float(h_max2),
+                        "neckline": float(neckline),
+                        "target": float(neckline - (h_max1 - neckline)),
+                        "timeframe": "H1",
+                    }
+                )
 
             # Double Bottom : deux creux proches
             if abs(l_min1 - l_min2) / l_min1 < 0.002:
-                l_min1_idx = np.argmin(l_segment[:lookback // 2])
-                l_min2_idx = np.argmin(l_segment[lookback // 2:]) + lookback // 2
-                neckline = max(h_segment[l_min1_idx:l_min2_idx + 1])
+                l_min1_idx = np.argmin(l_segment[: lookback // 2])
+                l_min2_idx = np.argmin(l_segment[lookback // 2 :]) + lookback // 2
+                neckline = max(h_segment[l_min1_idx : l_min2_idx + 1])
                 if l_min2_idx - l_min1_idx > lookback // 4:
-                    patterns.append({
-                        "pattern": "double_bottom",
-                        "strength": "major" if abs(neckline - l_min1) / neckline > 0.01 else "minor",
-                        "price1": float(l_min1),
-                        "price2": float(l_min2),
-                        "neckline": float(neckline),
-                        "target": float(neckline + (neckline - l_min1)),
-                        "timeframe": "H1",
-                    })
+                    patterns.append(
+                        {
+                            "pattern": "double_bottom",
+                            "strength": "major" if abs(neckline - l_min1) / neckline > 0.01 else "minor",
+                            "price1": float(l_min1),
+                            "price2": float(l_min2),
+                            "neckline": float(neckline),
+                            "target": float(neckline + (neckline - l_min1)),
+                            "timeframe": "H1",
+                        }
+                    )
 
         # 2. Head and Shoulders / Inverse H&S
         if n >= 40:
             mid = n // 2
-            left_shoulder = max(high[5:mid - 5])
-            head = max(high[mid - 5:mid + 5])
-            right_shoulder = max(high[mid + 5:-5])
+            left_shoulder = max(high[5 : mid - 5])
+            head = max(high[mid - 5 : mid + 5])
+            right_shoulder = max(high[mid + 5 : -5])
 
-            if head > left_shoulder and head > right_shoulder and \
-               abs(left_shoulder - right_shoulder) / head < 0.01:
+            if head > left_shoulder and head > right_shoulder and abs(left_shoulder - right_shoulder) / head < 0.01:
                 neckline = (min(low[5:mid]) + min(low[mid:-5])) / 2
-                patterns.append({
-                    "pattern": "head_and_shoulders",
-                    "strength": "major",
-                    "left_shoulder": float(left_shoulder),
-                    "head": float(head),
-                    "right_shoulder": float(right_shoulder),
-                    "neckline": float(neckline),
-                    "target": float(neckline - (head - neckline)),
-                    "timeframe": "H1",
-                })
+                patterns.append(
+                    {
+                        "pattern": "head_and_shoulders",
+                        "strength": "major",
+                        "left_shoulder": float(left_shoulder),
+                        "head": float(head),
+                        "right_shoulder": float(right_shoulder),
+                        "neckline": float(neckline),
+                        "target": float(neckline - (head - neckline)),
+                        "timeframe": "H1",
+                    }
+                )
 
             # Inverse H&S
-            left_shoulder_l = min(low[5:mid - 5])
-            head_l = min(low[mid - 5:mid + 5])
-            right_shoulder_l = min(low[mid + 5:-5])
+            left_shoulder_l = min(low[5 : mid - 5])
+            head_l = min(low[mid - 5 : mid + 5])
+            right_shoulder_l = min(low[mid + 5 : -5])
 
-            if head_l < left_shoulder_l and head_l < right_shoulder_l and \
-               abs(left_shoulder_l - right_shoulder_l) / max(abs(head_l), 0.0001) < 0.01:
+            if (
+                head_l < left_shoulder_l
+                and head_l < right_shoulder_l
+                and abs(left_shoulder_l - right_shoulder_l) / max(abs(head_l), 0.0001) < 0.01
+            ):
                 neckline = (max(high[5:mid]) + max(high[mid:-5])) / 2
-                patterns.append({
-                    "pattern": "inverse_head_and_shoulders",
-                    "strength": "major",
-                    "left_shoulder": float(left_shoulder_l),
-                    "head": float(head_l),
-                    "right_shoulder": float(right_shoulder_l),
-                    "neckline": float(neckline),
-                    "target": float(neckline + (neckline - head_l)),
-                    "timeframe": "H1",
-                })
+                patterns.append(
+                    {
+                        "pattern": "inverse_head_and_shoulders",
+                        "strength": "major",
+                        "left_shoulder": float(left_shoulder_l),
+                        "head": float(head_l),
+                        "right_shoulder": float(right_shoulder_l),
+                        "neckline": float(neckline),
+                        "target": float(neckline + (neckline - head_l)),
+                        "timeframe": "H1",
+                    }
+                )
 
         # 3. Bull Flag / Bear Flag (continuation patterns)
         if n >= 20:
@@ -660,22 +762,26 @@ class PatternMatcher:
 
             if trend_move > 0 and max(flag_part) - min(flag_part) < abs(trend_move) * 0.3:
                 # Consolidation après hausse = Bull Flag
-                patterns.append({
-                    "pattern": "bull_flag",
-                    "strength": "medium",
-                    "trend_pct": float(trend_move / trend_part[0] * 100),
-                    "flag_range_pct": float((max(flag_part) - min(flag_part)) / flag_part[0] * 100),
-                    "timeframe": "H1",
-                })
+                patterns.append(
+                    {
+                        "pattern": "bull_flag",
+                        "strength": "medium",
+                        "trend_pct": float(trend_move / trend_part[0] * 100),
+                        "flag_range_pct": float((max(flag_part) - min(flag_part)) / flag_part[0] * 100),
+                        "timeframe": "H1",
+                    }
+                )
             elif trend_move < 0 and max(flag_part) - min(flag_part) < abs(trend_move) * 0.3:
                 # Consolidation après baisse = Bear Flag
-                patterns.append({
-                    "pattern": "bear_flag",
-                    "strength": "medium",
-                    "trend_pct": float(trend_move / trend_part[0] * 100),
-                    "flag_range_pct": float((max(flag_part) - min(flag_part)) / flag_part[0] * 100),
-                    "timeframe": "H1",
-                })
+                patterns.append(
+                    {
+                        "pattern": "bear_flag",
+                        "strength": "medium",
+                        "trend_pct": float(trend_move / trend_part[0] * 100),
+                        "flag_range_pct": float((max(flag_part) - min(flag_part)) / flag_part[0] * 100),
+                        "timeframe": "H1",
+                    }
+                )
 
         # 4. Engulfing patterns (sur les 5 dernières bougies)
         for i in range(max(1, n - 5), n):
@@ -685,28 +791,30 @@ class PatternMatcher:
             body_curr = close[i] - open_p[i]
             # Bullish Engulfing
             if body_prev < 0 and body_curr > 0 and close[i] > open_p[i - 1] and open_p[i] < close[i - 1]:
-                patterns.append({
-                    "pattern": "bullish_engulfing",
-                    "strength": "medium",
-                    "index": i,
-                    "timeframe": "H1",
-                })
+                patterns.append(
+                    {
+                        "pattern": "bullish_engulfing",
+                        "strength": "medium",
+                        "index": i,
+                        "timeframe": "H1",
+                    }
+                )
             # Bearish Engulfing
             elif body_prev > 0 and body_curr < 0 and close[i] < open_p[i - 1] and open_p[i] > close[i - 1]:
-                patterns.append({
-                    "pattern": "bearish_engulfing",
-                    "strength": "medium",
-                    "index": i,
-                    "timeframe": "H1",
-                })
+                patterns.append(
+                    {
+                        "pattern": "bearish_engulfing",
+                        "strength": "medium",
+                        "index": i,
+                        "timeframe": "H1",
+                    }
+                )
 
         return patterns
 
     # ── C. SIGNAL AGRÉGÉ ──
 
-    def get_pattern_signal(self, recent: pd.DataFrame,
-                           use_dtw: bool = False,
-                           tf: str = "H1") -> dict:
+    def get_pattern_signal(self, recent: pd.DataFrame, use_dtw: bool = False, tf: str = "H1") -> dict:
         """Signal complet : pattern matching + chartistes."""
         # Pattern matching historique
         matches = self.find_similar_dtw(recent, n_results=10, tf=tf, use_dtw=use_dtw)
@@ -777,10 +885,8 @@ class PatternMatcher:
         if not patterns:
             return {"signal": "NEUTRE", "confidence": 0}
 
-        bullish_patterns = {"double_bottom", "inverse_head_and_shoulders",
-                            "bull_flag", "bullish_engulfing"}
-        bearish_patterns = {"double_top", "head_and_shoulders",
-                            "bear_flag", "bearish_engulfing"}
+        bullish_patterns = {"double_bottom", "inverse_head_and_shoulders", "bull_flag", "bullish_engulfing"}
+        bearish_patterns = {"double_top", "head_and_shoulders", "bear_flag", "bearish_engulfing"}
 
         bullish = sum(1 for p in patterns if p["pattern"] in bullish_patterns)
         bearish = sum(1 for p in patterns if p["pattern"] in bearish_patterns)
@@ -796,6 +902,7 @@ class PatternMatcher:
 # ============================================================
 # 4. MARKET MEMORY — Intégration complète multi-timeframe
 # ============================================================
+
 
 class MarketMemory:
     """
@@ -846,8 +953,7 @@ class MarketMemory:
             return struct.get_nearby_levels(price, distance)
         return []
 
-    def get_pattern_context(self, symbol: str, recent: pd.DataFrame,
-                            use_dtw: bool = False, tf: str = "H1") -> dict:
+    def get_pattern_context(self, symbol: str, recent: pd.DataFrame, use_dtw: bool = False, tf: str = "H1") -> dict:
         """Contexte de pattern pour un symbole."""
         matcher = self.matchers.get(symbol)
         if matcher:
@@ -861,8 +967,7 @@ class MarketMemory:
             return struct.get_mtf_alignment(price)
         return {}
 
-    def get_market_context(self, symbol: str, current_price: float,
-                           recent: pd.DataFrame | None = None) -> dict:
+    def get_market_context(self, symbol: str, current_price: float, recent: pd.DataFrame | None = None) -> dict:
         """Contexte complet du marché pour un symbole."""
         profile = self.profiles.get(symbol)
         struct = self.structures.get(symbol)
@@ -897,20 +1002,34 @@ class MarketMemory:
             print(f"\n{'─' * 80}")
             print(f"  {symbol}")
             print(f"{'─' * 80}")
-            print(f"  Période : {s['periode']['debut'][:10]} → {s['periode']['fin'][:10]} ({s['periode']['annees']} ans)")
-            print(f"  Bougies : M15={s['periode']['candles_m15']:,} | H1={s['periode']['candles_h1']:,} | H4={s['periode']['candles_h4']:,} | D1={s['periode']['candles_d1']:,}")
-            print(f"  ATR H1 : {s['volatilite']['atr_mean_h1']:.5f} | Range H1: {s['volatilite']['range_pct_mean_h1']:.2f}%")
-            print(f"  RSI : {s['rsi']['mean']:.1f} (OB {s['rsi']['overbought_pct']:.1f}%, OS {s['rsi']['oversold_pct']:.1f}%)")
+            print(
+                f"  Période : {s['periode']['debut'][:10]} → {s['periode']['fin'][:10]} ({s['periode']['annees']} ans)"
+            )
+            print(
+                f"  Bougies : M15={s['periode']['candles_m15']:,} | H1={s['periode']['candles_h1']:,} | H4={s['periode']['candles_h4']:,} | D1={s['periode']['candles_d1']:,}"
+            )
+            print(
+                f"  ATR H1 : {s['volatilite']['atr_mean_h1']:.5f} | Range H1: {s['volatilite']['range_pct_mean_h1']:.2f}%"
+            )
+            print(
+                f"  RSI : {s['rsi']['mean']:.1f} (OB {s['rsi']['overbought_pct']:.1f}%, OS {s['rsi']['oversold_pct']:.1f}%)"
+            )
             print(f"  ADX trending : {s['adx']['trending_pct_h1']:.1f}% | ranging: {s['adx']['ranging_pct_h1']:.1f}%")
             print(f"  MACD achat : {s['macd']['signal_achat_h1']:.1f}% | vente : {s['macd']['signal_vente_h1']:.1f}%")
             print(f"  Doji : {s['candles']['doji_pct']:.1f}% | Marubozu: {s['candles']['marubozu_pct']:.1f}%")
-            print(f"  Patterns bougies : Hammer {s['candles']['hammer_pct']:.1f}% | Shooting Star {s['candles']['shooting_star_pct']:.1f}%")
+            print(
+                f"  Patterns bougies : Hammer {s['candles']['hammer_pct']:.1f}% | Shooting Star {s['candles']['shooting_star_pct']:.1f}%"
+            )
             print(f"  Volume élevé (>1.5x) : {s['volume']['high_volume_pct_h1']:.1f}% du temps")
 
-            tend_h1 = s.get('tendance_h1', {})
-            print(f"  Tendance H1 : hausse {tend_h1.get('hausse_pct', 0):.1f}% | baisse {tend_h1.get('baisse_pct', 0):.1f}%")
-            tend_d1 = s.get('tendance_d1', {})
-            print(f"  Tendance D1 : hausse {tend_d1.get('hausse_pct', 0):.1f}% | baisse {tend_d1.get('baisse_pct', 0):.1f}%")
+            tend_h1 = s.get("tendance_h1", {})
+            print(
+                f"  Tendance H1 : hausse {tend_h1.get('hausse_pct', 0):.1f}% | baisse {tend_h1.get('baisse_pct', 0):.1f}%"
+            )
+            tend_d1 = s.get("tendance_d1", {})
+            print(
+                f"  Tendance D1 : hausse {tend_d1.get('hausse_pct', 0):.1f}% | baisse {tend_d1.get('baisse_pct', 0):.1f}%"
+            )
 
             if "d1" in s:
                 print(f"  Plus haut historique : {s['d1']['plus_haut_historique']:.5f}")
@@ -920,10 +1039,20 @@ class MarketMemory:
             struct = self.structures.get(symbol)
             if struct and struct._computed:
                 print(f"\n  Niveaux clés : {len(struct.key_levels)} (dont {len(struct.value_zones)} zones de value)")
-                d1_highs = [l for l in struct.key_levels if "D1" in (l.get("timeframes", ["D1"]))
-                          and l.get("type") == "resistance" and l.get("strength") == "major"]
-                d1_lows = [l for l in struct.key_levels if "D1" in (l.get("timeframes", ["D1"]))
-                         and l.get("type") == "support" and l.get("strength") == "major"]
+                d1_highs = [
+                    l
+                    for l in struct.key_levels
+                    if "D1" in (l.get("timeframes", ["D1"]))
+                    and l.get("type") == "resistance"
+                    and l.get("strength") == "major"
+                ]
+                d1_lows = [
+                    l
+                    for l in struct.key_levels
+                    if "D1" in (l.get("timeframes", ["D1"]))
+                    and l.get("type") == "support"
+                    and l.get("strength") == "major"
+                ]
                 if d1_highs:
                     closest_high = min(d1_highs, key=lambda x: abs(x["price"] - float(d1_highs[0]["price"])))
                     print(f"  Résistance D1 majeure : {closest_high['price']:.5f}")

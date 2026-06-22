@@ -50,9 +50,8 @@ from engine_simple.volume_profile import VolumeProfile, analyze as vp_analyze
 from engine_simple.order_flow import OrderFlowAnalyzer, analyze_bars as flow_analyze
 from engine_simple.mtf_confirm import MultiTimeframeConfirmer, confirm as mtf_confirm
 from engine_simple.adaptive_params import AdaptiveParameters, get_adapted_params
-from engine_simple.walk_forward_opt import WalkForwardOptimizer, get_optimal_params
-from engine_simple.portfolio_opt import PortfolioOptimizer, get_risk_allocation
-from engine_simple.risk_parity import RiskParitySizer, calculate_lot as rp_calculate_lot
+
+# walk_forward_opt archivé dans retired/engine_simple/ (code mort, jamais intégré au flux trading)
 from engine_simple.dashboard import Dashboard, generate_report as dash_report
 
 # ── Nouveaux modules Juin 2026 ──
@@ -67,6 +66,51 @@ warnings.filterwarnings("ignore", message="X does not have valid feature names")
 STATE_FILE = "runtime/robot_state.json"
 HEARTBEAT_FILE = "runtime/heartbeat.txt"
 PID_FILE = "runtime/robot.pid"
+
+# Named mutex Windows — plus fiable que le fichier PID (auto-libéré par l'OS)
+_MUTEX_NAME = "Global\\MT5_FTMO_MOM20x3"
+_mutex_handle = None
+
+
+def _acquire_mutex():
+    """Acquiert un named mutex Windows. Retourne True si acquis, False sinon.
+    Le mutex est automatiquement libéré par l'OS si le processus crashe."""
+    global _mutex_handle
+    if os.name != "nt":
+        return True  # Pas de mutex Windows sur Linux/Mac
+    try:
+        import ctypes
+
+        # CreateMutexW retourne un handle existant si le mutex existe déjà
+        handle = ctypes.windll.kernel32.CreateMutexW(None, True, _MUTEX_NAME)
+        if not handle:
+            logger.warning("PID lock: CreateMutexW a échoué — fallback fichier")
+            return False
+        last_error = ctypes.windll.kernel32.GetLastError()
+        if last_error == 183:  # ERROR_ALREADY_EXISTS
+            ctypes.windll.kernel32.CloseHandle(handle)
+            logger.critical("PID lock: mutex déjà détenu par une autre instance — abandon")
+            return False
+        _mutex_handle = handle
+        logger.debug(f"PID lock: mutex Windows acquis")
+        return True
+    except Exception as e:
+        logger.warning(f"PID lock: mutex Windows indisponible ({e}) — fallback fichier")
+        return False
+
+
+def _release_mutex():
+    """Libère le named mutex Windows."""
+    global _mutex_handle
+    if _mutex_handle is not None:
+        try:
+            import ctypes
+
+            ctypes.windll.kernel32.ReleaseMutex(_mutex_handle)
+            ctypes.windll.kernel32.CloseHandle(_mutex_handle)
+        except Exception:
+            pass
+        _mutex_handle = None
 
 
 def _atomic_write_json(path, data):
@@ -95,8 +139,14 @@ def _clean_orphan_tmp_files(glob_pattern="*.tmp"):
                 f.unlink(missing_ok=True)
             except Exception as e:
                 logger.debug(f"[CLEAN] Orphelin runtime/{f.name} ignoré: {e}")
-        # H-04b: Nettoie aussi les *.json.tmp.* (atomic write residues)
+        # H-04b: Nettoie aussi les *.json.tmp.* (anciens atomic write residues timestampés)
         for f in runtime_dir.glob("*.json.tmp.*"):
+            try:
+                f.unlink(missing_ok=True)
+            except Exception as e:
+                logger.debug(f"[CLEAN] Orphelin runtime/{f.name} ignoré: {e}")
+        # H-04c: Nettoie les *.json.tmp (nouveau format atomic write, sans timestamp)
+        for f in runtime_dir.glob("*.json.tmp"):
             try:
                 f.unlink(missing_ok=True)
             except Exception as e:
@@ -104,38 +154,22 @@ def _clean_orphan_tmp_files(glob_pattern="*.tmp"):
 
 
 def _acquire_lock():
-    """PID lock — atomic file creation (empêche les instances dupliquées)"""
+    """PID lock — named mutex Windows (primaire) + fichier PID (fallback).
+    Empêche les instances dupliquées même après crash (mutex auto-libéré par l'OS)."""
     pid = os.getpid()
 
-    # 🔒 Vérification secondaire : scanner les processus python* qui exécutent main.py
-    # via PowerShell. Non-bloquante : ne fait qu'un warning si un zombie est détecté,
-    # car le vrai verrou est le fichier PID + OpenProcess ci-dessous.
-    try:
-        import subprocess
+    # 🔒 PRIORITÉ 1: Named mutex Windows (primaire, plus fiable)
+    if _acquire_mutex():
+        # Mutex acquis — écrire aussi le fichier PID pour compatibilité
+        lock = Path(PID_FILE)
+        try:
+            lock.write_text(str(pid))
+        except Exception:
+            pass
+        logger.info(f"PID lock: {pid} (mutex)")
+        return
 
-        result = subprocess.run(
-            [
-                "powershell",
-                "-Command",
-                'Get-CimInstance Win32_Process | Where-Object { ($_.Name -like "python*") '
-                '-and $_.CommandLine -like "*main.py*" } | Select-Object -ExpandProperty ProcessId',
-            ],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-        for line in result.stdout.strip().split("\n"):
-            line = line.strip()
-            if line and line.isdigit():
-                existing_pid = int(line)
-                if existing_pid != pid:
-                    logger.warning(
-                        f"PID lock: instance détectée (PID {existing_pid}) via scan —"
-                        " vérification par OpenProcess ci-dessous"
-                    )
-    except Exception as e:
-        logger.debug(f"PID lock: scan processus auxiliaire ignoré ({e})")
-
+    # 🔒 PRIORITÉ 2: File-based lock (fallback Linux/Mac)
     lock = Path(PID_FILE)
     try:
         fd = os.open(PID_FILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
@@ -168,12 +202,8 @@ def _acquire_lock():
                     sys.exit(1)
                 logger.warning(f"PID lock: zombie PID {existing} libere")
             else:
-                # OpenProcess a échoué (NULL handle) — deux possibilités :
-                # 1. Le processus n'existe plus (zombie) → safe to overwrite
-                # 2. PROCESS_QUERY_INFORMATION refusé (processus d'un autre user/session)
-                #    → CONSERVATEUR : considérer comme actif pour éviter les doublons
                 last_error = ctypes.windll.kernel32.GetLastError()
-                if last_error == ERROR_ACCESS_DENIED:
+                if last_error == 5:  # ERROR_ACCESS_DENIED
                     logger.critical(
                         f"PID lock: accès refusé au PID {existing} — considéré comme actif (GetLastError=5)"
                     )
@@ -188,10 +218,12 @@ def _acquire_lock():
                 pass
         # Stale lock: overwrite
         lock.write_text(str(pid))
-    logger.info(f"PID lock: {pid}")
+    logger.info(f"PID lock: {pid} (file)")
 
 
 def _release_lock():
+    """Libère le PID lock (mutex + fichier)."""
+    _release_mutex()
     try:
         lock = Path(PID_FILE)
         if lock.exists() and lock.read_text().strip() == str(os.getpid()):
@@ -234,7 +266,7 @@ class FTMO_SIMPLE:
             errors.append(f"MAX_DD_PCT={cfg.MAX_DD_PCT} — doit être entre 0 et 12%")
         if cfg.MIN_RR_RATIO < 1.0:
             errors.append(f"MIN_RR_RATIO={cfg.MIN_RR_RATIO} < 1.0 — risque de non-rentabilité")
-        if cfg.MAX_POSITIONS > 12:
+        if cfg.MAX_POSITIONS > 16:
             errors.append(f"MAX_POSITIONS={cfg.MAX_POSITIONS} trop élevé pour FTMO 200K")
         if cfg.RISK_PER_TRADE <= 0 or cfg.RISK_PER_TRADE > 0.02:
             errors.append(f"RISK_PER_TRADE={cfg.RISK_PER_TRADE} — doit être entre 0.001 et 0.02")
@@ -313,17 +345,6 @@ class FTMO_SIMPLE:
             logger.warning(f"[MARKET_MEMORY] Impossible de charger: {e}")
             self.market_memory = None
 
-        # PHASE 3: RegimeEngine — Détection avancée de 7 régimes
-        self.regime_engine = None
-        try:
-            from engine_simple.regime_engine import RegimeEngine
-
-            self.regime_engine = RegimeEngine()
-            logger.info("[REGIME_ENGINE] Chargé — 7 régimes actifs")
-        except Exception as e:
-            logger.warning(f"[REGIME_ENGINE] Impossible de charger: {e}")
-            self.regime_engine = None
-
         # PHASE 5: SessionFilter — Filtre de session par symbole
         self.session_filter = None
         try:
@@ -367,17 +388,9 @@ class FTMO_SIMPLE:
         self.mtf_confirm = MultiTimeframeConfirmer()
         logger.info("[MTF_CONFIRM] Chargé — confirmation multi-TF")
 
-        # Phase 12-13: Adaptive + WFO (per-symbol, lazy init)
+        # Phase 12-13: Adaptive (per-symbol, lazy init)
         self._adaptive_params: dict[str, AdaptiveParameters] = {}
-        self._wfo: dict[str, WalkForwardOptimizer] = {}
-
-        # Phase 14: Portfolio Optimizer
-        self.portfolio_optimizer = PortfolioOptimizer()
-        logger.info("[PORTFOLIO_OPT] Chargé — optimisation allocation")
-
-        # Phase 15: Risk Parity
-        self.risk_parity = RiskParitySizer()
-        logger.info("[RISK_PARITY] Chargé — sizing vol-adjusted")
+        # WFO retiré — walk_forward_opt.py archivé dans retired/ (code mort)
 
         # Phase 16: Dashboard
         self.dashboard = Dashboard()
@@ -439,18 +452,27 @@ class FTMO_SIMPLE:
             self.ftmo.peak_profit.update(self._state["peak_profit"])
         # M16: Restore cooldowns per-symbol
         if self._state.get("cooldowns"):
+            _now = datetime.utcnow()
             for k, v in self._state["cooldowns"].items():
                 with contextlib.suppress(ValueError):
-                    self.ftmo.cooldowns[k] = datetime.fromisoformat(v)
+                    cd = datetime.fromisoformat(v)
+                    # 🔧 FIX M5: Ne pas restaurer les cooldowns de >2h (périmés après restart)
+                    if (_now - cd).total_seconds() < 7200:  # 2h
+                        self.ftmo.cooldowns[k] = cd
             logger.info(f"[STATE] Restored {len(self.ftmo.cooldowns)} cooldowns")
         # M17: Restore _symbol_consecutive_losses
+        # 🔧 FIX M6: Reset au restart pour repartir à zéro (les pertes consécutives
+        # de la session précédente ne devraient pas impacter la nouvelle session)
+        self.ftmo._symbol_consecutive_losses.clear()
         if self._state.get("symbol_consecutive_losses"):
-            self.ftmo._symbol_consecutive_losses.update(self._state["symbol_consecutive_losses"])
-            logger.info(f"[STATE] Restored {len(self.ftmo._symbol_consecutive_losses)} symbol consecutive losses")
+            logger.info(
+                f"[STATE] symbol_consecutive_losses reset (restart) — ancien: {self._state.get('symbol_consecutive_losses')}"
+            )
         if self._state.get("challenge_status"):
             self.ftmo.challenge_status = self._state["challenge_status"]
         if self._state.get("consistency_violated"):
             self.ftmo.consistency_violated = True
+            self.ftmo.challenge.consistency_violated = True  # sync source (ChallengeTracker)
         if self._state.get("daily_profit_reduced"):
             self.ftmo._daily_profit_reduced = True
         if self._state.get("trade_history"):
@@ -467,7 +489,9 @@ class FTMO_SIMPLE:
                     continue
                 try:
                     time_val = t.get("time", "")
-                    if isinstance(time_val, str):
+                    if isinstance(time_val, (int, float)):
+                        time_val = datetime.fromtimestamp(time_val)
+                    elif isinstance(time_val, str):
                         time_val = datetime.fromisoformat(time_val)
                     self.ftmo.challenge._trade_history.append(
                         {
@@ -524,6 +548,12 @@ class FTMO_SIMPLE:
                 f"[STATE] Reconstruit {len(self.ftmo.trading_days)} jours trading, "
                 f"{len(self.ftmo.daily_pnl_by_date)} daily_pnl depuis trade_history"
             )
+            # Recalculer la règle de consistance FTMO à partir des daily_pnl_by_date reconstruits
+            self.ftmo._check_consistency()
+            logger.info(
+                f"[STATE] consistency_violated={self.ftmo.consistency_violated} "
+                f"(après recalcul depuis {len(self.ftmo.daily_pnl_by_date)} jours)"
+            )
         if self._state.get("daily_stats"):
             self.ftmo.daily_stats = self._state["daily_stats"]
         _dse = self._state.get("daily_start_equity")
@@ -532,9 +562,36 @@ class FTMO_SIMPLE:
             logger.debug(f"[STATE] daily_start_equity restauré: {_dse}")
         else:
             logger.debug(f"[STATE] daily_start_equity ignoré: {_dse} (<=0 ou None)")
+        # 🔧 FIX H3: Forcer le recalage de daily_start_equity après restart
+        # pour éviter qu'il reste bloqué à l'initial_balance (200000).
+        # Le _reset_daily() est appelé dans la boucle trading, mais si on est
+        # dans le même jour UTC, il ne se déclenche pas. On force ici.
+        # ATTENTION: _reset_daily() copie challenge→ftmo, donc on modifie LES DEUX.
+        import datetime as _dt
+
+        _saved_day = self._state.get("daily_stats", {}).get("day")
+        _today = _dt.datetime.utcnow().date()
+        if self.mt5:
+            _acct = self.mt5.get_account_info()
+            if _acct:
+                if str(_today) != str(_saved_day):
+                    # Jour différent → _reset_daily() va normalement corriger
+                    pass
+                elif _acct.equity != self.ftmo.daily_start_equity:
+                    # Même jour, restart dans la journée → on recale sur l'equity actuelle
+                    _old = self.ftmo.daily_start_equity
+                    _new_eq = _acct.equity
+                    # Modifier les DEUX (protector + challenge) car _reset_daily()
+                    # copie challenge→protector à chaque cycle
+                    self.ftmo.daily_start_equity = _new_eq
+                    if hasattr(self.ftmo, "challenge"):
+                        self.ftmo.challenge.daily_start_equity = _new_eq
+                    logger.info(f"[STATE] daily_start_equity recalculé: {_old}→{_new_eq} (restart intra-jour)")
 
         # PHASE 2.2: Initialiser le Meta-Learner (dans AdaptiveEngine) à partir de l'historique
-        if self.ftmo._trade_history:
+        # Meta-Learner désactivé (P7: _meta_active=False) — l'import et l'instanciation sont
+        # dynamiques dans AdaptiveEngine.__init__ et ne se produisent que si _meta_active=True.
+        if self.adaptive._meta_active and self.ftmo._trade_history:
             logger.info(f"[META] Initialisation à partir de {len(self.ftmo._trade_history)} trades historiques")
             self.adaptive.meta.initialize_from_history(self.ftmo._trade_history)
             meta_status = self.adaptive.meta.get_calibration_status()
@@ -544,10 +601,16 @@ class FTMO_SIMPLE:
             def __init__(self, mt5_conn):
                 self._mt5 = mt5_conn
                 self._cache = None
+                self._last_fetch = 0.0
+                self._ttl = 150  # 150s entre refetch MT5 (limite FTMO 2000 req/jour)
 
-            def get(self):
-                if self._cache is None:
+            def get(self, force_refresh=False):
+                import time
+
+                now = time.time()
+                if self._cache is None or force_refresh or (now - self._last_fetch) > self._ttl:
                     self._cache = self._mt5.get_positions()
+                    self._last_fetch = now
                 return self._cache
 
             def invalidate(self):
@@ -709,9 +772,9 @@ class FTMO_SIMPLE:
                 daily_pnl_by_date=(
                     {str(k): v for k, v in self.ftmo.daily_pnl_by_date.items()} if hasattr(self, "ftmo") else {}
                 ),
-                trading_days_list=[str(d) for d in self.ftmo.trading_days] if hasattr(self, "ftmo") else [],
+                trading_days_list=sorted([str(d) for d in self.ftmo.trading_days]) if hasattr(self, "ftmo") else [],
                 challenge_status=self.ftmo.challenge_status if hasattr(self, "ftmo") else "ACTIVE",
-                consistency_violated=self.ftmo.consistency_violated if hasattr(self, "ftmo") else False,
+                consistency_violated=self.ftmo.challenge.consistency_violated if hasattr(self, "ftmo") else False,
                 daily_stats=self.ftmo.daily_stats if hasattr(self, "ftmo") else None,
                 daily_start_equity=(
                     self.ftmo.daily_start_equity if hasattr(self, "ftmo") and self.ftmo.daily_start_equity > 0 else None
@@ -805,16 +868,20 @@ class FTMO_SIMPLE:
                         logger.critical(f"{len(timestamps)} restarts dans l'heure — abandon")
                         self.notifier.send(f"WATCHDOG: {len(timestamps)} restarts/h — abandon")
                         self._save_state()
-                        # Libérer le PID lock AVANT d'arrêter pour que le nouveau processus puisse démarrer
+                        # SPAWN d'abord, PUIS libérer le lock (évite la fenêtre de race condition)
+                        import subprocess as _sp
+
+                        _sp.Popen([sys.executable, "main.py"], cwd=os.path.dirname(os.path.abspath(__file__)))
+                        time.sleep(1.5)  # Laisser le temps au nouveau processus d'acquérir le mutex
                         _release_lock()
                         sys.exit(1)
                     self._save_state()
-                    # Libérer le PID lock avant de spawner le nouveau processus
-                    _release_lock()
-                    import subprocess
+                    # SPAWN d'abord, PUIS libérer le lock
+                    import subprocess as _sp
 
-                    subprocess.Popen([sys.executable, "main.py"], cwd=os.path.dirname(os.path.abspath(__file__)))
-                    sys.exit(1)
+                    _sp.Popen([sys.executable, "main.py"], cwd=os.path.dirname(os.path.abspath(__file__)))
+                    time.sleep(1.5)  # Laisser le temps au nouveau processus d'acquérir le mutex
+                    _release_lock()
                 if not self.mt5.reconnect():
                     logger.error("Watchdog: echec reconnexion MT5")
                     break
@@ -881,18 +948,37 @@ class FTMO_SIMPLE:
                 floating = account.equity - account.balance
                 dd = max(0, self.ftmo.initial_balance - account.equity)
                 dd_pct = dd / max(self.ftmo.initial_balance, 1) * 100
-                pos_info = f"{len(self._pos_cache.get())}pos"
+                pos_count = len(self._pos_cache.get())
+                pos_info = f"{pos_count}pos"
                 logger.info(
                     f"[Cycle {self.cycle_count}] Balance={account.balance:.0f} Eq={account.equity:.0f} "
                     f"Fl={floating:+.0f} DD={dd:.0f}({dd_pct:.1f}%) {pos_info} "
                     f"Pertes_cons={self.ftmo.consecutive_losses}"
                 )
+                # Action #10: Alerte si DD > 5%
+                if dd_pct > 5.0 and hasattr(self, "notifier"):
+                    self.notifier.send(f"⚠️ ALERTE DD {dd_pct:.1f}% — Eq=${account.equity:.0f} Positions={pos_count}")
                 # Métriques
                 self.metrics.gauge("balance", account.balance)
                 self.metrics.gauge("equity", account.equity)
                 self.metrics.gauge("drawdown_pct", dd_pct)
                 self.metrics.gauge("consecutive_losses", self.ftmo.consecutive_losses)
                 self.metrics.gauge("open_positions", len(self._pos_cache.get()))
+
+                # Per-symbol DD tracking pour PortfolioController
+                if self.portfolio_controller:
+                    try:
+                        live_positions = self._pos_cache.get()
+                        sym_pnl: dict[str, float] = {}
+                        for p in live_positions:
+                            sym = getattr(p, "symbol", "?")
+                            sym_pnl[sym] = sym_pnl.get(sym, 0.0) + getattr(p, "profit", 0.0)
+                        for sym, pnl in sym_pnl.items():
+                            # DD par symbole = perte flottante / balance
+                            sym_dd = max(0, -pnl) / max(account.balance, 1)
+                            self.portfolio_controller.update_symbol_dd(sym, sym_dd)
+                    except Exception as e:
+                        logger.debug(f"  [PORTFOLIO_DD] per-symbol DD failed: {e}")
 
             # Reset daily stats si changement de jour (avant toute opération)
             if hasattr(self, "ftmo") and self.ftmo:
@@ -953,6 +1039,17 @@ class FTMO_SIMPLE:
                     f"[BROKER] MT5 down depuis {mt5_down_for:.0f}s après cycle ops — "
                     f"skip, {600 - mt5_down_for:.0f}s avant arret"
                 )
+            if self.cycle_count % 4 == 0:
+                # ❤️ Heartbeat toutes les 60s — permet de détecter les cycles figés
+                pos_count = len(self._pos_cache.get()) if hasattr(self, "_pos_cache") else 0
+                eq = account.equity if "account" in dir() else 0
+                bal = account.balance if "account" in dir() else 0
+                pnl_val = (eq - bal) if eq and bal else 0
+                logger.info(
+                    f"[HEARTBEAT] Cycle {self.cycle_count} | {pos_count} pos | "
+                    f"Eq=${eq:.0f} Bal=${bal:.0f} PnL=${pnl_val:.0f} | "
+                    f"6H mem check au cycle {(self.cycle_count // 900 + 1) * 900}"
+                )
             if self.cycle_count % 60 == 0:
                 # Memory monitoring — alerte si > 1.5 GB
                 if HAS_PSUTIL:
@@ -967,6 +1064,23 @@ class FTMO_SIMPLE:
                             logger.debug(f"[MEM] {mem_mb:.0f} MB")
                     except Exception:
                         pass
+                # Vérification mutex Windows (tous les 600 cycles ~2.5h)
+                if self.cycle_count % 600 == 0 and os.name == "nt":
+                    try:
+                        import ctypes
+
+                        h = ctypes.windll.kernel32.CreateMutexW(None, True, _MUTEX_NAME)
+                        if h:
+                            err = ctypes.windll.kernel32.GetLastError()
+                            ctypes.windll.kernel32.CloseHandle(h)
+                            if err == 183:  # ERROR_ALREADY_EXISTS
+                                logger.debug(f"[MUTEX] OK — détenu par PID {os.getpid()}")
+                            else:
+                                logger.error(f"[MUTEX] INATTENDU — err={err}, mutex non détenu par nous?")
+                        else:
+                            logger.error("[MUTEX] CreateMutexW a échoué — mutex perdu?")
+                    except Exception as e:
+                        logger.debug(f"[MUTEX] Vérification impossible: {e}")
                 # Calibration persistante + DL si disponible (auto-gardé interne)
                 self.adaptive.train_dl_if_ready()
                 self.adaptive.save_calibration()
@@ -975,8 +1089,10 @@ class FTMO_SIMPLE:
                     logger.info(f"  [PERF] {json.dumps(perf)}")
                 if hasattr(cfg, "reload_config") and cfg.reload_config():
                     logger.info("[CONFIG] Configuration reloaded a chaud")
-                    if hasattr(self, "ftmo") and hasattr(self.ftmo, "refresh_symbol_limits"):
-                        self.ftmo.refresh_symbol_limits()
+                # Toujours rafraîchir les symbol_limits (même sans hot-reload)
+                # Nécessaire car le hot-reload YAML peut ne pas détecter les changements de mtime
+                if hasattr(self, "ftmo") and hasattr(self.ftmo, "refresh_symbol_limits"):
+                    self.ftmo.refresh_symbol_limits()
 
             if self.cycle_count - self.last_report_cycle >= 20:
                 self._log_ftmo_report()
@@ -1022,6 +1138,11 @@ class FTMO_SIMPLE:
             self._last_cycle_time = time.time()
             self._watchdog_failures = 0
 
+            # Persistance périodique (tous les 20 cycles = ~5min)
+            # Évite la perte de trade_history/daily_pnl_by_date en cas de crash
+            if self.cycle_count % 20 == 0:
+                self._save_state()
+
             # 🧹 GC périodique : tous les 500 cycles (~2h à 15s/cycle)
             # Évite la fragmentation mémoire Python/numpy de s'accumuler au fil du temps.
             if self.cycle_count % 500 == 0 and self.cycle_count > 0:
@@ -1029,6 +1150,13 @@ class FTMO_SIMPLE:
 
                 collected = gc.collect()
                 logger.debug(f"[MEM] GC collecte: {collected} objets libérés (cycle {self.cycle_count})")
+
+            # 🆕 Phase 14c: Retraining hebdomadaire LightGBM (tous les ~2000 cycles ≈ 8h)
+            if self.cycle_count % 2000 == 0 and self.cycle_count > 0:
+                try:
+                    self._check_weekly_retrain()
+                except Exception as _e_rt:
+                    logger.debug(f"[LGB RETRAIN] Check failed: {_e_rt}")
 
             elapsed = time.time() - cycle_start
             sleep_time = max(5, cfg.CYCLE_SECONDS - elapsed)
@@ -1043,143 +1171,6 @@ class FTMO_SIMPLE:
 
     def _manage_positions(self):
         self.pos_manager.manage_positions()
-
-    # DÉPRÉCIÉ: remplacé par signal_pipeline._phase1_mom20x3() (P1 Juin 2026)
-    # Conservé pour fallback manuel ou debug. Ne plus appeler depuis _scan_signals.
-    def _get_mom20x3_signal(self, symbol):
-        """Génère un signal MOM20x3 avec filtres ADX slope / +DI/-DI + OL params.
-        Timeframe par symbole depuis config: XAUUSD=H4, BTCUSD=H1, US500.cash=H1."""
-        try:
-            # === Timeframe spécifique au symbole (config YAML) ===
-            tf = cfg.SYMBOL_TIMEFRAMES.get(symbol, "H1")
-
-            # === Récupérer les paramètres OnlineLearner pour ce symbole ===
-            ol_thresh_trending = None
-            ol_thresh_ranging = None
-            ol_risk_mult = 1.0
-            try:
-                ol_params = self.adaptive.learner.get_params(symbol, base_thresh=2.5)
-                ol_thresh = ol_params.get("thresh", 2.5)
-                # OL thresh >= base → pas de changement (stratégie par défaut)
-                # OL thresh < base → plus agressif (WR > 78%)
-                # Mode modéré: on n'applique que si OL est PLUS agressif que le base
-                from engine_simple.strategy import SYMBOL_CONFIG as _SYMBOL_CFG
-
-                base_trending = _SYMBOL_CFG.get(symbol, {}).get("threshold_trending", 2.0)
-                if ol_thresh < base_trending:
-                    ol_thresh_trending = ol_thresh
-                    ol_thresh_ranging = max(1.5, ol_thresh - 0.5)
-                    # Throttle: log 1/60 cycles max (évite spam ~2,940 lignes/jour)
-                    if self.cycle_count - self._log_throttle.get("ol_thresh", 0) >= 60:
-                        self._log_throttle["ol_thresh"] = self.cycle_count
-                        logger.info(
-                            f"  [OL-THRESH] {symbol}: OL thresh={ol_thresh} → "
-                            f"custom trending={ol_thresh_trending}, ranging={ol_thresh_ranging}"
-                        )
-                else:
-                    # Throttle: log 1/60 cycles max
-                    if self.cycle_count - self._log_throttle.get("ol_thresh", 0) >= 60:
-                        self._log_throttle["ol_thresh"] = self.cycle_count
-                        logger.debug(
-                            f"  [OL-THRESH] {symbol}: OL thresh={ol_thresh} >= base={base_trending} → using base"
-                        )
-                ol_risk_mult = ol_params.get("risk_mult", 1.0)
-            except Exception as e:
-                logger.debug(f"  [OL] {symbol}: params fallback to defaults ({e})")
-
-            # === Signal sur le timeframe principal du symbole ===
-            rates_tf = self.mt5.get_rates(symbol, tf, count=10000)
-            if rates_tf is None or len(rates_tf) < 50:
-                logger.debug(
-                    f"  [MOM20x3] {symbol}: rates {tf} insufficient ({0 if rates_tf is None else len(rates_tf)} bars < 50)"
-                )
-                return None
-            mom = MOM20x3(rates_tf, symbol, market_memory=self.market_memory)
-            raw = mom.analyze(
-                custom_thresh_trending=ol_thresh_trending,
-                custom_thresh_ranging=ol_thresh_ranging,
-            )
-            if raw is None:
-                return None
-
-            # === Confirmation timeframe supérieur (non-bloquant) ===
-            # Pour les symboles H1: confirmation H4 (EMA50)
-            # Pour XAUUSD H4: confirmation D1 (EMA50)
-            h4_conf = 1.0
-            higher_tf = "D1" if tf == "H4" else "H4"
-            try:
-                higher_cached = self.mt5.get_rates(symbol, higher_tf, count=60)
-                if higher_cached is not None and len(higher_cached) > 30:
-                    hc = np.array([r[4] for r in higher_cached], dtype=float)
-                    he = ema(hc, 50)
-                    if len(he) > 0 and not np.isnan(he[-1]) and he[-1] > 0:
-                        higher_ema50 = float(he[-1])
-                        higher_price = float(hc[-1])
-                        if raw["action"] == "BUY" and higher_price < higher_ema50 * 0.998:
-                            h4_conf = 0.80
-                        elif raw["action"] == "SELL" and higher_price > higher_ema50 * 1.002:
-                            h4_conf = 0.80
-            except Exception:
-                pass
-
-            # === MTF Alignment (4 timeframes via MarketMemory) ===
-            tick = self.mt5.get_tick(symbol)
-            if self.market_memory is not None:
-                try:
-                    entry_price = tick.ask if tick else 0
-                    if entry_price > 0:
-                        mtf = self.market_memory.get_mtf_alignment(symbol, entry_price)
-                        bullish_count = sum(1 for v in mtf.values() if v == "bullish")
-                        bearish_count = sum(1 for v in mtf.values() if v == "bearish")
-
-                        # Pénalité si 3+ TF contredisent le signal
-                        if raw["action"] == "BUY" and bearish_count >= 3:
-                            h4_conf *= 0.85  # -15%
-                            logger.debug(f"  [MTF] {symbol}: {bearish_count} TF bearish → h4_conf -15%")
-                        elif raw["action"] == "SELL" and bullish_count >= 3:
-                            h4_conf *= 0.85
-                            logger.debug(f"  [MTF] {symbol}: {bullish_count} TF bullish → h4_conf -15%")
-
-                        # Bonus si 3+ TF confirment
-                        if raw["action"] == "BUY" and bullish_count >= 3:
-                            h4_conf = min(1.0, h4_conf * 1.05)  # +5%
-                        elif raw["action"] == "SELL" and bearish_count >= 3:
-                            h4_conf = min(1.0, h4_conf * 1.05)
-                except Exception as e:
-                    logger.debug(f"  [MTF] {symbol}: erreur alignment: {e}")
-
-            # === Enrichir ===
-            entry = tick.ask if tick else 0
-            signal = dict(raw)
-            signal["symbol"] = symbol
-            signal["timeframe"] = tf
-            signal["details"] = f"MOM20x3_{tf}"
-            signal["quality"] = min(1.0, (signal.get("confidence", 0.5) + 0.1) * h4_conf)
-            # Réduire le score si la TF supérieure contredit le signal
-            if h4_conf < 1.0 and signal.get("score", 0.6) > 0.5:
-                signal["score"] = max(0.5, signal["score"] * 0.90)
-            # Per-symbol risk_mult from config as BASE (XAUUSD=1.00, BTCUSD=0.65, etc.)
-            # OL risk_mult adjusts ON TOP (multiplicative)
-            symbol_config = cfg.SYMBOL_LIMITS.get(symbol, {})
-            base_risk_mult = symbol_config.get("risk_mult", 1.0)
-            signal["risk_mult"] = base_risk_mult * ol_risk_mult
-            signal["entry_price"] = entry if raw["action"] == "BUY" else (tick.bid if tick else 0)
-            signal["higher_tf_conf"] = round(h4_conf, 2)
-            atr_price = signal.get("atr", 0)
-            price = tick.bid if tick else 0
-            signal["atr_pct"] = round(atr_price / price * 100, 4) if price > 0 else 0
-            # FIX M1: Calculer le RSI réel (14 périodes) au lieu du placeholder 50
-            try:
-                close_prices = np.array([r[4] for r in rates_tf], dtype=float)
-                rsi_arr = ind_rsi(close_prices, period=14)
-                rsi_val = float(rsi_arr[-1]) if len(rsi_arr) > 0 and not np.isnan(rsi_arr[-1]) else 50.0
-                signal["rsi"] = round(rsi_val, 1)
-            except Exception:
-                signal["rsi"] = 50.0
-            return signal
-        except Exception as e:
-            logger.exception(f"  [MOM20x3] {symbol}: echec generation: {e}")
-            return None
 
     def _scan_signals(self):
         # Auto-stop DÉSACTIVÉ — mode production continue (sans arret)
@@ -1256,12 +1247,18 @@ class FTMO_SIMPLE:
             score = result.score
             # Stocker une COPIE pour éviter mutation cumulative du risk_mult
             self._last_signals[symbol] = {"signal": dict(signal), "score": score, "cycle": self.cycle_count}
-            # PortfolioController — vérifier corrélation et exposition
+            # PortfolioController — vérifier corrélation et exposition (avec positions RÉELLES)
             if self.portfolio_controller:
-                can_open, reason = self.portfolio_controller.can_open_position(symbol, signal.get("action", "BUY"), [])
-                if not can_open:
-                    logger.debug(f"  [PORTFOLIO] {symbol}: {reason}")
-                    continue
+                try:
+                    live_now = self._pos_cache.get()
+                    can_open, reason = self.portfolio_controller.can_open_position(
+                        symbol, signal.get("action", "BUY"), live_now
+                    )
+                    if not can_open:
+                        logger.debug(f"  [PORTFOLIO] {symbol}: {reason}")
+                        continue
+                except Exception as e:
+                    logger.warning(f"  [PORTFOLIO] {symbol}: erreur ({e}) — bypass")
             candidates.append((score, symbol, signal, positions))
 
         # Save signal debug info — seulement tous les 5 cycles (évite I/O excessif)
@@ -1313,7 +1310,7 @@ class FTMO_SIMPLE:
                 kelly_factor = max(0.3, min(1.5, kelly_risk / cfg.RISK_PER_TRADE))  # borné [0.3, 1.5]
                 signal["risk_mult"] = signal.get("risk_mult", 1.0) * kelly_factor
                 # 🔒 FIX M2: Cap final du risk_mult par symbole (après toutes les multiplications)
-                _FINAL_CAP = {"XAUUSD": 1.50, "BTCUSD": 1.25, "US500.cash": 1.30, "ETHUSD": 1.20, "EURUSD": 2.00}
+                _FINAL_CAP = {"XAUUSD": 1.50, "BTCUSD": 1.25, "US500.cash": 1.30, "EURUSD": 2.00}
                 cap = _FINAL_CAP.get(symbol, 1.0)
                 if signal["risk_mult"] > cap:
                     logger.info(f"  [RISK] {symbol}: risk_mult {signal['risk_mult']:.3f} capé à {cap} (post-Kelly)")
@@ -1329,6 +1326,21 @@ class FTMO_SIMPLE:
                 logger.info(
                     f"  [TRADE] >>> {symbol} {signal['action']} (score={score:.2f}, strat={signal.get('details', '?')})"
                 )
+                # 🆕 Phase 14b: Sauvegarder les features + prédictions pour retraining futur
+                # Appelé IMMÉDIATEMENT après exécution pour capturer l'état avant que
+                # track_new() ne crée son propre meta (add_meta pré-remplit _position_meta)
+                try:
+                    ticket = getattr(result, "order", 0)
+                    if ticket:
+                        meta_data = {
+                            "_features": signal.get("_features", {}),
+                            "predictions": signal.get("_model_predictions", {}),
+                            "feature_adj": signal.get("feature_adj", 1.0),
+                            "feature_reasons": signal.get("feature_reasons", {}),
+                        }
+                        self.tracker.add_meta(ticket, meta_data)
+                except Exception as _e:
+                    logger.debug(f"[LGB META] Sauvegarde features ouverture échouée: {_e}")
                 # Enregistrer le trade ouvert pour MAX_TRADES_PER_DAY
                 self.ftmo.register_open_trade(symbol)
                 # Invalider le cache pour que le prochain candidat voie la nouvelle position
@@ -1512,7 +1524,15 @@ class FTMO_SIMPLE:
                 sym_wr = sum(1 for t in sym_trades if t["profit"] > 0) / len(sym_trades)
                 sym_pf = self._calc_pf(sym_trades)
                 # PHASE 3: Log détaillé par symbole
-                logger.info(f"  [PHASE 3] {symbol}: {len(sym_trades)} trades, WR={sym_wr:.1%}, PF={sym_pf:.2f}")
+                # 🔧 FIX H4: Capper l'affichage du PF à 5.0 pour éviter les PF aberrants
+                # (EURUSD PF=42.37, contamination données historiques)
+                _display_pf = min(sym_pf, 5.0)
+                logger.info(
+                    f"  [PHASE 3] {symbol}: {len(sym_trades)} trades, WR={sym_wr:.1%}, PF={_display_pf:.2f}"
+                    + (" (capé)" if sym_pf > 5.0 else "")
+                )
+                # Utiliser le PF réel (non capé) pour les décisions
+                # Si PF > 5.0, le gel période s'applique (lignes 1724+)
 
                 if sym_wr < 0.40:
                     # Mode dégradé au lieu de disable complet : le symbole continue à trader
@@ -1583,6 +1603,19 @@ class FTMO_SIMPLE:
         if len(self.ftmo._trade_history) < 50:
             return  # Pas assez de données pour ajuster
 
+        # Anti-spam: tracker le dernier log pour chaque type de message (ne pas spammer chaque cycle)
+        if not hasattr(self, "_last_spam_log"):
+            self._last_spam_log = {}
+        import time as _time
+
+        def _should_log(tag, interval=60):
+            now = _time.time()
+            last = self._last_spam_log.get(tag, 0)
+            if now - last >= interval:
+                self._last_spam_log[tag] = now
+                return True
+            return False
+
         # Anti-oscillation: ne pas ajuster plus d'une fois tous les 50 trades
         if not hasattr(self, "_phase3_last_adjustment"):
             self._phase3_last_adjustment = 0
@@ -1618,10 +1651,23 @@ class FTMO_SIMPLE:
             # 🔧 18 Juin 2026: Geler la période si WR < 40% (mode dégradé)
             # Empêche l'oscillation 22→20→18→reset→22 observée sur ETHUSD
             if sym_wr < 0.40:
-                logger.debug(
-                    f"[PHASE 3] {symbol}: WR={sym_wr:.1%} < 40% → gel période (mode dégradé, pas d'ajustement)"
-                )
+                if _should_log(f"wr_low_{symbol}"):
+                    logger.debug(
+                        f"[PHASE 3] {symbol}: WR={sym_wr:.1%} < 40% → gel période (mode dégradé, pas d'ajustement)"
+                    )
                 continue
+
+            # 🔧 19 Juin 2026: PF > 5.0 = données contaminées (impossible en live)
+            # Ne pas ajuster la période sur des données non fiables
+            sym_profits = [t["profit"] for t in sym_trades if t.get("profit") is not None]
+            if sym_profits:
+                total_gain = sum(p for p in sym_profits if p > 0)
+                total_loss = abs(sum(p for p in sym_profits if p < 0))
+                sym_pf = total_gain / total_loss if total_loss > 0 else float("inf")
+                if sym_pf > 5.0:
+                    if _should_log(f"pf_contam_{symbol}"):
+                        logger.debug(f"[PHASE 3] {symbol}: PF={sym_pf:.1f} > 5.0 (contaminé) → gel période")
+                    continue
 
             current_period = SYMBOL_MOMENTUM_PERIODS.get(symbol, 20)
             new_period = current_period
@@ -1657,6 +1703,136 @@ class FTMO_SIMPLE:
         if adjustments:
             self._state["mom_period_adjustments"] = {k: v[:2] for k, v in adjustments.items()}
             self._save_state()
+
+    # ── Phase 14c: Retraining hebdomadaire LightGBM ────────────────────────
+
+    def _check_weekly_retrain(self) -> None:
+        """Vérifie si un retraining LightGBM est nécessaire et le lance.
+
+        Conditions :
+        1. Au moins 7 jours depuis le dernier retraining
+        2. Au moins 50 nouveaux trades réels collectés depuis le dernier retraining
+        3. Modèle chargé (on vérifie via self.adaptive.lgb)
+
+        Lance scripts/train_lightgbm.py --seed-only en sous-processus.
+        """
+        import json
+        import os
+        import subprocess
+        from pathlib import Path
+
+        meta_path = "runtime/lgb_model_meta.json"
+        real_trades_path = "runtime/lgb_real_trades.jsonl"
+
+        # Vérifier que le modèle LGB est actif
+        lgb_available = hasattr(self.adaptive, "lgb") and self.adaptive.lgb is not None and self.adaptive.lgb.available
+        if not lgb_available:
+            return
+
+        # Vérifier la date du dernier retraining
+        last_retrain = 0.0
+        if os.path.exists(meta_path):
+            try:
+                with open(meta_path) as f:
+                    meta = json.load(f)
+                last_retrain = meta.get("last_retrain_ts", 0.0)
+                if isinstance(last_retrain, str):
+                    from datetime import datetime as _dt
+
+                    last_retrain = _dt.fromisoformat(last_retrain).timestamp()
+                last_retrain = float(last_retrain)  # ensure float (LSP safety)
+            except Exception:
+                pass
+
+        days_since = (time.time() - last_retrain) / 86400
+        if days_since < 7:
+            return  # Pas encore une semaine
+
+        # Compter les nouveaux trades depuis le dernier retraining
+        new_trades = 0
+        if os.path.exists(real_trades_path):
+            try:
+                total_lines = sum(1 for _ in open(real_trades_path) if _.strip())
+                # Estimer les trades post-retrain : si le fichier est plus récent que le retrain
+                file_mtime = os.path.getmtime(real_trades_path)
+                if last_retrain > 0:
+                    # Compter les lignes ajoutées après last_retrain via le timestamp closed_at
+                    new_trades = 0
+                    with open(real_trades_path) as f:
+                        for line in f:
+                            line = line.strip()
+                            if not line:
+                                continue
+                            try:
+                                rec = json.loads(line)
+                                # Ne compter que les trades avec vraies features
+                                features = rec.get("features", {})
+                                if not features or len(features) < 5:
+                                    continue
+                                closed = rec.get("closed_at", 0)
+                                if isinstance(closed, str):
+                                    from datetime import datetime as _dt2
+
+                                    closed = _dt2.fromisoformat(closed).timestamp()
+                                if closed > last_retrain:
+                                    new_trades += 1
+                            except Exception:
+                                pass
+                else:
+                    # Premier retrain : tous les trades avec features comptent
+                    new_trades = sum(
+                        1 for l in open(real_trades_path) if l.strip() and len(json.loads(l).get("features", {})) >= 5
+                    )
+            except Exception:
+                pass
+
+        if new_trades < 50:
+            logger.info(
+                f"[LGB RETRAIN] {new_trades} nouveaux trades < 50, "
+                f"attendre ({days_since:.0f} jours depuis dernier retrain)"
+            )
+            return
+
+        # Lancer le retraining
+        logger.info(
+            f"[LGB RETRAIN] Lancement retraining: {new_trades} nouveaux trades, "
+            f"{days_since:.0f} jours depuis dernier retrain"
+        )
+        try:
+            script = Path(__file__).resolve().parent / "scripts" / "train_lightgbm.py"
+            if not script.exists():
+                script = Path("scripts/train_lightgbm.py")
+            result = subprocess.run(
+                [sys.executable, str(script), "--seed-only", "--force"],
+                capture_output=True,
+                text=True,
+                timeout=300,  # 5 min max
+            )
+            if result.returncode == 0:
+                logger.info(f"[LGB RETRAIN] Succès! {result.stdout[-500:]}")
+                # Mettre à jour la date de retraining
+                if os.path.exists(meta_path):
+                    try:
+                        with open(meta_path) as f:
+                            meta = json.load(f)
+                        meta["last_retrain_ts"] = time.time()
+                        meta["new_trades_since_last"] = new_trades
+                        with open(meta_path, "w") as f:
+                            json.dump(meta, f, indent=2)
+                    except Exception:
+                        pass
+                # Recharger le modèle
+                try:
+                    self.adaptive.lgb.load()
+                    logger.info("[LGB RETRAIN] Modèle rechargé après retraining")
+                except Exception as e:
+                    logger.warning(f"[LGB RETRAIN] Rechargement modèle échoué: {e}")
+            else:
+                logger.warning(f"[LGB RETRAIN] Échec (code={result.returncode}): {result.stderr[:500]}")
+        except subprocess.TimeoutExpired:
+            logger.warning("[LGB RETRAIN] Timeout (5 min dépassé)")
+        except Exception as e:
+            logger.warning(f"[LGB RETRAIN] Erreur: {e}")
 
 
 def main():

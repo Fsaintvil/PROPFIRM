@@ -58,17 +58,6 @@ TRAILING_BY_SYMBOL = {
         "LOW_VOL": [(1.0, 0.30), (2.0, 0.18), (3.0, 0.10), (5.0, 0.05)],
     },
     # ═══════════════════════════════════════════════════════════════════════
-    # ETHUSD H4 — Ethereum (Juin 2026 — SYNCHRONISÉ AVEC PROFIL)
-    # Lock unifié à 1.0×ATR. Trailing identique à BTCUSD (corrélé 0.89).
-    # ═══════════════════════════════════════════════════════════════════════
-    "ETHUSD": {
-        "TREND_UP": [(1.0, 0.80), (2.0, 0.50), (3.0, 0.30), (5.0, 0.15)],
-        "TREND_DOWN": [(1.0, 0.80), (2.0, 0.50), (3.0, 0.30), (5.0, 0.15)],
-        "RANGING": [(1.0, 0.60), (2.0, 0.40), (3.0, 0.25), (5.0, 0.12)],
-        "HIGH_VOL": [(1.0, 1.00), (2.0, 0.70), (3.0, 0.50), (5.0, 0.25)],
-        "LOW_VOL": [(1.0, 0.40), (2.0, 0.30), (3.0, 0.15), (5.0, 0.08)],
-    },
-    # ═══════════════════════════════════════════════════════════════════════
     # EURUSD H1 — Euro/Dollar (Juin 2026)
     # Pas de profil dédié (EURUSD n'a pas de SymbolInstitutionalProfile).
     # Lock serré à 0.80×ATR (forex H1 rapide → verrouiller tôt).
@@ -128,13 +117,6 @@ BE_BUFFER_BY_SYMBOL = {
         "HIGH_VOL": 1.00,  # haute vol: très large
         "LOW_VOL": 0.50,  # basse vol: serré
     },
-    "ETHUSD": {
-        "TREND_UP": 0.65,  # crypto H4: standard
-        "TREND_DOWN": 0.65,
-        "RANGING": 0.80,  # ranging: large
-        "HIGH_VOL": 1.05,  # haute vol: très large
-        "LOW_VOL": 0.45,  # basse vol: serré
-    },
     "EURUSD": {
         "TREND_UP": 0.55,  # forex: buffer standard
         "TREND_DOWN": 0.55,
@@ -171,16 +153,15 @@ FIRST_LOCK_ATR = (
 )
 
 # Per-symbol risk_mult cap: Juin 2026 — EURUSD ajouté
-RISK_MULT_CAP = {"XAUUSD": 1.25, "BTCUSD": 1.00, "US500.cash": 1.15, "ETHUSD": 1.00, "EURUSD": 2.00}
+RISK_MULT_CAP = {"XAUUSD": 1.25, "BTCUSD": 1.00, "US500.cash": 1.15, "EURUSD": 2.00}
 
 # Per-symbol max positions (total BUY+SELL) — EURUSD ajouté
 MAX_POS_PER_SYMBOL = {
     "XAUUSD": 4,
     "BTCUSD": 4,
     "US500.cash": 4,
-    "ETHUSD": 4,
     "EURUSD": 4,
-}  # Capacité augmentée pour multi-positions
+}
 
 # ============================================================================
 # DD THRESHOLDS — Risk reduction levels
@@ -198,21 +179,15 @@ TIME_STOP_MIN_PROFIT_ATR = 0.5  # minimum profit in ATR to trigger time-stop
 # ============================================================================
 # PULLBACK FILTER — Score threshold for pullback enforcement
 # ============================================================================
-PULLBACK_FILTER_SCORE_THRESHOLD = (
-    0.60  # Scénario A: abaissé 0.65→0.60 pour +20% trades (plus de signaux passent sans pullback)
-)
+PULLBACK_FILTER_SCORE_THRESHOLD = 0.60  # Scénario A: abaissé 0.65→0.60 pour +20% trades
 
-# Premier lock par symbole — Juin 2026 Calibration
-# XAUUSD H4: 0.8×ATR (tendances H4 longues → protéger tôt)
-# BTCUSD H1: 1.5×ATR (crypto volatile → laisser respirer)
-# US500.cash H4: 0.8×ATR (H4 → lock tôt)
-# Premier lock par symbole — Juin 2026 Calibration (EURUSD ajouté)
+# Premier lock par symbole — Harmonisé avec TRAILING_BY_SYMBOL (19 Juin 2026)
+# Les valeurs correspondent au premier threshold ATR de TRAILING_BY_SYMBOL pour TREND_UP
 FIRST_LOCK_BY_SYMBOL = {
-    "XAUUSD": 0.8,
-    "BTCUSD": 1.5,
-    "US500.cash": 0.8,
-    "ETHUSD": 1.2,
-    "EURUSD": 0.8,  # forex H1: lock standard (comme US500)
+    "XAUUSD": 1.0,  # TRAILING: TREND_UP first lock = 1.0
+    "BTCUSD": 1.0,  # TRAILING: TREND_UP first lock = 1.0
+    "US500.cash": 0.5,  # TRAILING: TREND_UP first lock = 0.5
+    "EURUSD": 1.0,  # TRAILING: TREND_UP first lock = 1.0 (valeur par défaut)
 }
 
 

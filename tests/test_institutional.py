@@ -1,4 +1,5 @@
 """Tests pour AuditTrail, RiskManager, Broker, RateLimiter — modules institutionnels"""
+
 import os
 import sys
 import tempfile
@@ -24,6 +25,7 @@ from engine_simple.risk_manager import (
 from engine_simple.trade_executor import ExecutionStats, PerSymbolRateLimiter as RateLimiter
 
 # ── AuditTrail ──
+
 
 def test_audit_trail_log_decision():
     with tempfile.TemporaryDirectory() as tmp:
@@ -77,6 +79,7 @@ def test_audit_trail_log_state_change():
 
 # ── PerSymbolRateLimiter ──
 
+
 def test_rate_limiter_allows():
     rl = RateLimiter(max_per_minute=5, window_seconds=60, min_interval_s=0)
     for _ in range(5):
@@ -98,6 +101,7 @@ def test_rate_limiter_per_symbol_independence():
 
 
 # ── ExecutionStats ──
+
 
 def test_execution_stats_records():
     stats = ExecutionStats()
@@ -130,6 +134,7 @@ def test_execution_stats_summary():
 
 # ── SymbolPerformance ──
 
+
 def test_symbol_performance_wins():
     sp = SymbolPerformance()
     sp.record(100, 2.0)
@@ -158,6 +163,7 @@ def test_symbol_performance_empty():
 
 # ── KellySizing ──
 
+
 def test_kelly_sizing_basic():
     kelly = KellySizing(fraction=0.25)
     perf = MagicMock()
@@ -175,7 +181,7 @@ def test_kelly_sizing_low_win_rate():
     perf.avg_r_multiple = 1.0
     perf.trades = 100
     risk = kelly.calculate(perf, 1.0)
-    assert risk <= 0.0044
+    assert risk <= 0.0055  # Kelly négatif → risk = base_risk (0.005 depuis 19 Juin)
 
 
 def test_kelly_sizing_no_trades():
@@ -187,6 +193,7 @@ def test_kelly_sizing_no_trades():
 
 
 # ── VaREstimator ──
+
 
 def test_var_parametric():
     var = VaREstimator(lookback=100)
@@ -220,6 +227,7 @@ def test_cvar():
 
 # ── CircuitBreaker ──
 
+
 def test_circuit_breaker_no_trip():
     cb = CircuitBreaker(max_loss_pct=0.05, window_minutes=30)
     cb.update(100000, 100000)
@@ -251,6 +259,7 @@ def test_circuit_breaker_cooldown():
 
 # ── StressTester ──
 
+
 def test_stress_tester_basic():
     st = StressTester()
     results = st.run("EURUSD", 1.10, 1.095, 0.1, 0.005, 1.10)
@@ -262,6 +271,7 @@ def test_stress_tester_basic():
 
 
 # ── Broker (wrapper tests) ──
+
 
 def test_latency_tracker():
     lt = LatencyTracker()

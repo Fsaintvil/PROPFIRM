@@ -7,6 +7,7 @@ Usage:
     python scripts/download_historical_data.py
     python scripts/download_historical_data.py --force
 """
+
 import os
 import sys
 import time
@@ -20,15 +21,19 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import MetaTrader5 as mt5
 
 TF_MAP = {
+    "M15": mt5.TIMEFRAME_M15,
     "H1": mt5.TIMEFRAME_H1,
     "H4": mt5.TIMEFRAME_H4,
     "D1": mt5.TIMEFRAME_D1,
 }
 
 ALL_SYMBOLS = [
-    "AUDUSD", "EURJPY", "EURUSD", "GBPJPY", "GBPUSD",
-    "NZDUSD", "USDCAD", "USDCHF", "USDJPY", "XAUUSD",
-    "USOIL.cash", "US500.cash", "BTCUSD", "ETHUSD", "JP225.cash",
+    "XAUUSD",
+    "XAGUSD",
+    "BTCUSD",
+    "ETHUSD",
+    "US500.cash",
+    "NAS100.cash",
 ]
 
 BATCH_SIZE = 50000
@@ -55,7 +60,7 @@ def download_tf(symbol, tf_name, force=False):
     tf = TF_MAP[tf_name]
     all_rates = []
     offset = 0
-    max_candles = 300000 if tf_name == "H1" else 200000 if tf_name == "H4" else 10000
+    max_candles = 500000 if tf_name == "M15" else 300000 if tf_name == "H1" else 200000 if tf_name == "H4" else 10000
 
     while offset < max_candles:
         rates = mt5.copy_rates_from_pos(symbol, tf, offset, BATCH_SIZE)
@@ -73,16 +78,18 @@ def download_tf(symbol, tf_name, force=False):
 
     result = []
     for r in all_rates:
-        result.append({
-            "timestamp": datetime.fromtimestamp(r[0]),
-            "open": float(r[1]),
-            "high": float(r[2]),
-            "low": float(r[3]),
-            "close": float(r[4]),
-            "volume": int(r[5]),
-            "spread": int(r[6]),
-            "symbol": symbol,
-        })
+        result.append(
+            {
+                "timestamp": datetime.fromtimestamp(r[0]),
+                "open": float(r[1]),
+                "high": float(r[2]),
+                "low": float(r[3]),
+                "close": float(r[4]),
+                "volume": int(r[5]),
+                "spread": int(r[6]),
+                "symbol": symbol,
+            }
+        )
 
     seen = set()
     deduped = []
@@ -101,9 +108,20 @@ def download_tf(symbol, tf_name, force=False):
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser()
+
+    parser = argparse.ArgumentParser(description="Télécharge les données MT5 vers data/historical/")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument(
+        "--symbols",
+        type=str,
+        default=None,
+        help="Symboles séparés par des virgules (défaut: tous)",
+    )
     args = parser.parse_args()
+
+    symbols_to_download = ALL_SYMBOLS
+    if args.symbols:
+        symbols_to_download = [s.strip() for s in args.symbols.split(",")]
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -112,9 +130,9 @@ def main():
         sys.exit(1)
     print(f"MT5 connected: {mt5.terminal_info().name}")
 
-    timeframes = ["H1", "H4", "D1"]
+    timeframes = ["M15", "H1", "H4", "D1"]
 
-    for symbol in ALL_SYMBOLS:
+    for symbol in symbols_to_download:
         for tf_name in timeframes:
             print(f"  {symbol}_{tf_name}... ", end="", flush=True)
             start = time.time()

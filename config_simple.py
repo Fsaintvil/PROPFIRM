@@ -96,7 +96,11 @@ except Exception as e:
     _fb_log("MT5_PASSWORD", "(masqué)")
     MT5_SERVER = ""
     _fb_log("MT5_SERVER", "(vide)")
-    SYMBOLS = ["XAUUSD", "BTCUSD", "ETHUSD", "EURUSD"]  # US500.cash désactivé 19 Juin (PF=0.24)
+    SYMBOLS = [
+        "XAUUSD",
+        "BTCUSD",
+        "EURUSD",
+    ]
     _fb_log("SYMBOLS", SYMBOLS)
     ROBOT_MAGIC = 999001
     _fb_log("ROBOT_MAGIC", 999001)
@@ -212,20 +216,6 @@ except Exception as e:
             sl_atr_ranging=1.2,
             tp_atr_ranging=3.0,
         ),
-        "ETHUSD": dict(
-            max_lot=0.05,
-            risk_mult=0.50,
-            max_spread_points=150,
-            adx_thresh=20,
-            min_score=0.60,
-            allow_buys=True,
-            allow_shorts=False,  # 🔴 BUY-ONLY — SELL WR 30.8% toxique
-            momentum_period=24,
-            sl_atr_trending=2.5,
-            tp_atr_trending=6.0,
-            sl_atr_ranging=2.0,
-            tp_atr_ranging=4.0,
-        ),
         # EURUSD H1 (fallback YAML) — Juin 2026
         "EURUSD": dict(
             max_lot=0.10,
@@ -246,7 +236,6 @@ except Exception as e:
         "XAUUSD": "H4",
         "BTCUSD": "H1",
         "US500.cash": "H4",
-        "ETHUSD": "H4",
         "EURUSD": "H1",
     }
     ML_EXPERIMENT_TRACKING = False

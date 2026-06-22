@@ -91,20 +91,6 @@ SYMBOL_SESSIONS = {
             "ny_close": 0.85,
         },
     },
-    "ETHUSD": {
-        "sessions": ["asian", "london_open", "london", "london_ny_overlap", "ny", "ny_close"],
-        "peak_hours": [(0, 23)],  # 24/7
-        "avoid_hours": [],
-        "base_activity": 0.85,  # ETH 24/7 — élevée
-        "multiplier": {
-            "asian": 0.80,
-            "london_open": 0.85,
-            "london": 0.85,
-            "london_ny_overlap": 1.0,
-            "ny": 0.90,
-            "ny_close": 0.80,
-        },
-    },
     "US500.cash": {
         "sessions": ["london_open", "london", "london_ny_overlap", "ny"],
         "peak_hours": [(13, 17), (17, 21)],  # US market hours

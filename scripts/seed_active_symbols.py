@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Seed les 6 symboles actifs dans l'OnlineLearner avec trades réalistes.
+"""Seed les 3 symboles actifs dans l'OnlineLearner avec trades réalistes.
 
 Utilise les WR de backtest 2026 (conservatives) et R-multiples réalistes
 (RR~2.5 pour winners, R=-1 pour losers).
+19 Juin 2026: 3 symboles (XAUUSD H4, BTCUSD H1, EURUSD H1)
 
 Usage:
     python scripts/seed_active_symbols.py           # Génère et applique le seed
     python scripts/seed_active_symbols.py --dry-run  # Simulation sans écrire
     python scripts/seed_active_symbols.py --csv-only # Met à jour le CSV seulement
 """
+
 import csv
 import json
 import os
@@ -26,11 +28,12 @@ random.seed(42)  # Reproductible
 
 # ============================================================
 # Données par symbole — WR backtest 2026 (ajusté conservateur)
+# Juin 2026: 3 symboles actifs (XAUUSD H4, BTCUSD H1, EURUSD H1)
 # ============================================================
 SYMBOL_CONFIG = {
-    "XAUUSD":   {"wr": 0.62, "trades": 200, "rr_win": 2.5, "rr_loss": -1.0, "volume": 0.10},
-    "BTCUSD":   {"wr": 0.65, "trades": 200, "rr_win": 2.5, "rr_loss": -1.0, "volume": 0.05},
-    "US500.cash": {"wr": 0.62, "trades": 200, "rr_win": 2.4, "rr_loss": -1.0, "volume": 0.10},
+    "XAUUSD": {"wr": 0.62, "trades": 200, "rr_win": 2.5, "rr_loss": -1.0, "volume": 0.10},
+    "BTCUSD": {"wr": 0.65, "trades": 200, "rr_win": 2.5, "rr_loss": -1.0, "volume": 0.05},
+    "EURUSD": {"wr": 0.63, "trades": 200, "rr_win": 2.3, "rr_loss": -1.0, "volume": 0.10},
 }
 
 # Régimes réalistes (Distribution: 40% RANGING, 25% TREND_UP, 25% TREND_DOWN, 5% HIGH_VOL, 5% LOW_VOL)
@@ -72,14 +75,16 @@ def generate_trades(symbol: str, cfg: dict) -> list[dict]:
         second = random.randint(0, 59)
         timestamp = f"{year}.{month:02d}.{day:02d} {hour:02d}:{minute:02d}:{second:02d}"
 
-        trades.append({
-            "symbol": symbol,
-            "direction": direction,
-            "volume": round(volume, 2),
-            "profit": profit,
-            "r_multiple": r_mul,
-            "timestamp": timestamp,
-        })
+        trades.append(
+            {
+                "symbol": symbol,
+                "direction": direction,
+                "volume": round(volume, 2),
+                "profit": profit,
+                "r_multiple": r_mul,
+                "timestamp": timestamp,
+            }
+        )
 
     return trades
 
@@ -129,8 +134,7 @@ def update_csv(trades: list[dict], dry_run: bool = False):
         for t in trades:
             # Ne pas dupliquer si déjà présent
             if t["symbol"] in existing_symbols and any(
-                r["symbol"] == t["symbol"] and r["timestamp"] == t["timestamp"]
-                for r in existing_lines
+                r["symbol"] == t["symbol"] and r["timestamp"] == t["timestamp"] for r in existing_lines
             ):
                 continue
             writer.writerow(t)
@@ -157,7 +161,7 @@ def reset_state(dry_run: bool = False):
     print()
     print("  🔄 AU PROCHAIN DÉMARRAGE DU ROBOT:")
     print("     OnlineLearner re-seedera depuis le CSV mis à jour")
-    print("     Les 6 symboles actifs auront 200 trades avec WR réaliste")
+    print("     Les 3 symboles actifs auront 200 trades avec WR réaliste")
     print("     Les adapted_params seront générés automatiquement")
 
 
@@ -181,13 +185,13 @@ def print_stats(csv_path: Path):
                 symbols[sym]["wins"] += 1
 
     print(f"\n  {'Symbole':<15} {'Trades':<8} {'WR':<8} {'Exp':<8}")
-    print(f"  {'─'*40}")
+    print(f"  {'─' * 40}")
     for sym in sorted(symbols.keys()):
         s = symbols[sym]
         wr = s["wins"] / s["trades"] * 100 if s["trades"] else 0
         exp = s["total_r"] / s["trades"] if s["trades"] else 0
         print(f"  {sym:<15} {s['trades']:<8} {wr:<7.1f}% {exp:<8.2f}")
-    print(f"  {'─'*40}")
+    print(f"  {'─' * 40}")
     total_trades = sum(s["trades"] for s in symbols.values())
     print(f"  {'TOTAL':<15} {total_trades:<8}")
 
@@ -197,7 +201,7 @@ def main():
     csv_only = "--csv-only" in sys.argv
 
     print("=" * 55)
-    print("  SEED ONLINE LEARNER — 6 Symboles Actifs")
+    print("  SEED ONLINE LEARNER — 3 Symboles Actifs")
     print("=" * 55)
 
     # Générer les trades
@@ -207,7 +211,7 @@ def main():
         trades = generate_trades(sym, cfg)
         all_trades.extend(trades)
         wr = cfg["wr"]
-        print(f"  {sym}: {cfg['trades']} trades, WR={wr*100:.0f}%, RR_win={cfg['rr_win']}")
+        print(f"  {sym}: {cfg['trades']} trades, WR={wr * 100:.0f}%, RR_win={cfg['rr_win']}")
 
     # Mettre à jour le CSV
     print(f"\n📝 Mise à jour du CSV: {SEED_CSV}")

@@ -325,7 +325,11 @@ class ChallengeTracker:
                 {
                     "symbol": t["symbol"],
                     "profit": t["profit"],
-                    "time": t["time"].isoformat() if isinstance(t["time"], datetime) else str(t["time"]),
+                    "time": t["time"].isoformat()
+                    if isinstance(t["time"], datetime)
+                    else datetime.fromtimestamp(t["time"]).isoformat()
+                    if isinstance(t["time"], (int, float))
+                    else str(t["time"]),
                 }
                 for t in self._trade_history[-200:]  # last 200 trades
             ],
@@ -376,7 +380,9 @@ class ChallengeTracker:
             for t in th:
                 try:
                     time_val = t.get("time", "")
-                    if isinstance(time_val, str):
+                    if isinstance(time_val, (int, float)):
+                        time_val = datetime.fromtimestamp(time_val)
+                    elif isinstance(time_val, str):
                         time_val = datetime.fromisoformat(time_val)
                     self._trade_history.append(
                         {

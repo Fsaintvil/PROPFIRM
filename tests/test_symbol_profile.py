@@ -21,7 +21,7 @@ from engine_simple.symbol_profile import (
 )
 
 # Symboles actifs Juin 2026
-ACTIVE_SYMBOLS = ["XAUUSD", "BTCUSD", "ETHUSD", "US500.cash"]
+ACTIVE_SYMBOLS = ["XAUUSD", "BTCUSD", "US500.cash"]
 
 
 class TestSymbolProfileExists:
@@ -74,14 +74,10 @@ class TestInstitutionalKnowledge:
 
 
 class TestCorrelation:
-    def test_positive_correlation_crypto(self):
-        assert CORRELATION_MATRIX["BTCUSD"]["ETHUSD"] > 0.8  # corrélé 0.89
-
-    def test_negative_correlation_gold_vs_equity(self):
+    def test_correlation_gold_vs_equity(self):
         assert CORRELATION_MATRIX["XAUUSD"]["US500.cash"] < 0  # 避险 vs risk-on
 
     def test_get_correlation(self):
-        assert get_correlation("BTCUSD", "ETHUSD") > 0.8
         assert get_correlation("XAUUSD", "US500.cash") < 0
         assert get_correlation("XXX", "YYY") == 0.0
 
@@ -89,8 +85,6 @@ class TestCorrelation:
         # POSITION_GROUPS vidé volontairement (mode agressif)
         siblings = get_same_group("BTCUSD")
         assert siblings == []
-        siblings2 = get_same_group("ETHUSD")
-        assert siblings2 == []
 
     def test_get_opposite_group(self):
         # POSITION_GROUPS vidé volontairement (mode agressif)

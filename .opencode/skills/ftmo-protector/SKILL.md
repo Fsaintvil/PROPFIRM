@@ -79,7 +79,7 @@ profit > 5.0×ATR → SL = peak - 0.10×ATR
 - Ne JAMAIS modifier `MIN_RR_RATIO` en dessous de 2.0 sans passer par le Risk Marshal
 - **Le trailing est basé sur ATR H1** — si le timeframe n'est pas disponible, le calcul échoue
 - **best_day_pct** reconstruit depuis l'historique (fix Juin 2026) — ne plus utiliser de valeur statique
-- **Matrice de corrélation Pearson** calculée en temps réel depuis les données MT5 H1 (3 symboles actifs : XAUUSD, BTCUSD, US500.cash) — les classes d'actifs sont décorrélées (0.10-0.30), limité à 2 trades/direction/symbole
+- **Matrice de corrélation Pearson** calculée en temps réel depuis les données MT5 H1 (4 symboles actifs : XAUUSD, BTCUSD, ETHUSD, US500.cash) — BTC/ETH corrélés 0.89, autres décorrélés (0.10-0.30), limité à 2 trades/direction/groupe
 - Le **CIRCUIT_BREAKER_DD_PCT** à 8% déclenche un arrêt d'urgence avant d'atteindre les 10% FTMO, donnant une marge de sécurité de 2%
 - **Partial TP** persisté dans `robot_state.json` — évite les doubles TP au redémarrage
 
@@ -95,7 +95,6 @@ python -m pytest tests/test_position_tracker.py -v
 ```
 
 ## Agents concernés
-- `@risk-marshal` — veto sur DD > 8%
-- `@ftmo-prosecutor` — cherche les violations FTMO
-- `@prop-compliance` — vérifie la conformité
+- `@risk-compliance` — veto sur DD > 8%
 - `@auto-fixer` — corrige les bugs de protection
+- `@quant-auditor` — valide les métriques de protection

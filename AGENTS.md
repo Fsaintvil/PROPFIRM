@@ -1183,4 +1183,98 @@ Les deux fonctionnent correctement :
 | `main.py` | Restart flow : spawn → sleep → release (élimine race condition) |
 | `AGENTS.md` | Cette section |
 
+---
+
+## Session Robot Manager — 22 Juin 2026 (Partie 2 — Agent Daemon + Dual Instance Kill)
+
+### Mission
+- Intégrer `agent_daemon.py` (9 agents du Trading Intelligence Council) dans le démarrage automatique du robot
+- Remplacer l'ancien `monitor.py` (disparu) par le daemon d'agents
+- Résoudre le problème de double instance du robot (cycles entrelacés)
+- Nettoyer et stabiliser l'infrastructure
+
+### État initial
+- Robot PID 13364 en cours, mais **2 instances Python** détectées (PIDs 13364 + 12048)
+- Cycles entrelacés : `[Cycle 168]...6s...[Cycle 74]...9s...[Cycle 169]...` — deux robots écrivent dans le même log
+- Agent daemon inexistant (`monitor.py` supprimé, non remplacé)
+- 9 positions MT5 (3 BTCUSD, 3 XAUUSD, 3 EURUSD), PnL flottant -$160
+- Challenge FTMO : 8/10 jours, $1,246 PnL, 0.6% DD, WR 43%
+- `best_day_pct` réinitialisé à 0.0% après restart (artefact de recalcul)
+
+### Actions exécutées
+
+| # | Action | Résultat |
+|---|--------|----------|
+| **I1** | `start_robot.ps1` : remplacement `monitor.py` → `agent_daemon.py` | ✅ Daemon démarré automatiquement avec le robot |
+| **I2** | `start_robot.ps1` : vérification status daemon après lancement | ✅ Affiche cycle + niveau global |
+| **I3** | `start_robot.ps1` : résumé mis à jour (réf. daemon actif) | ✅ |
+| **I4** | `robot.ps1` : `Get-MonitorProcess` → `Get-DaemonProcess` | ✅ Status/Stop/Monitor mis à jour |
+| **I5** | `robot.ps1` : appel `--stop` daemon en fallback | ✅ Arrêt propre depuis le script |
+| **I6** | **Kill double instance** : PID 12048 tué (SIGTERM → confirmé mort) | ✅ |
+| **I7** | **Kill massif** : `taskkill /F /IM python.exe` pour nettoyer toutes instances | ✅ Les deux instances supprimées |
+| **I8** | Redémarrage robot propre : 1 instance unique PID 16860 | ✅ Cycles 236→243, plus d'entrelacement |
+| **I9** | Redémarrage agent daemon : PID 324, cycle 715, 9 agents actifs | ✅ |
+| **I10** | Tests : 944/976 passed, 32 skipped | ✅ Stables |
+
+### Agent Daemon — Architecture intégrée
+
+```
+start_robot.ps1 / robot.ps1
+  ├── python main.py              → Robot MOM20x3 (PID lock)
+  └── python scripts/agent_daemon.py → 9 agents du Council (PID lock)
+        ├── CIO (15s)             → Métriques vitales
+        ├── Risk Compliance (15s) → Règles FTMO
+        ├── Kill Switch (15s)     → Arrêt d'urgence
+        ├── System Monitor (60s)  → Mémoire, logs
+        ├── Auto Fixer (60s)      → Détection bugs
+        ├── Signal Engine (300s)  → Qualité signaux
+        ├── Adaptive Engine (300s)→ Pipeline ML
+        ├── Quant Auditor (3600s) → Validation statistique
+        └── Optimizer (86400s)    → Performance hebdo
+```
+
+### Problème résolu : Double instance
+
+**Cause racine** : Le mutex Windows (`CreateMutexW`) ne fonctionne pas dans l'environnement Git Bash → les deux instances main.py s'exécutaient sans protection.
+
+**Solution** : 
+1. Kill manuel de toutes les instances Python
+2. Redémarrage unique (PID 16860)
+3. La protection réelle est maintenant le **PID lock file** (`runtime/robot.pid`) + la vigilance du daemon
+
+**À long terme** : Le daemon d'agents (CIO/Kill Switch) surveille en permanence qu'une seule instance tourne.
+
+### État final (PID 16860)
+
+| Métrique | Valeur |
+|----------|--------|
+| PID | **16860** |
+| Daemon PID | **324** (cycle 715, niveau ORANGE) |
+| Balance | $200,217 |
+| Equity | $200,070 |
+| PnL réalisé | ~$78 |
+| DD from peak | 0.6% |
+| Positions | 9 (3 BTCUSD, 3 XAUUSD, 3 EURUSD) |
+| Flottant | -$147 |
+| WR globale | 43% (106 trades Phase 3) |
+| WR last_20 | **60%** ✅ (amélioration récente) |
+| WR last_50 | 44% |
+| WR last_100 | 52% |
+| Gel période | BTCUSD (WR 33.9%), XAUUSD (WR 38.7%), EURUSD (PF 4.85 capé) |
+| Challenge | ACTIF, 8/10 jours, $78/$20K (0.4%) |
+| Tests | 944/976 pass |
+
+### Points d'attention
+1. **best_day_pct à 0.0%** — réinitialisé par le restart. Les données brutes sont intactes (`daily_pnl_by_date`). Le recalcul se fera automatiquement.
+2. **WR en baisse** sur Phase 3 (33-38% pour BTCUSD/XAUUSD) — les 3 fixes ADX guard + doublons + threshold ont besoin de plus de recul
+3. **EURUSD PF=4.85 capé** — toujours potentiellement contaminé, le gel période est justifié
+4. **Le daemon montre ORANGE** — normal : QUANT_AUDITOR et OPTIMIZER n'ont pas encore eu leur premier cycle long (1h et 24h)
+
+### Fichiers modifiés cette session
+| Fichier | Changement |
+|---------|-----------|
+| `scripts/start_robot.ps1` | monitor.py → agent_daemon.py, vérification status daemon, résumé mis à jour |
+| `scripts/robot.ps1` | Get-MonitorProcess → Get-DaemonProcess, stop/status/monitor adaptés au daemon |
+| `AGENTS.md` | Cette section |
+
 

@@ -1,17 +1,19 @@
 """Tests for position_tracker.py — SymbolPerformance + PositionTracker"""
+
 import os
 import sys
 import time
 from collections import OrderedDict
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 import config_simple as cfg
 from engine_simple.position_tracker import SymbolPerformance, PositionTracker
 
 
 # ── SymbolPerformance ───────────────────────────────────────────────
+
 
 class TestSymbolPerformance:
     def test_init(self):
@@ -95,6 +97,7 @@ class TestSymbolPerformance:
 
 
 # ── PositionTracker ─────────────────────────────────────────────────
+
 
 class TestPositionTracker:
     def make_tracker(self):
@@ -212,9 +215,11 @@ class TestPositionTracker:
             tracker.track_new()
 
         meta = tracker._position_meta[102]
-        assert "dl_features" in meta
-        assert meta["dl_features"] == [0.1, 0.2, 0.3]
+        # Compatibilité ascendante : dl_features → _features
+        assert "_features" in meta, f"Expected _features in meta keys: {list(meta.keys())}"
+        assert meta["_features"] == [0.1, 0.2, 0.3]
         assert meta["predictions"] == {"MOM20x3": "BUY"}
+
     def test_get_active_count(self):
         tracker, *_ = self.make_tracker()
         assert tracker.get_active_count() == 0
@@ -289,8 +294,12 @@ class TestPositionTracker:
 
         # Setup meta
         tracker._position_meta[1] = {
-            "symbol": "XAUUSD", "entry": 2350.0, "sl": 2348.0,
-            "lot": 0.1, "regime": "RANGING", "r1_usd": 100.0,
+            "symbol": "XAUUSD",
+            "entry": 2350.0,
+            "sl": 2348.0,
+            "lot": 0.1,
+            "regime": "RANGING",
+            "r1_usd": 100.0,
             "opened_at": time.time() - 3600,
         }
 
@@ -311,7 +320,7 @@ class TestPositionTracker:
         # Verify recording — pas historical car trade live (time > _start_time)
         assert 1 in tracker._recorded_deals
         assert "1_XAUUSD" in tracker._recorded_position_ids
-        ftmo.record_trade_result.assert_called_with("XAUUSD", 150.0, historical=False)
+        ftmo.record_trade_result.assert_called_with("XAUUSD", 150.0, historical=False, trade_time=ANY)
         journal.record.assert_called_once()
         adaptive.record_result.assert_called_once()
         audit.log_decision.assert_called_once()

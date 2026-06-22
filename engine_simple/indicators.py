@@ -26,7 +26,7 @@ def sma(data, period):
         return result
     cum = np.cumsum(d)
     cum[period:] = cum[period:] - cum[:-period]
-    result[period - 1:] = cum[period - 1:] / period
+    result[period - 1 :] = cum[period - 1 :] / period
     return result
 
 
@@ -80,7 +80,7 @@ def bollinger_bands(data, period=20, std_dev=2.0):
     middle = sma(d, period)
     std = np.full_like(d, np.nan)
     for i in range(period - 1, len(d)):
-        std[i] = np.std(d[i - period + 1:i + 1])
+        std[i] = np.std(d[i - period + 1 : i + 1])
     upper = middle + std_dev * std
     lower = middle - std_dev * std
     return upper, middle, lower
@@ -115,6 +115,89 @@ def obv(close, volume):
     return result
 
 
+def chaikin_money_flow(close, high, low, volume, period=20):
+    """Chaikin Money Flow — pression d'achat/vente cumulée.
+
+    CMF > 0.1 → accumulation (pression haussière)
+    CMF < -0.1 → distribution (pression baissière)
+
+    Args:
+        close: Prix de clôture
+        high: Plus haut
+        low: Plus bas
+        volume: Volume
+        period: Période (défaut 20)
+
+    Returns:
+        float: CMF entre -1 et +1, 0.0 si données insuffisantes
+    """
+    c = np.asarray(close, dtype=float)
+    h = np.asarray(high, dtype=float)
+    l = np.asarray(low, dtype=float)
+    v = np.asarray(volume, dtype=float)
+    if len(c) < period + 1:
+        return 0.0
+    mfm = ((c[-period:] - l[-period:]) - (h[-period:] - c[-period:])) / np.maximum(h[-period:] - l[-period:], 0.0001)
+    mfv = mfm * v[-period:]
+    cmf = np.sum(mfv) / np.maximum(np.sum(v[-period:]), 0.0001)
+    return float(np.clip(cmf, -1.0, 1.0))
+
+
+def relative_volume(volume, period=50):
+    """Relative Volume — volume actuel / volume moyen.
+
+    RVOL < 0.5 → volume anormalement bas (faux breakout possible)
+    RVOL > 2.0 → volume anormalement haut (breakout confirmé)
+
+    Args:
+        volume: Volume par barre
+        period: Période de référence (défaut 50)
+
+    Returns:
+        float: Ratio de volume relatif, 1.0 si données insuffisantes
+    """
+    v = np.asarray(volume, dtype=float)
+    if len(v) < period + 1:
+        return 1.0
+    avg_vol = np.mean(v[-period:])
+    if avg_vol < 0.001:
+        return 1.0
+    return float(v[-1] / avg_vol)
+
+
+def obv_divergence(close, volume, period=20):
+    """OBV Divergence — conflit entre tendance prix et OBV.
+
+    Retourne:
+        "bullish" si prix baisse mais OBV monte (accumulation cachée)
+        "bearish" si prix monte mais OBV baisse (distribution cachée)
+        "none" si pas de divergence
+
+    Args:
+        close: Prix de clôture
+        volume: Volume
+        period: Période (défaut 20)
+
+    Returns:
+        tuple: (divergence_type: str, strength: float)
+    """
+    c = np.asarray(close, dtype=float)
+    v = np.asarray(volume, dtype=float)
+    if len(c) < period + 1:
+        return "none", 0.0
+    obv_arr = obv(c, v)
+    if len(obv_arr) < period:
+        return "none", 0.0
+    price_slope = c[-1] - c[-period]
+    obv_slope_val = obv_arr[-1] - obv_arr[-period]
+    strength = abs(obv_slope_val) / max(abs(obv_arr[-period]), 1.0)
+    if price_slope > 0 and obv_slope_val < 0:
+        return "bearish", min(strength, 1.0)
+    elif price_slope < 0 and obv_slope_val > 0:
+        return "bullish", min(strength, 1.0)
+    return "none", 0.0
+
+
 def atr(high, low, close, period=14):
     """Average True Range"""
     h = np.asarray(high, dtype=float)
@@ -123,8 +206,7 @@ def atr(high, low, close, period=14):
     result = np.full_like(c, np.nan)
     if len(c) < period + 1:
         return result
-    tr = np.maximum(h[1:] - lo[1:],
-                    np.maximum(np.abs(h[1:] - c[:-1]), np.abs(lo[1:] - c[:-1])))
+    tr = np.maximum(h[1:] - lo[1:], np.maximum(np.abs(h[1:] - c[:-1]), np.abs(lo[1:] - c[:-1])))
     result[period] = np.mean(tr[:period])
     for i in range(period + 1, len(c)):
         result[i] = (result[i - 1] * (period - 1) + tr[i - 1]) / period
@@ -138,8 +220,8 @@ def stochastic_rsi(data, period=14, k=3, d=3):
     if len(r) < period + k:
         return stoch, stoch
     for i in range(period, len(r)):
-        lowest = np.min(r[i - period + 1:i + 1])
-        highest = np.max(r[i - period + 1:i + 1])
+        lowest = np.min(r[i - period + 1 : i + 1])
+        highest = np.max(r[i - period + 1 : i + 1])
         if highest - lowest > 0:
             stoch[i] = (r[i] - lowest) / (highest - lowest) * 100
         else:
@@ -166,8 +248,17 @@ def volume_profile(prices, volumes, num_levels=24):
         vol_profile[idx] += v[i]
     poc = bins[np.argmax(vol_profile)]
     value_area = bins[vol_profile >= np.max(vol_profile) * 0.7]
-    return bins, vol_profile, np.array([poc, np.min(value_area) if len(value_area) > 0 else price_min,
-                                        np.max(value_area) if len(value_area) > 0 else price_max])
+    return (
+        bins,
+        vol_profile,
+        np.array(
+            [
+                poc,
+                np.min(value_area) if len(value_area) > 0 else price_min,
+                np.max(value_area) if len(value_area) > 0 else price_max,
+            ]
+        ),
+    )
 
 
 def ema_alignment(ema9, ema20, ema50, ema200, price):
@@ -284,7 +375,7 @@ def rsi_divergence(close, rsi_values, lookback=20):
 
 def _adx_arrays(high, low, close, period=14):
     """Calcule les arrays complets ADX, +DI, -DI alignés sur la longueur d'entrée.
-    
+
     Returns:
         tuple[np.ndarray, np.ndarray, np.ndarray]: (adx_arr, pdi_arr, mdi_arr)
         alignés sur len(high). Les premières `period*2` valeurs sont NaN.
@@ -300,9 +391,7 @@ def _adx_arrays(high, low, close, period=14):
     down = lo[:-1] - lo[1:]
     plus_dm = np.where((up > down) & (up > 0), up, 0)
     minus_dm = np.where((down > up) & (down > 0), down, 0)
-    tr = np.maximum(h[1:] - lo[1:],
-                    np.maximum(np.abs(h[1:] - c[:-1]),
-                               np.abs(lo[1:] - c[:-1])))
+    tr = np.maximum(h[1:] - lo[1:], np.maximum(np.abs(h[1:] - c[:-1]), np.abs(lo[1:] - c[:-1])))
 
     # Wilder smoothing
     pds = np.zeros(len(tr))
@@ -324,26 +413,22 @@ def _adx_arrays(high, low, close, period=14):
     # DX array (safe division)
     di_sum = pdi_arr_raw + mdi_arr_raw
     di_sum_safe = np.where(di_sum > 0.001, di_sum, np.nan)
-    dx_arr = np.where((trs > 1e-10) & (di_sum > 0.001),
-                      100.0 * np.abs(pdi_arr_raw - mdi_arr_raw) / di_sum_safe,
-                      0.0)
+    dx_arr = np.where((trs > 1e-10) & (di_sum > 0.001), 100.0 * np.abs(pdi_arr_raw - mdi_arr_raw) / di_sum_safe, 0.0)
 
     # Second Wilder smoothing on DX
     adx_arr_raw = np.zeros(len(dx_arr))
-    adx_arr_raw[period - 1] = np.mean(dx_arr[period - 1:period * 2 - 1])
+    adx_arr_raw[period - 1] = np.mean(dx_arr[period - 1 : period * 2 - 1])
     for i in range(period, len(dx_arr)):
         adx_arr_raw[i] = (adx_arr_raw[i - 1] * (period - 1) + dx_arr[i]) / period
 
     # Pad front with NaN to align with original length (offset = 1 from tr vs h)
     pad = np.full(n - len(adx_arr_raw), np.nan)
-    return (np.concatenate([pad, adx_arr_raw]),
-            np.concatenate([pad, pdi_arr_raw]),
-            np.concatenate([pad, mdi_arr_raw]))
+    return (np.concatenate([pad, adx_arr_raw]), np.concatenate([pad, pdi_arr_raw]), np.concatenate([pad, mdi_arr_raw]))
 
 
 def adx(high, low, close, period=14):
     """Average Directional Index (ADX) — Wilder smoothing.
-    
+
     Returns:
         tuple[float, float, float]: (adx, plus_di, minus_di) dernières valeurs.
         ou (0.0, 0.0, 0.0) si pas assez de données.
@@ -358,7 +443,7 @@ def adx(high, low, close, period=14):
 
 def adx_arrays(high, low, close, period=14):
     """ADX avec arrays complets — idéal pour backtests O(n).
-    
+
     Returns:
         tuple[np.ndarray, np.ndarray, np.ndarray]: (adx_arr, plus_di_arr, minus_di_arr)
         alignés sur len(high). Les premières ~28 valeurs sont NaN.

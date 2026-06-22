@@ -1,10 +1,12 @@
 """Tests pour strategy.py — MOM20x3 pur, fonction pure, testable."""
+
 import numpy as np
 import pytest
 
 from engine_simple.strategy import MOM20x3, mom20x3_signal
 from engine_simple.strategy import (
-    THRESHOLD_TRENDING, THRESHOLD_RANGING, THRESHOLD_MAX, THRESHOLD_MIN,
+    THRESHOLD_MAX,
+    THRESHOLD_MIN,
 )
 
 
@@ -147,7 +149,7 @@ class TestMOM20x3Wrapper:
         # Supporte les périodes 15, 20, 24, 30 :
         #   momentum(p) = close[-1] - close[-p-1]
         #   dip à n-p-1 pour chaque période p
-        dip_indices = {n - 16, n - 21, n - 25, n - 31}  # dips pour périodes 15,20,24,30
+        dip_indices = {n - 16, n - 19, n - 21, n - 25, n - 31}  # dips pour périodes 15,18,20,24,30
         for i in range(n):
             noise = np.random.randn() * 0.002
             if i in dip_indices:

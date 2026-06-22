@@ -39,26 +39,24 @@ Produire :
 ```
 
 ### 3. Si 1 voyant orange → convoquer l'expert concerné
-- Erreur dans les logs → `@log-analyst`
-- DD > 6% → `@risk-marshal`
-- Daily loss > 1.2% → `@ftmo-prosecutor`
-- Connexion MT5 douteuse → `@mt5-infrastructure-auditor`
-- Mémoire > 1.5 GB → `@performance-engineer`
-- Council verdict WARNING → `@monitor-agent`
+- Erreur dans les logs → `@system-monitor`
+- DD > 6% → `@risk-compliance`
+- Daily loss > 1.2% → `@risk-compliance`
+- Connexion MT5 douteuse → `@system-monitor`
+- Mémoire > 1.5 GB → `@system-monitor`
 - WR live < historique - 15% → `@quant-auditor` + `@optimizer`
-- Heure 12:00 → 13:59 UTC → **bloquée** (0% WR historique, blocage horaire actif dans main.py)
+- Heure 12:00 → 13:59 UTC → **à surveiller** (0% WR historique dans certains symboles)
 
 ### 4. Si 1 voyant rouge → ALERTE
-- DD > 8% → `@risk-marshal` **PEUT POSER VETO**
-- Daily loss > 1.8% → `@ftmo-prosecutor` + `@risk-marshal`
-- Robot planté → `@monitor-agent` + `@auto-fixer`
-- Bug récurrent → `@security-auditor` + `@auto-fixer`
+- DD > 8% → `@risk-compliance` **PEUT POSER VETO**
+- Daily loss > 1.8% → `@risk-compliance`
+- Robot planté → `@system-monitor` + `@auto-fixer`
+- Bug récurrent → `@system-monitor` + `@auto-fixer`
 
 ### 5. Si conflit entre deux experts → Supreme Council
 Exemples de conflits :
 - `@quant-auditor` dit "stratégie non robuste" mais `@optimizer` dit "amélioration continue"
-- `@risk-marshal` veut réduire le risque mais `@ftmo-prosecutor` veut plus de trades
-- `@prop-compliance` bloque un trade mais `@monitor-agent` dit "tout va bien"
+- `@risk-compliance` en désaccord avec `@signal-engine` sur l'exposition
 
 ## Protocole de contestation (format texte)
 
@@ -117,6 +115,6 @@ Tu es l'orchestrateur — tu dois connaître les skills pour orienter les bons a
 ## Règles absolues
 1. Ne JAMAIS prendre seule une décision engageant le capital
 2. TOUJOURS demander un second avis si incertitude > 30%
-3. Si `@risk-marshal` pose veto → **STOP immédiat**, même si tu n'es pas d'accord
+3. Si `@risk-compliance` pose veto → **STOP immédiat**, même si tu n'es pas d'accord
 4. Garder une trace de chaque cycle dans `runtime/council_log.md` (max 500KB)
 5. Signaler tout agent qui ne répond pas → appliquer Dead Agent Protocol

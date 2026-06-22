@@ -21,8 +21,8 @@ class MT5Connector:
         self.connected = False
 
     def connect(self):
-        if not mt5.initialize(timeout=30000, portable=True):
-            logger.error("MT5 initialization failed (timeout 30s)")
+        if not mt5.initialize(timeout=10000, portable=True):
+            logger.error("MT5 initialization failed (timeout 10s)")
             return False
         if not mt5.login(self.login, password=self.password, server=self.server):
             logger.error("MT5 login failed")
@@ -30,10 +30,11 @@ class MT5Connector:
         # Activer Market Watch pour tous les symboles du robot
         try:
             import config_simple as cfg
+
             for sym in cfg.SYMBOLS:
                 mt5.symbol_select(sym, True)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"[CONNECT] symbol_select error during connect: {e}")
         self.connected = True
         info = mt5.account_info()
         if info is not None:
@@ -73,19 +74,25 @@ class MT5Connector:
     def get_tick(self, symbol):
         return mt5.symbol_info_tick(symbol)
 
-    def get_rates(self, symbol, timeframe, count=100):
+    def get_rates(self, symbol, timeframe, count=10000):
+        """Récupère les bougies MT5. Cap à 10000 bars (MAX dispo: 33K H4, 9K H1 US500).
+        count=100000 causait None sur tous les symboles (MT5 retourne None si count > dispo)."""
         # Accepte string ("M1", "H1") ou int (mt5.TIMEFRAME_M1)
         if isinstance(timeframe, int):
             tf = timeframe
         else:
             tf_map = {
-                "M1": mt5.TIMEFRAME_M1, "M5": mt5.TIMEFRAME_M5, "M15": mt5.TIMEFRAME_M15,
-                "H1": mt5.TIMEFRAME_H1, "H4": mt5.TIMEFRAME_H4, "D1": mt5.TIMEFRAME_D1
+                "M1": mt5.TIMEFRAME_M1,
+                "M5": mt5.TIMEFRAME_M5,
+                "M15": mt5.TIMEFRAME_M15,
+                "H1": mt5.TIMEFRAME_H1,
+                "H4": mt5.TIMEFRAME_H4,
+                "D1": mt5.TIMEFRAME_D1,
             }
             tf = tf_map.get(timeframe, mt5.TIMEFRAME_H1)
         return mt5.copy_rates_from_pos(symbol, tf, 0, count)
 
-    def get_rates_multi_tf(self, symbol, timeframes, count=100):
+    def get_rates_multi_tf(self, symbol, timeframes, count=10000):
         result = {}
         for tf_name in timeframes:
             r = self.get_rates(symbol, tf_name, count)
@@ -110,14 +117,27 @@ class MT5Connector:
             return None
         ct = 1 if position.type == 0 else 0
         price = tick.ask if ct == 0 else tick.bid
-        req = dict(action=mt5.TRADE_ACTION_DEAL, symbol=position.symbol,
-            volume=position.volume, type=ct, position=position.ticket,
-            price=price, magic=self.magic, comment="CLOSE_SIMPLE")
+        req = dict(
+            action=mt5.TRADE_ACTION_DEAL,
+            symbol=position.symbol,
+            volume=position.volume,
+            type=ct,
+            position=position.ticket,
+            price=price,
+            magic=self.magic,
+            comment="CLOSE_SIMPLE",
+        )
         return mt5.order_send(req)
 
     def update_sl(self, position, new_sl):
-        req = dict(action=mt5.TRADE_ACTION_SLTP, position=position.ticket,
-            symbol=position.symbol, sl=new_sl, tp=position.tp, magic=self.magic)
+        req = dict(
+            action=mt5.TRADE_ACTION_SLTP,
+            position=position.ticket,
+            symbol=position.symbol,
+            sl=new_sl,
+            tp=position.tp,
+            magic=self.magic,
+        )
         return mt5.order_send(req)
 
     def get_account_info(self):
@@ -135,18 +155,21 @@ class MT5Connector:
             return False
 
     def reconnect(self) -> bool:
-        """Tente une reconnexion complète à MT5."""
+        """Tente une reconnexion complète à MT5 avec retry rapide."""
         logger.info("[MT5] Tentative de reconnexion...")
-        try:
-            mt5.shutdown()
-        except Exception:
-            pass
-        import time as _time
-        _time.sleep(2)
-        if self.connect():
-            logger.info("[MT5] Reconnexion réussie")
-            return True
-        logger.error("[MT5] Échec de reconnexion")
+        for attempt in range(3):
+            try:
+                mt5.shutdown()
+            except Exception:
+                pass
+            import time as _time
+
+            _time.sleep(1)
+            if self.connect():
+                logger.info(f"[MT5] Reconnexion réussie (tentative #{attempt + 1})")
+                return True
+            logger.warning(f"[MT5] Tentative #{attempt + 1}/3 échouée")
+        logger.error("[MT5] Échec de reconnexion après 3 tentatives")
         return False
 
     def get_history(self, from_time, to_time):

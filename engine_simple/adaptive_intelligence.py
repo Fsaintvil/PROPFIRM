@@ -6,19 +6,14 @@ from pathlib import Path
 
 import numpy as np
 
-from engine_simple.dl_ensemble import DLEnsemble
-from engine_simple.fvg_detector import detect_fvg, detect_liquidity_sweep, filter_active_fvgs, fvg_score
 from engine_simple.indicators import obv, rsi, rsi_divergence
-from engine_simple.market_structure import analyze_market_structure
-from engine_simple.meta_learner import MetaLearner
-from engine_simple.structure_analyzer import multi_tf_alignment
+
 try:
-    from engine_simple.walk_forward_validator import WalkForwardValidator
+    from engine_simple.market_structure import analyze_market_structure
 except ImportError:
-    try:
-        from scripts.recalibration.walk_forward_validator import WalkForwardValidator
-    except ImportError:
-        WalkForwardValidator = None  # fallback : pas de validateur
+    analyze_market_structure = None
+from engine_simple.structure_analyzer import multi_tf_alignment
+from engine_simple.lightgbm_model import LightGBMModel
 
 logger = logging.getLogger("adaptive")
 
@@ -28,9 +23,10 @@ class MarketRegime:
 
     def __init__(self):
         from engine_simple.regime import RegimeDetector
+
         self._detector = RegimeDetector()
 
-    def detect(self, rates):
+    def detect(self, rates, symbol: str = "_default"):
         closes = np.array([r[4] for r in rates], dtype=float)
         highs = np.array([r[2] for r in rates], dtype=float)
         lows = np.array([r[3] for r in rates], dtype=float)
@@ -46,12 +42,19 @@ class MarketRegime:
         else:
             adx_val, _, _ = _adx_result
 
-        # Délégation au nouveau détecteur
-        regime, meta = self._detector.detect(highs, lows, closes, adx_val=adx_val)
+        # Délégation au nouveau détecteur (avec symbole pour hystérésis par symbole)
+        regime, meta = self._detector.detect(highs, lows, closes, adx_val=adx_val, symbol=symbol)
 
         # Enrichissement avec structure de marché, volume, RSI
-        ms = analyze_market_structure(highs, lows, closes)
-        structure_trend = ms.get("trend", "unknown")
+        _ms = None
+        if analyze_market_structure is not None:
+            try:
+                _ms = analyze_market_structure(highs, lows, closes)
+                structure_trend = _ms.get("trend", "unknown")
+            except Exception:
+                structure_trend = "unknown"
+        else:
+            structure_trend = "unknown"
 
         obv_arr = obv(closes, volumes)
         obv_trend = 0
@@ -62,21 +65,32 @@ class MarketRegime:
         rsi_now = rsi_arr[-1] if len(rsi_arr) > 0 and not np.isnan(rsi_arr[-1]) else 50
         div = rsi_divergence(closes, rsi_arr, lookback=20)
 
-        volume_confirms = (obv_trend > 0 and structure_trend == "bullish") or \
-                          (obv_trend < 0 and structure_trend == "bearish")
+        volume_confirms = (obv_trend > 0 and structure_trend == "bullish") or (
+            obv_trend < 0 and structure_trend == "bearish"
+        )
 
-        return regime, {
+        # Enrichir avec les données market_structure détaillées
+        meta_result = {
             "adx": round(meta["adx"], 1),
             "vol_percentile": round(meta["vol_percentile"], 2),
             "structure_trend": structure_trend,
-            "structure_score": round(ms.get("score", 0), 2),
+            "structure_score": round(_ms.get("score", 0) if _ms else 0, 2),
             "obv_trend": obv_trend,
             "rsi": round(rsi_now, 1),
             "volume_confirms": volume_confirms,
             "confidence_bonus": 0.10 if volume_confirms else 0,
             "rsi_divergence": div.get("bullish", False) or div.get("bearish", False),
-            "eq_hl_count": ms.get("equal_highs_lows", {}).get("count", 0),
+            "eq_hl_count": _ms.get("equal_highs_lows", {}).get("count", 0) if _ms else 0,
         }
+        # Données ICT/SMC détaillées
+        if _ms:
+            meta_result["unmitigated_obs"] = _ms.get("unmitigated_obs", 0)
+            meta_result["unmitigated_fvgs"] = _ms.get("unmitigated_fvgs", 0)
+            meta_result["recent_bos"] = _ms.get("recent_bos", False)
+            meta_result["recent_choch"] = _ms.get("recent_choch", False)
+            meta_result["recent_sweeps"] = _ms.get("recent_sweeps", [])
+
+        return regime, meta_result
 
     def _adx(self, highs, lows, closes, p=14):
         """Hook pour compatibilité tests. Délègue à regime._calc_adx."""
@@ -116,22 +130,23 @@ class OnlineLearner:
                 "history": {sym: list(h) for sym, h in self.history.items()},
                 "adapted_params": self.adapted_params,
             }
-            import json, time as _time
-            path = str(path)
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
-            # Écriture atomique : tmp + rename
-            tmp = path + f".tmp.{_time.time()}"
-            with open(tmp, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, default=str)
-            import os as _os
-            _os.replace(tmp, path)
+            import json
+
+            path = Path(str(path))
+            path.parent.mkdir(parents=True, exist_ok=True)
+            # Écriture atomique : tmp fixe (sans timestamp) + replace
+            # Un nom fixe garantit que l'écriture précédente échouée est écrasée
+            tmp = path.with_suffix(".json.tmp")
+            tmp.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+            tmp.replace(path)  # atomique sur NTFS
         except Exception as e:
-            logger.debug(f"[OnlineLearner] save_state failed: {e}")
+            logger.warning(f"[OnlineLearner] save_state failed: {e}")  # Warning pour visibilité
 
     def _load_state(self, path=None):
         path = path or self._state_path or self.STATE_FILENAME
         try:
             import json
+
             path = str(path)
             if not Path(path).exists():
                 # Pas de state disque → nettoyer le lock seed pour permettre re-seed
@@ -153,7 +168,7 @@ class OnlineLearner:
                 self.window = loaded_window
             self.history = {}
             for sym, trades in data.get("history", {}).items():
-                self.history[sym] = deque(trades[-self.window:], maxlen=self.window)
+                self.history[sym] = deque(trades[-self.window :], maxlen=self.window)
             self.adapted_params = data.get("adapted_params", {})
             n_trades = sum(len(h) for h in self.history.values())
             logger.info(f"[OnlineLearner] État restauré: {len(self.history)} symboles, {n_trades} trades")
@@ -167,6 +182,7 @@ class OnlineLearner:
         Les trades seed n'écrasent PAS les trades existants (import unique).
         """
         import csv
+
         path = Path(csv_path)
         if not path.exists():
             logger.info(f"[OnlineLearner] seed CSV {csv_path} non trouvé — skip")
@@ -214,7 +230,14 @@ class OnlineLearner:
         if symbol not in self.history:
             self.history[symbol] = deque(maxlen=self.window)
         self.history[symbol].append({"r": r_multiple, "regime": regime})
-        self._update_params(symbol)
+        # ⚠️ CRITIQUE: _update_params peut planter (ex: données corrompues).
+        # try/finally garantit que save_state() est TOUJOURS appelée pour
+        # ne JAMAIS perdre un trade live. Sans cela, l'OnlineLearner reste
+        # figé aux valeurs seed et n'apprend jamais du marché réel.
+        try:
+            self._update_params(symbol)
+        except Exception as e:
+            logger.error(f"[OnlineLearner] _update_params échoué pour {symbol}: {e}")
         if not self._batch_mode:
             self.save_state()
 
@@ -234,32 +257,55 @@ class OnlineLearner:
 
     def get_params(self, symbol, base_thresh=3.0):
         if symbol not in self.adapted_params:
+            # ⚠️ R1: Fallback transparent — pas de paramètres appris pour ce symbole
+            # Le risk_mult=1.0 signifie "pas d'ajustement OL" → la config symbole est utilisée telle quelle.
+            # Cela arrive si le seed n'a pas encore été chargé ou si _update_params a supprimé
+            # les params (trop peu de trades valides). Normal en début de vie du robot.
+            logger.debug(f"[OnlineLearner] {symbol}: fallback defaults (no adapted_params)")
             return {"thresh": base_thresh, "risk_mult": 1.0, "sl_mult": 3.0, "tp_mult": 1.0}
         return self.adapted_params[symbol]
 
     def _update_params(self, symbol):
         h = list(self.history.get(symbol, []))
-        if len(h) < self.window // 2:
+        # 🔧 R3: Seuil réduit window//4=50 au lieu de window//2=100 (trop long à atteindre en live)
+        min_trades = max(15, self.window // 10)
+        if len(h) < min_trades:
             return
         # Filtrer les trades avec régime valide (IGNORE les trades UNKNOWN/?)
         # Permissif: seed data utilise direction comme proxy de régime (BUY/SELL) + HIST pour trades historiques
-        valid_regimes = {"RANGING", "TREND_UP", "TREND_DOWN", "HIGH_VOL", "LOW_VOL", "HIST", "RAN", "BUY", "SELL"}
+        # 🔧 R2: "IMPORT" ajouté — les trades réels enregistrés par position_tracker.py utilisent ce régime
+        valid_regimes = {
+            "RANGING",
+            "TREND_UP",
+            "TREND_DOWN",
+            "HIGH_VOL",
+            "LOW_VOL",
+            "HIST",
+            "RAN",
+            "BUY",
+            "SELL",
+            "IMPORT",
+        }
         h_valid = [t for t in h if t.get("regime", "") in valid_regimes]
-        
+
         # Si moins de 5 trades valides ou si la majorité des trades sont invalides,
         # on garde le paramétrage par défaut (ne pas apprendre sur des données pourries)
         if len(h_valid) < 5 or (len(h) > 0 and len(h_valid) / len(h) < 0.3):
             # Trop peu de trades fiables → adapted_params par défaut
-            logger.info(f"[OnlineLearner] {symbol}: {len(h_valid)}/{len(h)} régimes valides "
-                       f"— skip apprentissage (données insuffisantes)")
+            logger.info(
+                f"[OnlineLearner] {symbol}: {len(h_valid)}/{len(h)} régimes valides "
+                f"— skip apprentissage (données insuffisantes)"
+            )
             if symbol in self.adapted_params:
                 del self.adapted_params[symbol]
             return
-        
+
         rr = np.array([t["r"] for t in h_valid])
         wr = np.mean(rr > 0)
         expectancy = np.mean(rr)
-        logger.info(f"[OnlineLearner] {symbol}: {len(h_valid)} trades valides, WR={wr:.1%}, expectancy={expectancy:.2f}")
+        logger.info(
+            f"[OnlineLearner] {symbol}: {len(h_valid)} trades valides, WR={wr:.1%}, expectancy={expectancy:.2f}"
+        )
         thresh = 2.5
         risk_mult = 1.0
         if wr < 0.70:
@@ -274,8 +320,10 @@ class OnlineLearner:
         if expectancy < 0 and len(h) > 10:
             risk_mult = 0.5
         self.adapted_params[symbol] = {
-            "thresh": thresh, "risk_mult": risk_mult,
-            "sl_mult": 3.0, "tp_mult": 1.0,
+            "thresh": thresh,
+            "risk_mult": risk_mult,
+            "sl_mult": 3.0,
+            "tp_mult": 1.0,
         }
 
     def get_summary(self, symbol):
@@ -284,15 +332,18 @@ class OnlineLearner:
             return {}
         rr = np.array([t["r"] for t in h])
         return {
-            "trades": len(h), "wr": round(np.mean(rr > 0), 3),
-            "avg_r": round(np.mean(rr), 3), "expectancy": round(np.mean(rr), 3),
+            "trades": len(h),
+            "wr": round(np.mean(rr > 0), 3),
+            "avg_r": round(np.mean(rr), 3),
+            "expectancy": round(np.mean(rr), 3),
         }
 
 
 # Symbols ou DL est pire que aleatoire
 DL_MIN_SCORE = 0.50  # Abaissé de 0.60→0.50 : le modèle donne 83% de scores entre 0.58-0.60
-                     # À 0.50 : scores 0.50-0.60 acceptés avec risque ×0.5 (même 33% WR × RR 3= profitable)
+# À 0.50 : scores 0.50-0.60 acceptés avec risque ×0.5 (même 33% WR × RR 3= profitable)
 DL_SAFE_SCORE = 0.60  # Seuil historique : scores >= 0.60 = risque plein
+
 
 class AdaptiveEngine:
     def __init__(self, mt5, calibration_path=None):
@@ -302,29 +353,36 @@ class AdaptiveEngine:
         # puis seed depuis les fichiers Excel historiques si premier démarrage
         self.learner = OnlineLearner(window=200, state_path=OnlineLearner.STATE_FILENAME)
         self.learner.seed_from_csv("runtime/online_learner_seed.csv")
-        self.meta = MetaLearner(recalibration_freq=50)
-        self.meta.load_state()  # restaure les trackers depuis meta_learner.json
-        self.dl = DLEnsemble()
-        # ML Ensemble (RF/XGB/LGBM) désactivé — info-only à 45%, 581 MB RAM pour rien
+        # P7: DL désactivé — aucun modèle .pkl trouvé
+        self.dl = None
         self.ml = None
-        self.lgb = None  # LightGBM désactivé (poids=0)
+        # LightGBM: chargement automatique si le modèle entraîné existe
+        self.lgb = LightGBMModel()
+        lgb_loaded = self.lgb.load()
+        if lgb_loaded:
+            logger.info(f"LightGBM chargé: {self.lgb.summary()}")
+        else:
+            logger.info("LightGBM non disponible — exécutez scripts/train_lightgbm.py")
+        self._meta_active = lgb_loaded  # Meta activé uniquement si LGB est dispo
+        if self._meta_active:
+            from engine_simple.meta_learner import MetaLearner
+
+            self.meta = MetaLearner(recalibration_freq=50)
+            self.meta.load_state()
+            logger.info(f"Meta-Learner active, tracking {len(self.meta.get_model_names())} models | DL=AVAILABLE")
+        else:
+            self.meta = None
+            logger.info("Meta-Learner BYPASSED — only MOM20x3 active (DL/LGB disabled)")
+
         self._dl_grey_zone = False  # flag pour risk/2 entre 0.50-0.60
-        # Bilan ML explicite : l'opérateur sait exactement ce qui tourne
-        dl_status = "AVAILABLE" if self.dl.available else "DISABLED (no models)"
-        logger.info(f"Meta-Learner ready, tracking {len(self.meta.get_model_names())} models | "
-                    f"DL={dl_status} | LGB=DISABLED | Ensemble=DISABLED")
         self.calibration_path = calibration_path
         if calibration_path:
             self._load_calibration(calibration_path)
-        # Sync meta_learner.json immédiatement pour que les diagnostics externes
-        # (check_calibration.py, AGENTS.md) trouvent les données au bon format
-        self.meta.save_state()
-        if WalkForwardValidator is not None:
-            self.validator = WalkForwardValidator(snapshot_interval=50)
-            logger.info("Walk-Forward Validator ready")
-        else:
-            self.validator = None
-            logger.warning("Walk-Forward Validator unavailable (module moved)")
+        # Sync meta_learner.json only when MetaLearner is active
+        if self._meta_active:
+            self.meta.save_state()
+        # Walk-Forward Validator retiré — module archivé dans retired/
+        self.validator = None
 
     def _load_calibration(self, path):
         if not os.path.exists(path):
@@ -340,6 +398,7 @@ class AdaptiveEngine:
                 logger.error(f"  [CAL] Fichier calibration trop volumineux ({stat.st_size} bytes) — refusé")
                 return
             import json
+
             with open(path, "r") as f:
                 raw = f.read()
             if len(raw) > 50 * 1024 * 1024:  # 50MB max safe JSON
@@ -350,42 +409,71 @@ class AdaptiveEngine:
             # ← FIX: backward compat — supporte ancien double-nesting ET nouveau format plat
             if "meta_calibration" in mc and isinstance(mc["meta_calibration"], dict):
                 mc = mc["meta_calibration"]
-            # Restore MetaLearner trackers
-            for name, tdata in mc.get("meta_trackers", {}).items():
-                if name in self.meta.trackers:
-                    t = self.meta.trackers[name]
-                    for stat_key, stat_val in tdata.items():
-                        store = getattr(t, stat_key, None)
-                        if store is not None:
-                            store.clear()
-                            store.update(stat_val)
-            # Restore regime performance + penalties
-            rp = mc.get("meta_regime_performance", {})
-            if rp:
-                self.meta.regime_performance.clear()
-                for k, v in rp.items():
-                    self.meta.regime_performance[k] = v
-            rp_penalty = mc.get("meta_regime_penalty", {})
-            if rp_penalty:
-                for model_name, penalties in rp_penalty.items():
-                    t = self.meta.trackers.get(model_name)
-                    if t:
-                        for regime, penalty in penalties.items():
-                            t.regime_penalty[regime] = penalty
-            self.meta.trades_since_recal = mc.get("meta_trades_since_recal", 0)
+            # Restore MetaLearner trackers (only when active)
+            if self._meta_active:
+                for name, tdata in mc.get("meta_trackers", {}).items():
+                    if name in self.meta.trackers:
+                        t = self.meta.trackers[name]
+                        for stat_key, stat_val in tdata.items():
+                            store = getattr(t, stat_key, None)
+                            if store is not None:
+                                store.clear()
+                                store.update(stat_val)
+                # Restore regime performance + penalties
+                rp = mc.get("meta_regime_performance", {})
+                if rp:
+                    self.meta.regime_performance.clear()
+                    for k, v in rp.items():
+                        self.meta.regime_performance[k] = v
+                rp_penalty = mc.get("meta_regime_penalty", {})
+                if rp_penalty:
+                    for model_name, penalties in rp_penalty.items():
+                        t = self.meta.trackers.get(model_name)
+                        if t:
+                            for regime, penalty in penalties.items():
+                                t.regime_penalty[regime] = penalty
+                self.meta.trades_since_recal = mc.get("meta_trades_since_recal", 0)
             # Restore OnlineLearner history
             ol = state.get("online_history", {})
+
             for sym, hist_list in ol.items():
+                # ⛔ Les symboles dans _SYMBOLS_SKIP_OL_IMPORT (ex: EURUSD) sont
+                # exclus de l'import MT5 dans position_tracker.py, mais ils DOIVENT
+                # être restaurés depuis la calibration pour que l'OL survive aux
+                # redémarrages avec ses trades appris (seed + live).
+                # Sinon, une fenêtre de race condition (seed script → _load_state)
+                # peut faire perdre les données à chaque restart.
+                from engine_simple.position_tracker import _SYMBOLS_SKIP_OL_IMPORT
+
+                if sym in _SYMBOLS_SKIP_OL_IMPORT:
+                    logger.info(f"  [CAL] Restoring {sym} from calibration (skip list ignored for state restoration)")
                 self.learner.history[sym] = deque(maxlen=self.learner.window)
                 for h in hist_list:
                     self.learner.history[sym].append(h)
                 self.learner._update_params(sym)
+            # ⚠️ Restaurer adapted_params depuis la calibration (survit aux redémarrages)
+            cal_adapted = state.get("adapted_params", {})
+            if cal_adapted:
+                for sym, params in cal_adapted.items():
+                    self.learner.adapted_params[sym] = params
+                logger.info(
+                    f"  [CAL] Restored adapted_params for {len(cal_adapted)} symbols: "
+                    + ", ".join(f"{s}={p.get('risk_mult', '?')}" for s, p in cal_adapted.items())
+                )
+            # 🔧 R5: Synchroniser online_learner_state.json depuis la calibration
+            # Évite le scénario où le fichier principal est absent mais la calibration existe
+            try:
+                self.learner.save_state()
+            except Exception as e:
+                logger.debug(f"  [CAL] Sync online_learner_state.json: {e}")
             counts = sum(len(v) for v in state.get("online_history", {}).values())
             n_trackers = len(mc.get("meta_trackers", {}))
-            logger.info(f"  [CAL] Loaded calibration: MetaLearner {n_trackers} "
-                        f"trackers, OnlineLearner {counts} records")
-            # Sync meta_learner.json après chargement réussi
-            self.meta.save_state()
+            logger.info(
+                f"  [CAL] Loaded calibration: MetaLearner {n_trackers} trackers, OnlineLearner {counts} records"
+            )
+            # Sync meta_learner.json only when active
+            if self._meta_active:
+                self.meta.save_state()
         except (KeyError, ValueError, TypeError, AttributeError, OSError) as e:
             logger.warning(f"  [CAL] Failed to load calibration: {e}")
 
@@ -393,37 +481,40 @@ class AdaptiveEngine:
         if not self.calibration_path:
             return
         try:
-            mc = {
-                "meta_trackers": {
-                    name: {
-                        "regime_stats": dict(tracker.regime_stats),
-                        "global_stats": dict(tracker.global_stats),
-                        "symbol_stats": dict(tracker.symbol_stats),
-                    }
-                    for name, tracker in self.meta.trackers.items()
-                },
-                "meta_regime_performance": dict(self.meta.regime_performance),
-                "meta_regime_penalty": {
-                    name: dict(tracker.regime_penalty)
-                    for name, tracker in self.meta.trackers.items()
-                },
-                "meta_trades_since_recal": self.meta.trades_since_recal,
-            }
             state = {
-                "meta_calibration": mc,  # ← FIX: pas de double-nesting
-                "meta_trackers": {        # ← FIX: exposition directe pour diagnostic
-                    name: dict(tracker.global_stats)
-                    for name, tracker in self.meta.trackers.items()
-                },
-                "online_history": {
-                    sym: list(h) for sym, h in self.learner.history.items()
-                },
+                "online_history": {sym: list(h) for sym, h in self.learner.history.items()},
+                # ⚠️ CRITIQUE: adapted_params doit être persisté pour que les
+                # paramètres appris (risk_mult, thresh) survivent aux redémarrages.
+                # Sans cela, l'OnlineLearner revient aux valeurs par défaut à chaque restart.
+                "adapted_params": dict(self.learner.adapted_params),
             }
+            if self._meta_active:
+                mc = {
+                    "meta_trackers": {
+                        name: {
+                            "regime_stats": dict(tracker.regime_stats),
+                            "global_stats": dict(tracker.global_stats),
+                            "symbol_stats": dict(tracker.symbol_stats),
+                        }
+                        for name, tracker in self.meta.trackers.items()
+                    },
+                    "meta_regime_performance": dict(self.meta.regime_performance),
+                    "meta_regime_penalty": {
+                        name: dict(tracker.regime_penalty) for name, tracker in self.meta.trackers.items()
+                    },
+                    "meta_trades_since_recal": self.meta.trades_since_recal,
+                }
+                state["meta_calibration"] = mc  # ← FIX: pas de double-nesting
+                state["meta_trackers"] = {  # ← FIX: exposition directe pour diagnostic
+                    name: dict(tracker.global_stats) for name, tracker in self.meta.trackers.items()
+                }
             import json
+
             with open(self.calibration_path, "w") as f:
                 json.dump(state, f, indent=2, default=str)
-            # Sync meta_learner.json en parallèle
-            self.meta.save_state()
+            # Sync meta_learner.json only when active
+            if self._meta_active:
+                self.meta.save_state()
         except (OSError, KeyError, ValueError, TypeError) as e:
             logger.warning(f"  [CAL] Failed to save calibration: {e}")
 
@@ -432,10 +523,10 @@ class AdaptiveEngine:
         h1_rates = rates_dict.get("H1")
         if h1_rates is None or len(h1_rates) < 50:
             return None
-        regime, meta = self.regime.detect(h1_rates)
+        regime, meta = self.regime.detect(h1_rates, symbol=symbol)
         dl_result = None
         dl_label = "N/A"
-        if self.dl.available:
+        if self.dl is not None and self.dl.available:
             try:
                 dl_result = self.dl.predict(symbol, rates_dict)
                 if dl_result:
@@ -451,19 +542,25 @@ class AdaptiveEngine:
                     logger.info(f"  [VIGIL] {symbol}: regime={regime} DL={dl_label} ADX={meta['adx']:.0f}")
             except (ValueError, TypeError, IndexError, AttributeError) as e:
                 logger.warning(f"  [VIGIL] {symbol}: DL error: {e}")
-        return {"symbol": symbol, "regime": regime, "regime_meta": meta,
-                "dl_action": dl_result["action"] if dl_result else None,
-                "dl_score": dl_result["score"] if dl_result else None,
-                "dl_buy_prob": dl_result["buy_prob"] if dl_result else None}
+        return {
+            "symbol": symbol,
+            "regime": regime,
+            "regime_meta": meta,
+            "dl_action": dl_result["action"] if dl_result else None,
+            "dl_score": dl_result["score"] if dl_result else None,
+            "dl_buy_prob": dl_result["buy_prob"] if dl_result else None,
+        }
 
     def analyze(self, symbol, rates_dict, signal, trade_stats=None):
         h1_rates = rates_dict.get("H1")
         if h1_rates is None or len(h1_rates) < 50:
             return signal
 
-        regime, meta = self.regime.detect(h1_rates)
-        logger.info(f"  [REGIME] {symbol}: {regime} (ADX={meta['adx']}, vol%={meta['vol_percentile']}, "
-            f"struct={meta['structure_trend']}, vol_confirm={meta['volume_confirms']})")
+        regime, meta = self.regime.detect(h1_rates, symbol=symbol)
+        logger.info(
+            f"  [REGIME] {symbol}: {regime} (ADX={meta['adx']}, vol%={meta['vol_percentile']}, "
+            f"struct={meta['structure_trend']}, vol_confirm={meta['volume_confirms']})"
+        )
 
         params = dict(self.learner.get_params(symbol))  # copie pour éviter mutation in-place
 
@@ -471,7 +568,13 @@ class AdaptiveEngine:
         d_rates = rates_dict.get("D1")
         h4_rates = rates_dict.get("H4")
         alignment_dir, alignment_score = "NO_TRADE", 0
-        if d_rates is not None and h4_rates is not None and len(d_rates) >= 50 and len(h4_rates) >= 50 and len(h1_rates) >= 50:
+        if (
+            d_rates is not None
+            and h4_rates is not None
+            and len(d_rates) >= 50
+            and len(h4_rates) >= 50
+            and len(h1_rates) >= 50
+        ):
             d_close = np.array([r[4] for r in d_rates], dtype=float)
             h4_close = np.array([r[4] for r in h4_rates], dtype=float)
             h1_close = np.array([r[4] for r in h1_rates], dtype=float)
@@ -485,30 +588,16 @@ class AdaptiveEngine:
             else:
                 logger.info(f"  [STRUCTURE] {symbol}: multi-TF={alignment_score} → neutre/conflit")
 
-        # FVG + liquidity sweep detection (institutional)
-        h1h_arr = np.array([r[2] for r in h1_rates], dtype=float)
-        h1l_arr = np.array([r[3] for r in h1_rates], dtype=float)
-        h1c_arr = np.array([r[4] for r in h1_rates], dtype=float)
-        raw_fvgs = detect_fvg(h1h_arr, h1l_arr, lookback=10)
-        active_fvgs = filter_active_fvgs(raw_fvgs, h1h_arr[-1], h1l_arr[-1])
+        # FVG + liquidity sweep detection (désactivé — module fvg_detector dans retired/)
         fvg_bonus = 0.0
-        if active_fvgs:
-            fvg_bonus = fvg_score(active_fvgs, signal.get("action", "HOLD"))
-            if fvg_bonus != 0:
-                logger.info(f"  [FVG] {symbol}: {len(active_fvgs)} actifs, bonus={fvg_bonus:+.2f}")
         sweep_type, sweep_level = None, None
-        if h4_rates is not None and len(h4_rates) >= 10:
-            h4h_arr = np.array([r[2] for r in h4_rates], dtype=float)
-            h4l_arr = np.array([r[3] for r in h4_rates], dtype=float)
-            sweep_type, sweep_level = detect_liquidity_sweep(h4h_arr, h4l_arr, h1h_arr, h1l_arr, h1c_arr)
-            if sweep_type:
-                logger.info(f"  [LIQUIDITY] {symbol}: {sweep_type} @ {sweep_level}")
+        active_fvgs = []
 
         # Collect predictions from ALL models
         all_predictions = {"MOM20x3": {"action": signal.get("action", "HOLD"), "score": signal.get("score", 0.5)}}
 
         dl_result = None
-        if self.dl.available:
+        if self.dl is not None and self.dl.available:
             try:
                 dl_result = self.dl.predict(symbol, rates_dict)
                 if dl_result:
@@ -521,7 +610,9 @@ class AdaptiveEngine:
                         all_predictions["DL_LSTM"] = dl_result
                         dl_agrees = dl_result.get("action", "HOLD") == signal.get("action", "HOLD")
                         self._dl_grey_zone = True  # Flag pour risk/2 plus tard
-                        logger.info(f"  [DL] {symbol}: {dl_result['action']} (score={dl_score:.3f}, GREY ZONE, agree={dl_agrees})")
+                        logger.info(
+                            f"  [DL] {symbol}: {dl_result['action']} (score={dl_score:.3f}, GREY ZONE, agree={dl_agrees})"
+                        )
                     else:
                         # Score >= 0.60 : confiance pleine
                         all_predictions["DL_LSTM"] = dl_result
@@ -531,37 +622,71 @@ class AdaptiveEngine:
             except (ValueError, TypeError, IndexError, AttributeError, KeyError) as e:
                 logger.warning(f"  [DL] {symbol}: predict error: {e}")
 
+        # LightGBM prediction: utilise les features calculées dans phase13
+        lgb_result = None
+        if self.lgb is not None and self.lgb.available:
+            try:
+                # Features disponibles depuis signal_pipeline.phase13
+                lgb_features = signal.get("_features", {})
+                if len(lgb_features) >= 10:
+                    lgb_result = self.lgb.predict(lgb_features)
+                    if lgb_result and lgb_result["action"] != "HOLD":
+                        all_predictions["LGB"] = {
+                            "action": lgb_result["action"],
+                            "score": lgb_result["probability"],
+                        }
+                        logger.info(
+                            f"  [LGB] {symbol}: {lgb_result['action']} "
+                            f"(proba={lgb_result['probability']:.3f}, "
+                            f"conf={lgb_result['confidence']:.3f})"
+                        )
+                        if lgb_result.get("top_features"):
+                            top = lgb_result["top_features"]
+                            logger.debug(
+                                f"  [LGB] {symbol}: top features: " + ", ".join(f"{k}={v:.1%}" for k, v in top.items())
+                            )
+                    else:
+                        logger.debug(f"  [LGB] {symbol}: HOLD (proba={lgb_result.get('probability', 0.5):.3f})")
+                else:
+                    logger.debug(f"  [LGB] {symbol}: features insuffisantes ({len(lgb_features)} < 10)")
+            except Exception as e:
+                logger.warning(f"  [LGB] {symbol}: predict error: {e}")
 
-        # Meta-Learner: combine predictions (≥ 2 modèles suffit: MOM20x3 + DL LSTM)
+        # Meta-Learner: combine predictions (≥ 2 modèles: MOM20x3 + DL/LGB)
         meta_action, meta_confidence = "HOLD", 0.5
         devil_disagreements = []
-        if len(all_predictions) >= 2:
-            meta_action, meta_confidence, _ = (
-                self.meta.get_ensemble_action(regime, all_predictions, symbol=symbol))
+        if self._meta_active and len(all_predictions) >= 2:
+            meta_action, meta_confidence, _ = self.meta.get_ensemble_action(regime, all_predictions, symbol=symbol)
             devil_disagreements = self.meta.devil_advocate_check(
-                regime, all_predictions, signal.get("action", "HOLD"), symbol=symbol)
+                regime, all_predictions, signal.get("action", "HOLD"), symbol=symbol
+            )
 
         adapted = dict(signal)
 
-        # Regime-based SL/TP (R:R ≥ 2.0 pour FTMO expectancy positive)
-        if regime == "TREND_DOWN" or regime == "TREND_UP":
-            adapted["sl_atr"] = 2.0  # R:R = 5.0/2.0 = 2.5
-            adapted["tp_atr"] = 5.0
-        elif regime == "HIGH_VOL":
-            adapted["sl_atr"] = 2.0  # R:R = 5.0/2.0 = 2.5
-            adapted["tp_atr"] = 5.0
-            params["risk_mult"] *= 0.7
-        elif regime == "LOW_VOL":
-            adapted["sl_atr"] = 2.0  # R:R = 4.5/2.0 = 2.25 (FTMO: SL plus large évite stop-outs)
-            adapted["tp_atr"] = 4.5
-        else:
-            adapted["sl_atr"] = 2.0  # R:R = 4.5/2.0 = 2.25 (RANGING: SL plus large = moins de bruit)
-            adapted["tp_atr"] = 4.5
+        # SL/TP : préserver les valeurs calibrées par symbole (strategy.py)
+        # 🔧 18 Juin 2026: fallback régime seulement si signal n'a PAS sl_atr
+        # AVANT: hardcodé à 2.0×ATR — écrasait les profils (ex: US500 1.2×ATR → 2.86×ATR réel)
+        if "sl_atr" not in adapted or adapted.get("sl_atr") is None:
+            if regime in ("TREND_DOWN", "TREND_UP"):
+                adapted["sl_atr"] = 2.0  # R:R = 5.0/2.0 = 2.5
+                adapted["tp_atr"] = 5.0
+            elif regime == "HIGH_VOL":
+                adapted["sl_atr"] = 2.0  # R:R = 5.0/2.0 = 2.5
+                adapted["tp_atr"] = 5.0
+                params["risk_mult"] *= 0.7
+            elif regime == "LOW_VOL":
+                adapted["sl_atr"] = 2.0  # R:R = 4.5/2.0 = 2.25
+                adapted["tp_atr"] = 4.5
+            else:
+                adapted["sl_atr"] = 2.0  # R:R = 4.5/2.0 = 2.25
+                adapted["tp_atr"] = 4.5
 
-        adapted["risk_mult"] = params["risk_mult"]
+        # OL risk_mult appliqué en multiplicateur du base_risk_mult par symbole
+        # (le risk_mult du signal contient déjà base_risk × ol_risk de main.py)
+        adapted["risk_mult"] = adapted.get("risk_mult", 1.0)
 
         # DL grey zone (0.50-0.60) : risk/2
-        if getattr(self, '_dl_grey_zone', False):
+        if getattr(self, "_dl_grey_zone", False):
             adapted["risk_mult"] *= 0.50
             logger.info(f"  [DL GREY ZONE] {symbol}: risk/2 (score DL entre {DL_MIN_SCORE}-{DL_SAFE_SCORE})")
             self._dl_grey_zone = False  # reset
@@ -582,10 +707,14 @@ class AdaptiveEngine:
 
         # MOM/DL AGREEMENT check (seulement si Devil n'a pas déjà réduit le risque)
         mom_action = signal.get("action", "HOLD")
-        if not _devil_applied and dl_result and dl_result.get("action", "HOLD") in ("BUY", "SELL") and mom_action in ("BUY", "SELL"):
+        if (
+            not _devil_applied
+            and dl_result
+            and dl_result.get("action", "HOLD") in ("BUY", "SELL")
+            and mom_action in ("BUY", "SELL")
+        ):
             if dl_result["action"] != mom_action:
-                logger.info(f"  [AGREEMENT] {symbol}: MOM={mom_action} "
-                            f"DL={dl_result['action']} → DISAGREE, risk/2")
+                logger.info(f"  [AGREEMENT] {symbol}: MOM={mom_action} DL={dl_result['action']} → DISAGREE, risk/2")
                 adapted["risk_mult"] *= 0.5
             else:
                 logger.info(f"  [AGREEMENT] {symbol}: MOM={mom_action} DL={dl_result['action']} → AGREE ✓")
@@ -593,8 +722,10 @@ class AdaptiveEngine:
 
         # Meta-ensemble decision overrides signal if high confidence
         if meta_action != "HOLD" and meta_confidence > 0.65 and meta_action != signal.get("action", "HOLD"):
-            logger.info(f"  [META] {symbol}: meta={meta_action} (conf={meta_confidence:.2f}) "
-                        f"vs MOM={signal.get('action')} → meta override")
+            logger.info(
+                f"  [META] {symbol}: meta={meta_action} (conf={meta_confidence:.2f}) "
+                f"vs MOM={signal.get('action')} → meta override"
+            )
             adapted["action"] = meta_action
             adapted["confidence"] = min(0.95, meta_confidence)
             adapted["score"] = min(0.99, meta_confidence)
@@ -622,23 +753,30 @@ class AdaptiveEngine:
             adapted["confidence"] = min(0.95, adapted.get("confidence", 0.5) + abs(fvg_bonus) * 0.5)
 
         # Regime bonus
-        regime_bonus = {"TREND_UP": 0.08, "TREND_DOWN": 0.08, "HIGH_VOL": -0.05,
-                        "LOW_VOL": 0.03, "RANGING": 0.0}.get(regime, 0.0)
+        regime_bonus = {"TREND_UP": 0.08, "TREND_DOWN": 0.08, "HIGH_VOL": -0.05, "LOW_VOL": 0.03, "RANGING": 0.0}.get(
+            regime, 0.0
+        )
         regime_bonus += meta.get("confidence_bonus", 0)
         adapted["score"] = min(0.99, adapted.get("score", 0.5) + regime_bonus)
         adapted["confidence"] = min(0.95, adapted.get("confidence", 0.5) + regime_bonus * 0.5)
 
-        # Session boost institutionnel (basé sur liquidité réelle)
-        h = datetime.utcnow().hour
-        if 7 <= h < 9:
-            adapted["score"] = min(0.99, adapted.get("score", 0.5) + 0.10)
-            adapted["confidence"] = min(0.95, adapted.get("confidence", 0.5) + 0.08)
-        elif 13 <= h < 15:
-            adapted["score"] = min(0.99, adapted.get("score", 0.5) + 0.08)
-            adapted["confidence"] = min(0.95, adapted.get("confidence", 0.5) + 0.06)
-        elif 0 <= h < 6:
-            adapted["score"] = max(0.30, adapted.get("score", 0.5) - 0.10)
-            adapted["confidence"] = max(0.30, adapted.get("confidence", 0.5) - 0.08)
+        # Session boost par symbole (basé sur preferred_hours du symbole)
+        # Actif dans ses heures préférées → bonus, en dehors → pénalité
+        try:
+            from config_simple import SYMBOL_LIMITS as _SYM
+
+            _sym_cfg = _SYM.get(symbol, {})
+            _pref = _sym_cfg.get("preferred_hours")
+            if _pref is not None and len(_pref) > 0 and len(_pref) < 24:
+                h = datetime.utcnow().hour
+                if h in _pref:
+                    adapted["score"] = min(0.99, adapted.get("score", 0.5) + 0.08)
+                    adapted["confidence"] = min(0.95, adapted.get("confidence", 0.5) + 0.06)
+                else:
+                    adapted["score"] = max(0.30, adapted.get("score", 0.5) - 0.05)
+                    adapted["confidence"] = max(0.30, adapted.get("confidence", 0.5) - 0.04)
+        except Exception:
+            pass
 
         # Meta confidence boost
         if meta_action == adapted.get("action") and meta_confidence > 0.6:
@@ -660,21 +798,26 @@ class AdaptiveEngine:
                 adapted["risk_mult"] *= 0.7
                 logger.info(f"  [STATS] {symbol}: WR={wr:.0%} < 45% → risk/1.43")
             elif wr > 0.65:
-                logger.info(f"  [STATS] {symbol}: WR={wr:.0%} > 65% → bonus +{wr_bonus+.02:.0%}")
+                logger.info(f"  [STATS] {symbol}: WR={wr:.0%} > 65% → bonus +{wr_bonus + 0.02:.0%}")
             if pf < 0.8 and trade_stats.get("trade_count", 0) > 20:
                 adapted["risk_mult"] *= 0.5
                 logger.info(f"  [STATS] {symbol}: PF={pf:.1f} < 0.8 → risk/2")
 
         adapted["_regime"] = regime
         adapted["_dl_score"] = dl_result.get("score") if dl_result else None
+        adapted["_lgb_score"] = lgb_result.get("probability") if lgb_result else None
+        adapted["_lgb_action"] = lgb_result.get("action") if lgb_result else None
         adapted["_meta_action"] = meta_action
         adapted["_meta_confidence"] = round(meta_confidence, 3)
         adapted["_devil"] = len(devil_disagreements)
         adapted["_model_predictions"] = dict(all_predictions)
-        if dl_result:
-            adapted["_ml_agrees"] = dl_result.get("action", "HOLD") == signal.get("action", "HOLD")
-        else:
-            adapted["_ml_agrees"] = None
+        # ML agrees : vérifie si au moins un modèle ML (DL ou LGB) agree avec MOM20x3
+        _mom_action = signal.get("action", "HOLD")
+        _dl_agrees = dl_result and dl_result.get("action", "HOLD") == _mom_action
+        _lgb_agrees = lgb_result and lgb_result.get("action") == _mom_action
+        adapted["_ml_agrees"] = _dl_agrees or _lgb_agrees
+        adapted["_dl_agrees"] = _dl_agrees
+        adapted["_lgb_agrees"] = _lgb_agrees
         # Institutional analysis fields
         adapted["_alignment_dir"] = alignment_dir
         adapted["_alignment_score"] = alignment_score
@@ -682,32 +825,34 @@ class AdaptiveEngine:
         adapted["_sweep_type"] = sweep_type
         adapted["_sweep_level"] = sweep_level
 
-        # Recalibrate meta-learner periodically
-        if self.meta.should_recalibrate():
+        # Recalibrate meta-learner periodically (only when active)
+        if self._meta_active and self.meta.should_recalibrate():
             self.meta.recalibrate()
 
         return adapted
 
     def save_calibration(self):
         self._save_calibration()
-        self.meta.save_state()  # persist separate meta_learner.json
+        if self._meta_active:
+            self.meta.save_state()  # persist separate meta_learner.json
 
     def record_result(self, symbol, r_multiple, regime=None, dl_features=None, batch=False):
         self.learner.record_trade(symbol, r_multiple, regime)
         if not batch:
             self._save_calibration()  # persistence immédiate après chaque trade réel
-        if dl_features is not None and self.dl.available:
+        if dl_features is not None and self.dl is not None and self.dl.available:
             self.dl.record_trade(symbol, dl_features, r_multiple)
 
     def record_meta_result(self, symbol, regime, predictions_outcomes):
-        self.meta.record_trade(symbol, regime, predictions_outcomes)
+        if self._meta_active:
+            self.meta.record_trade(symbol, regime, predictions_outcomes)
         if self.validator is not None:
             for mname, correct in predictions_outcomes.items():
                 self.validator.record(mname, correct, regime, symbol)
         self._save_calibration()  # persistence après chaque meta trade
 
     def train_dl_if_ready(self):
-        if self.dl.available:
+        if self.dl is not None and self.dl.available:
             total = sum(len(v) for v in self.dl.training_buffer.values())
             if total >= 32:
                 self.dl.train_all()
@@ -716,7 +861,7 @@ class AdaptiveEngine:
                 logger.info(f"  [DL] Online training: {total} samples across {n_symbols} symbols")
 
     def build_dl_features(self, rates_dict):
-        if not self.dl.available:
+        if self.dl is None or not self.dl.available:
             return None
         h1 = rates_dict.get("H1")
         if h1 is None:
