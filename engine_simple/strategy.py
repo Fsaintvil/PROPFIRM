@@ -189,8 +189,8 @@ SYMBOL_CONFIG = {
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
         # Filtres ADX (standard forex)
-        "adx_slope_threshold": -5.0,  # standard forex
-        "adx_slope_threshold_strong": -8.0,  # pour raw_score > 0.70
+        "adx_slope_threshold": -12.0,  # ↑ -5.0→-12.0 (22 Juin, Supreme Council) : ADX slope constant -9.0 bloquait tout
+        "adx_slope_threshold_strong": -16.0,  # ↑ -8.0→-16.0 : pour raw_score > 0.70, débloque EURUSD (WR live 69.2%)
         # Pullback bandes modérées (EURUSD pullbacks modérés)
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
@@ -354,12 +354,27 @@ def mom20x3_signal(
             _unmitigated_fvgs = _structure.get("unmitigated_fvgs", 0)
 
             # Pénalité si structure contredit le signal
+            # 🔧 FIX 22 Juin 2026 — ADX guard : si ADX > 25 ET spread DI > 5,
+            # l'ADX/DI est plus fiable que la structure ICT/SMC → pas de pénalité.
+            # Évite la situation XAUUSD où ADX=32/-DI=27 était pénalisé
+            # par une structure "bullish" ICT à contre-tendance.
+            _adx_strong = adx_val > 25 and abs(plus_di - minus_di) > 5
             if mom > 0 and _struct_trend == "bearish":
-                raw_score *= 0.80  # -20%
-                logger.debug(f"  [STRUCT] {symbol}: BUY mais structure bearish → score -20%")
+                if _adx_strong:
+                    logger.debug(
+                        f"  [STRUCT] {symbol}: BUY mais ADX={adx_val:.0f} fort → skip penalty structure bearish"
+                    )
+                else:
+                    raw_score *= 0.80  # -20%
+                    logger.debug(f"  [STRUCT] {symbol}: BUY mais structure bearish → score -20%")
             elif mom < 0 and _struct_trend == "bullish":
-                raw_score *= 0.80
-                logger.debug(f"  [STRUCT] {symbol}: SELL mais structure bullish → score -20%")
+                if _adx_strong:
+                    logger.debug(
+                        f"  [STRUCT] {symbol}: SELL mais ADX={adx_val:.0f} fort → skip penalty structure bullish"
+                    )
+                else:
+                    raw_score *= 0.80
+                    logger.debug(f"  [STRUCT] {symbol}: SELL mais structure bullish → score -20%")
 
             # Bonus si structure confirme
             if mom > 0 and _struct_trend == "bullish":

@@ -55,7 +55,7 @@ risk:
   max_trading_days: 0            # pas de limite max
 
   # --- Risque par trade ---
-  per_trade_pct: 0.005           # ↑ 0.4%→0.5% (19 Juin) : +25% profit/trade, 4 pertes = 2% daily loss (limite FTMO)
+  per_trade_pct: 0.004           # ↓ 0.5%→0.4% (22 Juin, Supreme Council) : 5 pertes = 2% daily loss, marge +25%
   short_mult: 1.0                # même risque long/short
   max_risk_amount: 800.0         # $800 max risque par trade
 
@@ -64,8 +64,8 @@ risk:
   atr_multiplier: 1.5            # multiplicateur ATR pour SL
 
   # --- Cooldown ---
-  cooldown_minutes: 5           # 5 min après perte (réduit pour production continue)
-  auto_pause_losses: 10          # 10 pertes consécutives → pause 30 min
+  cooldown_minutes: 15          # ↑ 5→15min (22 Juin, Supreme Council) : vrai refroidissement après perte
+  auto_pause_losses: 5           # ↓ 10→5 (22 Juin, Supreme Council) : 5 pertes = $1.6K = 0.8% DD avant pause
 
   # --- Volatilité ---
   max_spread_points: 120         # spread max global (overridden par symbole)
@@ -150,7 +150,7 @@ symbol_limits:
     timeframe: "H1"             # H1 (WR 69.8%, PF 1.19, DD 5.6% clean)
     max_lot: 0.03               # 0.03 lot, max $240 risque/trade (prudent)
     min_lot: 0.01
-    risk_mult: 0.72             # ↑ 0.65→0.72 (19 Juin 2026) : WR 60% sur 25 trades, +$128 PnL — augmentation 10%
+    risk_mult: 0.0              # DÉSACTIVÉ (22 Juin, Supreme Council) : WR live 44.7%, momentum < seuil, gap -25 pts backtest
     max_spread_points: 150      # spread large crypto (typique 80-150 pts)
     min_score: 0.60             # seuil abaissé 0.65→0.60 pour plus de signaux (calibration)
     adx_thresh: 20              # ADX 20/16 (crypto plus bruité que forex)
