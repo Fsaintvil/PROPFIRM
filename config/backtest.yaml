@@ -1,0 +1,133 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Configuration Backtest Institutionnel — MOM20x3 Multi-Actifs 12+ ans
+# ═══════════════════════════════════════════════════════════════════════════
+# Usage : python scripts/bt_run.py --config config/backtest.yaml
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ─── Capital ───────────────────────────────────────────────────────────────
+capital:
+  initial_balance: 200_000        # Capital initial en USD
+  risk_per_trade: 0.0042          # 0.42% du capital par trade (PASS FTMO confirmé)
+  currency: USD
+
+# ─── Symboles (3 meilleurs MOM20x3 — validés PASS FTMO) ──────────────────────
+symbols:
+  minor_fx:
+    - GBPJPY
+  metals:
+    - XAUUSD
+  crypto:
+    - BTCUSD
+
+  default_timeframe: H1
+  start_date: 2012-01-01
+  end_date: 2026-01-01
+
+# ─── Stratégie ─────────────────────────────────────────────────────────────
+strategy:
+  name: mom20x3                    # Par défaut
+  params:
+    momentum_period: 20
+    threshold_trending: 2.5        # ×ATR en trend (ADX >= 22)
+    threshold_ranging: 2.0         # ×ATR en range (ADX < 22)
+    threshold_max: 2.5
+    threshold_min: 1.5
+    adx_threshold_trend: 22
+    adx_threshold_range: 18
+    pullback_band_trending: 0.5    # ×ATR
+    pullback_band_ranging: 0.3     # ×ATR
+    adx_slope_threshold: -6.0
+    adx_slope_threshold_strong: -10.0
+    min_score: 0.55
+
+# ─── Backtest Engine ───────────────────────────────────────────────────────
+engine:
+  # Timeouts en barres par timeframe
+  timeout_bars:
+    M1: 600
+    M5: 240
+    M15: 120
+    H1: 120
+    H4: 60
+    D1: 30
+
+  # Limites
+  max_positions: 3
+  max_positions_per_symbol: 1
+  min_bars_between_trades: 5
+  min_bars_warmup: 80
+
+  # Exécution
+  latency_ms: 100
+  requote_prob: 0.02
+  enable_partial_fill: true
+
+  # Trailing (v6 — RR prioritaire, premier lock à 1.5×ATR pour RR > 0.50)
+  be_buffer_atr: 0.60
+  trailing_levels:
+    RANGING: [[1.5, 0.50], [2.5, 0.30], [4.0, 0.18], [6.0, 0.08]]
+    TREND_UP: [[1.5, 0.60], [2.5, 0.35], [4.0, 0.20], [6.0, 0.10]]
+    TREND_DOWN: [[1.5, 0.60], [2.5, 0.35], [4.0, 0.20], [6.0, 0.10]]
+    HIGH_VOL: [[1.5, 0.70], [2.5, 0.45], [4.0, 0.28], [6.0, 0.15]]
+    LOW_VOL: [[1.0, 0.40], [2.0, 0.22], [3.0, 0.12], [5.0, 0.05]]
+
+# ─── Coûts ─────────────────────────────────────────────────────────────────
+costs:
+  # Mode par défaut : realistic | raw | conservative
+  mode: realistic
+
+  # Spread en pips (3 symboles actifs)
+  spread_pips:
+    GBPJPY: 3.0
+    XAUUSD: 5.0
+    BTCUSD: 10.0
+
+  # Commission
+  commission:
+    forex: [3.5, per_lot]       # $3.5/lot round-trip
+    metals: [5.0, per_lot]      # $5/lot round-trip
+    indices: [2.0, per_lot]     # $2/lot round-trip
+    energy: [5.0, per_lot]      # $5/lot round-trip
+    crypto: [0.0007, pct_notional]  # 0.07% round-trip
+
+  # Swap
+  swap_enabled: true
+
+  # Slippage
+  slippage_enabled: true
+
+# ─── FTMO Challenge ────────────────────────────────────────────────────────
+ftmo:
+  account_size: 200_000
+  profit_target_pct: 0.05         # 5%
+  max_daily_loss_pct: 0.02        # 2%
+  max_dd_pct: 0.10                # 10%
+  consistency_pct: 0.30           # 30%
+  min_trading_days: 10
+  max_duration_days: 30
+
+# ─── Tests de Robustesse ───────────────────────────────────────────────────
+robustness:
+  walk_forward:
+    n_splits: 5
+    purging: true
+    embargo: 10
+
+  monte_carlo:
+    n_simulations: 1000
+    method: bootstrap             # bootstrap | reshuffle | probabilistic
+
+  stress_tests:
+    sample_bars: 5000             # Limite pour accélérer (None = toutes)
+    scenarios:
+      - CRASH-2008
+      - SNB-2015
+      - COVID-2020
+      - RATE-2022
+
+# ─── Reporting ─────────────────────────────────────────────────────────────
+reporting:
+  output_dir: backtest/results
+  full_report: false              # Générer charts PNG + PDF + HTML
+  export_json: false
+  export_csv: false
