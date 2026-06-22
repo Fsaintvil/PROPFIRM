@@ -120,7 +120,7 @@ class OnlineLearner:
             self._batch_mode = True
 
     # ── Persistance disque ──────────────────────────────────────────
-    STATE_FILENAME = "runtime/online_learner_state.json"
+    STATE_FILENAME = "runtime/ol_state.json"
 
     def save_state(self, path=None):
         path = path or self._state_path or self.STATE_FILENAME
@@ -436,21 +436,21 @@ class AdaptiveEngine:
             # Restore OnlineLearner history
             ol = state.get("online_history", {})
 
+            # ⚠️ P0: Désactivé — l'overwrite de learner.history depuis calibration_state.json
+            # causait la perte des 145 IMPORT trades (race condition). L'OL garde son
+            # propre historique dans online_learner_state.json via _load_state().
+            # La calibration ne restaure que les adapted_params (ci-dessous).
+            # Voir: AGENTS.md → Supreme Council décision 22 Juin 2026
             for sym, hist_list in ol.items():
-                # ⛔ Les symboles dans _SYMBOLS_SKIP_OL_IMPORT (ex: EURUSD) sont
-                # exclus de l'import MT5 dans position_tracker.py, mais ils DOIVENT
-                # être restaurés depuis la calibration pour que l'OL survive aux
-                # redémarrages avec ses trades appris (seed + live).
-                # Sinon, une fenêtre de race condition (seed script → _load_state)
-                # peut faire perdre les données à chaque restart.
-                from engine_simple.position_tracker import _SYMBOLS_SKIP_OL_IMPORT
+                if False:  # P0: préservation historique OL
+                    from engine_simple.position_tracker import _SYMBOLS_SKIP_OL_IMPORT
 
-                if sym in _SYMBOLS_SKIP_OL_IMPORT:
-                    logger.info(f"  [CAL] Restoring {sym} from calibration (skip list ignored for state restoration)")
-                self.learner.history[sym] = deque(maxlen=self.learner.window)
-                for h in hist_list:
-                    self.learner.history[sym].append(h)
-                self.learner._update_params(sym)
+                    if sym in _SYMBOLS_SKIP_OL_IMPORT:
+                        logger.info(f"  [CAL] Restoring {sym} from calibration (skip list ignored)")
+                    self.learner.history[sym] = deque(maxlen=self.learner.window)
+                    for h in hist_list:
+                        self.learner.history[sym].append(h)
+                    self.learner._update_params(sym)
             # ⚠️ Restaurer adapted_params depuis la calibration (survit aux redémarrages)
             cal_adapted = state.get("adapted_params", {})
             if cal_adapted:

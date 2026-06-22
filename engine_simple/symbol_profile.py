@@ -186,14 +186,48 @@ CORRELATION_GROUPS: dict[str, list[str]] = {
     "CRYPTO": ["BTCUSD"],
     "RISK_ON": ["US500.cash"],
     "SAFE_HAVEN": ["XAUUSD"],
+    "FOREX_MAJOR": ["EURUSD", "GBPUSD", "USDJPY", "USDCAD"],
+    "FOREX_COMMODITY": ["AUDUSD", "USDCAD"],
 }
 
 # Matrice de corrélation institutionnelle (estimation)
 # Juin 2026: 3 symboles actifs (ETHUSD retiré)
 CORRELATION_MATRIX: dict[str, dict[str, float]] = {
-    "BTCUSD": {"BTCUSD": 1.0, "XAUUSD": 0.15, "US500.cash": 0.45},
-    "XAUUSD": {"XAUUSD": 1.0, "BTCUSD": 0.15, "US500.cash": -0.25},
-    "US500.cash": {"US500.cash": 1.0, "BTCUSD": 0.45, "XAUUSD": -0.25},
+    "BTCUSD": {
+        "BTCUSD": 1.0,
+        "XAUUSD": 0.15,
+        "US500.cash": 0.45,
+        "EURUSD": 0.10,
+        "GBPUSD": 0.15,
+        "USDJPY": -0.30,
+        "AUDUSD": 0.40,
+        "USDCAD": 0.35,
+    },
+    "XAUUSD": {
+        "XAUUSD": 1.0,
+        "BTCUSD": 0.15,
+        "US500.cash": -0.25,
+        "EURUSD": -0.10,
+        "GBPUSD": 0.05,
+        "USDJPY": 0.20,
+        "AUDUSD": -0.15,
+        "USDCAD": -0.10,
+    },
+    "US500.cash": {
+        "US500.cash": 1.0,
+        "BTCUSD": 0.45,
+        "XAUUSD": -0.25,
+        "EURUSD": 0.35,
+        "GBPUSD": 0.40,
+        "USDJPY": -0.20,
+        "AUDUSD": 0.30,
+        "USDCAD": 0.25,
+    },
+    "EURUSD": {"EURUSD": 1.0, "GBPUSD": 0.70, "USDJPY": 0.30, "AUDUSD": 0.55, "USDCAD": 0.50},
+    "GBPUSD": {"GBPUSD": 1.0, "EURUSD": 0.70, "USDJPY": 0.25, "AUDUSD": 0.50, "USDCAD": 0.45},
+    "USDJPY": {"USDJPY": 1.0, "EURUSD": 0.30, "GBPUSD": 0.25, "AUDUSD": 0.15, "USDCAD": 0.20},
+    "AUDUSD": {"AUDUSD": 1.0, "EURUSD": 0.55, "GBPUSD": 0.50, "USDJPY": 0.15, "USDCAD": 0.70},
+    "USDCAD": {"USDCAD": 1.0, "EURUSD": 0.50, "GBPUSD": 0.45, "USDJPY": 0.20, "AUDUSD": 0.70},
 }
 
 # Groupes pour la gestion de positions (max 1 trade par direction dans un groupe)

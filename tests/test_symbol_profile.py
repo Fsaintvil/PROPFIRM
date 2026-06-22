@@ -20,8 +20,8 @@ from engine_simple.symbol_profile import (
     validate_trade_with_profile,
 )
 
-# Symboles actifs Juin 2026
-ACTIVE_SYMBOLS = ["XAUUSD", "BTCUSD", "US500.cash"]
+# Symboles actifs 23 Juin 2026
+ACTIVE_SYMBOLS = ["XAUUSD", "BTCUSD", "US500.cash", "EURUSD", "USDJPY", "GBPUSD", "AUDUSD", "USDCAD"]
 
 
 class TestSymbolProfileExists:

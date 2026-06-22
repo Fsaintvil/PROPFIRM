@@ -69,6 +69,46 @@ TRAILING_BY_SYMBOL = {
         "HIGH_VOL": [(0.80, 0.70), (2.00, 0.50), (3.00, 0.35), (5.00, 0.20)],
         "LOW_VOL": [(0.80, 0.30), (2.00, 0.18), (3.00, 0.12), (5.00, 0.06)],
     },
+    # ═══════════════════════════════════════════════════════════════════════
+    # USDJPY H1 — Dollar/Yen (23 Juin 2026 — NOUVEAU, profil forex standard)
+    # ═══════════════════════════════════════════════════════════════════════
+    "USDJPY": {
+        "TREND_UP": [(0.80, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
+        "TREND_DOWN": [(0.80, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
+        "RANGING": [(0.80, 0.40), (2.00, 0.25), (3.00, 0.15), (5.00, 0.08)],
+        "HIGH_VOL": [(0.80, 0.70), (2.00, 0.50), (3.00, 0.35), (5.00, 0.20)],
+        "LOW_VOL": [(0.80, 0.30), (2.00, 0.18), (3.00, 0.12), (5.00, 0.06)],
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # GBPUSD H1 — Livre/Dollar (23 Juin 2026 — NOUVEAU, profil forex standard)
+    # ═══════════════════════════════════════════════════════════════════════
+    "GBPUSD": {
+        "TREND_UP": [(0.80, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
+        "TREND_DOWN": [(0.80, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
+        "RANGING": [(0.80, 0.40), (2.00, 0.25), (3.00, 0.15), (5.00, 0.08)],
+        "HIGH_VOL": [(0.80, 0.70), (2.00, 0.50), (3.00, 0.35), (5.00, 0.20)],
+        "LOW_VOL": [(0.80, 0.30), (2.00, 0.18), (3.00, 0.12), (5.00, 0.06)],
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # AUDUSD H1 — Australien/Dollar (23 Juin 2026 — NOUVEAU, profil forex standard)
+    # ═══════════════════════════════════════════════════════════════════════
+    "AUDUSD": {
+        "TREND_UP": [(0.80, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
+        "TREND_DOWN": [(0.80, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
+        "RANGING": [(0.80, 0.40), (2.00, 0.25), (3.00, 0.15), (5.00, 0.08)],
+        "HIGH_VOL": [(0.80, 0.70), (2.00, 0.50), (3.00, 0.35), (5.00, 0.20)],
+        "LOW_VOL": [(0.80, 0.30), (2.00, 0.18), (3.00, 0.12), (5.00, 0.06)],
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # USDCAD H1 — US/Canadian Dollar (23 Juin 2026 — NOUVEAU, profil forex standard)
+    # ═══════════════════════════════════════════════════════════════════════
+    "USDCAD": {
+        "TREND_UP": [(0.80, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
+        "TREND_DOWN": [(0.80, 0.50), (2.00, 0.35), (3.00, 0.20), (5.00, 0.10)],
+        "RANGING": [(0.80, 0.40), (2.00, 0.25), (3.00, 0.15), (5.00, 0.08)],
+        "HIGH_VOL": [(0.80, 0.70), (2.00, 0.50), (3.00, 0.35), (5.00, 0.20)],
+        "LOW_VOL": [(0.80, 0.30), (2.00, 0.18), (3.00, 0.12), (5.00, 0.06)],
+    },
 }
 
 # Fallback par défaut (ancien comportement)
@@ -124,6 +164,34 @@ BE_BUFFER_BY_SYMBOL = {
         "HIGH_VOL": 0.90,  # haute vol: très large
         "LOW_VOL": 0.40,  # basse vol: serré
     },
+    "USDJPY": {
+        "TREND_UP": 0.55,
+        "TREND_DOWN": 0.55,
+        "RANGING": 0.75,
+        "HIGH_VOL": 0.90,
+        "LOW_VOL": 0.40,
+    },
+    "GBPUSD": {
+        "TREND_UP": 0.55,
+        "TREND_DOWN": 0.55,
+        "RANGING": 0.75,
+        "HIGH_VOL": 0.90,
+        "LOW_VOL": 0.40,
+    },
+    "AUDUSD": {
+        "TREND_UP": 0.55,
+        "TREND_DOWN": 0.55,
+        "RANGING": 0.75,
+        "HIGH_VOL": 0.90,
+        "LOW_VOL": 0.40,
+    },
+    "USDCAD": {
+        "TREND_UP": 0.55,
+        "TREND_DOWN": 0.55,
+        "RANGING": 0.75,
+        "HIGH_VOL": 0.90,
+        "LOW_VOL": 0.40,
+    },
 }
 
 # Fallback par défaut
@@ -153,7 +221,16 @@ FIRST_LOCK_ATR = (
 )
 
 # Per-symbol risk_mult cap: Juin 2026 — EURUSD ajouté
-RISK_MULT_CAP = {"XAUUSD": 1.25, "BTCUSD": 1.00, "US500.cash": 1.15, "EURUSD": 2.00}
+RISK_MULT_CAP = {
+    "XAUUSD": 1.25,
+    "BTCUSD": 1.00,
+    "US500.cash": 1.15,
+    "EURUSD": 2.00,
+    "USDJPY": 1.50,
+    "GBPUSD": 1.50,
+    "AUDUSD": 1.25,
+    "USDCAD": 1.25,
+}
 
 # Per-symbol max positions (total BUY+SELL) — EURUSD ajouté
 MAX_POS_PER_SYMBOL = {
@@ -161,6 +238,10 @@ MAX_POS_PER_SYMBOL = {
     "BTCUSD": 4,
     "US500.cash": 4,
     "EURUSD": 4,
+    "USDJPY": 4,
+    "GBPUSD": 4,
+    "AUDUSD": 4,
+    "USDCAD": 4,
 }
 
 # ============================================================================
@@ -187,7 +268,11 @@ FIRST_LOCK_BY_SYMBOL = {
     "XAUUSD": 1.0,  # TRAILING: TREND_UP first lock = 1.0
     "BTCUSD": 1.0,  # TRAILING: TREND_UP first lock = 1.0
     "US500.cash": 0.5,  # TRAILING: TREND_UP first lock = 0.5
-    "EURUSD": 1.0,  # TRAILING: TREND_UP first lock = 1.0 (valeur par défaut)
+    "EURUSD": 1.0,  # TRAILING: TREND_UP first lock = 1.0
+    "USDJPY": 0.80,
+    "GBPUSD": 0.80,
+    "AUDUSD": 0.80,
+    "USDCAD": 0.80,
 }
 
 

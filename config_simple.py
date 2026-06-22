@@ -100,6 +100,10 @@ except Exception as e:
         "XAUUSD",
         "BTCUSD",
         "EURUSD",
+        "USDJPY",
+        "GBPUSD",
+        "AUDUSD",
+        "USDCAD",
     ]
     _fb_log("SYMBOLS", SYMBOLS)
     ROBOT_MAGIC = 999001
@@ -231,12 +235,76 @@ except Exception as e:
             sl_atr_ranging=1.2,
             tp_atr_ranging=3.0,
         ),
+        # USDJPY H1 (fallback YAML) — 23 Juin 2026
+        "USDJPY": dict(
+            max_lot=0.10,
+            risk_mult=1.00,
+            max_spread_points=45,
+            adx_thresh=22,
+            min_score=0.60,
+            allow_buys=True,
+            allow_shorts=True,
+            momentum_period=20,
+            sl_atr_trending=1.5,
+            tp_atr_trending=4.5,
+            sl_atr_ranging=1.2,
+            tp_atr_ranging=3.0,
+        ),
+        # GBPUSD H1 (fallback YAML) — 23 Juin 2026
+        "GBPUSD": dict(
+            max_lot=0.10,
+            risk_mult=0.90,
+            max_spread_points=50,
+            adx_thresh=22,
+            min_score=0.60,
+            allow_buys=True,
+            allow_shorts=True,
+            momentum_period=20,
+            sl_atr_trending=1.5,
+            tp_atr_trending=4.5,
+            sl_atr_ranging=1.2,
+            tp_atr_ranging=3.0,
+        ),
+        # AUDUSD H1 (fallback YAML) — 23 Juin 2026
+        "AUDUSD": dict(
+            max_lot=0.10,
+            risk_mult=0.75,
+            max_spread_points=45,
+            adx_thresh=22,
+            min_score=0.60,
+            allow_buys=True,
+            allow_shorts=True,
+            momentum_period=20,
+            sl_atr_trending=1.5,
+            tp_atr_trending=4.5,
+            sl_atr_ranging=1.2,
+            tp_atr_ranging=3.0,
+        ),
+        # USDCAD H1 (fallback YAML) — 23 Juin 2026
+        "USDCAD": dict(
+            max_lot=0.10,
+            risk_mult=0.85,
+            max_spread_points=45,
+            adx_thresh=22,
+            min_score=0.60,
+            allow_buys=True,
+            allow_shorts=True,
+            momentum_period=20,
+            sl_atr_trending=1.5,
+            tp_atr_trending=4.5,
+            sl_atr_ranging=1.2,
+            tp_atr_ranging=3.0,
+        ),
     }
     SYMBOL_TIMEFRAMES = {
         "XAUUSD": "H4",
         "BTCUSD": "H1",
         "US500.cash": "H4",
         "EURUSD": "H1",
+        "USDJPY": "H1",
+        "GBPUSD": "H1",
+        "AUDUSD": "H1",
+        "USDCAD": "H1",
     }
     ML_EXPERIMENT_TRACKING = False
     ML_TRACKING_URI = ""

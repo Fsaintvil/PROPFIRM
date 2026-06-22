@@ -22,7 +22,7 @@ from collections import deque
 ROOT = Path(__file__).resolve().parent.parent
 SEED_CSV = ROOT / "runtime" / "online_learner_seed.csv"
 LOCK_FILE = ROOT / "runtime" / "online_learner_seed.lock"
-STATE_FILE = ROOT / "runtime" / "online_learner_state.json"
+STATE_FILE = ROOT / "runtime" / "ol_state.json"
 
 random.seed(42)  # Reproductible
 
@@ -34,6 +34,10 @@ SYMBOL_CONFIG = {
     "XAUUSD": {"wr": 0.62, "trades": 200, "rr_win": 2.5, "rr_loss": -1.0, "volume": 0.10},
     "BTCUSD": {"wr": 0.65, "trades": 200, "rr_win": 2.5, "rr_loss": -1.0, "volume": 0.05},
     "EURUSD": {"wr": 0.63, "trades": 200, "rr_win": 2.3, "rr_loss": -1.0, "volume": 0.10},
+    "USDJPY": {"wr": 0.65, "trades": 200, "rr_win": 2.3, "rr_loss": -1.0, "volume": 0.10},
+    "GBPUSD": {"wr": 0.63, "trades": 200, "rr_win": 2.3, "rr_loss": -1.0, "volume": 0.10},
+    "AUDUSD": {"wr": 0.62, "trades": 200, "rr_win": 2.2, "rr_loss": -1.0, "volume": 0.10},
+    "USDCAD": {"wr": 0.63, "trades": 200, "rr_win": 2.3, "rr_loss": -1.0, "volume": 0.10},
 }
 
 # Régimes réalistes (Distribution: 40% RANGING, 25% TREND_UP, 25% TREND_DOWN, 5% HIGH_VOL, 5% LOW_VOL)

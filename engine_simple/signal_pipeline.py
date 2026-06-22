@@ -277,7 +277,13 @@ class SignalPipeline:
             ol_params = self.adaptive.learner.get_params(symbol, base_thresh=2.5)
             ol_thresh = ol_params.get("thresh", 2.5)
             base_trending = _SYMBOL_CFG.get(symbol, {}).get("threshold_trending", 2.0)
-            if ol_thresh < base_trending:
+            # ⚠️ P0: OL dépouillé de ses pouvoirs (Supreme Council, 22 Juin 2026)
+            # La condition ol_thresh < base_trending n'a JAMAIS été vraie depuis la création
+            # car le seed produit thresh=2.5 pour WR<70% et base_trending=2.0-2.5.
+            # L'OL continue d'enregistrer les trades et de logger ses recommandations
+            # (observateur passif) mais ses seuils sont ignorés.
+            # Voir: AGENTS.md → Session Robot Manager — 22 Juin 2026
+            if False:
                 ol_thresh_trending = ol_thresh
                 ol_thresh_ranging = max(1.5, ol_thresh - 0.5)
         except Exception:
@@ -343,16 +349,14 @@ class SignalPipeline:
         if h4_conf < 1.0 and signal.get("score", 0.6) > 0.5:
             signal["score"] = max(0.5, signal["score"] * 0.90)
 
-        # Per-symbol risk_mult (base × OL)
+        # Per-symbol risk_mult (base × constante OL)
+        # ⚠️ P0: OL risk_mult gelé à 0.75 (valeur seed pour WR<70%).
+        # Le OL.get_params() continue d'être loggué mais son risk_mult n'est plus utilisé
+        # car il était désynchronisé avec calibration_state.json.
+        # Supreme Council décision: gel temporaire en attendant Phase 2.
         symbol_config = self.symbol_limits.get(symbol, {})
         base_risk_mult = symbol_config.get("risk_mult", 1.0)
-        ol_risk_mult = 1.0
-        try:
-            ol_params = self.adaptive.learner.get_params(symbol, base_thresh=2.5)
-            ol_risk_mult = ol_params.get("risk_mult", 1.0)
-        except Exception:
-            pass
-        signal["risk_mult"] = base_risk_mult * ol_risk_mult
+        signal["risk_mult"] = base_risk_mult * 0.75
         signal["entry_price"] = entry if raw["action"] == "BUY" else (tick.bid if tick else 0)
         signal["higher_tf_conf"] = round(h4_conf, 2)
         atr_price = signal.get("atr", 0)

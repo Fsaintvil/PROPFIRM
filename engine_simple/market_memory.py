@@ -22,7 +22,7 @@ DATA_DIR = Path("data")
 FEATURES_DIR = DATA_DIR / "features"
 CACHE_DIR = DATA_DIR / "cache"
 
-SYMBOLS = ["XAUUSD", "BTCUSD", "US500.cash"]
+SYMBOLS = ["XAUUSD", "BTCUSD", "EURUSD", "USDJPY", "GBPUSD", "AUDUSD", "USDCAD"]
 TIMEFRAMES_TIERS = {
     "fast": "M15",
     "medium": "H1",

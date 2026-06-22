@@ -204,6 +204,103 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
     },
+    # ═══════════════════════════════════════════════════════════════════════
+    # USDJPY H1 — Dollar/Yen (23 Juin 2026 — NOUVEAU)
+    # Caractéristiques: Forex majeur, tendances longues, spread serré
+    # Backtest réaliste 2010-2026: WR 82.1%, PF 1.68, DD 2.5%, +$329K
+    #   → Meilleur performer des nouveaux symboles
+    # ═══════════════════════════════════════════════════════════════════════
+    "USDJPY": {
+        "momentum_period": 20,
+        "sl_atr_trending": 1.5,
+        "tp_atr_trending": 4.5,
+        "sl_atr_ranging": 1.2,
+        "tp_atr_ranging": 3.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -10.0,
+        "adx_slope_threshold_strong": -14.0,
+        "pullback_band_trending": 0.3,
+        "pullback_band_ranging": 0.2,
+        "cmf_threshold": 0.10,
+        "obv_div_penalty_high": 0.70,
+        "obv_div_penalty_low": 0.85,
+        "preferred_hours": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+        "news_minutes_before": 15,
+        "news_minutes_after": 15,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # GBPUSD H1 — Livre/Dollar (23 Juin 2026 — NOUVEAU)
+    # Caractéristiques: Forex majeur, volatilité élevée, spread modéré
+    # Backtest réaliste 2010-2026: WR 80.7%, PF 1.42, DD 1.9%, +$86K
+    # ═══════════════════════════════════════════════════════════════════════
+    "GBPUSD": {
+        "momentum_period": 20,
+        "sl_atr_trending": 1.5,
+        "tp_atr_trending": 4.5,
+        "sl_atr_ranging": 1.2,
+        "tp_atr_ranging": 3.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -10.0,
+        "adx_slope_threshold_strong": -14.0,
+        "pullback_band_trending": 0.3,
+        "pullback_band_ranging": 0.2,
+        "cmf_threshold": 0.10,
+        "obv_div_penalty_high": 0.70,
+        "obv_div_penalty_low": 0.85,
+        "preferred_hours": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+        "news_minutes_before": 20,
+        "news_minutes_after": 20,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # AUDUSD H1 — Australien/Dollar (23 Juin 2026 — NOUVEAU)
+    # Caractéristiques: Forex mineur, sessions Asia+London
+    # Backtest réaliste 2010-2026: WR 79.4%, PF 1.24, DD 3.6%, +$45K
+    # ═══════════════════════════════════════════════════════════════════════
+    "AUDUSD": {
+        "momentum_period": 20,
+        "sl_atr_trending": 1.5,
+        "tp_atr_trending": 4.5,
+        "sl_atr_ranging": 1.2,
+        "tp_atr_ranging": 3.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -10.0,
+        "adx_slope_threshold_strong": -14.0,
+        "pullback_band_trending": 0.3,
+        "pullback_band_ranging": 0.2,
+        "cmf_threshold": 0.10,
+        "obv_div_penalty_high": 0.70,
+        "obv_div_penalty_low": 0.85,
+        "preferred_hours": [0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+        "news_minutes_before": 15,
+        "news_minutes_after": 15,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # USDCAD H1 — Dollar US/Dollar Canadien (23 Juin 2026 — NOUVEAU)
+    # Caractéristiques: Forex majeur, corrélé au pétrole, DD excellent
+    # Backtest réaliste 2010-2026: WR 80.7%, PF 1.40, DD 1.2%, +$64K
+    # ═══════════════════════════════════════════════════════════════════════
+    "USDCAD": {
+        "momentum_period": 20,
+        "sl_atr_trending": 1.5,
+        "tp_atr_trending": 4.5,
+        "sl_atr_ranging": 1.2,
+        "tp_atr_ranging": 3.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -10.0,
+        "adx_slope_threshold_strong": -14.0,
+        "pullback_band_trending": 0.3,
+        "pullback_band_ranging": 0.2,
+        "cmf_threshold": 0.10,
+        "obv_div_penalty_high": 0.70,
+        "obv_div_penalty_low": 0.85,
+        "preferred_hours": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+        "news_minutes_before": 15,
+        "news_minutes_after": 15,
+    },
 }
 
 # Fallback par défaut

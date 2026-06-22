@@ -19,13 +19,16 @@ from engine_simple.adaptive_intelligence import AdaptiveEngine, MarketRegime, On
 
 @pytest.fixture(autouse=True)
 def _reset_seed():
-    """Nettoie le lock seed avant chaque test pour garantir l'isolation."""
+    """Nettoie le lock seed ET le state file avant chaque test pour garantir l'isolation.
+    Sans cela, les tests partagent le fichier de production ol_state.json et le corrompent."""
     lock = Path("runtime/online_learner_seed.lock")
     if lock.exists():
         lock.unlink()
-    state = Path("runtime/online_learner_state.json")
-    if state.exists():
-        state.unlink()
+    # Nettoyer les deux state files (ancien + nouveau unifié)
+    for f in ["runtime/online_learner_state.json", "runtime/ol_state.json"]:
+        p = Path(f)
+        if p.exists():
+            p.unlink()
 
 
 def _make_h1_rates(n=100, trend="up"):

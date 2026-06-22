@@ -328,7 +328,7 @@ class FTMO_SIMPLE:
         self._stop_trading = False  # Désactivé — mode production continue (sans arret)
         # MOM20x3 pur — strategy.py est l'unique source de signaux
         self.signals = None  # interface conservée pour compatibilité
-        self.adaptive = AdaptiveEngine(self.mt5, calibration_path="runtime/calibration_state.json")
+        self.adaptive = AdaptiveEngine(self.mt5, calibration_path="runtime/ol_state.json")
 
         # PHASE 2.2: MetaLearner intégré dans AdaptiveEngine
         # (instance self.adaptive.meta créée dans AdaptiveEngine.__init__)
@@ -1310,7 +1310,16 @@ class FTMO_SIMPLE:
                 kelly_factor = max(0.3, min(1.5, kelly_risk / cfg.RISK_PER_TRADE))  # borné [0.3, 1.5]
                 signal["risk_mult"] = signal.get("risk_mult", 1.0) * kelly_factor
                 # 🔒 FIX M2: Cap final du risk_mult par symbole (après toutes les multiplications)
-                _FINAL_CAP = {"XAUUSD": 1.50, "BTCUSD": 1.25, "US500.cash": 1.30, "EURUSD": 2.00}
+                _FINAL_CAP = {
+                    "XAUUSD": 1.50,
+                    "BTCUSD": 1.25,
+                    "US500.cash": 1.30,
+                    "EURUSD": 2.00,
+                    "USDJPY": 1.50,
+                    "GBPUSD": 1.50,
+                    "AUDUSD": 1.25,
+                    "USDCAD": 1.25,
+                }
                 cap = _FINAL_CAP.get(symbol, 1.0)
                 if signal["risk_mult"] > cap:
                     logger.info(f"  [RISK] {symbol}: risk_mult {signal['risk_mult']:.3f} capé à {cap} (post-Kelly)")

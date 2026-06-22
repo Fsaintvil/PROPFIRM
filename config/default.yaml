@@ -1,6 +1,7 @@
 # ============================================================================
-# CONFIGURATION PRODUCTION — FTMO 200K Challenge (Juin 2026)
-# 3 actifs calibrés indépendamment : XAUUSD (H4), BTCUSD (H1), EURUSD (H1)
+# CONFIGURATION PRODUCTION — FTMO 200K Challenge (23 Juin 2026)
+# 7 actifs : XAUUSD (H4), BTCUSD (H1), EURUSD (H1),
+#            USDJPY (H1), GBPUSD (H1), AUDUSD (H1), USDCAD (H1)
 # Aucun paramètre identique entre deux actifs sans justification statistique.
 # ============================================================================
 # Chaque paramètre est justifié par:
@@ -19,16 +20,19 @@ robot:
 # ── Trading ──────────────────────────────────────────────────────────────
 trading:
   symbols:
-    - XAUUSD      # H4 — WR 71.9%, PF 1.11, DD 9.7% (backtest H4 avec coûts)
-    - BTCUSD      # H1 — WR 74.6%, PF 1.17, DD 9.2% (backtest H4 avec coûts)
+    - XAUUSD      # H4 — WR 68.6%, PF 1.16, DD 6.9% (backtest 12+ ans)
+    - BTCUSD      # H1 — WR 32.3% Phase 3, PF 0.71, risk_mult=0.0 (DÉSACTIVÉ 23 Juin)
     # - ETHUSD      # DÉSACTIVÉ 19 Juin — WR 27.6% live, PF 0.50, toxique
-    - EURUSD      # H1 — WR 88.9% live, PF 76.34, BUY invincible (8-0)
-    # - US500.cash  # DÉSACTIVÉ 19 Juin — PF=0.24 live, WR=46.9%, toxique
+    - EURUSD      # H1 — WR 68.6%, PF 1.12, DD 3.7% (backtest 12+ ans)
+    - USDJPY      # H1 — WR 82.1%, PF 1.68, DD 2.5% (backtest réaliste 16 ans)
+    - GBPUSD      # H1 — WR 80.7%, PF 1.42, DD 1.9% (backtest réaliste 16 ans)
+    - AUDUSD      # H1 — WR 79.4%, PF 1.24, DD 3.6% (backtest réaliste 16 ans)
+    - USDCAD      # H1 — WR 80.7%, PF 1.40, DD 1.2% (backtest réaliste 16 ans)
 
   # Limites globales — Production continue (1 trade/symbole/5min)
-  max_positions: 14             # Capacité augmentée (19 Juin) : 4 symboles × 3-4 positions/symbole possibles
-  max_positions_per_symbol: 2   # 2 positions max par symbole (↓ 3→2, réduction risque directionnel)
-  max_trades_per_day: 80        # 4 symboles × 20 trades/jour (inchangé)
+  max_positions: 20             # Augmenté (23 Juin) : 7 symboles × 2-3 positions/symbole
+  max_positions_per_symbol: 2   # 2 positions max par symbole
+  max_trades_per_day: 120       # Augmenté (23 Juin) : 7 symboles × ~17 trades/jour
   max_signals_per_cycle: 10     # marge pour signaux simultanés
   max_orders_per_minute: 6      # 1 trade/min/symbole + marge
   lot_size: 0.05                # lot par défaut (overridden par symbol_limits)
@@ -287,6 +291,146 @@ symbol_limits:
     news_minutes_after: 15      # 15 min après
 
   # ═══════════════════════════════════════════════════════════════════════
+  # ═══════════════════════════════════════════════════════════════════════
+  # USDJPY — Dollar/Yen (TIMEFRAME H1)
+  # Caractéristiques: Forex majeur, spread serré, tendances longues
+  # Backtest réaliste 2010-2026: WR 82.1%, PF 1.68, DD 2.5%, +$329K
+  #   → Meilleur performer des 4 nouveaux symboles
+  # ═══════════════════════════════════════════════════════════════════════
+  USDJPY:
+    timeframe: "H1"
+    max_lot: 0.10
+    min_lot: 0.01
+    risk_mult: 1.00             # Top performer, +$329K/16ans
+    max_spread_points: 45       # Spread JPY parfois légèrement plus large
+    min_score: 0.60
+    adx_thresh: 22
+    allow_buys: true
+    allow_shorts: true
+    momentum_period: 20
+    sl_atr_trending: 1.5
+    tp_atr_trending: 4.5
+    sl_atr_ranging: 1.2
+    tp_atr_ranging: 3.0
+    adx_slope_threshold: -10.0
+    adx_slope_threshold_strong: -14.0
+    threshold_trending: 2.5
+    threshold_ranging: 2.0
+    pullback_band_trending: 0.3
+    pullback_band_ranging: 0.2
+    cmf_threshold: 0.10
+    obv_div_penalty_high: 0.70
+    obv_div_penalty_low: 0.85
+    preferred_hours: [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]
+    weekend_trading: false
+    news_minutes_before: 15
+    news_minutes_after: 15
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # GBPUSD — Livre Sterling/Dollar (TIMEFRAME H1)
+  # Caractéristiques: Forex majeur, volatilité plus élevée, spread modéré
+  # Backtest réaliste 2010-2026: WR 80.7%, PF 1.42, DD 1.9%, +$86K
+  #   → Volatilité GBP plus élevée que EURUSD → trailing légèrement plus large
+  # ═══════════════════════════════════════════════════════════════════════
+  GBPUSD:
+    timeframe: "H1"
+    max_lot: 0.10
+    min_lot: 0.01
+    risk_mult: 0.90             # +$86K/16ans, risk légèrement réduit
+    max_spread_points: 50       # Spread GBP parfois large (news UK)
+    min_score: 0.60
+    adx_thresh: 22
+    allow_buys: true
+    allow_shorts: true
+    momentum_period: 20
+    sl_atr_trending: 1.5
+    tp_atr_trending: 4.5
+    sl_atr_ranging: 1.2
+    tp_atr_ranging: 3.0
+    adx_slope_threshold: -10.0
+    adx_slope_threshold_strong: -14.0
+    threshold_trending: 2.5
+    threshold_ranging: 2.0
+    pullback_band_trending: 0.3
+    pullback_band_ranging: 0.2
+    cmf_threshold: 0.10
+    obv_div_penalty_high: 0.70
+    obv_div_penalty_low: 0.85
+    preferred_hours: [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]
+    weekend_trading: false
+    news_minutes_before: 20     # News UK (BoE, CPI) → plus de temps
+    news_minutes_after: 20
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # AUDUSD — Dollar Australien/Dollar US (TIMEFRAME H1)
+  # Caractéristiques: Forex mineur, sessions Asia+London, spreads modérés
+  # Backtest réaliste 2010-2026: WR 79.4%, PF 1.24, DD 3.6%, +$45K
+  #   → Plus faible des 4, risk_mult réduit
+  # ═══════════════════════════════════════════════════════════════════════
+  AUDUSD:
+    timeframe: "H1"
+    max_lot: 0.10
+    min_lot: 0.01
+    risk_mult: 0.75             # +$45K/16ans, risk plus conservateur
+    max_spread_points: 45
+    min_score: 0.60
+    adx_thresh: 22
+    allow_buys: true
+    allow_shorts: true
+    momentum_period: 20
+    sl_atr_trending: 1.5
+    tp_atr_trending: 4.5
+    sl_atr_ranging: 1.2
+    tp_atr_ranging: 3.0
+    adx_slope_threshold: -10.0
+    adx_slope_threshold_strong: -14.0
+    threshold_trending: 2.5
+    threshold_ranging: 2.0
+    pullback_band_trending: 0.3
+    pullback_band_ranging: 0.2
+    cmf_threshold: 0.10
+    obv_div_penalty_high: 0.70
+    obv_div_penalty_low: 0.85
+    preferred_hours: [0,1,2,3,4,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]  # Asia + London
+    weekend_trading: false
+    news_minutes_before: 15
+    news_minutes_after: 15
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # USDCAD — Dollar US/Dollar Canadien (TIMEFRAME H1)
+  # Caractéristiques: Forex majeur, corrélé au pétrole, spreads modérés
+  # Backtest réaliste 2010-2026: WR 80.7%, PF 1.40, DD 1.2%, +$64K
+  #   → Très bon DD, risk modéré
+  # ═══════════════════════════════════════════════════════════════════════
+  USDCAD:
+    timeframe: "H1"
+    max_lot: 0.10
+    min_lot: 0.01
+    risk_mult: 0.85             # +$64K/16ans, DD 1.2% excellent
+    max_spread_points: 45
+    min_score: 0.60
+    adx_thresh: 22
+    allow_buys: true
+    allow_shorts: true
+    momentum_period: 20
+    sl_atr_trending: 1.5
+    tp_atr_trending: 4.5
+    sl_atr_ranging: 1.2
+    tp_atr_ranging: 3.0
+    adx_slope_threshold: -10.0
+    adx_slope_threshold_strong: -14.0
+    threshold_trending: 2.5
+    threshold_ranging: 2.0
+    pullback_band_trending: 0.3
+    pullback_band_ranging: 0.2
+    cmf_threshold: 0.10
+    obv_div_penalty_high: 0.70
+    obv_div_penalty_low: 0.85
+    preferred_hours: [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]
+    weekend_trading: false
+    news_minutes_before: 15
+    news_minutes_after: 15
+
   # ═══════════════════════════════════════════════════════════════════════
   # US500.cash — DÉSACTIVÉ le 19 Juin 2026
   # Raison: PF=0.48 live, WR=44.4%, 18 trades, -$5.59 PnL (Quant Audit 19 Juin)
