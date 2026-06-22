@@ -266,8 +266,8 @@ class FTMO_SIMPLE:
             errors.append(f"MAX_DD_PCT={cfg.MAX_DD_PCT} — doit être entre 0 et 12%")
         if cfg.MIN_RR_RATIO < 1.0:
             errors.append(f"MIN_RR_RATIO={cfg.MIN_RR_RATIO} < 1.0 — risque de non-rentabilité")
-        if cfg.MAX_POSITIONS > 16:
-            errors.append(f"MAX_POSITIONS={cfg.MAX_POSITIONS} trop élevé pour FTMO 200K")
+        if cfg.MAX_POSITIONS > 24:
+            errors.append(f"MAX_POSITIONS={cfg.MAX_POSITIONS} trop élevé pour FTMO 200K (max 24 pour 7 symboles)")
         if cfg.RISK_PER_TRADE <= 0 or cfg.RISK_PER_TRADE > 0.02:
             errors.append(f"RISK_PER_TRADE={cfg.RISK_PER_TRADE} — doit être entre 0.001 et 0.02")
         if errors:
