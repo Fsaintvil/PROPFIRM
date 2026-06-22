@@ -1,11 +1,11 @@
 # ============================================================================
-# PRODUCTION OVERRIDES — 5 Actifs Calibrés (Juin 2026)
+# PRODUCTION OVERRIDES — 3 Actifs Actifs (Juin 2026)
 # ============================================================================
-# XAUUSD H4 : WR 71.9%, PF 1.11, DD 9.7%  — risk_mult 1.00, weekend_trading=false
-# BTCUSD H1 : WR 74.6%, PF 1.17, DD 9.2%  — risk_mult 0.65, weekend_trading=true
-# ETHUSD H4  : WR 70.5%, PF 1.03, DD 7.4%  — risk_mult 0.50 (corrélé BTC 0.89)
-# EURUSD H1  : WR 88.2% live, PF 10.6 — risk_mult 2.00 (boost dilution consistency)
-# US500.cash DÉSACTIVÉ 19 Juin 2026 (PF=0.24 live, WR=46.9%)
+# XAUUSD H4 : WR 71.9%, PF 1.11, DD 9.7%  — risk_mult 1.10, weekend_trading=false
+# BTCUSD H1 : WR 74.6%, PF 1.17, DD 9.2%  — risk_mult 0.72, weekend_trading=true
+# EURUSD H1  : WR ~52% réel — risk_mult 1.00
+# ETHUSD    : 🔴 DÉSACTIVÉ 19 Juin 2026 (WR 27.6% live, PF 0.50)
+# US500.cash : 🔴 DÉSACTIVÉ 19 Juin 2026 (PF=0.24 live, WR=46.9%)
 # ============================================================================
 # Fusionné avec default.yaml (deep merge).
 # Seuls les champs qui surchargent default.yaml sont listés ici.
@@ -13,8 +13,8 @@
 
 # ── Trading — Production continue (1 trade/symbole/5min) ──────────────────
 trading:
-  max_positions: 12             # Capacité augmentée pour multi-positions (conf>85%→4, conf>70%→3)
-  max_positions_per_symbol: 4   # 4 max par symbole
+  max_positions: 14             # ↑ 6→14 (19 Juin) : capacité pour multi-positions par confiance
+  max_positions_per_symbol: 2   # 2 max par symbole (↓ 4→2, réduction risque directionnel)
   max_trades_per_day: 80        # 4 symboles × 20/jour
   max_signals_per_cycle: 10
   history_lookback_days: 3          # P2: réduit 7→3 jours (moins de contamination historique)
@@ -26,9 +26,9 @@ symbol_limits:
   XAUUSD:
     timeframe: "H4"           # H4 (H1 = -$187K/12ans → HORS-JEU)
     max_lot: 0.10
-    risk_mult: 1.00           # H4 DD 6.9% → marge large (était 0.80)
+    risk_mult: 1.10           # ↑ 1.00→1.10 (19 Juin 2026) : WR 77.8% live, +$1,044 PnL
     max_spread_points: 60     # élargi (était 40)
-    min_score: 0.60           # P3: remonté 0.55→0.60 (filtrer signaux faibles, WR=35.6%)
+    min_score: 0.63           # ↑ 22 Juin: 0.60→0.63 (nouvelles pénalités volume RVOL×0.75 CMF×0.85 OBV×0.70)
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -37,33 +37,38 @@ symbol_limits:
   BTCUSD:
     timeframe: "H1"           # H1 — crypto 24/7
     max_lot: 0.03
-    risk_mult: 0.65           # ↑ de 0.50 (PF 1.19 + DD 5.6% → peut monter)
+    risk_mult: 0.72           # ↑ 0.65→0.72 (19 Juin 2026) : WR 60% live, +$128 PnL
     max_spread_points: 150
-    min_score: 0.55           # Scénario A: abaissé de 0.60→0.55 pour +20% trades
+    min_score: 0.60           # ↓ 0.65→0.60 (22 Juin 2026) : seuils volume assouplis (CMF=0.20, OBV=0.85/0.92)
     adx_thresh: 20
     allow_buys: true
     allow_shorts: true
+    # ── Volume filter thresholds (22 Juin 2026) ──
+    # BTCUSD H1: volume crypto bursty → CMF moins sensible, OBV moins pénalisant
+    cmf_threshold: 0.20          # ↑ 0.10→0.20 (35.3% des signaux pénalisés à 0.10)
+    obv_div_penalty_high: 0.85   # ↑ 0.70→0.85 (21.2% des signaux pénalisés à 0.70)
+    obv_div_penalty_low: 0.92    # ↑ 0.85→0.92
     max_daily_loss_pct_override: 0.015   # 1.5% daily loss (plus strict)
     circuit_breaker_dd_pct_override: 0.06  # 6% DD → arrêt
 
-  # ETHUSD — BUY-ONLY Temporaire (SELL WR=30.8% toxique)
-  ETHUSD:
-    timeframe: "H4"           # H4 (backtest coûts: WR 70.5%, PF 1.03, DD 7.4%)
-    max_lot: 0.05             # prudent (volatilité ETH élevée)
-    risk_mult: 0.50           # corrélé BTC (0.89) → risque réduit
-    max_spread_points: 150    # spread large crypto
-    min_score: 0.55           # Scénario A: abaissé de 0.60→0.55 pour +20% trades
-    adx_thresh: 20
-    allow_buys: true
-    allow_shorts: true        # 🔓 DÉBLOQUÉ — SELL WR 30.8% meilleur que BUY 25%
+  # ETHUSD — 🔴 DÉSACTIVÉ 19 Juin 2026 (WR 27.6% live, PF 0.50, toxique)
+  # ETHUSD:
+  #   timeframe: "H4"
+  #   max_lot: 0.05
+  #   risk_mult: 0.0
+  #   max_spread_points: 150
+  #   min_score: 0.99
+  #   adx_thresh: 20
+  #   allow_buys: false
+  #   allow_shorts: false
 
   # EURUSD — Nouveau symbole (Juin 2026), DEUX DIRECTIONS
   EURUSD:
     timeframe: "H1"           # H1 (WR 68.6% 12ans, PF 1.12, DD 3.7%)
     max_lot: 0.10             # lot standard forex
-    risk_mult: 2.00           # ↑ boost pour diluer consistency FTMO (WR 88% live, PF 10.6)
+    risk_mult: 1.00           # ↑ 0.75→1.00 (19 Juin) : WR 80% live, PF 29.4
     max_spread_points: 40     # serré (EURUSD très liquide)
-    min_score: 0.70           # 🔧 18 Juin: remonté 0.55→0.70 (WR 92.6% biaisé par 3 outliers)
+    min_score: 0.70           # 22 Juin: nouvelles pénalités volume (RVOL×0.75 CMF×0.85 OBV×0.70) actives
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true        # DEUX DIRECTIONS — le MOM20x3 + risk management gèrent le risque
@@ -81,7 +86,7 @@ symbol_limits:
 
 # ── Risk — Production ───────────────────────────────────────────────────
 risk:
-  per_trade_pct: 0.004
+  per_trade_pct: 0.005           # ↑ 0.4%→0.5% (19 Juin)
   max_daily_loss_pct: 0.02
   max_dd_pct: 0.10
   min_rr_ratio: 2.0

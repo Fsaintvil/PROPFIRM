@@ -12,7 +12,8 @@ Flux:
     ├── phase5_regime_rule()     ← direction = régime ?
     ├── phase6_strategy_selector() ← params par régime
     ├── phase7_volume_profile()  ← POC/VAH/VAL
-    ├── phase8_order_flow()      ← tick delta, divergence
+    ├── phase7b_rvol_cmf()       ← RVOL + Chaikin Money Flow
+    ├── phase8_order_flow()      ← tick delta, divergence, OBV divergence
     ├── phase9_mtf_confirm()     ← TF supérieure
     ├── phase10_market_profile() ← Initial Balance
     ├── phase11_vwap()           ← Premium/Discount zones
@@ -23,9 +24,13 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 from datetime import datetime, timezone
+import time
 
 import pandas as _pd
 import numpy as np
+
+from engine_simple.indicators import chaikin_money_flow, relative_volume, obv, obv_divergence
+from engine_simple.feature_pipeline import compute_all_features, compute_score_adjustment
 
 logger = logging.getLogger("signal_pipeline")
 
@@ -79,6 +84,24 @@ class SignalPipeline:
         self.symbol_timeframes = symbol_timeframes
         # Cache des AdaptiveParameters par symbole
         self._adaptive_params: dict = {}
+        # Cache get_rates() par (symbole, timeframe) — évite appels MT5 redondants
+        self._rates_cache: dict[tuple[str, str], tuple[float, object]] = {}
+        self.RATES_CACHE_TTL = 10  # secondes
+
+    def _get_cached_rates(self, symbol: str, tf: str, count: int = 100):
+        """get_rates() avec cache TTL pour éviter les appels MT5 redondants.
+
+        Cache par (symbol, tf) avec invalidation après RATES_CACHE_TTL secondes.
+        Les appels avec count différent sont traités séparément (clé inclut count).
+        """
+        key = (symbol, tf, count)
+        now = time.time()
+        cached = self._rates_cache.get(key)
+        if cached and (now - cached[0]) < self.RATES_CACHE_TTL:
+            return cached[1]
+        rates = self.mt5.get_rates(symbol, tf, count=count)
+        self._rates_cache[key] = (now, rates)
+        return rates
 
     def _to_dataframe(self, rates, cols=None):
         """Convertit les rates MT5 (liste de tuples) en DataFrame si nécessaire."""
@@ -167,6 +190,10 @@ class SignalPipeline:
         if not self._phase7_volume_profile(symbol, signal):
             return None
 
+        # Phase 7b: RVOL + CMF
+        if not self._phase7b_rvol_cmf(symbol, signal):
+            return None
+
         # Phase 8: Order Flow
         if not self._phase8_order_flow(symbol, signal):
             return None
@@ -186,15 +213,19 @@ class SignalPipeline:
         # Phase 12: Adaptive Params
         self._phase12_adaptive_params(symbol, signal)
 
+        # Phase 13: Feature Scoring (10+ features comme bonus/pénalité)
+        self._phase13_feature_scoring(symbol, signal)
+
+        # Phase 14: LightGBM ajuste score et risque selon sa prédiction
+        self._phase14_lgb_scoring(symbol, signal)
+
         # Dynamic position limits based on confidence
-        # Nouveaux seuils (Juin 2026):  conf > 0.90 → 4, > 0.80 → 3, > 0.70 → 2, sinon → 1
+        # Seuils AGENTS.md (Juin 2026): conf > 0.85 → 4, > 0.70 → 3, sinon → 1
         sig_conf = signal.get("confidence", 0.0)
-        if sig_conf > 0.90:
+        if sig_conf > 0.85:
             max_per_symbol = 4
-        elif sig_conf > 0.80:
-            max_per_symbol = 3
         elif sig_conf > 0.70:
-            max_per_symbol = 2
+            max_per_symbol = 3
         else:
             max_per_symbol = 1
         hard_limit = config_limits.get(symbol, 4)
@@ -372,6 +403,19 @@ class SignalPipeline:
             hour_utc = datetime.now(timezone.utc).hour
             session_score = self.session_filter.get_session_score(symbol, hour_utc)
             if session_score < 0.3:
+                # Bypass pour signaux forts (score≥0.80 ET ADX≥15)
+                # Même règle que DANGER_HOURS — un signal technique fort peut
+                # trader en dehors des heures de liquidité optimales
+                sig_score = signal.get("score", 0)
+                sig_adx = signal.get("adx", 0)
+                if sig_score >= 0.80 and sig_adx >= 15:
+                    signal["session_score"] = session_score
+                    signal["session_bypass"] = True
+                    logger.debug(
+                        f"  [SESSION] {symbol}: score {session_score:.2f} < 0.3 "
+                        f"mais BYPASS pour signal fort (score={sig_score:.2f}, ADX={sig_adx:.0f})"
+                    )
+                    return True
                 logger.debug(f"  [SESSION] {symbol}: score {session_score:.2f} < 0.3 → skip")
                 return False
             signal["session_score"] = session_score
@@ -418,12 +462,79 @@ class SignalPipeline:
         signal["strat_params"] = strat_params.to_dict() if hasattr(strat_params, "to_dict") else strat_params
         return True
 
+    # ── Phase 7b: RVOL + CMF ────────────────────────────────────────────
+
+    def _phase7b_rvol_cmf(self, symbol: str, signal: dict) -> bool:
+        """Relative Volume (RVOL) + Chaikin Money Flow (CMF).
+
+        RVOL < 0.5 → breakout sans volume → pénalité -15%
+        RVOL > 2.0 → breakout avec volume fort → bonus +10%
+        CMF > seuil → accumulation haussière → bonus BUY / pénalité SELL
+        CMF < -seuil → distribution baissière → bonus SELL / pénalité BUY
+
+        Les seuils CMF sont configurables par symbole (default.yaml).
+        BTCUSD utilise 0.20 (volume crypto bursty), forex/indices 0.10.
+        """
+        try:
+            tf = self.symbol_timeframes.get(symbol, "H1")
+            rates = self._get_cached_rates(symbol, tf, count=100)
+            if rates is None or len(rates) < 50:
+                return True
+            df = self._to_dataframe(rates)
+            closes = df["close"].values
+            volumes = df["volume"].values
+            highs = df["high"].values
+            lows = df["low"].values
+
+            # ── RVOL ──
+            rvol = relative_volume(volumes, period=50)
+            if rvol < 0.5:
+                signal["score"] = max(0.3, signal["score"] * 0.75)
+                signal["rvol_adj"] = 0.75
+                signal["rvol_note"] = "FAIBLE"
+            elif rvol > 2.0:
+                signal["score"] = min(0.95, signal["score"] * 1.10)
+                signal["rvol_adj"] = 1.10
+                signal["rvol_note"] = "FORT"
+            else:
+                signal["rvol_adj"] = 1.0
+                signal["rvol_note"] = "normal"
+            signal["rvol"] = round(rvol, 2)
+
+            # ── CMF (seuil par symbole) ──
+            sym_cfg = self.symbol_limits.get(symbol, {})
+            cmf_threshold = sym_cfg.get("cmf_threshold", 0.10)
+            cmf = chaikin_money_flow(closes, highs, lows, volumes, period=20)
+            sig_action = signal.get("action", "BUY")
+            if cmf > cmf_threshold:
+                if sig_action == "BUY":
+                    signal["score"] = min(0.95, signal["score"] * 1.08)
+                else:
+                    signal["score"] = max(0.3, signal["score"] * 0.85)
+                signal["cmf_adj"] = 1.08 if sig_action == "BUY" else 0.85
+                signal["cmf_note"] = "accumulation"
+            elif cmf < -cmf_threshold:
+                if sig_action == "SELL":
+                    signal["score"] = min(0.95, signal["score"] * 1.08)
+                else:
+                    signal["score"] = max(0.3, signal["score"] * 0.85)
+                signal["cmf_adj"] = 1.08 if sig_action == "SELL" else 0.85
+                signal["cmf_note"] = "distribution"
+            else:
+                signal["cmf_adj"] = 1.0
+                signal["cmf_note"] = "neutre"
+            signal["cmf"] = round(cmf, 3)
+
+        except Exception as e:
+            logger.debug(f"  [VOL] {symbol}: erreur RVOL/CMF: {e}")
+        return True
+
     # ── Phase 7: Volume Profile ────────────────────────────────────────────
 
     def _phase7_volume_profile(self, symbol: str, signal: dict) -> bool:
         try:
             tf_vp = self.symbol_timeframes.get(symbol, "H1")
-            recent_vp = self.mt5.get_rates(symbol, tf_vp, count=100)
+            recent_vp = self._get_cached_rates(symbol, tf_vp, count=100)
             if recent_vp is not None and len(recent_vp) >= 50:
                 df = self._to_dataframe(recent_vp)
                 vp_levels = self.volume_profile.analyze(df)
@@ -455,11 +566,12 @@ class SignalPipeline:
     # ── Phase 8: Order Flow ────────────────────────────────────────────────
 
     def _phase8_order_flow(self, symbol: str, signal: dict) -> bool:
+        df = None
         try:
             flow_metrics = self.order_flow.analyze_ticks_from_mt5(self.mt5, symbol, count=1000)
             if flow_metrics is None or flow_metrics.total_volume == 0:
                 tf_of = self.symbol_timeframes.get(symbol, "H1")
-                recent_of = self.mt5.get_rates(symbol, tf_of, count=100)
+                recent_of = self._get_cached_rates(symbol, tf_of, count=100)
                 if recent_of is not None and len(recent_of) >= 20:
                     df = self._to_dataframe(recent_of)
                     flow_metrics = self.order_flow.analyze_bars(df)
@@ -477,6 +589,23 @@ class SignalPipeline:
                             f"  [FLOW] {symbol}: score {signal['score']:.3f} < {self.cfg.MIN_SIGNAL_SCORE} → skip"
                         )
                         return False
+            # ── OBV Divergence (pénalités par symbole) ──
+            # Utilise les mêmes barres que l'Order Flow (pas de get_rates() supplémentaire)
+            # Les pénalités sont configurables par symbole (default.yaml).
+            # BTCUSD: high=0.85, low=0.92 (volume crypto bursty → moins pénalisant)
+            # Forex/indices: high=0.70, low=0.85 (standard)
+            if "df" in locals() and df is not None and len(df) >= 20:
+                sym_cfg_of = self.symbol_limits.get(symbol, {})
+                obv_high = sym_cfg_of.get("obv_div_penalty_high", 0.70)
+                obv_low = sym_cfg_of.get("obv_div_penalty_low", 0.85)
+                closes_df = df["close"].values
+                volumes_df = df["volume"].values
+                div_type, div_strength = obv_divergence(closes_df, volumes_df, period=20)
+                if div_type != "none":
+                    penalty = obv_high if div_strength > 0.5 else obv_low
+                    signal["score"] = max(0.3, signal["score"] * penalty)
+                    signal["obv_divergence"] = div_type
+                    signal["obv_div_strength"] = round(div_strength, 2)
         except Exception as e:
             logger.debug(f"  [FLOW] {symbol}: erreur OrderFlow: {e}")
         return True
@@ -506,7 +635,7 @@ class SignalPipeline:
     def _phase10_market_profile(self, symbol: str, signal: dict) -> bool:
         try:
             tf_mp = self.symbol_timeframes.get(symbol, "H1")
-            mp_data = self.mt5.get_rates(symbol, tf_mp, count=100)
+            mp_data = self._get_cached_rates(symbol, tf_mp, count=100)
             if mp_data is not None and len(mp_data) >= 10:
                 df = self._to_dataframe(mp_data)
                 mp_result = self.market_profile.analyze(df, signal_action=signal.get("action"))
@@ -530,7 +659,7 @@ class SignalPipeline:
     def _phase11_vwap(self, symbol: str, signal: dict) -> bool:
         try:
             tf_vwap = self.symbol_timeframes.get(symbol, "H1")
-            vwap_data = self.mt5.get_rates(symbol, tf_vwap, count=100)
+            vwap_data = self._get_cached_rates(symbol, tf_vwap, count=100)
             if vwap_data is not None and len(vwap_data) >= 20:
                 df = self._to_dataframe(vwap_data)
                 vwap_result = self.vwap_analyzer.analyze(df)
@@ -565,3 +694,159 @@ class SignalPipeline:
                 signal["adaptive_params"] = adapted.to_dict()
         except Exception as e:
             logger.debug(f"  [ADAPTIVE] {symbol}: erreur: {e}")
+
+    # ── Phase 13: Feature Scoring ─────────────────────────────────────────
+
+    def _phase13_feature_scoring(self, symbol: str, signal: dict) -> None:
+        """Calcule 25+ features et ajuste le score avec des bonus/pénalités.
+
+        Les features sont persistées dans le signal pour :
+        - Diagnostic (logs)
+        - Futures phases (Phase 14: LightGBM)
+        - Training data collection
+
+        Facteurs (issus de feature_pipeline.compute_score_adjustment):
+          EMA alignment      : +8% si tendance confirme, -15% si contre-tendance
+          ATR percentile     : -10% si >85%, +5% si <15%
+          Vol expansion      : -12% si >30%
+          RVOL               : +10% si >2.0, -15% si <0.5
+          CMF                : +8% si confirme, -8% si contredit
+          VWAP discount      : +6% si prix sous VWAP en BUY
+          OBV divergence     : +8% si confirme, -15% si contredit
+          Sessions           : +5% London-NY overlap, -5% Asia
+          Spread percentile  : -12% si >80%
+          Range position     : -8% si contre-intuitif
+        """
+        try:
+            tf = self.symbol_timeframes.get(symbol, "H1")
+            rates = self._get_cached_rates(symbol, tf, count=250)
+            if rates is None or len(rates) < 50:
+                return
+
+            df = self._to_dataframe(rates)
+            close = df["close"].values.astype(float)
+            high = df["high"].values.astype(float)
+            low = df["low"].values.astype(float)
+            volume = df["volume"].values.astype(float) if "volume" in df.columns else None
+
+            # Spread history (collecté au fil de l'eau depuis les ticks)
+            spread = None
+            try:
+                tick = self.mt5.get_tick(symbol)
+                if tick:
+                    spread = getattr(tick, "spread", None) or 0
+            except Exception:
+                pass
+
+            # Calcul des features
+            features = compute_all_features(
+                close=close,
+                high=high,
+                low=low,
+                volume=volume,
+                spread=spread,
+                symbol=symbol,
+            )
+
+            # Ajustement du score
+            action = signal.get("action", "BUY")
+            adj, reasons = compute_score_adjustment(features, action)
+
+            # Appliquer l'ajustement
+            old_score = signal.get("score", 0.6)
+            new_score = max(0.30, min(0.99, old_score * adj))
+            signal["score"] = new_score
+            signal["feature_adj"] = round(adj, 3)
+            signal["feature_reasons"] = reasons
+            signal["feature_count"] = len(features)
+
+            # Persister les features pour le diagnostic
+            signal["_features"] = {
+                k: round(v, 4) if isinstance(v, float) else v for k, v in features.items() if k not in ("_features",)
+            }
+
+            if adj != 1.0:
+                logger.info(
+                    f"  [FEATURES] {symbol}: adj={adj:.3f} score {old_score:.3f}→{new_score:.3f} "
+                    f"| {len(reasons)} raisons"
+                )
+
+        except Exception as e:
+            logger.debug(f"  [FEATURES] {symbol}: erreur feature scoring: {e}")
+
+    # ── Phase 14: LightGBM ajuste score et risque ──────────────────────────
+
+    def _phase14_lgb_scoring(self, symbol: str, signal: dict) -> None:
+        """LightGBM ajuste le score et le risk_mult selon sa prédiction.
+
+        Les features sont déjà calculées par phase13. LGB prédit la probabilité
+        de succès du trade. Selon la confiance et l'accord avec MOM20x3 :
+
+          Agree + conf>0.3 → bonus score (+12% max) + risk_mult (+15% max)
+          Disagree + conf>0.3 → pénalité score (-20% max) + risk_mult (-25% max)
+          Confiance < 0.3 → aucun changement
+
+        Seuil de confiance 0.3 ≈ proba > 0.65 ou < 0.35.
+        """
+        lgb = getattr(self.adaptive, "lgb", None)
+        if lgb is None or not lgb.available:
+            return
+
+        features = signal.get("_features", {})
+        if len(features) < 10:
+            return
+
+        try:
+            lgb_result = lgb.predict(features)
+            # Valider que le résultat est un vrai dict (pas un mock de test)
+            if not isinstance(lgb_result, dict):
+                logger.debug(f"  [LGB] {symbol}: predict returned {type(lgb_result).__name__}, skip")
+                return
+        except Exception as e:
+            logger.debug(f"  [LGB] {symbol}: predict error: {e}")
+            return
+
+        proba = float(lgb_result.get("probability", 0.5))
+        confidence = float(lgb_result.get("confidence", 0.0))
+        lgb_action = str(lgb_result.get("action", "HOLD"))
+        mom_action = str(signal.get("action", "HOLD"))
+        agrees = lgb_action == mom_action
+
+        # Stocker les métadonnées LGB dans le signal (pour logs, tracking, retraining)
+        signal["_lgb_score"] = proba
+        signal["_lgb_action"] = lgb_action
+        signal["_lgb_agrees"] = agrees
+
+        if confidence < 0.3:
+            signal["_lgb_impact"] = f"neutre (conf={confidence:.2f} < 0.3)"
+            return
+
+        if agrees:
+            # ✅ LGB confirme MOM20x3 → bonus score + risque
+            score_bonus = confidence * 0.12  # max +12%
+            risk_bonus = 1.0 + confidence * 0.15  # max +15%
+            old_score = signal.get("score", 0.5)
+            signal["score"] = min(0.99, old_score * (1 + score_bonus))
+            signal["risk_mult"] = signal.get("risk_mult", 1.0) * risk_bonus
+            signal["_lgb_impact"] = (
+                f"bonus score+{score_bonus:.1%} risk×{risk_bonus:.2f} (agree, conf={confidence:.2f}, proba={proba:.3f})"
+            )
+            logger.info(
+                f"  [LGB] {symbol}: ✅ agree → score {old_score:.3f}→{signal['score']:.3f}, "
+                f"risk×{risk_bonus:.2f} (conf={confidence:.2f}, proba={proba:.3f})"
+            )
+        else:
+            # ❌ LGB contredit MOM20x3 → pénalité score + risque
+            score_penalty = confidence * 0.20  # max -20%
+            risk_penalty = 1.0 - confidence * 0.25  # max -25%, floor 0.5
+            old_score = signal.get("score", 0.5)
+            signal["score"] = max(0.30, old_score * (1 - score_penalty))
+            signal["risk_mult"] = signal.get("risk_mult", 1.0) * max(0.5, risk_penalty)
+            signal["_lgb_impact"] = (
+                f"penalty score-{score_penalty:.1%} risk×{risk_penalty:.2f} "
+                f"(disagree, conf={confidence:.2f}, proba={proba:.3f})"
+            )
+            logger.info(
+                f"  [LGB] {symbol}: ❌ disagree → score {old_score:.3f}→{signal['score']:.3f}, "
+                f"risk×{risk_penalty:.2f} (conf={confidence:.2f}, proba={proba:.3f})"
+            )

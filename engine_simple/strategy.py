@@ -6,8 +6,8 @@ Principe :
   c[i-20] - c[i] > seuil × ATR  →  Breakout baissier (SELL)
 
 Seuils adaptatifs selon ADX (validés backtest 12+ ans, 67% WR) :
-  ADX ≥ 25 (trending) : seuil = 2.5 × ATR
-  ADX < 25 (ranging)  : seuil = 2.0 × ATR
+  ADX ≥ 22 (trending) : seuil = 2.5 × ATR (unifié avec regime.py 22/18)
+  ADX < 22 (ranging)  : seuil = 2.0 × ATR
   Plafonné à 2.5 × ATR max, plancher 1.5 × ATR
 
 Filtres additionnels (Juin 2026 — Audit Profond) :
@@ -19,21 +19,25 @@ Filtres additionnels (Juin 2026 — Audit Profond) :
 
 Aucun overlay ICT/SMC (FVG, Order Blocks, Killzones, etc.)
 """
+
 import logging
 
 import numpy as np
 
 from engine_simple.indicators import adx, atr, ema
 
+try:
+    from engine_simple.market_structure import analyze_market_structure
+except ImportError:
+    analyze_market_structure = None
+
 logger = logging.getLogger("strategy")
 
-# Seuils de base par régime de marché — validés backtest 12+ ans (67% WR)
-# Attention: des seuils trop bas (1.5/1.0 Mode MAX) génèrent des signaux
-# parasites en ranging — le backtest H1 2026 utilisait 2.5/2.0
-THRESHOLD_TRENDING = 2.5  # ADX >= 25 (Mode MAX était 1.5)
-THRESHOLD_RANGING = 2.0   # ADX < 25 (Mode MAX était 1.0)
-THRESHOLD_MAX = 2.5       # Plafond absolu (Mode MAX était 2.0)
-THRESHOLD_MIN = 1.5       # Plancher absolu (sécurité anti-blocage total)
+# THRESHOLD_TRENDING / THRESHOLD_RANGING sont DÉPRÉCIÉS (Juin 2026)
+# Les seuils réels viennent de SYMBOL_CONFIG (per-symbol) ou DEFAULT_SYMBOL_CONFIG.
+# Ces constantes ne sont plus utilisées dans le calcul du signal.
+THRESHOLD_MAX = 2.5  # Plafond absolu (clamping sécurité)
+THRESHOLD_MIN = 1.5  # Plancher absolu (clamping sécurité)
 
 # ============================================================================
 # PARAMÈTRES SPÉCIFIQUES PAR ACTIF — Calibration Production
@@ -65,25 +69,29 @@ SYMBOL_CONFIG = {
     # Justification complète dans config/default.yaml:XAUUSD
     # ═══════════════════════════════════════════════════════════════════════
     "XAUUSD": {
-        # Momentum 20 périodes H4 = 80h (vs 15=60h, plus robuste)
-        "momentum_period": 20,
+        # Momentum 18 périodes H4 = 72h (Scénario A: +20% trades)
+        "momentum_period": 18,
         # SL/TP trending: 1.8/5.0 (RR 2.78 — SL plus serré H4)
         "sl_atr_trending": 1.8,
         "tp_atr_trending": 5.0,
         # SL/TP ranging: 1.5/3.5 (RR 2.33 — TP plus proche en range)
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 3.5,
-        # Seuils ATR (conservés, validés backtest 12+ ans)
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        # Seuils ATR (validés backtest 12+ ans, assouplis mode modéré)
+        "threshold_trending": 2.0,  # Mode modéré: -0.5 vs 2.5
+        "threshold_ranging": 1.5,  # Mode modéré: -0.5 vs 2.0
         # Filtres ADX (plus stricts en H4 — tendances plus pures)
-        "adx_slope_threshold": -8.0,
-        "adx_slope_threshold_strong": -12.0,
+        "adx_slope_threshold": -14.0,  # Mode modéré: +75% vs -8.0
+        "adx_slope_threshold_strong": -20.0,  # Scénario A: assoupli -18.0→-20.0 pour +20% trades (plus de signaux forts passent l'ADX slope)
         # Pullback bandes (H4 → pullbacks plus larges)
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
+        # Volume filter thresholds (standard forex/indices)
+        "cmf_threshold": 0.10,
+        "obv_div_penalty_high": 0.70,
+        "obv_div_penalty_low": 0.85,
         # Sessions préférées (London+NY overlap élargi)
-        "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
+        "preferred_hours": list(range(24)),  # 24/7 — pas de blocage horaire
         # News filter
         "news_minutes_before": 10,
         "news_minutes_after": 10,
@@ -96,8 +104,8 @@ SYMBOL_CONFIG = {
     # Justification complète dans config/default.yaml:BTCUSD
     # ═══════════════════════════════════════════════════════════════════════
     "BTCUSD": {
-        # Momentum 24 périodes = filtre bruit haute-fréquence (vs 20)
-        "momentum_period": 24,
+        # Momentum 22 périodes H1 = 22h (Scénario A: +20% trades)
+        "momentum_period": 22,
         # SL/TP trending: 3.0/7.0 (RR 2.33 — large pour gaps crypto)
         "sl_atr_trending": 3.0,
         "tp_atr_trending": 7.0,
@@ -108,11 +116,15 @@ SYMBOL_CONFIG = {
         "threshold_trending": 2.0,
         "threshold_ranging": 1.5,
         # Filtres ADX (très permissifs — ADX crypto bruité)
-        "adx_slope_threshold": -3.0,
-        "adx_slope_threshold_strong": -6.0,
+        "adx_slope_threshold": -6.0,  # Mode modéré: 2x vs -3.0
+        "adx_slope_threshold_strong": -10.0,  # Mode modéré: +67% vs -6.0
         # Pullback bandes larges (BTC fait des pullbacks violents)
         "pullback_band_trending": 0.8,
         "pullback_band_ranging": 0.5,
+        # Volume filter thresholds (crypto — volume bursty → relaxed)
+        "cmf_threshold": 0.20,
+        "obv_div_penalty_high": 0.85,
+        "obv_div_penalty_low": 0.92,
         # Sessions 24/7 — crypto ne dort jamais
         "preferred_hours": list(range(24)),
         # News filter
@@ -129,8 +141,8 @@ SYMBOL_CONFIG = {
     # Justification complète dans config/default.yaml:US500.cash
     # ═══════════════════════════════════════════════════════════════════════
     "US500.cash": {
-        # Momentum 20 périodes H4 = 80h (vs 24 H1 = 24h)
-        "momentum_period": 20,
+        # Momentum 18 périodes H4 = 72h (Scénario A: +20% trades)
+        "momentum_period": 18,
         # SL/TP trending: 1.5/4.0 (RR 2.67 — SL serré, US500 H4 peu volatile)
         "sl_atr_trending": 1.5,
         "tp_atr_trending": 4.0,
@@ -141,16 +153,56 @@ SYMBOL_CONFIG = {
         "threshold_trending": 2.0,
         "threshold_ranging": 1.5,
         # Filtres ADX (plus permissifs — H4 moins de bougies)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -10.0,  # Mode modéré: 2x vs -5.0
+        "adx_slope_threshold_strong": -14.0,  # Mode modéré: +40% vs -10.0
         # Pullback bandes serrées (indices font peu de pullbacks profonds)
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
+        # Volume filter thresholds (standard indices)
+        "cmf_threshold": 0.10,
+        "obv_div_penalty_high": 0.70,
+        "obv_div_penalty_low": 0.85,
         # Sessions préférées (US market hours élargies)
-        "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
+        "preferred_hours": list(range(24)),  # 24/7 — pas de blocage horaire
         # News filter (renforcé — indice sensible aux news US)
         "news_minutes_before": 20,
         "news_minutes_after": 20,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # EURUSD H1 — Euro/Dollar US (Juin 2026 — réactivé 17 Juin)
+    # Caractéristiques: Forex majeur, spreads serrés, liquidité extrême
+    # Backtest H1 12+ ans: WR 68.6%, PF 1.12, DD 3.7% (excellent)
+    # Live FTMO (Juin 2026): WR 77.3% sur 22 trades (nettoyé des simulés)
+    # Timeframe: H1 (seul TF viable pour EURUSD intraday)
+    # Justification complète dans config/default.yaml:EURUSD
+    # ═══════════════════════════════════════════════════════════════════════
+    "EURUSD": {
+        # Momentum 18 périodes H1 = 18h (plus réactif que 20 — reco analyse 9 Juin)
+        "momentum_period": 18,
+        # SL/TP trending: 1.5/4.5 (RR 3.0 — SL serré, EURUSD moins volatile)
+        "sl_atr_trending": 1.5,
+        "tp_atr_trending": 4.5,
+        # SL/TP ranging: 1.2/3.0 (RR 2.5)
+        "sl_atr_ranging": 1.2,
+        "tp_atr_ranging": 3.0,
+        # Seuils ATR (standard MOM20x3, validés backtest 12+ ans)
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        # Filtres ADX (standard forex)
+        "adx_slope_threshold": -5.0,  # standard forex
+        "adx_slope_threshold_strong": -8.0,  # pour raw_score > 0.70
+        # Pullback bandes modérées (EURUSD pullbacks modérés)
+        "pullback_band_trending": 0.3,
+        "pullback_band_ranging": 0.2,
+        # Volume filter thresholds (standard forex)
+        "cmf_threshold": 0.10,
+        "obv_div_penalty_high": 0.70,
+        "obv_div_penalty_low": 0.85,
+        # Sessions préférées (London+NY overlap)
+        "preferred_hours": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+        # News filter
+        "news_minutes_before": 15,
+        "news_minutes_after": 15,
     },
 }
 
@@ -163,19 +215,21 @@ DEFAULT_SYMBOL_CONFIG = {
     "tp_atr_ranging": 4.0,
     "threshold_trending": 2.5,
     "threshold_ranging": 2.0,
-    "adx_slope_threshold": -6.0,
-    "adx_slope_threshold_strong": -10.0,
+    "adx_slope_threshold": -10.0,  # Mode modéré: +67% vs -6.0
+    "adx_slope_threshold_strong": -14.0,  # Mode modéré: +40% vs -10.0
     "pullback_band_trending": 0.5,
     "pullback_band_ranging": 0.3,
+    # Volume filter thresholds (default — standard forex/indices)
+    "cmf_threshold": 0.10,
+    "obv_div_penalty_high": 0.70,
+    "obv_div_penalty_low": 0.85,
     "preferred_hours": list(range(24)),
     "news_minutes_before": 5,
     "news_minutes_after": 5,
 }
 
 # Compatibilité avec l'ancien code (momentum periods)
-SYMBOL_MOMENTUM_PERIODS = {
-    sym: cfg["momentum_period"] for sym, cfg in SYMBOL_CONFIG.items()
-}
+SYMBOL_MOMENTUM_PERIODS = {sym: cfg["momentum_period"] for sym, cfg in SYMBOL_CONFIG.items()}
 
 # Périodes par défaut
 DEFAULT_SYMBOL_MOMENTUM_PERIOD = 20
@@ -195,13 +249,19 @@ def _get_momentum_period(symbol: str | None) -> int:
     return SYMBOL_MOMENTUM_PERIODS.get(symbol, DEFAULT_SYMBOL_MOMENTUM_PERIOD)
 
 
-def mom20x3_signal(close: np.ndarray, high: np.ndarray, low: np.ndarray,
-                   period: int = 20, atr_period: int = 14,
-                   adx_period: int = 14,
-                   symbol: str | None = None,
-                   custom_thresh_trending: float | None = None,
-                   custom_thresh_ranging: float | None = None) -> dict | None:
-    """Génère un signal MOM20x3 avec filtres ADX slope, +DI/-DI et pullback.
+def mom20x3_signal(
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
+    period: int = 20,
+    atr_period: int = 14,
+    adx_period: int = 14,
+    symbol: str | None = None,
+    custom_thresh_trending: float | None = None,
+    custom_thresh_ranging: float | None = None,
+    market_memory=None,
+) -> dict | None:
+    """Génère un signal MOM20x3 avec filtres ADX slope, +DI/-DI, pullback, S/R et patterns.
 
     Args:
         close: np.array de prix de clôture (au moins period + 1 éléments)
@@ -257,7 +317,7 @@ def mom20x3_signal(close: np.ndarray, high: np.ndarray, low: np.ndarray,
     # === Seuil adaptatif selon ADX (calculé avant les filtres) ===
     # Support OnlineLearner: custom_thresh_* surcharge les hardcodés
     # Utilise les seuils spécifiques au symbole
-    is_trending = adx_val >= 25
+    is_trending = adx_val >= 22  # unifié avec regime.py (22 entrée / 18 sortie)
     if is_trending:
         thresh = custom_thresh_trending if custom_thresh_trending is not None else sym_cfg["threshold_trending"]
     else:
@@ -278,6 +338,46 @@ def mom20x3_signal(close: np.ndarray, high: np.ndarray, low: np.ndarray,
     else:
         raw_score = 0.0
 
+    # === Market Structure Filter (ICT/SMC) ===
+    # Analyse BOS/CHOCH/OB pour confirmer ou infirmer la direction du signal
+    _structure = None
+    _struct_trend = "unknown"
+    _struct_score = 0
+    _unmitigated_obs = 0
+    _unmitigated_fvgs = 0
+    if analyze_market_structure is not None and len(high) >= 30 and len(low) >= 30:
+        try:
+            _structure = analyze_market_structure(high, low, close, lookback=100)
+            _struct_trend = _structure.get("trend", "unknown")
+            _struct_score = _structure.get("score", 0)
+            _unmitigated_obs = _structure.get("unmitigated_obs", 0)
+            _unmitigated_fvgs = _structure.get("unmitigated_fvgs", 0)
+
+            # Pénalité si structure contredit le signal
+            if mom > 0 and _struct_trend == "bearish":
+                raw_score *= 0.80  # -20%
+                logger.debug(f"  [STRUCT] {symbol}: BUY mais structure bearish → score -20%")
+            elif mom < 0 and _struct_trend == "bullish":
+                raw_score *= 0.80
+                logger.debug(f"  [STRUCT] {symbol}: SELL mais structure bullish → score -20%")
+
+            # Bonus si structure confirme
+            if mom > 0 and _struct_trend == "bullish":
+                raw_score = min(1.0, raw_score * 1.10)  # +10%
+                logger.debug(f"  [STRUCT] {symbol}: BUY + structure bullish → score +10%")
+            elif mom < 0 and _struct_trend == "bearish":
+                raw_score = min(1.0, raw_score * 1.10)
+                logger.debug(f"  [STRUCT] {symbol}: SELL + structure bearish → score +10%")
+
+            # Pénalité si BOS/CHOCH récent contredit
+            if _structure.get("recent_bos"):
+                bos = _structure.get("bos", {})
+                if (mom > 0 and bos.get("bearish_bos")) or (mom < 0 and bos.get("bullish_bos")):
+                    raw_score *= 0.85
+                    logger.debug(f"  [STRUCT] {symbol}: BOS contredit signal → score -15%")
+        except Exception as e:
+            logger.debug(f"  [STRUCT] {symbol}: erreur analyse market_structure: {e}")
+
     # Initialiser les variables utilisées par les filtres
     pullback_active = False  # False par défaut = bloquer sauf si pullback confirmé
     pullback_dist = 0.0
@@ -291,14 +391,13 @@ def mom20x3_signal(close: np.ndarray, high: np.ndarray, low: np.ndarray,
     adx_slope_ok = True
     adx_slope_threshold = sym_cfg["adx_slope_threshold"]
 
-    if raw_score > 0.70:
+    if raw_score > 0.50:
         adx_slope_threshold = sym_cfg["adx_slope_threshold_strong"]
 
     if adx_slope < adx_slope_threshold:
         adx_slope_ok = False
         logger.debug(
-            f"  [MOM20x3] ADX slope={adx_slope:.1f} < {adx_slope_threshold:.1f} → "
-            f"skip (raw_score={raw_score:.2f})"
+            f"  [MOM20x3] ADX slope={adx_slope:.1f} < {adx_slope_threshold:.1f} → skip (raw_score={raw_score:.2f})"
         )
 
     # === Filtre +DI/-DI directionnel ===
@@ -316,7 +415,7 @@ def mom20x3_signal(close: np.ndarray, high: np.ndarray, low: np.ndarray,
             dir_filter_ok = False
             di_suggests = "SELL"
             logger.debug(
-                f"  [MOM20x3] FILTRE DIR: {symbol} BUY mais +DI={plus_di:.1f} <= -DI×0.8={minus_di*0.8:.1f}"
+                f"  [MOM20x3] FILTRE DIR: {symbol} BUY mais +DI={plus_di:.1f} <= -DI×0.8={minus_di * 0.8:.1f}"
                 f" → vérification short-term"
             )
     else:  # SELL bias
@@ -325,7 +424,7 @@ def mom20x3_signal(close: np.ndarray, high: np.ndarray, low: np.ndarray,
             dir_filter_ok = False
             di_suggests = "BUY"
             logger.debug(
-                f"  [MOM20x3] FILTRE DIR: {symbol} SELL mais -DI={minus_di:.1f} <= +DI×0.8={plus_di*0.8:.1f}"
+                f"  [MOM20x3] FILTRE DIR: {symbol} SELL mais -DI={minus_di:.1f} <= +DI×0.8={plus_di * 0.8:.1f}"
                 f" → vérification short-term"
             )
 
@@ -335,12 +434,16 @@ def mom20x3_signal(close: np.ndarray, high: np.ndarray, low: np.ndarray,
 
     if mom > 0 and mom_abs >= threshold_value:
         action = "BUY"
-        score = 0.50 + raw_score * 0.45
+        score = 0.35 + raw_score * 0.60  # range [0.35-0.95] pour distinguer signaux faibles/forts
     elif mom < 0 and mom_abs >= threshold_value:
         action = "SELL"
-        score = 0.50 + raw_score * 0.45
+        score = 0.35 + raw_score * 0.60
 
     if action is None:
+        logger.debug(
+            f"  [MOM20x3] {symbol}: mom={mom:.5f} < thresh={threshold_value:.5f} "
+            f"(thresh={thresh:.2f}×ATR={current_atr:.5f}) → no signal"
+        )
         return None
 
     # === DI Override : si le filtre directionnel bloque mais que le short-term
@@ -359,12 +462,12 @@ def mom20x3_signal(close: np.ndarray, high: np.ndarray, low: np.ndarray,
             if adx_val < 22:
                 override_thresh = threshold_value * 2.0
             else:
-                override_thresh = threshold_value * 0.5  # ~1.0×ATR
+                override_thresh = threshold_value * 0.75  # ~1.5×ATR (moins permissif qu'avant)
             if di_suggests == "SELL" and short_mom < -override_thresh:
                 # Short-term momentum confirme la baisse → override en SELL
                 action = "SELL"
                 short_raw_score = min(1.0, short_mom_abs / (threshold_value * 2))
-                score = 0.50 + short_raw_score * 0.45
+                score = 0.35 + short_raw_score * 0.60
                 dir_filter_ok = True
                 logger.info(
                     f"  [MOM20x3] DI OVERRIDE: {symbol} 20p BUY→SELL "
@@ -374,24 +477,33 @@ def mom20x3_signal(close: np.ndarray, high: np.ndarray, low: np.ndarray,
                 # Short-term momentum confirme la hausse → override en BUY
                 action = "BUY"
                 short_raw_score = min(1.0, short_mom_abs / (threshold_value * 2))
-                score = 0.50 + short_raw_score * 0.45
+                score = 0.35 + short_raw_score * 0.60
                 dir_filter_ok = True
                 logger.info(
                     f"  [MOM20x3] DI OVERRIDE: {symbol} 20p SELL→BUY "
                     f"(short_mom={short_mom:.5f} override_thresh={override_thresh:.5f})"
                 )
 
+    # === Liquidity Sweep Filter ===
+    # Un sweep de liquidité récent indique un faux signal probable
+    if _structure is not None:
+        recent_sweeps = _structure.get("recent_sweeps", [])
+        if recent_sweeps:
+            last_sweep = recent_sweeps[-1]
+            sweep_type = last_sweep.get("type", "")
+            if (action == "BUY" and sweep_type == "bullish_sweep") or (
+                action == "SELL" and sweep_type == "bearish_sweep"
+            ):
+                raw_score *= 0.85  # -15%
+                logger.debug(f"  [STRUCT] {symbol}: liquidity sweep {sweep_type} récent → score -15%")
+
     # === Appliquer les filtres (ADX slope + directionnel) ===
     if not adx_slope_ok:
-        logger.debug(
-            f"  [MOM20x3] {action} {symbol}: ADX slope={adx_slope:.1f} → skip"
-        )
+        logger.debug(f"  [MOM20x3] {action} {symbol}: ADX slope={adx_slope:.1f} → skip")
         return None
 
     if not dir_filter_ok:
-        logger.debug(
-            f"  [MOM20x3] {action} {symbol}: direction filter → skip"
-        )
+        logger.debug(f"  [MOM20x3] {action} {symbol}: direction filter → skip")
         return None
 
     # === Pullback check : prix proche de EMA20 ===
@@ -415,15 +527,94 @@ def mom20x3_signal(close: np.ndarray, high: np.ndarray, low: np.ndarray,
             if abs(pullback_dist) < pullback_band:
                 pullback_active = True
 
-    # === Pullback info (logger ONLY) ===
-    # Ne BLOQUE PAS le trade — MOM20x3 est une stratégie momentum qui entre
-    # sur breakouts, pas sur retracements EMA20. Le pullback est informatif.
-    # La protection contre les trends faibles est assurée par ADX slope + DI.
+    # === Pullback info + filter pour signaux faibles ===
+    # MOM20x3 est une stratégie momentum qui entre sur breakouts, pas sur retracements EMA20.
+    # Le pullback est informatif pour les signaux forts (score >= seuil config).
+    # Pour les signaux faibles (score < seuil), un pullback actif est requis comme confirmation.
+    from engine_simple.ftmo_config import PULLBACK_FILTER_SCORE_THRESHOLD
+
     if not pullback_active and pullback_band > 0:
+        if score < PULLBACK_FILTER_SCORE_THRESHOLD:
+            logger.info(
+                f"  [PULLBACK] {action} {symbol}: score={score:.2f} < 0.65 + pas de pullback "
+                f"(dist={pullback_dist:.2f}% > band={pullback_band:.2f}%) → skip"
+            )
+            return None
         logger.debug(
             f"  [MOM20x3] {action} {symbol}: pas de pullback vers EMA20 "
             f"(dist={pullback_dist:.2f}% > band={pullback_band:.2f}%) → OK (momentum)"
         )
+
+    # === S/R Level Filter (MarketMemory) ===
+    # Pénalité si prix proche d'une résistance/support majeur
+    _nearest_support = None
+    _nearest_resistance = None
+    if market_memory is not None and symbol is not None:
+        try:
+            current_price = float(close[-1])
+            sr_levels = market_memory.get_nearby_levels(symbol, current_price, distance=0.5)
+            for level in sr_levels:
+                if level["type"] == "support" and (
+                    _nearest_support is None or level["price"] > _nearest_support["price"]
+                ):
+                    _nearest_support = level
+                elif level["type"] == "resistance" and (
+                    _nearest_resistance is None or level["price"] < _nearest_resistance["price"]
+                ):
+                    _nearest_resistance = level
+
+            # Pénalité si prix proche d'une résistance majeure et signal BUY
+            if _nearest_resistance and _nearest_resistance.get("strength") == "major":
+                dist_pct = abs(current_price - _nearest_resistance["price"]) / current_price * 100
+                if dist_pct < 0.3:  # < 0.3% de la résistance
+                    score = max(0.35, score * 0.85)  # -15%
+                    logger.debug(
+                        f"  [S/R] {symbol}: BUY proche résistance {_nearest_resistance['price']:.5f} → score -15%"
+                    )
+
+            # Pénalité si prix proche d'un support majeur et signal SELL
+            if _nearest_support and _nearest_support.get("strength") == "major":
+                dist_pct = abs(current_price - _nearest_support["price"]) / current_price * 100
+                if dist_pct < 0.3:
+                    score = max(0.35, score * 0.85)
+                    logger.debug(f"  [S/R] {symbol}: SELL proche support {_nearest_support['price']:.5f} → score -15%")
+        except Exception as e:
+            logger.debug(f"  [S/R] {symbol}: erreur S/R levels: {e}")
+
+    # === Pattern Confluence (MarketMemory) ===
+    _pattern_signal = "NEUTRE"
+    _pattern_confidence = 0.0
+    if market_memory is not None and symbol is not None and len(close) >= 30:
+        try:
+            import pandas as pd
+
+            recent_df = pd.DataFrame(
+                {
+                    "open": close[-30:] * 0.999,  # approximation open ≈ close × 0.999
+                    "close": close[-30:],
+                    "high": high[-30:],
+                    "low": low[-30:],
+                }
+            )
+            pattern_ctx = market_memory.get_pattern_context(symbol, recent_df, use_dtw=False)
+            _pattern_signal = pattern_ctx.get("signal", "NEUTRE")
+            _pattern_confidence = pattern_ctx.get("confidence", 0.0)
+
+            # Bonus/pénalité selon concordance
+            if _pattern_signal == "HAUSSE" and action == "BUY":
+                score = min(0.99, score + 0.10)  # +10% bonus
+                logger.debug(f"  [PATTERN] {symbol}: HAUSSE + BUY → score +10%")
+            elif _pattern_signal == "BAISSE" and action == "SELL":
+                score = min(0.99, score + 0.10)
+                logger.debug(f"  [PATTERN] {symbol}: BAISSE + SELL → score +10%")
+            elif _pattern_signal == "BAISSE" and action == "BUY":
+                score = max(0.35, score - 0.10)  # -10% penalty
+                logger.debug(f"  [PATTERN] {symbol}: BAISSE + BUY → score -10%")
+            elif _pattern_signal == "HAUSSE" and action == "SELL":
+                score = max(0.35, score - 0.10)
+                logger.debug(f"  [PATTERN] {symbol}: HAUSSE + SELL → score -10%")
+        except Exception as e:
+            logger.debug(f"  [PATTERN] {symbol}: erreur pattern detection: {e}")
 
     # SL/TP selon le régime ADX — paramètres spécifiques par symbole
     if is_trending:
@@ -464,22 +655,37 @@ def mom20x3_signal(close: np.ndarray, high: np.ndarray, low: np.ndarray,
         "threshold_value": round(threshold_value, 5),
         "momentum_period": period,
         "is_trending": is_trending,
-        "_regime": "TREND_UP" if (is_trending and action == "BUY")
-                   else "TREND_DOWN" if (is_trending and action == "SELL")
-                   else "RANGING",
+        "_regime": "TREND_UP"
+        if (is_trending and action == "BUY")
+        else "TREND_DOWN"
+        if (is_trending and action == "SELL")
+        else "RANGING",
         "_ml_agrees": None,
         "_model_predictions": {"MOM20x3": action},
         "_dl_score": None,
+        # Market structure data (ICT/SMC)
+        "structure_trend": _struct_trend,
+        "structure_score": _struct_score,
+        "unmitigated_obs": _unmitigated_obs,
+        "unmitigated_fvgs": _unmitigated_fvgs,
+        "_structure_obs": _structure.get("order_blocks", []) if _structure else [],
+        # S/R levels data (MarketMemory)
+        "nearest_support": _nearest_support["price"] if _nearest_support else None,
+        "nearest_resistance": _nearest_resistance["price"] if _nearest_resistance else None,
+        # Pattern data (MarketMemory)
+        "pattern_signal": _pattern_signal,
+        "pattern_confidence": round(_pattern_confidence, 3),
     }
 
 
 class MOM20x3:
     """Wrapper de la stratégie MOM20x3 — utilise la période adaptative par symbole."""
 
-    def __init__(self, rates: list, symbol: str, period: int | None = None):
+    def __init__(self, rates: list, symbol: str, period: int | None = None, market_memory=None):
         self.rates = rates
         self.symbol = symbol
         self.period = period or _get_momentum_period(symbol)
+        self.market_memory = market_memory
         self._parse_rates()
 
     def _parse_rates(self):
@@ -492,17 +698,20 @@ class MOM20x3:
         self._high = np.array([r[2] for r in self.rates], dtype=float)
         self._low = np.array([r[3] for r in self.rates], dtype=float)
 
-    def analyze(self,
-                custom_thresh_trending: float | None = None,
-                custom_thresh_ranging: float | None = None) -> dict | None:
+    def analyze(
+        self, custom_thresh_trending: float | None = None, custom_thresh_ranging: float | None = None
+    ) -> dict | None:
         if self._close is None:
             return None
         return mom20x3_signal(
-            self._close, self._high, self._low,
+            self._close,
+            self._high,
+            self._low,
             period=self.period,
             symbol=self.symbol,
             custom_thresh_trending=custom_thresh_trending,
             custom_thresh_ranging=custom_thresh_ranging,
+            market_memory=self.market_memory,
         )
 
     def __call__(self) -> dict | None:
