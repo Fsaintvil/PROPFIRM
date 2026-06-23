@@ -2,7 +2,7 @@
 # PRODUCTION OVERRIDES — 7 Actifs Actifs (23 Juin 2026)
 # ============================================================================
 # XAUUSD H4 : WR 68.6%, PF 1.16, DD 6.9%   — risk_mult 1.10
-# BTCUSD H1 : WR 32.3% Phase 3, PF 0.71   — risk_mult 0.0 (DÉSACTIVÉ 23 Juin)
+# BTCUSD H1 : WR 32.3% Phase 3, PF 0.71   — risk_mult 0.30 (RÉACTIVÉ 23 Juin)
 # EURUSD H1 : WR 68.6%, PF 1.12, DD 3.7%   — risk_mult 1.00
 # USDJPY H1 : WR 82.1%, PF 1.68, DD 2.5%   — risk_mult 1.00 (NOUVEAU)
 # GBPUSD H1 : WR 80.7%, PF 1.42, DD 1.9%   — risk_mult 0.90 (NOUVEAU)
@@ -37,14 +37,14 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
 
-  # BTCUSD — DÉSACTIVÉ 23 Juin 2026 (WR 32.3% Phase 3, PF 0.71)
-  # Réactivation quand WR >55% sur 50 trades consécutifs
+  # BTCUSD — RÉACTIVÉ 23 Juin 2026 (WR 32.3% Phase 3 → risk_mult réduit)
+  # Surveillance: momentum > threshold requis (ADX 20 permissif)
   BTCUSD:
     timeframe: "H1"           # H1 — crypto 24/7
     max_lot: 0.03
-    risk_mult: 0.0            # DÉSACTIVÉ (aligné sur default.yaml) : WR 32.3% Phase 3, 5 pertes consécutives
+    risk_mult: 0.30           # ↑ 0.0→0.30 (RÉACTIVÉ 23 Juin) : risque prudent, WR Phase 3 à surveiller
     max_spread_points: 150
-    min_score: 0.60           # ↓ 0.65→0.60 (22 Juin 2026) : seuils volume assouplis (CMF=0.20, OBV=0.85/0.92)
+    min_score: 0.70           # ↑ 0.60→0.70 (plus sélectif, >70% de chance requis)
     adx_thresh: 20
     allow_buys: true
     allow_shorts: true
@@ -79,44 +79,51 @@ symbol_limits:
     allow_shorts: true        # DEUX DIRECTIONS — le MOM20x3 + risk management gèrent le risque
 
   # USDJPY H1 — NOUVEAU 23 Juin 2026 (WR 82.1%, PF 1.68, DD 2.5%)
-  # ⚠️ min_score=0.85 : seulement si >85% de chance de réussite (phase de validation live)
+  # min_score=0.75 : >75% de chance de réussite requis
   USDJPY:
     timeframe: "H1"
     max_lot: 0.15             # ↑ 0.10→0.15 (augmentation validée 23 Juin)
     risk_mult: 1.00
     max_spread_points: 45
-    min_score: 0.85
+    min_score: 0.75
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
 
   # GBPUSD H1 — NOUVEAU 23 Juin 2026 (WR 80.7%, PF 1.42, DD 1.9%)
-  # ⚠️ min_score=0.85 : seulement si >85% de chance de réussite (phase de validation live)
+  # min_score=0.75 : >75% de chance de réussite requis
   GBPUSD:
     timeframe: "H1"
     max_lot: 0.15             # ↑ 0.10→0.15 (augmentation validée 23 Juin)
     risk_mult: 0.90
+    max_spread_points: 50
+    min_score: 0.75
+    adx_thresh: 22
+    allow_buys: true
+    allow_shorts: true
+    news_minutes_before: 20
+    news_minutes_after: 20
 
   # AUDUSD H1 — NOUVEAU 23 Juin 2026 (WR 79.4%, PF 1.24, DD 3.6%)
-  # ⚠️ min_score=0.85 : seulement si >85% de chance de réussite (phase de validation live)
+  # min_score=0.75 : >75% de chance de réussite requis
   AUDUSD:
     timeframe: "H1"
     max_lot: 0.12             # ↑ 0.10→0.12 (augmentation validée 23 Juin)
     risk_mult: 0.75
     max_spread_points: 45
-    min_score: 0.85
+    min_score: 0.75
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
 
   # USDCAD H1 — NOUVEAU 23 Juin 2026 (WR 80.7%, PF 1.40, DD 1.2%)
-  # ⚠️ min_score=0.85 : seulement si >85% de chance de réussite (phase de validation live)
+  # min_score=0.75 : >75% de chance de réussite requis
   USDCAD:
     timeframe: "H1"
     max_lot: 0.15             # ↑ 0.10→0.15 (augmentation validée 23 Juin)
     risk_mult: 0.85
     max_spread_points: 45
-    min_score: 0.85
+    min_score: 0.75
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
