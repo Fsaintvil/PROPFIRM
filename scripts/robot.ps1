@@ -112,7 +112,7 @@ if ($dp) {
         $ast = Get-Content $AGENT_STATUS | ConvertFrom-Json
         Write-Host "  Council: cycle $($ast.cycle), niveau $($ast.global_level)"
         Write-Host "  Robot: $(if($ast.robot_alive){'OK - EN VIE'}else{'.. Démarrage...'})"
-        Write-Host "  Agents: $($ast.agents.Count) actifs"
+        Write-Host "  Agents: $(($ast.agents.psobject.Properties).Count) actifs"
     }
 } else {
     Write-Host " ECHEC" -ForegroundColor Red
