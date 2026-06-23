@@ -214,7 +214,8 @@ def atr(high, low, close, period=14):
 
 
 def stochastic_rsi(data, period=14, k=3, d=3):
-    """Stochastic RSI"""
+    """Stochastic RSI — RETIRÉ du code mort le 23 Juin 2026.
+    Conservé car importé par feature_pipeline.py et utilisé dans rsi_divergence_features()."""
     r = rsi(data, period)
     stoch = np.full_like(r, np.nan)
     if len(r) < period + k:
@@ -229,36 +230,6 @@ def stochastic_rsi(data, period=14, k=3, d=3):
     k_line = ema(np.nan_to_num(stoch, nan=50), k)
     d_line = ema(k_line, d)
     return k_line, d_line
-
-
-def volume_profile(prices, volumes, num_levels=24):
-    """Volume Profile: returns volume at each price level"""
-    p = np.asarray(prices, dtype=float)
-    v = np.asarray(volumes, dtype=float)
-    if len(p) < 10:
-        return np.array([]), np.array([]), np.array([])
-    price_min, price_max = np.min(p), np.max(p)
-    if price_max - price_min < 0.0001:
-        return np.array([]), np.array([]), np.array([])
-    bins = np.linspace(price_min, price_max, num_levels)
-    indices = np.digitize(p, bins) - 1
-    indices = np.clip(indices, 0, num_levels - 1)
-    vol_profile = np.zeros(num_levels)
-    for i, idx in enumerate(indices):
-        vol_profile[idx] += v[i]
-    poc = bins[np.argmax(vol_profile)]
-    value_area = bins[vol_profile >= np.max(vol_profile) * 0.7]
-    return (
-        bins,
-        vol_profile,
-        np.array(
-            [
-                poc,
-                np.min(value_area) if len(value_area) > 0 else price_min,
-                np.max(value_area) if len(value_area) > 0 else price_max,
-            ]
-        ),
-    )
 
 
 def ema_alignment(ema9, ema20, ema50, ema200, price):
@@ -289,20 +260,6 @@ def ema_alignment(ema9, ema20, ema50, ema200, price):
     return alignment
 
 
-def anchored_vwap(high, low, close, volume, anchor_idx=0):
-    """Anchored VWAP from a specific anchor point (e.g., session open)"""
-    h, lo, c, v = [np.asarray(x, dtype=float) for x in (high, low, close, volume)]
-    if anchor_idx >= len(c) or len(c) < 10:
-        return vwap(h, lo, c, v)
-    typical = (h + lo + c) / 3
-    cum_vp = np.cumsum(typical * v)
-    cum_v = np.cumsum(v)
-    anchored_vp = cum_vp[-1] - cum_vp[anchor_idx] if anchor_idx > 0 else cum_vp[-1]
-    anchored_v = cum_v[-1] - cum_v[anchor_idx] if anchor_idx > 0 else cum_v[-1]
-    avwap = anchored_vp / max(anchored_v, 0.0001)
-    return avwap, (c[-1] - avwap) / max(avwap, 0.0001)
-
-
 def fibonacci_retracement(swing_high, swing_low, current_price=None):
     """Fibonacci retracement levels from a swing high/low"""
     if swing_high is None or swing_low is None or swing_high <= swing_low:
@@ -327,22 +284,6 @@ def fibonacci_retracement(swing_high, swing_low, current_price=None):
         else:
             levels["nearest"] = None
     return levels
-
-
-def premium_discount_zones(price, vwap_val, high=None, low=None):
-    """Identify premium (above VWAP) and discount (below VWAP) zones"""
-    if vwap_val is None or vwap_val <= 0:
-        return {"zone": "unknown", "distance": 0, "ratio": 0.5}
-    distance = (price - vwap_val) / vwap_val
-    zone = "premium" if distance > 0 else "discount" if distance < 0 else "at_vwap"
-    ratio = 0.5
-    if high is not None and low is not None and high > low:
-        ratio = (price - low) / (high - low)
-    return {
-        "zone": zone,
-        "distance": round(distance * 100, 2),
-        "ratio": min(1, max(0, ratio)),
-    }
 
 
 def rsi_divergence(close, rsi_values, lookback=20):

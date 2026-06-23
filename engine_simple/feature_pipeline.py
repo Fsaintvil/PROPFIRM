@@ -14,8 +14,13 @@ Utilisation:
   features = compute_all_features(close, high, low, volume, spread, symbol)
   # → dict de ~30 features
 
-  score_adj = compute_score_adjustment(features, signal_action)
-  # → facteur de score (0.0-2.0)
+   score_adj = compute_score_adjustment(features, signal_action)
+   # → facteur de score (0.0-2.0)
+
+Nouveautés v4.6.0 (Juin 2026) :
+   - RSI Divergence (rsi_div_bullish, rsi_div_bearish, rsi_div_strength)
+   - Stochastic RSI (stoch_rsi_k, stoch_rsi_d, stoch_rsi_cross, ob/os)
+   Les 2 features marchent sur les prix uniquement — pas besoin de trades.
 """
 
 import logging
@@ -31,6 +36,8 @@ from engine_simple.indicators import (
     vwap,
     obv,
     rsi,
+    rsi_divergence,
+    stochastic_rsi,
     bollinger_bands,
     chaikin_money_flow,
     relative_volume,
@@ -388,6 +395,82 @@ def spread_features(spread: float | None = None, spread_history: list[float] | N
     return f
 
 
+# ─── 8. RSI Divergence Features ─────────────────────────────────────────
+
+
+def rsi_divergence_features(close: np.ndarray) -> dict[str, float]:
+    """RSI value + Divergence detection (bullish/bearish).
+
+    Features:
+        rsi_value: RSI actuel (0-100)
+        rsi_overbought: 1 si RSI > 70, 0 sinon
+        rsi_oversold: 1 si RSI < 30, 0 sinon
+        rsi_div_bullish: 1 si divergence haussière, 0 sinon
+        rsi_div_bearish: 1 si divergence baissière, 0 sinon
+        rsi_div_strength: Force de la divergence (0-1)
+    """
+    f: dict[str, float] = {}
+    if len(close) < 30:
+        return f
+
+    rsi_arr = rsi(close, 14)
+    if len(rsi_arr) == 0 or np.isnan(rsi_arr[-1]):
+        return f
+
+    rsi_val = float(rsi_arr[-1])
+    f["rsi_value"] = round(rsi_val, 1)
+    f["rsi_overbought"] = 1.0 if rsi_val > 70 else 0.0
+    f["rsi_oversold"] = 1.0 if rsi_val < 30 else 0.0
+
+    # Divergence detection
+    rsi_vals = np.nan_to_num(rsi_arr, nan=50.0)
+    div = rsi_divergence(close, rsi_vals, lookback=20)
+    if div:
+        f["rsi_div_bullish"] = 1.0 if div.get("bullish", False) else 0.0
+        f["rsi_div_bearish"] = 1.0 if div.get("bearish", False) else 0.0
+        f["rsi_div_strength"] = round(div.get("strength", 0.0), 3)
+
+    logger.debug(f"[RSI_DIV] rsi={rsi_val:.1f}, div={f.get('rsi_div_bullish', 0)}/{f.get('rsi_div_bearish', 0)}")
+    return f
+
+
+# ─── 9. Stochastic RSI Features ──────────────────────────────────────────
+
+
+def stoch_rsi_features(close: np.ndarray) -> dict[str, float]:
+    """Stochastic RSI — K and D lines with overbought/oversold detection.
+
+    Features:
+        stoch_rsi_k: Ligne K actuelle (0-100)
+        stoch_rsi_d: Ligne D actuelle (0-100)
+        stoch_rsi_cross: 1 si K > D (haussière), -1 si K < D (baissière), 0 sinon
+        stoch_rsi_overbought: 1 si K > 80 (suracheté), 0 sinon
+        stoch_rsi_oversold: 1 si K < 20 (survendu), 0 sinon
+    """
+    f: dict[str, float] = {}
+    if len(close) < 30:
+        return f
+
+    stoch_k_arr, stoch_d_arr = stochastic_rsi(close, period=14, k=3, d=3)
+    if len(stoch_k_arr) == 0 or np.isnan(stoch_k_arr[-1]):
+        return f
+
+    k_val = float(stoch_k_arr[-1])
+    d_val = float(stoch_d_arr[-1]) if not np.isnan(stoch_d_arr[-1]) else k_val
+    f["stoch_rsi_k"] = round(k_val, 1)
+    f["stoch_rsi_d"] = round(d_val, 1)
+
+    # K crossing above D (bullish) or below D (bearish)
+    f["stoch_rsi_cross"] = 1.0 if k_val > d_val else (-1.0 if k_val < d_val else 0.0)
+
+    # Overbought / Oversold
+    f["stoch_rsi_overbought"] = 1.0 if k_val > 80 else 0.0
+    f["stoch_rsi_oversold"] = 1.0 if k_val < 20 else 0.0
+
+    logger.debug(f"[STOCH_RSI] K={k_val:.1f}, D={d_val:.1f}, cross={f['stoch_rsi_cross']}")
+    return f
+
+
 # ─── Main Entry Point ─────────────────────────────────────────────────────
 
 
@@ -413,7 +496,7 @@ def compute_all_features(
         symbol: Nom du symbole (optionnel, pour ajustements)
 
     Returns:
-        dict de ~30 features nommées
+        dict de ~35 features nommées
     """
     features: dict[str, float] = {}
 
@@ -443,6 +526,12 @@ def compute_all_features(
 
     # EMA Alignment
     features.update(ema_alignment_features(close))
+
+    # 8. RSI Divergence (marche sur les prix uniquement, pas besoin de trades)
+    features.update(rsi_divergence_features(close))
+
+    # 9. Stochastic RSI (marche sur les prix uniquement)
+    features.update(stoch_rsi_features(close))
 
     # Spread
     features.update(spread_features(spread, spread_history))
@@ -546,6 +635,48 @@ def compute_score_adjustment(
         else:
             adj *= 0.85
             reasons["obv_div_disagree"] = f"-15% (OBV contredit, strength={obv_str:.2f})"
+
+    # ── RSI Divergence ──
+    rsi_div_bull = features.get("rsi_div_bullish", 0)
+    rsi_div_bear = features.get("rsi_div_bearish", 0)
+    rsi_div_str = features.get("rsi_div_strength", 0)
+    if rsi_div_bull or rsi_div_bear:
+        if rsi_div_str > 0.3:
+            if (signal_action == "BUY" and rsi_div_bull) or (signal_action == "SELL" and rsi_div_bear):
+                adj *= 1.08
+                reasons["rsi_div_agree"] = f"+8% (RSI divergence confirme, strength={rsi_div_str:.2f})"
+            else:
+                adj *= 0.85
+                reasons["rsi_div_disagree"] = f"-15% (RSI divergence contredit, strength={rsi_div_str:.2f})"
+
+    # ── RSI Overbought/Oversold ──
+    rsi_val = features.get("rsi_value", 50)
+    if signal_action == "BUY" and rsi_val > 70:
+        adj *= 0.90
+        reasons["rsi_overbought"] = f"-10% (RSI={rsi_val:.0f}, suracheté pour achat)"
+    elif signal_action == "SELL" and rsi_val < 30:
+        adj *= 0.90
+        reasons["rsi_oversold"] = f"-10% (RSI={rsi_val:.0f}, survendu pour vente)"
+
+    # ── Stochastic RSI Overbought/Oversold ──
+    stoch_ob = features.get("stoch_rsi_overbought", 0)
+    stoch_os = features.get("stoch_rsi_oversold", 0)
+    if signal_action == "BUY" and stoch_ob:
+        adj *= 0.88
+        reasons["stoch_overbought"] = "-12% (StochRSI suracheté, risque de retournement)"
+    elif signal_action == "SELL" and stoch_os:
+        adj *= 0.88
+        reasons["stoch_oversold"] = "-12% (StochRSI survendu, risque de retournement)"
+
+    # ── StochRSI Cross ──
+    stoch_cross = features.get("stoch_rsi_cross", 0)
+    if stoch_cross != 0:
+        if (signal_action == "BUY" and stoch_cross > 0) or (signal_action == "SELL" and stoch_cross < 0):
+            adj *= 1.05
+            reasons["stoch_cross_agree"] = f"+5% (StochRSI cross={stoch_cross:.0f} confirme)"
+        else:
+            adj *= 0.92
+            reasons["stoch_cross_disagree"] = f"-8% (StochRSI cross={stoch_cross:.0f} contredit)"
 
     # ── Sessions ──
     if features.get("session_london_ny_overlap", 0):

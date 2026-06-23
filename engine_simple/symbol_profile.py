@@ -5,7 +5,7 @@ comportement technique, spreads, corrélations. Ce module centralise cette
 connaissance pour optimiser les décisions de trading par symbole.
 
 Symboles actifs (Juin 2026): XAUUSD H4, BTCUSD H1, EURUSD H1
-Note: ETHUSD désactivé 19 Juin (WR 27.6%, PF 0.50); US500.cash désactivé 19 Juin (PF 0.24)
+Note: ETHUSD désactivé 19 Juin (WR 27.6%, PF 0.50); US500.cash réactivé 23 Juin H4
 
 Usage:
     from engine_simple.symbol_profile import get_profile

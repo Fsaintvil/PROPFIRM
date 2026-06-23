@@ -1,4 +1,5 @@
 """Unit tests for indicators.py — pure NumPy, no MT5 dependency"""
+
 import os
 import sys
 
@@ -8,7 +9,6 @@ import numpy as np
 np.random.seed(42)
 
 from engine_simple.indicators import (
-    anchored_vwap,
     atr,
     bollinger_bands,
     ema,
@@ -17,12 +17,10 @@ from engine_simple.indicators import (
     macd,
     market_regime_features,
     obv,
-    premium_discount_zones,
     rsi,
     rsi_divergence,
     sma,
     stochastic_rsi,
-    volume_profile,
     vwap,
 )
 
@@ -37,6 +35,7 @@ def _assert_not_all_nan(arr, name="array"):
 
 
 # ── EMA ──
+
 
 def test_ema_basic():
     data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -66,6 +65,7 @@ def test_ema_same_as_sma_at_period():
 
 # ── SMA ──
 
+
 def test_sma_basic():
     result = sma([1, 2, 3, 4, 5], 3)
     _assert_shape(result, 5)
@@ -78,6 +78,7 @@ def test_sma_too_short():
 
 
 # ── RSI ──
+
 
 def test_rsi_uptrend():
     data = list(range(1, 30))
@@ -115,6 +116,7 @@ def test_rsi_50_period():
 
 # ── MACD ──
 
+
 def test_macd_basic():
     data = list(range(1, 120))
     line, sig, hist = macd(data)
@@ -135,6 +137,7 @@ def test_macd_constant():
 
 # ── Bollinger Bands ──
 
+
 def test_bollinger_basic():
     data = list(range(1, 30))
     upper, mid, lower = bollinger_bands(data)
@@ -154,6 +157,7 @@ def test_bollinger_ordering():
 
 # ── VWAP ──
 
+
 def test_vwap_basic():
     high = [1, 2, 3]
     low = [0.5, 1, 2]
@@ -170,6 +174,7 @@ def test_vwap_constant():
 
 
 # ── OBV ──
+
 
 def test_obv_basic():
     close = [10, 11, 12, 11, 10]
@@ -192,6 +197,7 @@ def test_obv_constant_price():
 
 # ── ATR ──
 
+
 def test_atr_basic():
     high = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     low = [0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
@@ -207,6 +213,7 @@ def test_atr_too_short():
 
 # ── Stochastic RSI ──
 
+
 def test_stoch_rsi_basic():
     data = np.random.default_rng(42).normal(100, 5, 50).tolist()
     k, d = stochastic_rsi(data)
@@ -217,23 +224,8 @@ def test_stoch_rsi_basic():
         assert np.all(non_nan >= 0) and np.all(non_nan <= 100), "StochRSI should be 0-100"
 
 
-# ── Volume Profile ──
-
-def test_volume_profile_basic():
-    prices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    volumes = [100] * 10
-    bins, profile, summary = volume_profile(prices, volumes, 10)
-    assert len(bins) == 10
-    assert len(profile) == 10
-    assert bins[0] <= bins[-1]
-
-
-def test_volume_profile_too_short():
-    bins, profile, summary = volume_profile([1, 2], [100, 200], 10)
-    assert len(bins) == 0
-
-
 # ── EMA Alignment ──
+
 
 def test_ema_alignment_bullish():
     # All EMAs in bullish order: fast > slow
@@ -246,18 +238,8 @@ def test_ema_alignment_bearish():
     assert result < 0, f"Bearish alignment should be <0, got {result}"
 
 
-# ── Anchored VWAP ──
-
-def test_anchored_vwap_basic():
-    high = list(range(10, 110, 10))
-    low = list(range(5, 105, 10))
-    close = list(range(8, 108, 10))
-    volume = [1000] * 10
-    avwap, dist = anchored_vwap(high, low, close, volume, 0)
-    assert avwap > 0
-
-
 # ── Fibonacci ──
+
 
 def test_fib_basic():
     levels = fibonacci_retracement(10, 5, current_price=7)
@@ -278,24 +260,8 @@ def test_fib_invalid():
     assert fibonacci_retracement(10, None) == {}
 
 
-# ── Premium/Discount ──
-
-def test_premium_discount():
-    result = premium_discount_zones(110, 100, 120, 80)
-    assert result["zone"] == "premium"
-    assert result["distance"] > 0
-    result2 = premium_discount_zones(90, 100, 120, 80)
-    assert result2["zone"] == "discount"
-    result3 = premium_discount_zones(100, 100)
-    assert result3["zone"] == "at_vwap"
-
-
-def test_premium_discount_none_vwap():
-    result = premium_discount_zones(100, None)
-    assert result["zone"] == "unknown"
-
-
 # ── RSI Divergence ──
+
 
 def test_divergence_short_data():
     result = rsi_divergence([1, 2, 3], [50, 55, 60], 20)
@@ -313,19 +279,21 @@ def test_divergence_no_div():
 
 # ── Market Regime Features ──
 
+
 def test_market_regime_basic():
     data = np.random.default_rng(42).normal(100, 5, 60).tolist()
-    features = market_regime_features(data, [x-1 for x in data], data, [1000]*60)
+    features = market_regime_features(data, [x - 1 for x in data], data, [1000] * 60)
     assert isinstance(features, dict)
     assert len(features) > 0
 
 
 def test_market_regime_too_short():
-    features = market_regime_features([1, 2, 3], [0.5, 1, 2], [0.8, 1.5, 2.5], [100]*3, 50)
+    features = market_regime_features([1, 2, 3], [0.5, 1, 2], [0.8, 1.5, 2.5], [100] * 3, 50)
     assert features == {}
 
 
 # ── Run all ──
+
 
 def run():
     """Discover and run all test_* functions in this module"""
@@ -339,11 +307,10 @@ def run():
             failed += 1
             print(f"FAIL {t.__name__}: {e}")
     total = passed + failed
-    print(f"\n{total} tests: {passed} passed, {failed} failed ({passed/total*100:.0f}%)")
+    print(f"\n{total} tests: {passed} passed, {failed} failed ({passed / total * 100:.0f}%)")
     return failed == 0
 
 
 if __name__ == "__main__":
     success = run()
     sys.exit(0 if success else 1)
-

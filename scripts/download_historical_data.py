@@ -6,6 +6,9 @@ Reuses existing data from data/raw/ when available.
 Usage:
     python scripts/download_historical_data.py
     python scripts/download_historical_data.py --force
+    python scripts/download_historical_data.py --symbols EURUSD,GBPUSD
+    python scripts/download_historical_data.py --symbols EURUSD --max-candles 500000
+    python scripts/download_historical_data.py --symbols EURUSD --max-candles 500000 --force
 """
 
 import os
@@ -36,6 +39,16 @@ ALL_SYMBOLS = [
     "NAS100.cash",
 ]
 
+# Max candles par timeframe par défaut
+DEFAULT_MAX_CANDLES = {"M15": 500000, "H1": 300000, "H4": 200000, "D1": 10000}
+
+# Max candles personnalisés par symbole (optionnel, ex: récupérer plus de données forex)
+SYMBOL_MAX_CANDLES = {
+    # Forex pairs — augmenté si MT5 maxbars > 100K
+    # "EURUSD": {"H1": 500000},
+    # "GBPUSD": {"H1": 500000},
+}
+
 BATCH_SIZE = 50000
 SLEEP_BETWEEN = 0.3
 
@@ -43,7 +56,7 @@ RAW_DIR = Path("data/raw")
 OUT_DIR = Path("data/historical")
 
 
-def download_tf(symbol, tf_name, force=False):
+def download_tf(symbol, tf_name, force=False, max_candles_override=None):
     """Download one timeframe for one symbol."""
     out_path = OUT_DIR / f"{symbol}_{tf_name}.parquet"
 
@@ -60,7 +73,13 @@ def download_tf(symbol, tf_name, force=False):
     tf = TF_MAP[tf_name]
     all_rates = []
     offset = 0
-    max_candles = 500000 if tf_name == "M15" else 300000 if tf_name == "H1" else 200000 if tf_name == "H4" else 10000
+    # max_candles: d'abord override CLI, puis per-symbol, puis défaut
+    if max_candles_override is not None:
+        max_candles = max_candles_override
+    elif symbol in SYMBOL_MAX_CANDLES and tf_name in SYMBOL_MAX_CANDLES[symbol]:
+        max_candles = SYMBOL_MAX_CANDLES[symbol][tf_name]
+    else:
+        max_candles = DEFAULT_MAX_CANDLES.get(tf_name, 10000)
 
     while offset < max_candles:
         rates = mt5.copy_rates_from_pos(symbol, tf, offset, BATCH_SIZE)
@@ -117,6 +136,13 @@ def main():
         default=None,
         help="Symboles séparés par des virgules (défaut: tous)",
     )
+    parser.add_argument(
+        "--max-candles",
+        type=int,
+        default=None,
+        help="Max candles par timeframe (défaut: M15=500K, H1=300K, H4=200K, D1=10K). "
+        "Utile après avoir augmenté maxbars dans MT5: --max-candles 500000",
+    )
     args = parser.parse_args()
 
     symbols_to_download = ALL_SYMBOLS
@@ -136,7 +162,7 @@ def main():
         for tf_name in timeframes:
             print(f"  {symbol}_{tf_name}... ", end="", flush=True)
             start = time.time()
-            (data, error) = download_tf(symbol, tf_name, force=args.force)
+            (data, error) = download_tf(symbol, tf_name, force=args.force, max_candles_override=args.max_candles)
             elapsed = time.time() - start
 
             if error:

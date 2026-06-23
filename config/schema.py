@@ -44,9 +44,9 @@ class RobotConfig(BaseModel):
 
 class TradingConfig(BaseModel):
     symbols: list[str] = Field(default_factory=lambda: ["XAUUSD", "BTCUSD", "US500.cash"])
-    max_positions: int = Field(default=4, ge=1, le=30)
+    max_positions: int = Field(default=4, ge=1, le=50)
     max_positions_per_symbol: int = Field(default=2, ge=1, le=5)
-    max_trades_per_day: int = Field(default=80, ge=1, le=200)
+    max_trades_per_day: int = Field(default=80, ge=1, le=500)
     max_signals_per_cycle: int = Field(default=10, ge=1, le=20)
     max_orders_per_minute: int = Field(default=6, ge=1, le=20)
     lot_size: float = Field(default=0.05, ge=0.01, le=10)
