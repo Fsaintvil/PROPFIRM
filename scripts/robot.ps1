@@ -37,13 +37,13 @@ if ($Status) {
     if (Test-Path $AGENT_STATUS) {
         $ast = Get-Content $AGENT_STATUS | ConvertFrom-Json
         $robotIcon = if ($ast.robot_alive) { "EN VIE" } else { "ARRETE" }
-        Write-Host "Robot: $(if($ast.robot_alive){'✔'}else{'✘'}) $robotIcon"
+        Write-Host "Robot: $(if($ast.robot_alive){'[OK]'}else{'[XX]'}) $robotIcon"
         Write-Host "Council: cycle $($ast.cycle), niveau $($ast.global_level)"
         Write-Host ""
         Write-Host "-- Agents du Trading Intelligence Council --"
-        foreach ($name in ($ast.agents | Get-Member -MemberType NoteProperties).Name) {
+        foreach ($name in ($ast.agents.psobject.Properties).Name) {
             $a = $ast.agents.$name
-            $icon = switch($a.level) { "GREEN" { "✅" } "ORANGE" { "🟡" } "RED" { "🔴" } default { "⚪" } }
+            $icon = switch($a.level) { "GREEN" { "[G]" } "ORANGE" { "[O]" } "RED" { "[R]" } default { "[?]" } }
             Write-Host "  $icon $name`: $($a.message)"
         }
         # Messages inter-agents
@@ -111,7 +111,7 @@ if ($dp) {
     if (Test-Path $AGENT_STATUS) {
         $ast = Get-Content $AGENT_STATUS | ConvertFrom-Json
         Write-Host "  Council: cycle $($ast.cycle), niveau $($ast.global_level)"
-        Write-Host "  Robot: $(if($ast.robot_alive){'✔ EN VIE'}else{'⏳ Démarrage...'})"
+        Write-Host "  Robot: $(if($ast.robot_alive){'OK - EN VIE'}else{'.. Démarrage...'})"
         Write-Host "  Agents: $($ast.agents.Count) actifs"
     }
 } else {
