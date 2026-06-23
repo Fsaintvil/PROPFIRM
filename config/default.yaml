@@ -30,9 +30,9 @@ trading:
     - USDCAD      # H1 — WR 80.7%, PF 1.40, DD 1.2% (backtest réaliste 16 ans)
 
   # Limites globales — Production continue (1 trade/symbole/5min)
-  max_positions: 20             # Augmenté (23 Juin) : 7 symboles × 2-3 positions/symbole
-  max_positions_per_symbol: 2   # 2 positions max par symbole
-  max_trades_per_day: 120       # Augmenté (23 Juin) : 7 symboles × ~17 trades/jour
+  max_positions: 30             # ↑ 20→30 (23 Juin) : 7 symboles × 3-4 positions
+  max_positions_per_symbol: 3   # ↑ 2→3 (23 Juin) : jusqu'à 3 positions par symbole
+  max_trades_per_day: 200       # ↑ 120→200 (23 Juin) : 7 symboles × ~28 trades/jour
   max_signals_per_cycle: 10     # marge pour signaux simultanés
   max_orders_per_minute: 6      # 1 trade/min/symbole + marge
   lot_size: 0.05                # lot par défaut (overridden par symbol_limits)
@@ -95,7 +95,7 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════
   XAUUSD:
     timeframe: "H4"             # H4 (WR 68.6%, DD 6.9% — H1 perdant 12 ans)
-    max_lot: 0.10               # 0.10 lot = 10 onces, max $800 risque
+    max_lot: 0.10               # ↑ 0.05→0.10 (23 Juin) : augmentation validée, WR 68.6% H4
     min_lot: 0.01
     risk_mult: 1.10             # ↑ 1.00→1.10 (19 Juin 2026) : WR 77.8% sur 9 trades, +$1,044 PnL — augmentation 10%
     max_spread_points: 60       # élargi (40→60) : spread H4 or parfois large aux heures calmes
@@ -245,7 +245,7 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════
   EURUSD:
     timeframe: "H1"             # H1 (WR 68.6% 12ans, PF 1.12, DD 3.7%)
-    max_lot: 0.10               # lot standard forex (liquidité extrême)
+    max_lot: 0.20               # ↑ 0.10→0.20 (23 Juin) : augmentation validée, forex liquide
     min_lot: 0.01
     risk_mult: 1.00             # ↑ 0.75→1.00 (19 Juin) : WR 80% live, PF 29.4 — données contaminées nettoyées
     max_spread_points: 40       # serré (EURUSD très liquide, spread typique 8-15pts)
@@ -299,9 +299,7 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════
   USDJPY:
     timeframe: "H1"
-    max_lot: 0.10
-    min_lot: 0.01
-    risk_mult: 1.00             # Top performer, +$329K/16ans
+    max_lot: 0.15             # ↑ 0.10→0.15 (23 Juin) : augmentation validée, TOP performer
     max_spread_points: 45       # Spread JPY parfois légèrement plus large
     min_score: 0.85              # ⚠️ PHASE VALIDATION LIVE : 85% de chance de réussite requis
     adx_thresh: 22
@@ -334,9 +332,7 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════
   GBPUSD:
     timeframe: "H1"
-    max_lot: 0.10
-    min_lot: 0.01
-    risk_mult: 0.90             # +$86K/16ans, risk légèrement réduit
+    max_lot: 0.15             # ↑ 0.10→0.15 (23 Juin) : augmentation validée, volatilité GBP modérée
     max_spread_points: 50       # Spread GBP parfois large (news UK)
     min_score: 0.85              # ⚠️ PHASE VALIDATION LIVE : 85% de chance de réussite requis
     adx_thresh: 22
@@ -369,9 +365,7 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════
   AUDUSD:
     timeframe: "H1"
-    max_lot: 0.10
-    min_lot: 0.01
-    risk_mult: 0.75             # +$45K/16ans, risk plus conservateur
+    max_lot: 0.12             # ↑ 0.10→0.12 (23 Juin) : augmentation validée, plus conservateur
     max_spread_points: 45
     min_score: 0.85              # ⚠️ PHASE VALIDATION LIVE : 85% de chance de réussite requis
     adx_thresh: 22
@@ -404,9 +398,7 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════
   USDCAD:
     timeframe: "H1"
-    max_lot: 0.10
-    min_lot: 0.01
-    risk_mult: 0.85             # +$64K/16ans, DD 1.2% excellent
+    max_lot: 0.15             # ↑ 0.10→0.15 (23 Juin) : augmentation validée, DD 1.2% excellent
     max_spread_points: 45
     min_score: 0.85              # ⚠️ PHASE VALIDATION LIVE : 85% de chance de réussite requis
     adx_thresh: 22
