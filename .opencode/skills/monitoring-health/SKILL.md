@@ -33,11 +33,12 @@ Boucle 2 min :
 .\scripts\ai-manager.ps1 -Stop   # Arrêter le daemon
 ```
 
-> **Recommandé** : Utiliser `start_robot.ps1` pour lancer le robot (démarre le robot + watchdog automatiquement).
+> **Recommandé** : Utiliser `robot.ps1` pour gérer le robot (start, stop, status, logs).
 > ```powershell
-> .\scripts\start_robot.ps1       # Démarre robot + watchdog
-> .\scripts\start_robot.ps1 -Status  # Voir l'état
-> .\scripts\start_robot.ps1 -Stop    # Arrêter tout
+> .\scripts\robot.ps1            # Démarre robot + daemon
+> .\scripts\robot.ps1 -Status    # Voir l'état
+> .\scripts\robot.ps1 -Logs      # Voir les logs
+> .\scripts\robot.ps1 -Stop      # Arrêter tout
 > ```
 
 ### Performance Monitor (intégré dans le robot)
@@ -131,7 +132,7 @@ python -c "import psutil; print(f'RAM: {psutil.Process().memory_info().rss/1024/
 
 ## Fichiers clés
 - `scripts/ai-manager.ps1` — watchdog continu
-- `scripts/start_robot.ps1` — démarrage recommandé du robot
+- `scripts/robot.ps1` — gestion du robot (start/stop/status/logs)
 - `engine_simple/performance_monitor.py` — monitoring intégré
 - `main.py` — boucle 15s, logging, ftmo_report
 - `logs/simple_robot.log` — log principal

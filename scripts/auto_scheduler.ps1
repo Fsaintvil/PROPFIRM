@@ -40,17 +40,17 @@ if ($Install) {
     Log "Installation des taches planifiees..."
 
     # Tâche START : Lun-Ven 00:00 UTC (02:00 heure Paris)
-    # Utilise pythonw.exe (sans console) + start_robot.ps1
+    # Utilise robot.ps1 (start/stop/status/logs)
     schtasks /Create /SC WEEKLY /D MON,TUE,WED,THU,FRI `
         /TN "$TASK_START" `
-        /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \`"${BASE}\scripts\start_robot.ps1\`"" `
+        /TR "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \`"${BASE}\scripts\robot.ps1\`"" `
         /ST 02:00 `
         /SD "01/01/2026" `
         /RL HIGHEST `
         /F
 
     if ($?) {
-        Log "✅ $TASK_START creee : Lun-Ven 02:00 (00:00 UTC) → start_robot.ps1"
+        Log "✅ $TASK_START creee : Lun-Ven 02:00 (00:00 UTC) → robot.ps1"
     } else {
         Log "❌ Erreur creation $TASK_START"
     }
