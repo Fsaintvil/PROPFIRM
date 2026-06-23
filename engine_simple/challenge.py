@@ -119,16 +119,15 @@ class ChallengeTracker:
     # ── Règles FTMO ─────────────────────────────────────────────────
 
     def _check_consistency(self):
-        """FTMO consistency rule: aucun jour ne doit dépasser 30% du profit TARGET.
-        Règle FTMO 1-Step: le meilleur jour ≤ 30% × (capital × profit_target_pct).
-        Exemple: 200K × 10% = $20K target → 30% = $6K max/jour.
+        """FTMO consistency rule: aucun jour ne doit dépasser 30% du profit RÉEL.
+        Règle FTMO 1-Step authentique: le meilleur jour ≤ 30% × profit total réalisé.
+        Exemple: profit total $1,000 → max $300/jour.
 
         Vérification EN CONTINU dès que le PnL total dépasse $500."""
         total_pnl = sum(self.daily_pnl_by_date.values())
         if total_pnl < 500 or total_pnl <= 0:
             return
-        profit_target_amount = self.initial_balance * self.profit_target_pct
-        max_per_day = profit_target_amount * self.consistency_max_pct  # ex: $20K × 30% = $6K
+        max_per_day = total_pnl * self.consistency_max_pct  # ex: $1,000 × 30% = $300
         # Reset consistency_violated avant recalcul (peut se résoudre)
         self.consistency_violated = False
         for day, day_pnl in sorted(self.daily_pnl_by_date.items()):
@@ -136,11 +135,11 @@ class ChallengeTracker:
                 continue
             if day_pnl > max_per_day:
                 self.consistency_violated = True
-                day_pct_of_target = day_pnl / profit_target_amount
+                day_pct_of_total = day_pnl / total_pnl if total_pnl > 0 else 0
                 logger.critical(
                     f"FTMO CONSISTENCY VIOLATED: {day} = ${day_pnl:.0f} "
-                    f"({day_pct_of_target:.1%} du target ${profit_target_amount:.0f}) "
-                    f"> max {self.consistency_max_pct:.0%} × target"
+                    f"({day_pct_of_total:.1%} du profit total ${total_pnl:.0f}) "
+                    f"> max {self.consistency_max_pct:.0%} × total_pnl"
                 )
 
     def _check_daily_loss_limit(self, symbol=None):

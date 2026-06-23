@@ -47,6 +47,7 @@ class PerformanceMonitor:
         self._ensure_structure()
         self._lock = threading.Lock()  # C-02: protection race condition
         self._import_from_csv()  # Sync CSV → performance_history
+        self._last_alert_time = {}  # Déduplication: metric → last timestamp
 
     def _ensure_structure(self):
         """Crée la structure si le fichier est vide ou corrompu."""
@@ -396,6 +397,15 @@ class PerformanceMonitor:
 
         self._save()
 
+    def _dedup_alert(self, metric: str) -> bool:
+        """Déduplication: n'ajoute une alerte que si la dernière identique date de > 1h."""
+        now = datetime.utcnow().timestamp()
+        last = self._last_alert_time.get(metric, 0)
+        if now - last < 3600:  # 1h de cooldown
+            return False
+        self._last_alert_time[metric] = now
+        return True
+
     def check_alerts(self):
         """Vérifie les seuils d'alerte et retourne les alertes actives."""
         alerts = []
@@ -407,17 +417,19 @@ class PerformanceMonitor:
         if r50 and r100 and r100.get("trades", 0) >= 50:
             wr_diff = r100.get("wr", 0) - r50.get("wr", 0)
             if wr_diff > ALERT_THRESHOLDS["wr_50_drop"]:
-                alerts.append(
-                    {
-                        "level": "WARNING",
-                        "metric": "WR_DECLINE",
-                        "message": f"WR en baisse de {wr_diff:.1f}% sur 50 trades "
-                        f"(était {r100['wr']:.1f}% → {r50['wr']:.1f}%)",
-                        "value": wr_diff,
-                        "threshold": ALERT_THRESHOLDS["wr_50_drop"],
-                        "date": today,
-                    }
-                )
+                metric_key = f"WR_DECLINE_{today}"
+                if self._dedup_alert(metric_key):
+                    alerts.append(
+                        {
+                            "level": "WARNING",
+                            "metric": "WR_DECLINE",
+                            "message": f"WR en baisse de {wr_diff:.1f}% sur 50 trades "
+                            f"(était {r100['wr']:.1f}% → {r50['wr']:.1f}%)",
+                            "value": wr_diff,
+                            "threshold": ALERT_THRESHOLDS["wr_50_drop"],
+                            "date": today,
+                        }
+                    )
 
         # 2. Profit factor
         for window in [50, 100]:
@@ -429,27 +441,31 @@ class PerformanceMonitor:
                 gl = sum(abs(t["profit"]) for t in subset if t.get("profit", 0) < 0)
                 pf = gw / gl if gl > 0 else float("inf")
                 if pf < ALERT_THRESHOLDS["pf_below"]:
-                    alerts.append(
-                        {
-                            "level": "CRITICAL",
-                            "metric": "PF_BELOW_1",
-                            "message": f"Profit factor {pf:.2f} < 1.0 sur les {window} trades",
-                            "value": pf,
-                            "threshold": ALERT_THRESHOLDS["pf_below"],
-                            "date": today,
-                        }
-                    )
+                    metric_key = f"PF_BELOW_1_{window}_{today}"
+                    if self._dedup_alert(metric_key):
+                        alerts.append(
+                            {
+                                "level": "CRITICAL",
+                                "metric": "PF_BELOW_1",
+                                "message": f"Profit factor {pf:.2f} < 1.0 sur les {window} trades",
+                                "value": pf,
+                                "threshold": ALERT_THRESHOLDS["pf_below"],
+                                "date": today,
+                            }
+                        )
                 elif pf < ALERT_THRESHOLDS["pf_warning"]:
-                    alerts.append(
-                        {
-                            "level": "WARNING",
-                            "metric": "PF_LOW",
-                            "message": f"Profit factor {pf:.2f} < 1.2 sur les {window} trades",
-                            "value": pf,
-                            "threshold": ALERT_THRESHOLDS["pf_warning"],
-                            "date": today,
-                        }
-                    )
+                    metric_key = f"PF_LOW_{window}_{today}"
+                    if self._dedup_alert(metric_key):
+                        alerts.append(
+                            {
+                                "level": "WARNING",
+                                "metric": "PF_LOW",
+                                "message": f"Profit factor {pf:.2f} < 1.2 sur les {window} trades",
+                                "value": pf,
+                                "threshold": ALERT_THRESHOLDS["pf_warning"],
+                                "date": today,
+                            }
+                        )
 
         # 3. Symbole problématique
         for sym, sdata in self.history["symbols"].items():
@@ -463,18 +479,20 @@ class PerformanceMonitor:
             wr = wins / trades * 100 if trades > 0 else 0
             pf_sym = gross_profit / gross_loss if gross_loss > 0 else float("inf")
             if pnl < -50 and wr < 40:
-                alerts.append(
-                    {
-                        "level": "WARNING",
-                        "metric": "SYMBOL_LOSING",
-                        "message": f"{sym}: ${sdata['pnl']:.0f} sur {sdata['trades']} trades "
-                        f"(WR {wr:.1f}%, PF {pf_sym:.2f})",
-                        "value": sdata["pnl"],
-                        "threshold": -50,
-                        "symbol": sym,
-                        "date": today,
-                    }
-                )
+                metric_key = f"SYMBOL_LOSING_{sym}_{today}"
+                if self._dedup_alert(metric_key):
+                    alerts.append(
+                        {
+                            "level": "WARNING",
+                            "metric": "SYMBOL_LOSING",
+                            "message": f"{sym}: ${sdata['pnl']:.0f} sur {sdata['trades']} trades "
+                            f"(WR {wr:.1f}%, PF {pf_sym:.2f})",
+                            "value": sdata["pnl"],
+                            "threshold": -50,
+                            "symbol": sym,
+                            "date": today,
+                        }
+                    )
 
         # 4. Challenge progress faible à J+15
         c = self.history["challenge"]

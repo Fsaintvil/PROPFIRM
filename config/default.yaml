@@ -21,7 +21,7 @@ robot:
 trading:
   symbols:
     - XAUUSD      # H4 — WR 68.6%, PF 1.16, DD 6.9% (backtest 12+ ans)
-    - BTCUSD      # H1 — WR 32.3% Phase 3, PF 0.71, risk_mult=0.0 (DÉSACTIVÉ 23 Juin)
+    - BTCUSD      # H1 — WR 32.3% Phase 3, PF 0.71, risk_mult=0.30
     # - ETHUSD      # DÉSACTIVÉ 19 Juin — WR 27.6% live, PF 0.50, toxique
     - EURUSD      # H1 — WR 68.6%, PF 1.12, DD 3.7% (backtest 12+ ans)
     - USDJPY      # H1 — WR 82.1%, PF 1.68, DD 2.5% (backtest réaliste 16 ans)
@@ -45,7 +45,7 @@ trading:
 
 # ── Signal ───────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.60               # ↑ 22 Juin: 0.55→0.60 (nouvelles pénalités volume RVOL×0.75 CMF×0.85 OBV×0.70)
+  min_score: 0.70               # ↑ 0.60→0.70 (23 Juin) : aucun ordre exécuté avec <70% de chance
   daily_profit_limit_pct: 0.008  # 0.8% profit/jour max (FTMO consistency)
 
 # ── Risque FTMO ─────────────────────────────────────────────────────────
@@ -95,11 +95,11 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════
   XAUUSD:
     timeframe: "H4"             # H4 (WR 68.6%, DD 6.9% — H1 perdant 12 ans)
-    max_lot: 0.10               # ↑ 0.05→0.10 (23 Juin) : augmentation validée, WR 68.6% H4
+    max_lot: 0.05               # XAUUSD ne dépasse pas 0.05 lot
     min_lot: 0.01
     risk_mult: 1.10             # ↑ 1.00→1.10 (19 Juin 2026) : WR 77.8% sur 9 trades, +$1,044 PnL — augmentation 10%
     max_spread_points: 60       # élargi (40→60) : spread H4 or parfois large aux heures calmes
-    min_score: 0.60             # P3: remonté 0.55→0.60 (WR=35.6%, filtrer signaux faibles)
+    min_score: 0.70             # ↑ 0.60→0.70 (23 Juin) : min global 0.70, pas d'ordre <70% de chance
     adx_thresh: 22              # ADX hystérésis 22 entrée / 18 sortie
     allow_buys: true
     allow_shorts: true
@@ -152,7 +152,7 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════
   BTCUSD:
     timeframe: "H1"             # H1 (WR 69.8%, PF 1.19, DD 5.6% clean)
-    max_lot: 0.03               # 0.03 lot, max $240 risque/trade (prudent)
+    max_lot: 0.05               # ↑ 0.03→0.05 (23 Juin) : lot min 0.05 pour tous les symboles
     min_lot: 0.01
     risk_mult: 0.30             # RÉACTIVÉ 23 Juin : risk prudent (WR Phase 3 32.3%), surveillance active
     max_spread_points: 150      # spread large crypto (typique 80-150 pts)

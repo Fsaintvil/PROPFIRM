@@ -182,6 +182,11 @@ class SignalPipeline:
         if not self._phase5_regime_rule(signal):
             return None
 
+        # Phase 5b: BTCUSD RANGING SELL filter (0% WR sur 6 trades documenté)
+        if symbol in ("BTCUSD",) and signal.get("action") == "SELL" and signal.get("_regime") == "RANGING":
+            logger.debug(f"  [BTCUSD RANGING] {symbol}: SELL en ranging bloqué (0% WR sur 6 trades)")
+            return None
+
         # Phase 6: Strategy selector
         if not self._phase6_strategy_selector(symbol, signal):
             return None
