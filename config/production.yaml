@@ -79,23 +79,25 @@ symbol_limits:
     allow_shorts: true        # DEUX DIRECTIONS — le MOM20x3 + risk management gèrent le risque
 
   # USDJPY H1 — NOUVEAU 23 Juin 2026 (WR 82.1%, PF 1.68, DD 2.5%)
+  # ⚠️ min_score=0.85 : seulement si >85% de chance de réussite (phase de validation live)
   USDJPY:
     timeframe: "H1"
     max_lot: 0.10
     risk_mult: 1.00
     max_spread_points: 45
-    min_score: 0.60
+    min_score: 0.85
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
 
   # GBPUSD H1 — NOUVEAU 23 Juin 2026 (WR 80.7%, PF 1.42, DD 1.9%)
+  # ⚠️ min_score=0.85 : seulement si >85% de chance de réussite (phase de validation live)
   GBPUSD:
     timeframe: "H1"
     max_lot: 0.10
     risk_mult: 0.90
     max_spread_points: 50
-    min_score: 0.60
+    min_score: 0.85
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -103,23 +105,25 @@ symbol_limits:
     news_minutes_after: 20
 
   # AUDUSD H1 — NOUVEAU 23 Juin 2026 (WR 79.4%, PF 1.24, DD 3.6%)
+  # ⚠️ min_score=0.85 : seulement si >85% de chance de réussite (phase de validation live)
   AUDUSD:
     timeframe: "H1"
     max_lot: 0.10
     risk_mult: 0.75
     max_spread_points: 45
-    min_score: 0.60
+    min_score: 0.85
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
 
   # USDCAD H1 — NOUVEAU 23 Juin 2026 (WR 80.7%, PF 1.40, DD 1.2%)
+  # ⚠️ min_score=0.85 : seulement si >85% de chance de réussite (phase de validation live)
   USDCAD:
     timeframe: "H1"
     max_lot: 0.10
     risk_mult: 0.85
     max_spread_points: 45
-    min_score: 0.60
+    min_score: 0.85
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true

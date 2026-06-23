@@ -303,7 +303,7 @@ symbol_limits:
     min_lot: 0.01
     risk_mult: 1.00             # Top performer, +$329K/16ans
     max_spread_points: 45       # Spread JPY parfois légèrement plus large
-    min_score: 0.60
+    min_score: 0.85              # ⚠️ PHASE VALIDATION LIVE : 85% de chance de réussite requis
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -338,7 +338,7 @@ symbol_limits:
     min_lot: 0.01
     risk_mult: 0.90             # +$86K/16ans, risk légèrement réduit
     max_spread_points: 50       # Spread GBP parfois large (news UK)
-    min_score: 0.60
+    min_score: 0.85              # ⚠️ PHASE VALIDATION LIVE : 85% de chance de réussite requis
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -373,7 +373,7 @@ symbol_limits:
     min_lot: 0.01
     risk_mult: 0.75             # +$45K/16ans, risk plus conservateur
     max_spread_points: 45
-    min_score: 0.60
+    min_score: 0.85              # ⚠️ PHASE VALIDATION LIVE : 85% de chance de réussite requis
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -408,7 +408,7 @@ symbol_limits:
     min_lot: 0.01
     risk_mult: 0.85             # +$64K/16ans, DD 1.2% excellent
     max_spread_points: 45
-    min_score: 0.60
+    min_score: 0.85              # ⚠️ PHASE VALIDATION LIVE : 85% de chance de réussite requis
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
