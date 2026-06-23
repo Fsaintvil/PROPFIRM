@@ -1,4 +1,5 @@
 """TradeJournal — stockage SQLite + CSV des trades avec stats."""
+
 import csv
 import logging
 import os
@@ -44,11 +45,18 @@ class TradeJournal:
             # Schema migration: add missing columns from old DB
             existing = {r[1] for r in self._conn.execute("PRAGMA table_info(trades)").fetchall()}
             new_cols = {
-                "ticket": "TEXT", "action": "TEXT",
-                "entry_price": "REAL", "exit_price": "REAL",
-                "rr": "REAL", "regime": "TEXT",
-                "adx": "REAL", "atr": "REAL", "dl_score": "REAL",
-                "entry_time": "TEXT", "exit_time": "TEXT", "duration_min": "INTEGER",
+                "ticket": "TEXT",
+                "action": "TEXT",
+                "entry_price": "REAL",
+                "exit_price": "REAL",
+                "rr": "REAL",
+                "regime": "TEXT",
+                "adx": "REAL",
+                "atr": "REAL",
+                "dl_score": "REAL",
+                "entry_time": "TEXT",
+                "exit_time": "TEXT",
+                "duration_min": "INTEGER",
             }
             for col, coltype in new_cols.items():
                 if col not in existing:
@@ -59,9 +67,20 @@ class TradeJournal:
         """Écriture CSV redondante — backup si SQLite échoue, consultation facile."""
         try:
             csv_cols = [
-                "timestamp", "symbol", "direction", "volume",
-                "entry_price", "sl_price", "tp_price", "exit_price",
-                "sl_atr", "tp_atr", "pnl", "reason", "duration_h", "atr_h1",
+                "timestamp",
+                "symbol",
+                "direction",
+                "volume",
+                "entry_price",
+                "sl_price",
+                "tp_price",
+                "exit_price",
+                "sl_atr",
+                "tp_atr",
+                "pnl",
+                "reason",
+                "duration_h",
+                "atr_h1",
             ]
             row = {
                 "timestamp": trade.get("exit_time", trade.get("entry_time", "")),
@@ -91,20 +110,32 @@ class TradeJournal:
 
     def record_trade(self, trade: dict) -> None:
         with _lock:
-            self._conn.execute("""
+            self._conn.execute(
+                """
                 INSERT OR REPLACE INTO trades
                 (ticket, symbol, action, lot, entry_price, exit_price,
                  profit, rr, regime, adx, atr, dl_score,
                  entry_time, exit_time, duration_min)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-            """, (
-                trade["ticket"], trade["symbol"], trade["action"],
-                trade["lot"], trade["entry_price"], trade["exit_price"],
-                trade["profit"], trade["rr"], trade["regime"],
-                trade["adx"], trade["atr"], trade["dl_score"],
-                trade["entry_time"], trade["exit_time"],
-                trade["duration_min"],
-            ))
+            """,
+                (
+                    trade["ticket"],
+                    trade["symbol"],
+                    trade["action"],
+                    trade["lot"],
+                    trade["entry_price"],
+                    trade["exit_price"],
+                    trade["profit"],
+                    trade["rr"],
+                    trade["regime"],
+                    trade["adx"],
+                    trade["atr"],
+                    trade["dl_score"],
+                    trade["entry_time"],
+                    trade["exit_time"],
+                    trade["duration_min"],
+                ),
+            )
             self._conn.commit()
         # Backup CSV (hors du lock SQLite pour éviter contention)
         self._write_csv_backup(trade)
@@ -156,9 +187,7 @@ class TradeJournal:
                 conditions.append("exit_time >= datetime('now', ?)")
                 params.append(f"-{days} days")
             where = " WHERE " + " AND ".join(conditions) if conditions else ""
-            rows = self._conn.execute(
-                f"SELECT profit, rr FROM trades{where}", params
-            ).fetchall()
+            rows = self._conn.execute(f"SELECT profit, rr FROM trades{where}", params).fetchall()
         if not rows:
             return None
         wins = sum(1 for p, _ in rows if p is not None and p > 0)
@@ -176,7 +205,7 @@ class TradeJournal:
             "win_rate": wins / len(rows) if rows else 0,
             "trade_count": len(rows),
             "trade_winrate": wins / len(rows) if rows else 0,
-            "trade_profit_factor": gross_profit / gross_loss if gross_loss > 0 else float("inf"),
+            "trade_profit_factor": round(gross_profit / gross_loss, 4) if gross_loss > 0 else 9999.0,
             "trade_avg_pnl": net_profit / len(rows) if rows else 0,
         }
 
@@ -184,13 +213,9 @@ class TradeJournal:
         """Retourne tous les trades (backward compat)."""
         with _lock:
             if symbol:
-                rows = self._conn.execute(
-                    "SELECT profit, rr FROM trades WHERE symbol=?", (symbol,)
-                ).fetchall()
+                rows = self._conn.execute("SELECT profit, rr FROM trades WHERE symbol=?", (symbol,)).fetchall()
             else:
-                rows = self._conn.execute(
-                    "SELECT profit, rr FROM trades"
-                ).fetchall()
+                rows = self._conn.execute("SELECT profit, rr FROM trades").fetchall()
         return [{"profit": p, "rr": r} for p, r in rows]
 
     def get_recent(self, symbol: str | None = None, limit: int = 50) -> list[dict]:
@@ -205,9 +230,23 @@ class TradeJournal:
                     "SELECT * FROM trades ORDER BY exit_time DESC LIMIT ?",
                     (limit,),
                 ).fetchall()
-        columns = ["ticket", "symbol", "action", "lot", "entry_price",
-                    "exit_price", "profit", "rr", "regime", "adx", "atr",
-                    "dl_score", "entry_time", "exit_time", "duration_min"]
+        columns = [
+            "ticket",
+            "symbol",
+            "action",
+            "lot",
+            "entry_price",
+            "exit_price",
+            "profit",
+            "rr",
+            "regime",
+            "adx",
+            "atr",
+            "dl_score",
+            "entry_time",
+            "exit_time",
+            "duration_min",
+        ]
         return [dict(zip(columns, r)) for r in rows]
 
     def close(self) -> None:

@@ -27,8 +27,8 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # 3 actifs actifs (XAUUSD, BTCUSD, EURUSD) — ETHUSD désactivé 19 Juin (WR 27.6%)
-    assert len(cfg.trading.symbols) == 3
+    # 7 actifs actifs (XAUUSD, BTCUSD, EURUSD, USDJPY, GBPUSD, AUDUSD, USDCAD)
+    assert len(cfg.trading.symbols) == 7
     assert "XAUUSD" in cfg.trading.symbols
     assert "EURUSD" in cfg.trading.symbols
     assert "ETHUSD" not in cfg.trading.symbols  # désactivé 19 Juin
@@ -48,7 +48,7 @@ def test_as_flat_dict():
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
     assert flat["RISK_PER_TRADE_PCT"] == 0.004  # ↓ 0.5%→0.4% (22 Juin 2026, Supreme Council)
-    assert flat["TRADING_MAX_POSITIONS"] == 14  # 19 Juin: capacité multi-positions (↑ 6→14)
+    assert flat["TRADING_MAX_POSITIONS"] == 30  # 23 Juin: capacité multi-positions 7 symboles
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -56,7 +56,7 @@ def test_symbol_limits_defaults():
     cfg = load_config("default")
     assert "XAUUSD" in cfg.symbol_limits
     assert "BTCUSD" in cfg.symbol_limits
-    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.1
+    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.05  # ↓ 0.10→0.05 (23 Juin, contrainte utilisateur)
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
     assert cfg.symbol_limits["XAUUSD"].risk_mult == 1.10  # ↑ 10% (19 Juin 2026) WR 77.8% live
 
@@ -67,11 +67,11 @@ def test_symbol_limits_new_portfolio():
 
     cfg = load_config("default")
     btc = cfg.symbol_limits.get("BTCUSD", {})
-    assert btc.risk_mult == 0.0  # DÉSACTIVÉ (22 Juin 2026, Supreme Council) WR live 44.7%
+    assert btc.risk_mult == 0.30  # RÉACTIVÉ 23 Juin (WR Phase 3 32.3%, risk prudent)
     assert btc.allow_buys is True
     assert btc.allow_shorts is True
-    assert btc.max_lot == 0.03  # réduit pour crypto volatile
-    assert btc.min_score == 0.60  # abaissé (était 0.65) — calibration Juin 2026
+    assert btc.max_lot == 0.05  # ↑ 0.03→0.05 (23 Juin, lot min pour tous)
+    assert btc.min_score == 0.70  # ↑ 0.60→0.70 (23 Juin, min global 0.70)
 
 
 def test_env_interpolation():
@@ -125,7 +125,7 @@ def test_config_simple_compat():
     import config_simple as cfg
 
     assert cfg.ROBOT_MAGIC == 999001
-    assert cfg.RISK_PER_TRADE == 0.005  # ↑ 0.4%→0.5% (19 Juin 2026)
+    assert cfg.RISK_PER_TRADE == 0.006  # ↑ 0.4%→0.6% (23 Juin 2026, override production)
     assert cfg.MAX_ORDERS_PER_MINUTE == 6  # 1 trade/min/symbole + marge
     assert cfg.__version__ == "4.1.0"
 

@@ -736,6 +736,7 @@ class SignalPipeline:
             close = df["close"].values.astype(float)
             high = df["high"].values.astype(float)
             low = df["low"].values.astype(float)
+            open_prices = df["open"].values.astype(float) if "open" in df.columns else None
             volume = df["volume"].values.astype(float) if "volume" in df.columns else None
 
             # Spread history (collecté au fil de l'eau depuis les ticks)
@@ -752,6 +753,7 @@ class SignalPipeline:
                 close=close,
                 high=high,
                 low=low,
+                open_prices=open_prices,
                 volume=volume,
                 spread=spread,
                 symbol=symbol,

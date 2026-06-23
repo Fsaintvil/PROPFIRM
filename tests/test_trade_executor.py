@@ -1,4 +1,5 @@
 """Tests for trade_executor.py — PerSymbolRateLimiter, ExecutionStats, OrderValidator, TradeExecutor"""
+
 import os
 import sys
 import time
@@ -7,11 +8,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from unittest.mock import MagicMock, patch
 
 from engine_simple.trade_executor import (
-    PerSymbolRateLimiter, ExecutionStats, OrderValidator, TradeExecutor,
+    PerSymbolRateLimiter,
+    ExecutionStats,
+    OrderValidator,
+    TradeExecutor,
 )
 
 
 # ── PerSymbolRateLimiter ────────────────────────────────────────────
+
 
 class TestPerSymbolRateLimiter:
     def test_init(self):
@@ -51,6 +56,7 @@ class TestPerSymbolRateLimiter:
 
 
 # ── ExecutionStats ──────────────────────────────────────────────────
+
 
 class TestExecutionStats:
     def test_init(self):
@@ -114,6 +120,7 @@ class TestExecutionStats:
 
 # ── OrderValidator ──────────────────────────────────────────────────
 
+
 class TestOrderValidator:
     def test_valid_order(self):
         err = OrderValidator.validate("EURUSD", "BUY", 0.1, 1.1000, 1.0900, 1.1200, None)
@@ -157,6 +164,7 @@ class TestOrderValidator:
 
 
 # ── TradeExecutor ───────────────────────────────────────────────────
+
 
 class TestTradeExecutor:
     def make_executor(self):
@@ -215,9 +223,13 @@ class TestTradeExecutor:
     def test_execute_calc_sl_tp_from_atr(self):
         ex = self.make_executor()
         signal = {
-            "action": "BUY", "entry_price": 1.1000,
-            "sl": None, "tp": None,
-            "atr": 0.005, "sl_atr": 2.0, "tp_atr": 5.0,
+            "action": "BUY",
+            "entry_price": 1.1000,
+            "sl": None,
+            "tp": None,
+            "atr": 0.005,
+            "sl_atr": 2.0,
+            "tp_atr": 5.0,
         }
         tick = MagicMock(ask=1.1005, bid=1.1000)
         ex.mt5.get_tick.return_value = tick
@@ -237,8 +249,10 @@ class TestTradeExecutor:
     def test_execute_calc_lot_from_ftmo(self):
         ex = self.make_executor()
         signal = {
-            "action": "BUY", "entry_price": 1.1000,
-            "sl": 1.0900, "tp": 1.1300,
+            "action": "BUY",
+            "entry_price": 1.1000,
+            "sl": 1.0900,
+            "tp": 1.1300,
             "regime": "TREND_UP",
         }
         tick = MagicMock(ask=1.1005, bid=1.1000)
@@ -254,15 +268,17 @@ class TestTradeExecutor:
 
         assert result is not None
         lot_arg = ex.mt5.order_send.call_args[0][0]
-        # XAUUSD max_lot=0.10, ftmo retourne 0.15 → clamp à 0.10
-        assert lot_arg["volume"] == 0.10
+        # XAUUSD max_lot=0.05, ftmo retourne 0.15 → clamp à 0.05
+        assert lot_arg["volume"] == 0.05
         assert lot_arg["comment"] == "ADAPT_TRE"
 
     def test_execute_validation_fails(self):
         ex = self.make_executor()
         signal = {
-            "action": "BUY", "entry_price": 1.1000,
-            "sl": 1.0900, "tp": 1.1005,  # RR too low
+            "action": "BUY",
+            "entry_price": 1.1000,
+            "sl": 1.0900,
+            "tp": 1.1005,  # RR too low
             "regime": "RANGING",
         }
         ex.ftmo.calculate_lot.return_value = 0.1
@@ -272,8 +288,10 @@ class TestTradeExecutor:
     def test_execute_order_failed(self):
         ex = self.make_executor()
         signal = {
-            "action": "BUY", "entry_price": 1.1000,
-            "sl": 1.0900, "tp": 1.1300,
+            "action": "BUY",
+            "entry_price": 1.1000,
+            "sl": 1.0900,
+            "tp": 1.1300,
             "regime": "RANGING",
         }
         ex.ftmo.calculate_lot.return_value = 0.1
@@ -298,8 +316,8 @@ class TestTradeExecutor:
         ex = self.make_executor()
         ex.ftmo.calculate_lot.return_value = 0.15
         lot = ex._calc_lot("XAUUSD", 1.1000, 1.0900)
-        # XAUUSD max_lot=0.10, ftmo retourne 0.15 → clamp à 0.10
-        assert lot == 0.10
+        # XAUUSD max_lot=0.05, ftmo retourne 0.15 → clamp à 0.05
+        assert lot == 0.05
 
     def test_calc_lot_fallback_min(self):
         ex = self.make_executor()

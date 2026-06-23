@@ -174,9 +174,18 @@ class TestPerSymbolParameters:
         assert POSITION_GROUPS == []  # Mode agressif: pas de restriction de groupe
 
     def test_pip_factor_by_type(self):
-        """Forex profiles should have pip_factor=10000, crypto/gold/index=1.0"""
+        """Verify pip_factor by symbol type"""
+        expected = {
+            "EURUSD": 10000.0,  # Forex non-JPY
+            "GBPUSD": 10000.0,  # Forex non-JPY
+            "USDJPY": 100.0,  # Forex JPY (1 pip = 0.01 yen)
+            "AUDUSD": 10000.0,  # Forex non-JPY
+            "USDCAD": 10000.0,  # Forex non-JPY
+            "XAUUSD": 1.0,  # Gold (prix en unités)
+            "BTCUSD": 1.0,  # Crypto (prix en unités)
+            "US500.cash": 1.0,  # Index (prix en unités)
+        }
         for sym, p in PROFILES.items():
-            if sym in ("USDCAD", "GBPUSD", "USDCHF", "EURUSD"):
-                assert p.pip_factor == 10000.0, f"{sym}: forex should have pip_factor=10000"
-            else:
-                assert p.pip_factor == 1.0, f"{sym}: non-forex should have pip_factor=1.0"
+            exp = expected.get(sym)
+            assert exp is not None, f"{sym}: no expected pip_factor defined in test"
+            assert p.pip_factor == exp, f"{sym}: expected pip_factor={exp}, got {p.pip_factor}"

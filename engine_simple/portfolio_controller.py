@@ -1,0 +1,205 @@
+"""Portfolio Controller — Gestion de portefeuille multi-symboles.
+
+Gère l'exposition totale, la corrélation entre symboles, et les limites FTMO.
+
+Features:
+- Max positions total et par symbole
+- Corrélation inter-symboles (correlation groups)
+- Exposure management (long/short net)
+- DD tracking par symbole
+- Risk allocation dynamique
+
+Usage:
+    pc = PortfolioController()
+    can, reason = pc.can_open_position("BTCUSD", "BUY", current_positions)
+    allocation = pc.get_risk_allocation("BTCUSD", current_dd=0.05)
+"""
+
+import logging
+from dataclasses import dataclass, field
+from typing import Optional
+
+import numpy as np
+
+logger = logging.getLogger("portfolio_controller")
+
+
+@dataclass
+class Position:
+    """Position ouverte."""
+
+    symbol: str
+    direction: str  # "BUY" ou "SELL"
+    lot: float
+    entry_price: float
+    current_price: float = 0.0
+    pnl: float = 0.0
+    open_time: str = ""
+    regime: str = "RANGING"
+
+
+@dataclass
+class PortfolioState:
+    """État actuel du portefeuille."""
+
+    total_positions: int
+    long_positions: int
+    short_positions: int
+    net_exposure: float  # long - short (normalisé)
+    symbols_exposure: dict[str, float] = field(default_factory=dict)
+
+
+# ============================================================================
+# CORRELATION SUPPRIMÉE — mode agressif (Phase 0, Juin 2026)
+# Les groupes de corrélation, matrices et limites associées sont désactivés.
+# Positions simultanées possibles sur tous les symboles, y compris corrélés.
+# ============================================================================
+# Limites FTMO (corrélation désactivée)
+MAX_POSITIONS_TOTAL = 14  # Max positions totales (↑ 6→14, 19 Juin 2026 — capacité multi-positions)
+MAX_POSITIONS_PER_SYMBOL = 4  # Max positions par symbole (harmonisé avec ftmo_config MAX_POS_PER_SYMBOL)
+MAX_POSITIONS_PER_DIRECTION = 6  # ↑ 3→6 (19 Juin) : bear market TREND_DOWN cohérent, 6 SELL simultanés possibles
+
+
+class PortfolioController:
+    """Contrôleur de portefeuille pour le trading multi-symboles."""
+
+    def __init__(self):
+        self._positions: list[Position] = []
+        self._symbol_dd: dict[str, float] = {}
+        self._daily_pnl: float = 0.0
+        self._initial_balance: float = 200_000.0
+
+    def set_positions(self, positions: list[Position]):
+        """Met à jour les positions actuelles."""
+        self._positions = positions
+
+    def can_open_position(
+        self, symbol: str, direction: str, positions: list[Position] | None = None
+    ) -> tuple[bool, str]:
+        """Vérifie si on peut ouvrir une position.
+
+        Args:
+            symbol: Symbole (ex: "BTCUSD")
+            direction: "BUY" ou "SELL"
+            positions: Liste des positions actuelles (optionnel)
+
+        Returns:
+            (can_open, reason)
+        """
+        if positions is None:
+            positions = self._positions
+
+        # 1. Max positions total
+        if len(positions) >= MAX_POSITIONS_TOTAL:
+            return False, f"Max positions total atteint ({MAX_POSITIONS_TOTAL})"
+
+        # 2. Max positions par symbole
+        sym_positions = [p for p in positions if p.symbol == symbol]
+        if len(sym_positions) >= MAX_POSITIONS_PER_SYMBOL:
+            return False, f"Max positions {symbol} atteint ({MAX_POSITIONS_PER_SYMBOL})"
+
+        # 3. Max positions par direction
+        # Gère Position.direction (str "BUY"/"SELL") et MT5 TradePosition.type (int 0/1)
+        def _get_dir(p):
+            return p.direction if hasattr(p, "direction") else ("BUY" if getattr(p, "type", -1) == 0 else "SELL")
+
+        dir_positions = [p for p in positions if _get_dir(p) == direction]
+        if len(dir_positions) >= MAX_POSITIONS_PER_DIRECTION:
+            return False, f"Max positions {direction} atteint ({MAX_POSITIONS_PER_DIRECTION})"
+
+        # 4. Correlation group check SUPPRIMÉ — mode agressif
+
+        # 5. DD check per symbol
+        sym_dd = self._symbol_dd.get(symbol, 0.0)
+        if sym_dd > 0.08:  # 8% DD
+            return False, f"DD {symbol} trop élevé ({sym_dd * 100:.1f}%)"
+
+        # 6. Daily loss check
+        if self._daily_pnl < -self._initial_balance * 0.02:  # -2% daily
+            return False, f"Daily loss limit atteint ({self._daily_pnl:.2f})"
+
+        return True, "OK"
+
+    def get_risk_allocation(self, symbol: str, current_dd: float = 0.0) -> float:
+        """Retourne le multiplicateur de risque pour un symbole.
+
+        Args:
+            symbol: Symbole
+            current_dd: Drawdown actuel (0-1)
+
+        Returns:
+            Multiplicateur de risque [0.2-1.0]
+        """
+        # Base allocation
+        base = 1.0
+
+        # DD reduction
+        if current_dd > 0.07:  # 7% DD
+            base = 0.20
+        elif current_dd > 0.05:  # 5% DD
+            base = 0.50
+        elif current_dd > 0.03:  # 3% DD
+            base = 0.75
+
+        # Symbol-specific adjustment
+        symbol_weights = {
+            "XAUUSD": 1.0,
+            "BTCUSD": 0.8,
+            "US500.cash": 0.7,
+        }
+        weight = symbol_weights.get(symbol, 0.7)
+
+        return round(base * weight, 3)
+
+    def get_portfolio_state(self, positions: list[Position] | None = None) -> PortfolioState:
+        """Retourne l'état actuel du portefeuille."""
+        if positions is None:
+            positions = self._positions
+
+        long_pos = [p for p in positions if p.direction == "BUY"]
+        short_pos = [p for p in positions if p.direction == "SELL"]
+
+        # Net exposure (normalisé)
+        total_lot = sum(p.lot for p in positions) or 1.0
+        net = (sum(p.lot for p in long_pos) - sum(p.lot for p in short_pos)) / total_lot
+
+        # Per-symbol exposure
+        sym_exposure = {}
+        for p in positions:
+            sym_exposure[p.symbol] = sym_exposure.get(p.symbol, 0) + p.lot
+
+        return PortfolioState(
+            total_positions=len(positions),
+            long_positions=len(long_pos),
+            short_positions=len(short_pos),
+            net_exposure=round(net, 3),
+            symbols_exposure=sym_exposure,
+        )
+
+    def update_symbol_dd(self, symbol: str, dd: float):
+        """Met à jour le DD d'un symbole."""
+        self._symbol_dd[symbol] = dd
+
+    def update_daily_pnl(self, pnl: float):
+        """Met à jour le PnL journalier."""
+        self._daily_pnl = pnl
+
+    def reset_daily(self):
+        """Reset le PnL journalier (nouveau jour)."""
+        self._daily_pnl = 0.0
+
+
+# ============================================================================
+# CONVENIENCE FUNCTIONS
+# ============================================================================
+_default_controller = PortfolioController()
+
+
+def can_open_position(symbol: str, direction: str, positions: list[Position] | None = None) -> tuple[bool, str]:
+    """Vérifie si on peut ouvrir une position (fonction convenience)."""
+    return _default_controller.can_open_position(symbol, direction, positions)
+
+
+def get_risk_allocation(symbol: str, current_dd: float = 0.0) -> float:
+    """Retourne l'allocation de risque (fonction convenience)."""
+    return _default_controller.get_risk_allocation(symbol, current_dd)

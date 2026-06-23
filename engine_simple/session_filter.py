@@ -47,7 +47,7 @@ class SessionInfo:
 SESSIONS = {
     "asian": {"hours": (0, 7), "name": "Asie (Tokyo)", "description": "Session asiatique — faible liquidité, range"},
     "london_open": {
-        "hours": (7, 9),
+        "hours": (7, 8),
         "name": "Ouverture Londres",
         "description": "Ouverture européenne — volatilité accrue",
     },
@@ -58,7 +58,7 @@ SESSIONS = {
         "description": "Overlap — liquidité maximale",
     },
     "ny": {"hours": (17, 21), "name": "New York", "description": "Session américaine — bonne liquidité"},
-    "ny_close": {"hours": (21, 23), "name": "Fermeture NY", "description": "Fin de session — liquidité décroissante"},
+    "ny_close": {"hours": (21, 24), "name": "Fermeture NY", "description": "Fin de session — liquidité décroissante"},
 }
 
 # Profils de session par symbole

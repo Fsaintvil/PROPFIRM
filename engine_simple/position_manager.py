@@ -4,6 +4,7 @@ Responsabilités:
 - _manage_positions : surveillance MT5 (time-stop, trailing, partial TP)
 - _vigilance_scan : analyse parallèle de tous les symboles (régime, DL, structure)
 """
+
 import logging
 import time
 from datetime import datetime
@@ -21,8 +22,7 @@ class PositionManager:
     Délégation de main.py : appelé cycle par cycle.
     """
 
-    def __init__(self, mt5, ftmo, adaptive, signal_gen,
-                 regime_detector, pos_cache):
+    def __init__(self, mt5, ftmo, adaptive, signal_gen, regime_detector, pos_cache):
         self.mt5 = mt5
         self.ftmo = ftmo
         self.adaptive = adaptive
@@ -51,8 +51,7 @@ class PositionManager:
 
     def vigilance_scan(self):
         """DL/regime pipeline pour TOUS les symboles chaque cycle."""
-        positions = {p.symbol: p for p in self._pos_cache.get()
-                     if p.magic == cfg.ROBOT_MAGIC}
+        positions = {p.symbol: p for p in self._pos_cache.get() if p.magic == cfg.ROBOT_MAGIC}
         for symbol in cfg.SYMBOLS:
             try:
                 rates = self._get_rates_for_vigilance(symbol)
@@ -71,10 +70,12 @@ class PositionManager:
                     if new_regime != result.get("regime", ""):
                         logger.debug(
                             f"  [REGIME COMPARE] {symbol}: "
-                            f"old={result.get('regime','?')} new={new_regime} "
-                            f"(adx={new_meta.get('adx',0):.0f})")
+                            f"old={result.get('regime', '?')} new={new_regime} "
+                            f"(adx={new_meta.get('adx', 0):.0f})"
+                        )
                 # MOM20x3: signal parallèle (analyse seule, pas de décision)
                 from engine_simple.strategy import MOM20x3
+
                 mom = MOM20x3(rates, symbol)
                 mom_signal = mom.analyze()
                 if mom_signal and mom_signal.get("action") not in (None, "HOLD"):
@@ -86,23 +87,21 @@ class PositionManager:
                             f"  [STRAT COMPARE] {symbol}: "
                             f"DL={old_action} MOM20x3={new_action} "
                             f"score={mom_signal.get('score', 0):.2f} "
-                            f"ADX={regime_meta.get('adx', 0):.0f}")
+                            f"ADX={regime_meta.get('adx', 0):.0f}"
+                        )
                 # Position existante → comparer le régime d'entrée
                 pos = positions.get(symbol)
                 if pos:
                     comment = pos.comment or ""
-                    entry_regime = comment.replace("ADAPT_", "")[:5] \
-                        if comment.startswith("ADAPT_") else "?"
+                    entry_regime = comment.replace("ADAPT_", "")[:12] if comment.startswith("ADAPT_") else "?"
                     if entry_regime not in ("?", "LIMIT") and result["regime"] not in ("?", "LIMIT"):
                         if result["regime"] != entry_regime:
                             logger.info(
-                                f"  [REGIME SHIFT] {symbol}: {entry_regime} "
-                                f"→ {result['regime']} (position ouverte)")
+                                f"  [REGIME SHIFT] {symbol}: {entry_regime} → {result['regime']} (position ouverte)"
+                            )
                     if pos.sl > 0:
                         dist = abs(pos.price_open - pos.sl)
-                        logger.debug(
-                            f"  [POS] {symbol}: SL={pos.sl:.5f} "
-                            f"dist={dist:.5f} profit={pos.profit:+.2f}")
+                        logger.debug(f"  [POS] {symbol}: SL={pos.sl:.5f} dist={dist:.5f} profit={pos.profit:+.2f}")
             except Exception as e:
                 logger.warning(f"  [VIGIL] {symbol}: error: {e}")
 

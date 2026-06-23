@@ -1,6 +1,7 @@
 import json
 import logging
 import sqlite3
+import threading
 import time
 from pathlib import Path
 
@@ -25,6 +26,7 @@ class RateCache:
     def __init__(self, db_path=None, default_ttl=15):
         self._path = str(db_path or DB_PATH)
         self._default_ttl = default_ttl
+        self._lock = threading.Lock()  # Protection thread pour SQLite
         Path(self._path).parent.mkdir(parents=True, exist_ok=True)
         self._get_connection = sqlite3.connect(self._path, timeout=5, check_same_thread=False)
         self._get_connection.execute("PRAGMA journal_mode=WAL")  # C-03: WAL mode
@@ -84,8 +86,9 @@ class RateCache:
         ttl = self._default_ttl if ttl is None else ttl
         try:
             with self._get_conn() as c:
-                c.execute("INSERT OR REPLACE INTO rates VALUES (?,?,?)",
-                          (key, self._serialize(data), time.time() + ttl))
+                c.execute(
+                    "INSERT OR REPLACE INTO rates VALUES (?,?,?)", (key, self._serialize(data), time.time() + ttl)
+                )
         except (sqlite3.Error, TypeError) as e:
             logger.debug(f"Cache set failed: {e}")
 
@@ -102,8 +105,10 @@ class RateCache:
     def set_volatility(self, symbol, data, ttl=60):
         try:
             with self._get_conn() as c:
-                c.execute("INSERT OR REPLACE INTO volatility VALUES (?,?,?)",
-                          (symbol, self._serialize(data), time.time() + ttl))
+                c.execute(
+                    "INSERT OR REPLACE INTO volatility VALUES (?,?,?)",
+                    (symbol, self._serialize(data), time.time() + ttl),
+                )
         except (sqlite3.Error, TypeError) as e:
             logger.debug(f"Vol cache set failed: {e}")
 

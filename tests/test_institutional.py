@@ -181,7 +181,7 @@ def test_kelly_sizing_low_win_rate():
     perf.avg_r_multiple = 1.0
     perf.trades = 100
     risk = kelly.calculate(perf, 1.0)
-    assert risk <= 0.0055  # Kelly négatif → risk = base_risk (0.005 depuis 19 Juin)
+    assert risk <= 0.0065  # Kelly négatif → risk = base_risk (0.006 depuis 23 Juin)
 
 
 def test_kelly_sizing_no_trades():
