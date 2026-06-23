@@ -394,6 +394,127 @@ class KillSwitchAgent(Agent):
         return {"level": "GREEN", "message": "Standing by", "data": {}}
 
 
+class DataManagerAgent(Agent):
+    """Data Manager — toutes les 300s, vérifie fraîcheur et intégrité des données."""
+
+    def __init__(self):
+        super().__init__("DATA_MANAGER", interval_s=300, description="Qualité des données")
+
+    def execute(self, ctx: dict) -> dict:
+        alerts = []
+        level = "GREEN"
+
+        # 1. Vérifier que les logs sont frais (proxy pour données MT5)
+        log_age = ctx.get("log_age_s", 999)
+        if log_age > 120:
+            alerts.append(f"LOGS_STALE ({log_age:.0f}s)")
+            level = "ORANGE"
+        if log_age > 300:
+            level = "RED"
+
+        # 2. Vérifier l'intégrité des fichiers Parquet dans data/historical/
+        parquet_dir = BASE / "data" / "historical"
+        parquet_files: list = []
+        if parquet_dir.exists():
+            parquet_files = list(parquet_dir.glob("*.parquet"))
+            stale_count = 0
+            now = time.time()
+            for f in parquet_files:
+                age_days = (now - f.stat().st_mtime) / 86400
+                if age_days > 30:
+                    stale_count += 1
+            if stale_count > 5:
+                alerts.append(f"PARQUET_STALE: {stale_count} fichiers > 30 jours")
+                level = max(level, "ORANGE")
+
+        # 3. Vérifier la taille des fichiers de runtime
+        runtime_dir = RUNTIME
+        if runtime_dir.exists():
+            for f in runtime_dir.glob("*.json"):
+                size_mb = f.stat().st_size / (1024 * 1024)
+                if size_mb > 10:
+                    alerts.append(f"RUNTIME_FILE_LARGE: {f.name}={size_mb:.1f}MB")
+                    level = max(level, "ORANGE")
+
+        msg = ", ".join(alerts) if alerts else "Données OK"
+        return {
+            "level": level,
+            "message": msg,
+            "data": {"parquet_count": len(parquet_files) if parquet_dir.exists() else 0},
+        }
+
+
+class PerformanceEngineerAgent(Agent):
+    """Performance Engineer — toutes les 300s, mesure cycle time, mémoire, logs, uptime."""
+
+    def __init__(self):
+        super().__init__("PERFORMANCE_ENGINEER", interval_s=300, description="Performance et stabilité")
+        self._baseline_memory: float = 0.0
+        self._memory_samples: list[float] = []
+
+    def execute(self, ctx: dict) -> dict:
+        alerts = []
+        level = "GREEN"
+        data: dict[str, Any] = {}
+
+        # 1. Mémoire
+        mem = ctx.get("memory_mb", 0)
+        data["memory_mb"] = round(mem, 1)
+        if self._baseline_memory == 0 and mem > 0:
+            self._baseline_memory = mem
+        self._memory_samples.append(mem)
+        if len(self._memory_samples) > 60:  # 60 échantillons = 5h
+            self._memory_samples.pop(0)
+
+        if mem > 2000:
+            alerts.append(f"MEM={mem:.0f}MB > 2000")
+            level = "RED"
+        elif mem > 1500:
+            alerts.append(f"MEM={mem:.0f}MB > 1500")
+            level = "ORANGE"
+        elif mem > 500 and self._baseline_memory > 0:
+            # Fuite mémoire : +50% depuis le baseline
+            growth_pct = (mem - self._baseline_memory) / self._baseline_memory * 100
+            if growth_pct > 50:
+                alerts.append(f"MEM_LEAK: +{growth_pct:.0f}% depuis baseline ({self._baseline_memory:.0f}MB)")
+                level = "ORANGE"
+
+        # 2. Taille des logs
+        log_dir = LOG_DIR
+        total_log_mb = 0.0
+        if log_dir.exists():
+            for f in log_dir.glob("*.log*"):
+                total_log_mb += f.stat().st_size / (1024 * 1024)
+        data["logs_mb"] = round(total_log_mb, 1)
+        if total_log_mb > 500:
+            alerts.append(f"LOGS={total_log_mb:.0f}MB > 500MB")
+            level = "ORANGE"
+        elif total_log_mb > 1000:
+            alerts.append(f"LOGS={total_log_mb:.0f}MB > 1GB")
+            level = "RED"
+
+        # 3. Uptime du robot
+        pid = ctx.get("robot_pid")
+        if pid:
+            data["uptime_h"] = 0
+            # Vérifier l'âge des logs comme proxy de l'uptime
+            log_age = ctx.get("log_age_s", 999)
+            data["log_age_s"] = log_age
+        else:
+            alerts.append("ROBOT_DOWN")
+            level = "RED"
+
+        # 4. Tendance mémoire (dérive sur les 10 derniers échantillons)
+        if len(self._memory_samples) >= 10:
+            recent = self._memory_samples[-10:]
+            if recent[-1] > recent[0] * 1.1 and recent[-1] - recent[0] > 50:
+                alerts.append(f"MEM_DRIFT: +{(recent[-1] - recent[0]) / recent[0] * 100:.0f}% sur 10 échantillons")
+                level = max(level, "ORANGE")
+
+        msg = ", ".join(alerts) if alerts else f"OK (mem={data.get('memory_mb', 0)}MB, logs={data.get('logs_mb', 0)}MB)"
+        return {"level": level, "message": msg, "data": data}
+
+
 # ─── Daemon ─────────────────────────────────────────────────────────────
 
 
@@ -407,6 +528,8 @@ class AgentDaemon:
             RiskComplianceAgent(),
             KillSwitchAgent(),
             SystemMonitorAgent(),
+            DataManagerAgent(),
+            PerformanceEngineerAgent(),
             SignalEngineAgent(),
             AutoFixerAgent(),
             AdaptiveEngineAgent(),

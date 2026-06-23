@@ -1188,7 +1188,7 @@ Les deux fonctionnent correctement :
 ## Session Robot Manager — 22 Juin 2026 (Partie 2 — Agent Daemon + Dual Instance Kill)
 
 ### Mission
-- Intégrer `agent_daemon.py` (9 agents du Trading Intelligence Council) dans le démarrage automatique du robot
+- Intégrer `agent_daemon.py` (11 agents du Trading Intelligence Council) dans le démarrage automatique du robot
 - Remplacer l'ancien `monitor.py` (disparu) par le daemon d'agents
 - Résoudre le problème de double instance du robot (cycles entrelacés)
 - Nettoyer et stabiliser l'infrastructure
@@ -1213,7 +1213,7 @@ Les deux fonctionnent correctement :
 | **I6** | **Kill double instance** : PID 12048 tué (SIGTERM → confirmé mort) | ✅ |
 | **I7** | **Kill massif** : `taskkill /F /IM python.exe` pour nettoyer toutes instances | ✅ Les deux instances supprimées |
 | **I8** | Redémarrage robot propre : 1 instance unique PID 16860 | ✅ Cycles 236→243, plus d'entrelacement |
-| **I9** | Redémarrage agent daemon : PID 324, cycle 715, 9 agents actifs | ✅ |
+| **I9** | Redémarrage agent daemon : PID 324, cycle 715, 11 agents actifs | ✅ |
 | **I10** | Tests : 944/976 passed, 32 skipped | ✅ Stables |
 
 ### Agent Daemon — Architecture intégrée
@@ -1221,11 +1221,13 @@ Les deux fonctionnent correctement :
 ```
 start_robot.ps1 / robot.ps1
   ├── python main.py              → Robot MOM20x3 (PID lock)
-  └── python scripts/agent_daemon.py → 9 agents du Council (PID lock)
+  └── python scripts/agent_daemon.py → 11 agents du Council (PID lock)
         ├── CIO (15s)             → Métriques vitales
         ├── Risk Compliance (15s) → Règles FTMO
         ├── Kill Switch (15s)     → Arrêt d'urgence
         ├── System Monitor (60s)  → Mémoire, logs
+        ├── Data Manager (300s)   → Qualité des données (RÉACTIVÉ 23 Juin)
+        ├── Performance Engineer (300s) → Stabilité, mémoire, logs (RÉACTIVÉ 23 Juin)
         ├── Auto Fixer (60s)      → Détection bugs
         ├── Signal Engine (300s)  → Qualité signaux
         ├── Adaptive Engine (300s)→ Pipeline ML

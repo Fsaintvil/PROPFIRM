@@ -91,7 +91,7 @@ if ($rp) {
 }
 
 # Start agent daemon
-Write-Host "Lancement de l'Agent Daemon (9 agents)..." -NoNewline
+Write-Host "Lancement de l'Agent Daemon (11 agents)..." -NoNewline
 Start-Process -FilePath "python.exe" -ArgumentList "scripts\agent_daemon.py" -WorkingDirectory $BASE -WindowStyle Hidden
 Start-Sleep -Seconds 4
 $dp = Get-DaemonProcess
