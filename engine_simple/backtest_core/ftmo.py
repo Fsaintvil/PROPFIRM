@@ -241,10 +241,14 @@ class FTMOChallengeSimulator:
 
         # --- 4. Règle : Consistency ---
         if total_pnl > 0 and sorted_days:
+            positive_days_total = sum(v for v in daily_pnl.values() if v > 0)
             best_day = max(sorted_days, key=lambda d: daily_pnl[d])
             best_day_pnl = daily_pnl[best_day]
             verdict.best_day_pnl = round(best_day_pnl, 2)
-            best_day_pct = best_day_pnl / total_pnl * 100
+            if positive_days_total > 0:
+                best_day_pct = best_day_pnl / positive_days_total * 100
+            else:
+                best_day_pct = 0.0
             verdict.best_day_pct = round(best_day_pnl, 2)
             verdict.best_day_consistency_pct = round(best_day_pct, 1)
 
@@ -253,7 +257,7 @@ class FTMOChallengeSimulator:
                 if not verdict.fail_reason:
                     verdict.fail_reason = (
                         f"Consistency rule violée: meilleur jour "
-                        f"{best_day_pct:.1f}% du total "
+                        f"{best_day_pct:.1f}% des jours positifs "
                         f"(max {config.consistency_pct * 100:.0f}%)"
                     )
         else:

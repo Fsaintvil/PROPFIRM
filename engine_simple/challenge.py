@@ -123,11 +123,16 @@ class ChallengeTracker:
         Règle FTMO 1-Step authentique: le meilleur jour ≤ 30% × profit total réalisé.
         Exemple: profit total $1,000 → max $300/jour.
 
-        Vérification EN CONTINU dès que le PnL total dépasse $500."""
-        total_pnl = sum(self.daily_pnl_by_date.values())
-        if total_pnl < 500 or total_pnl <= 0:
+        Corrigé 23 Juin 2026:
+          - Le dénominateur est la SOMME DES JOURS POSITIFS (règle FTMO réelle)
+          - Le guard utilise le nombre de jours tradés (≥3), pas un seuil $500
+          - Évite le bug 763% quand une grosse perte compresse le PnL net"""
+        positive_days = [v for v in self.daily_pnl_by_date.values() if v > 0]
+        total_profitable = sum(positive_days)
+        if len(self.daily_pnl_by_date) < 2 or total_profitable <= 0:
             return
-        max_per_day = total_pnl * self.consistency_max_pct  # ex: $1,000 × 30% = $300
+        best_day = max(positive_days)
+        max_per_day = total_profitable * self.consistency_max_pct  # FTMO: 30% des jours positifs
         # Reset consistency_violated avant recalcul (peut se résoudre)
         self.consistency_violated = False
         for day, day_pnl in sorted(self.daily_pnl_by_date.items()):
@@ -135,11 +140,11 @@ class ChallengeTracker:
                 continue
             if day_pnl > max_per_day:
                 self.consistency_violated = True
-                day_pct_of_total = day_pnl / total_pnl if total_pnl > 0 else 0
+                day_pct_of_profitable = day_pnl / total_profitable if total_profitable > 0 else 0
                 logger.critical(
                     f"FTMO CONSISTENCY VIOLATED: {day} = ${day_pnl:.0f} "
-                    f"({day_pct_of_total:.1%} du profit total ${total_pnl:.0f}) "
-                    f"> max {self.consistency_max_pct:.0%} × total_pnl"
+                    f"({day_pct_of_profitable:.1%} des jours positifs ${total_profitable:.0f}) "
+                    f"> max {self.consistency_max_pct:.0%} × jours positifs"
                 )
 
     def _check_daily_loss_limit(self, symbol=None):
@@ -218,6 +223,7 @@ class ChallengeTracker:
         winners = sum(1 for t in self._trade_history if t.get("profit", 0) > 0)
         wr = winners / max(len(self._trade_history), 1)
 
+        # Règle FTMO réelle: best_day_pct = meilleur jour / somme des jours POSITIFS
         best_day = max(self.daily_pnl_by_date.values()) if self.daily_pnl_by_date else 0
         if best_day == 0 and self._trade_history and current_pnl > 0:
             temp_daily = {}
@@ -229,7 +235,12 @@ class ChallengeTracker:
             if temp_daily:
                 best_day = max(temp_daily.values())
 
-        best_day_pct = best_day / realized_pnl if realized_pnl > 0 and best_day > 0 else 0.0
+        # FTMO: dénominateur = somme des jours profitables (pas le PnL net)
+        positive_days_total = sum(v for v in self.daily_pnl_by_date.values() if v > 0)
+        if best_day <= 0 or positive_days_total <= 0:
+            best_day_pct = 0.0
+        else:
+            best_day_pct = best_day / positive_days_total
 
         return dict(
             balance=balance,
