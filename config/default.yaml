@@ -1,6 +1,9 @@
 # ============================================================================
 # CONFIGURATION PRODUCTION — FTMO 200K Challenge (24 Juin 2026)
-# 4 actifs : XAUUSD (H4), BTCUSD (H1), EURUSD (H1), US500.cash (H4)
+# 9 actifs : XAUUSD (H4), BTCUSD (H1), ETHUSD (H4), EURUSD (H1),
+#            USDJPY (H1), GBPUSD (H1), AUDUSD (H1), USDCAD (H1), US500.cash (H4)
+# Corrélation désactivée — tous les symboles tradent sans restriction.
+# Lots augmentés de 10% sur tous les symboles.
 # Aucun paramètre identique entre deux actifs sans justification statistique.
 # ============================================================================
 # Chaque paramètre est justifié par:
@@ -20,23 +23,22 @@ robot:
 trading:
   symbols:
     - XAUUSD      # H4 — WR 68.6%, PF 1.16, DD 6.9% (backtest 12+ ans)
-    - BTCUSD      # H1 — WR 32.3% Phase 3, PF 0.71, risk_mult=0.30
-    # - ETHUSD      # DÉSACTIVÉ 19 Juin — WR 27.6% live, PF 0.50, toxique
+    - BTCUSD      # H1 — WR 32.3% Phase 3, PF 0.71
+    - ETHUSD      # H4 — RÉACTIVÉ 24 Juin — WR 27.6% live, risk_mult=0.50 prudent
     - EURUSD      # H1 — WR 68.6%, PF 1.12, DD 3.7% (backtest 12+ ans)
-    - US500.cash  # H4 — WR 68.4% 12ans, PF 1.07 H4, risk_mult=0.50
-    # DÉSACTIVÉS 24 Juin 2026 — trop corrélés à EURUSD, pas d'edge démontré en live
-    # - USDJPY    # DÉSACTIVÉ — corrélation >0.70 avec EURUSD, pas d'edge démontré
-    # - GBPUSD    # DÉSACTIVÉ — corrélation >0.75 avec EURUSD, pas d'edge démontré
-    # - AUDUSD    # DÉSACTIVÉ — corrélation >0.65 avec EURUSD, pas d'edge démontré
-    # - USDCAD    # DÉSACTIVÉ — corrélation >0.60 avec EURUSD, pas d'edge démontré
+    - USDJPY      # H1 — RÉACTIVÉ 24 Juin — WR 82.1% backtest
+    - GBPUSD      # H1 — RÉACTIVÉ 24 Juin — WR 80.7% backtest
+    - AUDUSD      # H1 — RÉACTIVÉ 24 Juin — WR 79.4% backtest
+    - USDCAD      # H1 — RÉACTIVÉ 24 Juin — WR 80.7% backtest
+    - US500.cash  # H4 — WR 68.4% 12ans, PF 1.07 H4
 
-  # Limites globales — Production continue (1 trade/symbole/5min)
-  max_positions: 20             # 4 symboles x 5 positions max
+  # Limites globales — 9 symboles + lots +10% (24 Juin 2026)
+  max_positions: 45             # 9 symboles x 5 positions max
   max_positions_per_symbol: 3   # jusqu'à 3 par symbole
-  max_trades_per_day: 120       # 4 symboles x ~30 trades/jour
-  max_signals_per_cycle: 8      # marge pour signaux simultanés (4 symboles)
-  max_orders_per_minute: 6      # 1 trade/min/symbole + marge
-  lot_size: 0.05                # lot par défaut (overridden par symbol_limits)
+  max_trades_per_day: 270       # 9 symboles x ~30 trades/jour
+  max_signals_per_cycle: 18     # marge pour signaux simultanés (9 symboles)
+  max_orders_per_minute: 12     # 1 trade/min/symbole + marge
+  lot_size: 0.06                # ↑ 0.05→0.06 (+10%)
   min_trade_interval_sec: 300   # 5 min minimum entre trades par symbole
   batch_interval_sec: 1         # 1s = signaux chaque cycle (15s), pas de restriction batch
   trading_start_hour: 0
@@ -60,9 +62,9 @@ risk:
   max_trading_days: 0            # pas de limite max
 
   # --- Risque par trade ---
-  per_trade_pct: 0.004           # ↓ 0.5%→0.4% (22 Juin, Supreme Council) : 5 pertes = 2% daily loss, marge +25%
+  per_trade_pct: 0.0044          # ↑ 0.4%→0.44% (+10%) : lots +10%
   short_mult: 1.0                # même risque long/short
-  max_risk_amount: 800.0         # $800 max risque par trade
+  max_risk_amount: 880.0         # ↑ $800→$880 (+10%) max risque par trade
 
   # --- Qualité ---
   min_rr_ratio: 2.0              # RR≥2.0 obligatoire (validé backtest)
@@ -96,7 +98,7 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════
   XAUUSD:
     timeframe: "H4"             # H4 (WR 68.6%, DD 6.9% — H1 perdant 12 ans)
-    max_lot: 0.05               # XAUUSD ne dépasse pas 0.05 lot
+    max_lot: 0.06               # ↑ 0.05→0.06 (+10%)
     min_lot: 0.01
     risk_mult: 1.10             # ↑ 1.00→1.10 (19 Juin 2026) : WR 77.8% sur 9 trades, +$1,044 PnL — augmentation 10%
     max_spread_points: 60       # élargi (40→60) : spread H4 or parfois large aux heures calmes
@@ -153,7 +155,7 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════
   BTCUSD:
     timeframe: "H1"             # H1 (WR 69.8%, PF 1.19, DD 5.6% clean)
-    max_lot: 0.05               # ↑ 0.03→0.05 (23 Juin) : lot min 0.05 pour tous les symboles
+    max_lot: 0.06               # ↑ 0.05→0.06 (+10%)
     min_lot: 0.01
     risk_mult: 0.30             # RÉACTIVÉ 23 Juin : risk prudent (WR Phase 3 32.3%), surveillance active
     max_spread_points: 150      # spread large crypto (typique 80-150 pts)
@@ -203,20 +205,19 @@ symbol_limits:
     circuit_breaker_dd_pct_override: 0.06  # 6% DD → arrêt (vs 8% global)
 
   # ═══════════════════════════════════════════════════════════════════════
-  # ETHUSD — 🔴 DÉSACTIVÉ 19 Juin 2026
-  # WR 27.6% live, PF 0.50, toxique — données H4 backtest non représentatives
-  # Configuration conservée pour référence en cas de réactivation future.
+  # ETHUSD — RÉACTIVÉ 24 Juin 2026
+  # WR 27.6% live → risk_mult=0.50 prudent, surveillance active
   # ═══════════════════════════════════════════════════════════════════════
   ETHUSD:
     timeframe: "H4"
-    max_lot: 0.05
+    max_lot: 0.06               # ↑ 0.05→0.06 (+10%)
     min_lot: 0.01
-    risk_mult: 0.0              # DÉSACTIVÉ — risk_mult=0 empêche tout trade
+    risk_mult: 0.50             # RÉACTIVÉ — prudent (WR 27.6% live)
     max_spread_points: 150
-    min_score: 0.99             # DÉSACTIVÉ — min_score=0.99 bloque tous les signaux
+    min_score: 0.70             # RÉACTIVÉ — min_score standard
     adx_thresh: 20
-    allow_buys: false
-    allow_shorts: false         # DÉSACTIVÉ — les deux directions bloquées
+    allow_buys: true
+    allow_shorts: true          # RÉACTIVÉ — deux directions
     momentum_period: 24
     sl_atr_trending: 2.5
     tp_atr_trending: 6.0
@@ -246,7 +247,7 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════
   EURUSD:
     timeframe: "H1"             # H1 (WR 68.6% 12ans, PF 1.12, DD 3.7%)
-    max_lot: 0.20               # ↑ 0.10→0.20 (23 Juin) : augmentation validée, forex liquide
+    max_lot: 0.22               # ↑ 0.20→0.22 (+10%)
     min_lot: 0.01
     risk_mult: 1.00             # ↑ 0.75→1.00 (19 Juin) : WR 80% live, PF 29.4 — données contaminées nettoyées
     max_spread_points: 40       # serré (EURUSD très liquide, spread typique 8-15pts)
@@ -293,21 +294,18 @@ symbol_limits:
 
   # ═══════════════════════════════════════════════════════════════════════
   # ═══════════════════════════════════════════════════════════════════════
-  # USDJPY — 🔴 DÉSACTIVÉ 24 Juin 2026
-  # Raison: Corrélation >0.70 avec EURUSD, pas d'edge démontré en live.
-  # Backtest WR 82.1% suspect (trop parfait) — possible biais de lookahead.
-  # Configuration conservée pour référence en cas de réactivation.
+  # USDJPY — RÉACTIVÉ 24 Juin 2026 (corrélation désactivée)
   # ═══════════════════════════════════════════════════════════════════════
   USDJPY:
     timeframe: "H1"
-    max_lot: 0.15
+    max_lot: 0.17               # ↑ 0.15→0.17 (+10%)
     min_lot: 0.01
-    risk_mult: 0.0              # DÉSACTIVÉ
+    risk_mult: 1.00             # RÉACTIVÉ
     max_spread_points: 45
-    min_score: 0.99             # DÉSACTIVÉ — bloque tous les signaux
+    min_score: 0.75             # RÉACTIVÉ
     adx_thresh: 22
-    allow_buys: false
-    allow_shorts: false         # DÉSACTIVÉ
+    allow_buys: true
+    allow_shorts: true          # RÉACTIVÉ
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 4.5
@@ -328,20 +326,18 @@ symbol_limits:
     news_minutes_after: 15
 
   # ═══════════════════════════════════════════════════════════════════════
-  # GBPUSD — 🔴 DÉSACTIVÉ 24 Juin 2026
-  # Raison: Corrélation >0.75 avec EURUSD, pas d'edge démontré en live.
-  # Configuration conservée pour référence en cas de réactivation.
+  # GBPUSD — RÉACTIVÉ 24 Juin 2026 (corrélation désactivée)
   # ═══════════════════════════════════════════════════════════════════════
   GBPUSD:
     timeframe: "H1"
-    max_lot: 0.15
+    max_lot: 0.17               # ↑ 0.15→0.17 (+10%)
     min_lot: 0.01
-    risk_mult: 0.0              # DÉSACTIVÉ
+    risk_mult: 0.90             # RÉACTIVÉ
     max_spread_points: 50
-    min_score: 0.99             # DÉSACTIVÉ
+    min_score: 0.75             # RÉACTIVÉ
     adx_thresh: 22
-    allow_buys: false
-    allow_shorts: false         # DÉSACTIVÉ
+    allow_buys: true
+    allow_shorts: true          # RÉACTIVÉ
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 4.5
@@ -362,20 +358,18 @@ symbol_limits:
     news_minutes_after: 20
 
   # ═══════════════════════════════════════════════════════════════════════
-  # AUDUSD — 🔴 DÉSACTIVÉ 24 Juin 2026
-  # Raison: Corrélation >0.65 avec EURUSD, pas d'edge démontré en live.
-  # Configuration conservée pour référence en cas de réactivation.
+  # AUDUSD — RÉACTIVÉ 24 Juin 2026 (corrélation désactivée)
   # ═══════════════════════════════════════════════════════════════════════
   AUDUSD:
     timeframe: "H1"
-    max_lot: 0.12
+    max_lot: 0.13               # ↑ 0.12→0.13 (+10%)
     min_lot: 0.01
-    risk_mult: 0.0              # DÉSACTIVÉ
+    risk_mult: 0.75             # RÉACTIVÉ
     max_spread_points: 45
-    min_score: 0.99             # DÉSACTIVÉ
+    min_score: 0.75             # RÉACTIVÉ
     adx_thresh: 22
-    allow_buys: false
-    allow_shorts: false         # DÉSACTIVÉ
+    allow_buys: true
+    allow_shorts: true          # RÉACTIVÉ
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 4.5
@@ -396,20 +390,18 @@ symbol_limits:
     news_minutes_after: 15
 
   # ═══════════════════════════════════════════════════════════════════════
-  # USDCAD — 🔴 DÉSACTIVÉ 24 Juin 2026
-  # Raison: Corrélation >0.60 avec EURUSD, pas d'edge démontré en live.
-  # Configuration conservée pour référence en cas de réactivation.
+  # USDCAD — RÉACTIVÉ 24 Juin 2026 (corrélation désactivée)
   # ═══════════════════════════════════════════════════════════════════════
   USDCAD:
     timeframe: "H1"
-    max_lot: 0.15
+    max_lot: 0.17               # ↑ 0.15→0.17 (+10%)
     min_lot: 0.01
-    risk_mult: 0.0              # DÉSACTIVÉ
+    risk_mult: 0.85             # RÉACTIVÉ
     max_spread_points: 45
-    min_score: 0.99             # DÉSACTIVÉ
+    min_score: 0.75             # RÉACTIVÉ
     adx_thresh: 22
-    allow_buys: false
-    allow_shorts: false         # DÉSACTIVÉ
+    allow_buys: true
+    allow_shorts: true          # RÉACTIVÉ
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 4.5
@@ -439,7 +431,7 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════
   US500.cash:
     timeframe: "H4"             # H4 (H1 = PF 0.95 en 2026 → hors-jeu)
-    max_lot: 0.05               # lot min 0.05 pour tous
+    max_lot: 0.06               # ↑ 0.05→0.06 (+10%)
     min_lot: 0.01
     risk_mult: 0.50             # prudent — réactivation surveillée
     max_spread_points: 40

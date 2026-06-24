@@ -27,17 +27,18 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # 4 actifs actifs (XAUUSD, BTCUSD, EURUSD, US500.cash) — 24 Juin 2026
-    assert len(cfg.trading.symbols) == 4
+    # 9 actifs actifs (24 Juin 2026) — tous réactivés, lots +10%, corrélation désactivée
+    assert len(cfg.trading.symbols) == 9
     assert "XAUUSD" in cfg.trading.symbols
+    assert "BTCUSD" in cfg.trading.symbols
+    assert "ETHUSD" in cfg.trading.symbols  # réactivé 24 Juin
     assert "EURUSD" in cfg.trading.symbols
-    assert "US500.cash" in cfg.trading.symbols  # réactivé 23 Juin H4
-    assert "ETHUSD" not in cfg.trading.symbols  # désactivé 19 Juin
-    assert "USDJPY" not in cfg.trading.symbols  # désactivé 24 Juin
-    assert "GBPUSD" not in cfg.trading.symbols  # désactivé 24 Juin
-    assert "AUDUSD" not in cfg.trading.symbols  # désactivé 24 Juin
-    assert "USDCAD" not in cfg.trading.symbols  # désactivé 24 Juin
-    assert cfg.risk.per_trade_pct == 0.004  # ↓ 0.5%→0.4% (22 Juin 2026, Supreme Council)
+    assert "USDJPY" in cfg.trading.symbols  # réactivé 24 Juin
+    assert "GBPUSD" in cfg.trading.symbols  # réactivé 24 Juin
+    assert "AUDUSD" in cfg.trading.symbols  # réactivé 24 Juin
+    assert "USDCAD" in cfg.trading.symbols  # réactivé 24 Juin
+    assert "US500.cash" in cfg.trading.symbols
+    assert cfg.risk.per_trade_pct == 0.0044  # ↑ 0.4%→0.44% (+10%)
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 2.0  # RR≥2.0 (validé backtest)
 
@@ -52,8 +53,8 @@ def test_as_flat_dict():
     cfg = load_config("default")
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
-    assert flat["RISK_PER_TRADE_PCT"] == 0.004  # ↓ 0.5%→0.4% (22 Juin 2026, Supreme Council)
-    assert flat["TRADING_MAX_POSITIONS"] == 20  # 24 Juin: 4 symboles × 5 positions
+    assert flat["RISK_PER_TRADE_PCT"] == 0.0044  # ↑ 0.4%→0.44% (+10%)
+    assert flat["TRADING_MAX_POSITIONS"] == 45  # 24 Juin: 9 symboles × 5 positions
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -61,7 +62,7 @@ def test_symbol_limits_defaults():
     cfg = load_config("default")
     assert "XAUUSD" in cfg.symbol_limits
     assert "BTCUSD" in cfg.symbol_limits
-    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.05  # ↓ 0.10→0.05 (23 Juin, contrainte utilisateur)
+    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.06  # ↑ 0.05→0.06 (+10%)
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
     assert cfg.symbol_limits["XAUUSD"].risk_mult == 1.10  # ↑ 10% (19 Juin 2026) WR 77.8% live
 
@@ -75,7 +76,7 @@ def test_symbol_limits_new_portfolio():
     assert btc.risk_mult == 0.30  # RÉACTIVÉ 23 Juin (WR Phase 3 32.3%, risk prudent)
     assert btc.allow_buys is True
     assert btc.allow_shorts is True
-    assert btc.max_lot == 0.05  # ↑ 0.03→0.05 (23 Juin, lot min pour tous)
+    assert btc.max_lot == 0.06  # ↑ 0.05→0.06 (+10%)
     assert btc.min_score == 0.70  # ↑ 0.60→0.70 (23 Juin, min global 0.70)
 
 
@@ -130,8 +131,8 @@ def test_config_simple_compat():
     import config_simple as cfg
 
     assert cfg.ROBOT_MAGIC == 999001
-    assert cfg.RISK_PER_TRADE == 0.006  # ↑ 0.4%→0.6% (23 Juin 2026, override production)
-    assert cfg.MAX_ORDERS_PER_MINUTE == 6  # 1 trade/min/symbole + marge (4 symboles)
+    assert cfg.RISK_PER_TRADE == 0.0066  # ↑ 0.6%→0.66% (+10%)
+    assert cfg.MAX_ORDERS_PER_MINUTE == 12  # 1 trade/min/symbole + marge (9 symboles)
     assert cfg.__version__ == "4.1.0"
 
 
