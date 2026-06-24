@@ -27,12 +27,16 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # 8 actifs actifs (XAUUSD, BTCUSD, EURUSD, USDJPY, GBPUSD, AUDUSD, USDCAD, US500.cash)
-    assert len(cfg.trading.symbols) == 8
+    # 4 actifs actifs (XAUUSD, BTCUSD, EURUSD, US500.cash) — 24 Juin 2026
+    assert len(cfg.trading.symbols) == 4
     assert "XAUUSD" in cfg.trading.symbols
     assert "EURUSD" in cfg.trading.symbols
     assert "US500.cash" in cfg.trading.symbols  # réactivé 23 Juin H4
     assert "ETHUSD" not in cfg.trading.symbols  # désactivé 19 Juin
+    assert "USDJPY" not in cfg.trading.symbols  # désactivé 24 Juin
+    assert "GBPUSD" not in cfg.trading.symbols  # désactivé 24 Juin
+    assert "AUDUSD" not in cfg.trading.symbols  # désactivé 24 Juin
+    assert "USDCAD" not in cfg.trading.symbols  # désactivé 24 Juin
     assert cfg.risk.per_trade_pct == 0.004  # ↓ 0.5%→0.4% (22 Juin 2026, Supreme Council)
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 2.0  # RR≥2.0 (validé backtest)
@@ -49,7 +53,7 @@ def test_as_flat_dict():
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
     assert flat["RISK_PER_TRADE_PCT"] == 0.004  # ↓ 0.5%→0.4% (22 Juin 2026, Supreme Council)
-    assert flat["TRADING_MAX_POSITIONS"] == 40  # 23 Juin: capacité multi-positions 8 symboles
+    assert flat["TRADING_MAX_POSITIONS"] == 20  # 24 Juin: 4 symboles × 5 positions
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -127,7 +131,7 @@ def test_config_simple_compat():
 
     assert cfg.ROBOT_MAGIC == 999001
     assert cfg.RISK_PER_TRADE == 0.006  # ↑ 0.4%→0.6% (23 Juin 2026, override production)
-    assert cfg.MAX_ORDERS_PER_MINUTE == 8  # 1 trade/min/symbole + marge (8 symboles)
+    assert cfg.MAX_ORDERS_PER_MINUTE == 6  # 1 trade/min/symbole + marge (4 symboles)
     assert cfg.__version__ == "4.1.0"
 
 

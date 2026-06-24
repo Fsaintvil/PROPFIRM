@@ -1,7 +1,6 @@
 # ============================================================================
-# CONFIGURATION PRODUCTION — FTMO 200K Challenge (23 Juin 2026)
-# 7 actifs : XAUUSD (H4), BTCUSD (H1), EURUSD (H1),
-#            USDJPY (H1), GBPUSD (H1), AUDUSD (H1), USDCAD (H1)
+# CONFIGURATION PRODUCTION — FTMO 200K Challenge (24 Juin 2026)
+# 4 actifs : XAUUSD (H4), BTCUSD (H1), EURUSD (H1), US500.cash (H4)
 # Aucun paramètre identique entre deux actifs sans justification statistique.
 # ============================================================================
 # Chaque paramètre est justifié par:
@@ -24,18 +23,19 @@ trading:
     - BTCUSD      # H1 — WR 32.3% Phase 3, PF 0.71, risk_mult=0.30
     # - ETHUSD      # DÉSACTIVÉ 19 Juin — WR 27.6% live, PF 0.50, toxique
     - EURUSD      # H1 — WR 68.6%, PF 1.12, DD 3.7% (backtest 12+ ans)
-    - USDJPY      # H1 — WR 82.1%, PF 1.68, DD 2.5% (backtest réaliste 16 ans)
-    - GBPUSD      # H1 — WR 80.7%, PF 1.42, DD 1.9% (backtest réaliste 16 ans)
-    - AUDUSD      # H1 — WR 79.4%, PF 1.24, DD 3.6% (backtest réaliste 16 ans)
-    - USDCAD      # H1 — WR 80.7%, PF 1.40, DD 1.2% (backtest réaliste 16 ans)
-    - US500.cash  # H4 — réactivé 23 Juin 2026, WR 68.4% 12ans, PF 1.07 H4, risk_mult=0.50
+    - US500.cash  # H4 — WR 68.4% 12ans, PF 1.07 H4, risk_mult=0.50
+    # DÉSACTIVÉS 24 Juin 2026 — trop corrélés à EURUSD, pas d'edge démontré en live
+    # - USDJPY    # DÉSACTIVÉ — corrélation >0.70 avec EURUSD, pas d'edge démontré
+    # - GBPUSD    # DÉSACTIVÉ — corrélation >0.75 avec EURUSD, pas d'edge démontré
+    # - AUDUSD    # DÉSACTIVÉ — corrélation >0.65 avec EURUSD, pas d'edge démontré
+    # - USDCAD    # DÉSACTIVÉ — corrélation >0.60 avec EURUSD, pas d'edge démontré
 
   # Limites globales — Production continue (1 trade/symbole/5min)
-  max_positions: 40             # 8 symboles x 3-5 positions
+  max_positions: 20             # 4 symboles x 5 positions max
   max_positions_per_symbol: 3   # jusqu'à 3 par symbole
-  max_trades_per_day: 250       # 8 symboles x ~31 trades/jour
-  max_signals_per_cycle: 12     # marge pour signaux simultanés
-  max_orders_per_minute: 8      # 1 trade/min/symbole + marge
+  max_trades_per_day: 120       # 4 symboles x ~30 trades/jour
+  max_signals_per_cycle: 8      # marge pour signaux simultanés (4 symboles)
+  max_orders_per_minute: 6      # 1 trade/min/symbole + marge
   lot_size: 0.05                # lot par défaut (overridden par symbol_limits)
   min_trade_interval_sec: 300   # 5 min minimum entre trades par symbole
   batch_interval_sec: 1         # 1s = signaux chaque cycle (15s), pas de restriction batch
@@ -293,21 +293,21 @@ symbol_limits:
 
   # ═══════════════════════════════════════════════════════════════════════
   # ═══════════════════════════════════════════════════════════════════════
-  # USDJPY — Dollar/Yen (TIMEFRAME H1)
-  # Caractéristiques: Forex majeur, spread serré, tendances longues
-  # Backtest réaliste 2010-2026: WR 82.1%, PF 1.68, DD 2.5%, +$329K
-  #   → Meilleur performer des 4 nouveaux symboles
+  # USDJPY — 🔴 DÉSACTIVÉ 24 Juin 2026
+  # Raison: Corrélation >0.70 avec EURUSD, pas d'edge démontré en live.
+  # Backtest WR 82.1% suspect (trop parfait) — possible biais de lookahead.
+  # Configuration conservée pour référence en cas de réactivation.
   # ═══════════════════════════════════════════════════════════════════════
   USDJPY:
     timeframe: "H1"
-    max_lot: 0.15             # ↑ 0.10→0.15 (23 Juin) : augmentation validée, TOP performer
+    max_lot: 0.15
     min_lot: 0.01
-    risk_mult: 1.00
+    risk_mult: 0.0              # DÉSACTIVÉ
     max_spread_points: 45
-    min_score: 0.75              # ↓ 0.85→0.75 (23 Juin) : >75% de chance de réussite requis
+    min_score: 0.99             # DÉSACTIVÉ — bloque tous les signaux
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false         # DÉSACTIVÉ
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 4.5
@@ -328,21 +328,20 @@ symbol_limits:
     news_minutes_after: 15
 
   # ═══════════════════════════════════════════════════════════════════════
-  # GBPUSD — Livre Sterling/Dollar (TIMEFRAME H1)
-  # Caractéristiques: Forex majeur, volatilité plus élevée, spread modéré
-  # Backtest réaliste 2010-2026: WR 80.7%, PF 1.42, DD 1.9%, +$86K
-  #   → Volatilité GBP plus élevée que EURUSD → trailing légèrement plus large
+  # GBPUSD — 🔴 DÉSACTIVÉ 24 Juin 2026
+  # Raison: Corrélation >0.75 avec EURUSD, pas d'edge démontré en live.
+  # Configuration conservée pour référence en cas de réactivation.
   # ═══════════════════════════════════════════════════════════════════════
   GBPUSD:
     timeframe: "H1"
-    max_lot: 0.15             # ↑ 0.10→0.15 (23 Juin) : augmentation validée, volatilité GBP modérée
+    max_lot: 0.15
     min_lot: 0.01
-    risk_mult: 0.90
+    risk_mult: 0.0              # DÉSACTIVÉ
     max_spread_points: 50
-    min_score: 0.75              # ↓ 0.85→0.75 (23 Juin) : >75% de chance de réussite requis
+    min_score: 0.99             # DÉSACTIVÉ
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false         # DÉSACTIVÉ
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 4.5
@@ -359,25 +358,24 @@ symbol_limits:
     obv_div_penalty_low: 0.85
     preferred_hours: [7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]
     weekend_trading: false
-    news_minutes_before: 20     # News UK (BoE, CPI) → plus de temps
+    news_minutes_before: 20
     news_minutes_after: 20
 
   # ═══════════════════════════════════════════════════════════════════════
-  # AUDUSD — Dollar Australien/Dollar US (TIMEFRAME H1)
-  # Caractéristiques: Forex mineur, sessions Asia+London, spreads modérés
-  # Backtest réaliste 2010-2026: WR 79.4%, PF 1.24, DD 3.6%, +$45K
-  #   → Plus faible des 4, risk_mult réduit
+  # AUDUSD — 🔴 DÉSACTIVÉ 24 Juin 2026
+  # Raison: Corrélation >0.65 avec EURUSD, pas d'edge démontré en live.
+  # Configuration conservée pour référence en cas de réactivation.
   # ═══════════════════════════════════════════════════════════════════════
   AUDUSD:
     timeframe: "H1"
-    max_lot: 0.12             # ↑ 0.10→0.12 (23 Juin) : augmentation validée, plus conservateur
+    max_lot: 0.12
     min_lot: 0.01
-    risk_mult: 0.75
+    risk_mult: 0.0              # DÉSACTIVÉ
     max_spread_points: 45
-    min_score: 0.75              # ↓ 0.85→0.75 (23 Juin) : >75% de chance de réussite requis
+    min_score: 0.99             # DÉSACTIVÉ
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false         # DÉSACTIVÉ
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 4.5
@@ -392,27 +390,26 @@ symbol_limits:
     cmf_threshold: 0.10
     obv_div_penalty_high: 0.70
     obv_div_penalty_low: 0.85
-    preferred_hours: [0,1,2,3,4,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]  # Asia + London
+    preferred_hours: [0,1,2,3,4,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21]
     weekend_trading: false
     news_minutes_before: 15
     news_minutes_after: 15
 
   # ═══════════════════════════════════════════════════════════════════════
-  # USDCAD — Dollar US/Dollar Canadien (TIMEFRAME H1)
-  # Caractéristiques: Forex majeur, corrélé au pétrole, spreads modérés
-  # Backtest réaliste 2010-2026: WR 80.7%, PF 1.40, DD 1.2%, +$64K
-  #   → Très bon DD, risk modéré
+  # USDCAD — 🔴 DÉSACTIVÉ 24 Juin 2026
+  # Raison: Corrélation >0.60 avec EURUSD, pas d'edge démontré en live.
+  # Configuration conservée pour référence en cas de réactivation.
   # ═══════════════════════════════════════════════════════════════════════
   USDCAD:
     timeframe: "H1"
-    max_lot: 0.15             # ↑ 0.10→0.15 (23 Juin) : augmentation validée, DD 1.2% excellent
+    max_lot: 0.15
     min_lot: 0.01
-    risk_mult: 0.85
+    risk_mult: 0.0              # DÉSACTIVÉ
     max_spread_points: 45
-    min_score: 0.75              # ↓ 0.85→0.75 (23 Juin) : >75% de chance de réussite requis
+    min_score: 0.99             # DÉSACTIVÉ
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false         # DÉSACTIVÉ
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 4.5

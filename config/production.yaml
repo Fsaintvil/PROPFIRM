@@ -1,15 +1,12 @@
 # ============================================================================
-# PRODUCTION OVERRIDES — 8 Actifs Actifs (23 Juin 2026)
+# PRODUCTION OVERRIDES — 4 Actifs Actifs (24 Juin 2026)
 # ============================================================================
 # XAUUSD H4 : WR 65.8%, PF 2.02, +$1,231   — risk_mult 0.85
 # BTCUSD H1 : WR 32.3% Phase 3, PF 0.71   — risk_mult 0.30 (RÉACTIVÉ)
 # EURUSD H1 : WR 68.6%, PF 1.12, DD 3.7%   — risk_mult 1.00
-# USDJPY H1 : WR 82.1%, PF 1.68, DD 2.5%   — risk_mult 1.00
-# GBPUSD H1 : WR 80.7%, PF 1.42, DD 1.9%   — risk_mult 0.90
-# AUDUSD H1 : WR 79.4%, PF 1.24, DD 3.6%   — risk_mult 0.75
-# USDCAD H1 : WR 80.7%, PF 1.40, DD 1.2%   — risk_mult 0.85
-# US500.cash H4 : réactivé 23 Juin — risk_mult 0.50, min_score 0.75
-# ETHUSD    : 🔴 DÉSACTIVÉ 19 Juin 2026 (WR 27.6% live, PF 0.50)
+# US500.cash H4 : WR 68.4% 12ans, PF 1.07  — risk_mult 0.50, min_score 0.75
+# DÉSACTIVÉS 24 Juin 2026 (corrélés EURUSD) :
+#   USDJPY, GBPUSD, AUDUSD, USDCAD, ETHUSD
 # ============================================================================
 # Fusionné avec default.yaml (deep merge).
 # Seuls les champs qui surchargent default.yaml sont listés ici.
@@ -17,11 +14,11 @@
 
 # ── Trading — Production continue (1 trade/symbole/5min) ──────────────────
 trading:
-  max_positions: 40             # ↑ 30→40 (23 Juin) : 8 symboles × 3-5 positions
-  max_positions_per_symbol: 3   # ↑ 2→3 (23 Juin) : jusqu'à 3 positions par symbole
-  max_trades_per_day: 250       # ↑ 200→250 (23 Juin) : 8 symboles × ~31 trades/jour
-  max_signals_per_cycle: 12
-  history_lookback_days: 3          # P2: réduit 7→3 jours (moins de contamination historique)
+  max_positions: 20             # 4 symboles × 5 positions max
+  max_positions_per_symbol: 3   # jusqu'à 3 positions par symbole
+  max_trades_per_day: 120       # 4 symboles × ~30 trades/jour
+  max_signals_per_cycle: 8      # 4 symboles, max 2 signaux/cycle/symbole
+  history_lookback_days: 3          # réduit 7→3 jours (moins de contamination historique)
 
 # ── Symbol Limits — Production ──────────────────────────────────────────
 # Surcharges par rapport à default.yaml
@@ -78,55 +75,51 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true        # DEUX DIRECTIONS — le MOM20x3 + risk management gèrent le risque
 
-  # USDJPY H1 — NOUVEAU 23 Juin 2026 (WR 82.1%, PF 1.68, DD 2.5%)
-  # min_score=0.75 : >75% de chance de réussite requis
-  USDJPY:
-    timeframe: "H1"
-    max_lot: 0.15             # ↑ 0.10→0.15 (augmentation validée 23 Juin)
-    risk_mult: 1.00
-    max_spread_points: 45
-    min_score: 0.75
-    adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+  # USDJPY — 🔴 DÉSACTIVÉ 24 Juin 2026 (corrélé EURUSD)
+  # USDJPY:
+  #   timeframe: "H1"
+  #   max_lot: 0.15
+  #   risk_mult: 0.0
+  #   max_spread_points: 45
+  #   min_score: 0.99
+  #   adx_thresh: 22
+  #   allow_buys: false
+  #   allow_shorts: false
 
-  # GBPUSD H1 — NOUVEAU 23 Juin 2026 (WR 80.7%, PF 1.42, DD 1.9%)
-  # min_score=0.75 : >75% de chance de réussite requis
-  GBPUSD:
-    timeframe: "H1"
-    max_lot: 0.15             # ↑ 0.10→0.15 (augmentation validée 23 Juin)
-    risk_mult: 0.90
-    max_spread_points: 50
-    min_score: 0.75
-    adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
-    news_minutes_before: 20
-    news_minutes_after: 20
+  # GBPUSD — 🔴 DÉSACTIVÉ 24 Juin 2026 (corrélé EURUSD)
+  # GBPUSD:
+  #   timeframe: "H1"
+  #   max_lot: 0.15
+  #   risk_mult: 0.0
+  #   max_spread_points: 50
+  #   min_score: 0.99
+  #   adx_thresh: 22
+  #   allow_buys: false
+  #   allow_shorts: false
+  #   news_minutes_before: 20
+  #   news_minutes_after: 20
 
-  # AUDUSD H1 — NOUVEAU 23 Juin 2026 (WR 79.4%, PF 1.24, DD 3.6%)
-  # min_score=0.75 : >75% de chance de réussite requis
-  AUDUSD:
-    timeframe: "H1"
-    max_lot: 0.12             # ↑ 0.10→0.12 (augmentation validée 23 Juin)
-    risk_mult: 0.75
-    max_spread_points: 45
-    min_score: 0.75
-    adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+  # AUDUSD — 🔴 DÉSACTIVÉ 24 Juin 2026 (corrélé EURUSD)
+  # AUDUSD:
+  #   timeframe: "H1"
+  #   max_lot: 0.12
+  #   risk_mult: 0.0
+  #   max_spread_points: 45
+  #   min_score: 0.99
+  #   adx_thresh: 22
+  #   allow_buys: false
+  #   allow_shorts: false
 
-  # USDCAD H1 — NOUVEAU 23 Juin 2026 (WR 80.7%, PF 1.40, DD 1.2%)
-  # min_score=0.75 : >75% de chance de réussite requis
-  USDCAD:
-    timeframe: "H1"
-    max_lot: 0.15             # ↑ 0.10→0.15 (augmentation validée 23 Juin)
-    risk_mult: 0.85
-    max_spread_points: 45
-    min_score: 0.75
-    adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+  # USDCAD — 🔴 DÉSACTIVÉ 24 Juin 2026 (corrélé EURUSD)
+  # USDCAD:
+  #   timeframe: "H1"
+  #   max_lot: 0.15
+  #   risk_mult: 0.0
+  #   max_spread_points: 45
+  #   min_score: 0.99
+  #   adx_thresh: 22
+  #   allow_buys: false
+  #   allow_shorts: false
 
   # US500.cash H4 — RÉACTIVÉ 23 Juin 2026 (risk_mult=0.50 prudent, min_score=0.75)
   US500.cash:
