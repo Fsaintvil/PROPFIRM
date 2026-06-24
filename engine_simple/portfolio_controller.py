@@ -74,7 +74,11 @@ class PortfolioController:
         self._positions = positions
 
     def can_open_position(
-        self, symbol: str, direction: str, positions: list[Position] | None = None
+        self,
+        symbol: str,
+        direction: str,
+        positions: list[Position] | None = None,
+        high_confidence: bool = False,
     ) -> tuple[bool, str]:
         """Vérifie si on peut ouvrir une position.
 
@@ -82,12 +86,23 @@ class PortfolioController:
             symbol: Symbole (ex: "BTCUSD")
             direction: "BUY" ou "SELL"
             positions: Liste des positions actuelles (optionnel)
+            high_confidence: Si True, bypass les limites de positions (conf>90%)
 
         Returns:
             (can_open, reason)
         """
         if positions is None:
             positions = self._positions
+
+        # 🔥 HIGH CONFIDENCE BYPASS (>90%) : aucune limite de positions
+        if high_confidence:
+            # Vérifier seulement le DD et daily loss (protection FTMO)
+            sym_dd = self._symbol_dd.get(symbol, 0.0)
+            if sym_dd > 0.08:
+                return False, f"DD {symbol} trop élevé ({sym_dd * 100:.1f}%)"
+            if self._daily_pnl < -self._initial_balance * 0.02:
+                return False, f"Daily loss limit atteint ({self._daily_pnl:.2f})"
+            return True, "HIGH CONFIDENCE bypass"
 
         # 1. Max positions total
         if len(positions) >= MAX_POSITIONS_TOTAL:

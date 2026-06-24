@@ -440,7 +440,8 @@ class TestPipelineProcess:
             log_throttle={},
         )
         assert result is not None
-        assert result.signal["max_per_symbol"] == 4
+        # conf=0.95 > 0.90 → high confidence bypass → max_per_symbol=999
+        assert result.signal["max_per_symbol"] == 999
 
     def test_process_handles_exception_gracefully(self, pipeline, mock_risk_manager):
         """Une exception dans pre_trade doit remonter (non catchée)."""
@@ -624,7 +625,8 @@ class TestDynamicPositionLimits:
             log_throttle={},
         )
         assert result is not None
-        assert result.signal["max_per_symbol"] == 4
+        # conf=0.95 > 0.90 → high confidence bypass → max_per_symbol=999
+        assert result.signal["max_per_symbol"] == 999
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_limit_respects_hard_cap(self, mock_mom, pipeline):
@@ -653,8 +655,8 @@ class TestDynamicPositionLimits:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.95 → 4, mais hard_limit=2 → min(4,2)=2
-        assert result.signal["max_per_symbol"] == 2
+        # conf=0.95 > 0.90 → high confidence bypass → max_per_symbol=999 (hard limit ignoré)
+        assert result.signal["max_per_symbol"] == 999
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_low_confidence_gets_one_position(self, mock_mom, pipeline):

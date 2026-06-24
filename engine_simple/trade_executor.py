@@ -20,6 +20,10 @@ logger = logging.getLogger("executor")
 # un signal valide (score 0.83) toutes les 15s mais était bloqué 3 fois/4.
 MIN_SYMBOL_INTERVAL_S = 30  # 30s (↓ 60→30 Juin 2026: +de chances pour signaux forts consécutifs)
 
+# Intervalle minimum entre deux trades HIGH CONFIDENCE (>90%) sur le même symbole
+# 300s = 5 min — le tradeur veut un rythme soutenu mais pas du scalping
+HIGH_CONFIDENCE_INTERVAL_S = 300  # 5 min
+
 
 class PerSymbolRateLimiter:
     """Rate limiter par symbole : max 1 trade/min/symbole, min 5 min entre deux trades.
@@ -202,6 +206,10 @@ class TradeExecutor:
         self.rate_limiter = PerSymbolRateLimiter(
             max_per_minute=2, window_seconds=60
         )  # Mode modéré: 2 trades/min/symbole (était 1)
+        # Rate limiter HIGH CONFIDENCE : 1 trade/5min/symbole, aucune limite de positions
+        self.high_conf_rate_limiter = PerSymbolRateLimiter(
+            max_per_minute=1, window_seconds=300, min_interval_s=HIGH_CONFIDENCE_INTERVAL_S
+        )
         # Rate limiter global : max 1 ordre toutes les 10s (évite retcode 10018)
         self.global_rate_limiter = GlobalRateLimiter(min_interval_s=10)
         # 🐛 FIX 19 Juin: Market-closed cooldown — évite flood WARNING XAUUSD
@@ -217,13 +225,15 @@ class TradeExecutor:
 
     def execute(self, symbol, signal):
         action = self._get_signal_value(signal, "action")
+        high_confidence = self._get_signal_value(signal, "high_confidence", False)
 
         # Vérification doublon — permet jusqu'à N positions selon la confidence
         # max_per_symbol = 3 si conf>85%, 2 si conf>70%, 1 sinon (défini dans main.py)
+        # HIGH CONFIDENCE (>90%) : aucun limite de positions
         max_per_symbol = self._get_signal_value(signal, "max_per_symbol", 1)
         all_positions = self.mt5.get_positions()
         existing = [p for p in all_positions if p.symbol == symbol] if all_positions else []
-        if existing:
+        if existing and not high_confidence:
             sig_type = 0 if action == "BUY" else 1  # POSITION_TYPE_BUY=0, SELL=1
             same_dir_count = sum(1 for p in existing if p.type == sig_type)
             if same_dir_count >= max_per_symbol:
@@ -300,10 +310,16 @@ class TradeExecutor:
             logger.warning(f"[RATE LIMIT] Global: trop d'ordres simultanés, skip {symbol}")
             return None
 
-        # Rate limiter par SYMBOLE — max 1 trade/min/symbole
-        if not self.rate_limiter.allow(symbol):
-            logger.warning(f"[RATE LIMIT] {symbol}: fréquence max atteinte, skip")
-            return None
+        # Rate limiter par SYMBOLE — high confidence ou normal
+        if high_confidence:
+            # 🔥 HIGH CONFIDENCE: rate limiter 5 min, pas de limite de positions
+            if not self.high_conf_rate_limiter.allow(symbol):
+                logger.info(f"[RATE LIMIT] {symbol}: high confidence, attendre 5 min, skip")
+                return None
+        else:
+            if not self.rate_limiter.allow(symbol):
+                logger.warning(f"[RATE LIMIT] {symbol}: fréquence max atteinte, skip")
+                return None
 
         # try/finally pour libérer les rate limiters en cas d'exception
         result = None
@@ -313,7 +329,10 @@ class TradeExecutor:
         finally:
             # Si l'ordre a échoué, on libère les rate limiters
             if result is None or (hasattr(result, "retcode") and result.retcode != 10009):
-                self.rate_limiter.release(symbol)
+                if high_confidence:
+                    self.high_conf_rate_limiter.release(symbol)
+                else:
+                    self.rate_limiter.release(symbol)
                 self.global_rate_limiter.release()
 
         return result

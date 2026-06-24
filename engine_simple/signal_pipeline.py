@@ -226,44 +226,56 @@ class SignalPipeline:
 
         # Dynamic position limits based on confidence
         # Seuils AGENTS.md (Juin 2026): conf > 0.85 → 4, > 0.70 → 3, sinon → 1
+        # HIGH_CONF_CONFIDENCE = 0.90 : bypass toutes les limites, intervalle 5 min
         sig_conf = signal.get("confidence", 0.0)
-        if sig_conf > 0.85:
-            max_per_symbol = 4
-        elif sig_conf > 0.70:
-            max_per_symbol = 3
-        else:
-            max_per_symbol = 1
-        hard_limit = config_limits.get(symbol, 4)
-        max_per_symbol = min(max_per_symbol, hard_limit)
-        signal["max_per_symbol"] = max_per_symbol
-
-        # Vérifier la limite dans la direction du signal
+        HIGH_CONF_CONFIDENCE = 0.90
         sig_action = signal.get("action")
-        sig_dir = 0 if sig_action == "BUY" else 1 if sig_action == "SELL" else None
-        if sig_dir is not None:
-            dir_count = sym_dir_counts.get((symbol, sig_dir), 0)
-            if dir_count >= max_per_symbol:
+
+        if sig_conf > HIGH_CONF_CONFIDENCE:
+            # 🔥 HIGH CONFIDENCE BYPASS : aucune limite de positions
+            # conf > 90% → on peut ouvrir un trade toutes les 5 min
+            # indépendamment du nombre de positions déjà ouvertes
+            signal["high_confidence"] = True
+            max_per_symbol = 999  # illimité
+            signal["max_per_symbol"] = max_per_symbol
+            logger.debug(f"  [HIGH CONF] {symbol} {sig_action} conf={sig_conf:.2f} — bypass limites positions")
+        else:
+            if sig_conf > 0.85:
+                max_per_symbol = 4
+            elif sig_conf > 0.70:
+                max_per_symbol = 3
+            else:
+                max_per_symbol = 1
+            hard_limit = config_limits.get(symbol, 4)
+            max_per_symbol = min(max_per_symbol, hard_limit)
+            signal["max_per_symbol"] = max_per_symbol
+
+            # Vérifier la limite dans la direction du signal
+            sig_dir = 0 if sig_action == "BUY" else 1 if sig_action == "SELL" else None
+            if sig_dir is not None:
+                dir_count = sym_dir_counts.get((symbol, sig_dir), 0)
+                if dir_count >= max_per_symbol:
+                    _last = log_throttle.get("limit", {}).get(symbol, 0)
+                    if cycle_count - _last >= 30:
+                        log_throttle.setdefault("limit", {})[symbol] = cycle_count
+                        logger.debug(
+                            f"  [LIMIT] {symbol}: déjà {dir_count} position(s) {sig_action} "
+                            f"(max={max_per_symbol}, conf={sig_conf:.2f})"
+                        )
+                    return None
+
+            # Vérifier la limite totale par symbole
+            max_pos_total = min(max_per_symbol * 2, hard_limit * 2, self.cfg.MAX_POSITIONS)
+            total_count = sym_total_counts.get(symbol, 0)
+            if total_count >= max_pos_total:
                 _last = log_throttle.get("limit", {}).get(symbol, 0)
                 if cycle_count - _last >= 30:
                     log_throttle.setdefault("limit", {})[symbol] = cycle_count
                     logger.debug(
-                        f"  [LIMIT] {symbol}: déjà {dir_count} position(s) {sig_action} "
-                        f"(max={max_per_symbol}, conf={sig_conf:.2f})"
+                        f"  [LIMIT] {symbol}: déjà {total_count} position(s) totales "
+                        f"(max={max_pos_total}, conf={sig_conf:.2f})"
                     )
                 return None
-
-        # Vérifier la limite totale par symbole
-        max_pos_total = min(max_per_symbol * 2, hard_limit * 2, self.cfg.MAX_POSITIONS)
-        total_count = sym_total_counts.get(symbol, 0)
-        if total_count >= max_pos_total:
-            _last = log_throttle.get("limit", {}).get(symbol, 0)
-            if cycle_count - _last >= 30:
-                log_throttle.setdefault("limit", {})[symbol] = cycle_count
-                logger.debug(
-                    f"  [LIMIT] {symbol}: déjà {total_count} position(s) totales "
-                    f"(max={max_pos_total}, conf={sig_conf:.2f})"
-                )
-            return None
 
         return SignalResult(symbol=symbol, signal=signal, score=score)
 

@@ -1272,8 +1272,9 @@ class FTMO_SIMPLE:
             if self.portfolio_controller:
                 try:
                     live_now = self._pos_cache.get()
+                    high_conf = signal.get("high_confidence", False)
                     can_open, reason = self.portfolio_controller.can_open_position(
-                        symbol, signal.get("action", "BUY"), live_now
+                        symbol, signal.get("action", "BUY"), live_now, high_confidence=high_conf
                     )
                     if not can_open:
                         logger.debug(f"  [PORTFOLIO] {symbol}: {reason}")
@@ -1298,9 +1299,11 @@ class FTMO_SIMPLE:
             live_positions = self._pos_cache.get()
             live_pending = self.mt5.get_pending_orders()
             live_total = len(live_positions) + len(live_pending)
-            if live_total >= cfg.MAX_POSITIONS:
-                logger.info(f"  [LIMIT] Max positions ({cfg.MAX_POSITIONS}) atteint ({live_total} en cours)")
-                break
+            # 🔥 HIGH CONFIDENCE BYPASS: pas de limite de positions
+            if not signal.get("high_confidence", False):
+                if live_total >= cfg.MAX_POSITIONS:
+                    logger.info(f"  [LIMIT] Max positions ({cfg.MAX_POSITIONS}) atteint ({live_total} en cours)")
+                    break
             can_trade, reason = self.ftmo.can_trade(symbol, signal, live_positions)
             if not can_trade:
                 logger.debug(f"  [FTMO FINAL] {symbol}: {reason}")
