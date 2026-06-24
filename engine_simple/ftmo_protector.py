@@ -452,7 +452,7 @@ class FTMOProtector:
             return False, f"Zone 3: daily DD {daily_loss:.1%} >= {zone3:.1%}, stop"
 
         # Auto-pause après N pertes consécutives
-        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 5)
+        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 8)
         if self.consecutive_losses >= auto_pause:
             if self.global_cooldown_until is None:
                 auto_pause_cooldown = self.config.get("COOLDOWN_MINUTES", 5)
@@ -461,8 +461,19 @@ class FTMOProtector:
                     f"AUTO PAUSE: {self.consecutive_losses} consecutive losses >= {auto_pause}, "
                     f"global cooldown {auto_pause_cooldown}min jusqu'à {self.global_cooldown_until}"
                 )
-            remaining = int((self.global_cooldown_until - datetime.utcnow()).total_seconds() // 60)
-            return False, f"Global cooldown: {remaining}min (after {self.consecutive_losses} consecutive losses)"
+                return (
+                    False,
+                    f"Global cooldown: {auto_pause_cooldown}min (after {self.consecutive_losses} consecutive losses)",
+                )
+            # Cooldown déjà actif — vérifier expiration
+            now = datetime.utcnow()
+            if now < self.global_cooldown_until:
+                remaining = int((self.global_cooldown_until - now).total_seconds() // 60)
+                return False, f"Global cooldown: {remaining}min (after {self.consecutive_losses} consecutive losses)"
+            # Cooldown expiré → reset comme _check_global_cooldown()
+            logger.info(f"Global cooldown expired — reseting consecutive_losses from {self.consecutive_losses} to 0")
+            self.consecutive_losses = 0
+            self.global_cooldown_until = None
 
         # Per-symbol cooldown
         if symbol in self.cooldowns and datetime.utcnow() < self.cooldowns[symbol]:
@@ -619,7 +630,7 @@ class FTMOProtector:
                 mult *= 0.90  # DD > 3% → -10%
 
         # 3. Pertes consécutives (utilise AUTO_PAUSE_LOSSES de la config)
-        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 5)
+        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 8)
         if self.consecutive_losses >= auto_pause:
             mult *= 0.60  # Pause imminente → risque réduit
         elif self.consecutive_losses >= max(3, auto_pause - 2):

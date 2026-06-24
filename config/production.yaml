@@ -1,5 +1,5 @@
 # ============================================================================
-# PRODUCTION OVERRIDES — 9 Actifs Actifs (24 Juin 2026)
+# PRODUCTION OVERRIDES — 8 Actifs Actifs (24 Juin 2026)
 # ============================================================================
 # Corrélation désactivée — tous les symboles tradent sans restriction.
 # Lots augmentés de 10% sur tous les symboles.
@@ -10,10 +10,10 @@
 
 # ── Trading — Production continue (1 trade/symbole/5min) ──────────────────
 trading:
-  max_positions: 45             # 9 symboles × 5 positions max
+  max_positions: 40             # 8 symboles × 5 positions max
   max_positions_per_symbol: 3   # jusqu'à 3 positions par symbole
-  max_trades_per_day: 270       # 9 symboles × ~30 trades/jour
-  max_signals_per_cycle: 18     # 9 symboles
+  max_trades_per_day: 240       # 8 symboles × ~30 trades/jour
+  max_signals_per_cycle: 16     # 8 symboles
   history_lookback_days: 3          # réduit 7→3 jours (moins de contamination historique)
 
 # ── Symbol Limits — Production ──────────────────────────────────────────
@@ -48,17 +48,6 @@ symbol_limits:
     obv_div_penalty_low: 0.92    # ↑ 0.85→0.92
     max_daily_loss_pct_override: 0.015   # 1.5% daily loss (plus strict)
     circuit_breaker_dd_pct_override: 0.06  # 6% DD → arrêt
-
-  # ETHUSD — RÉACTIVÉ 24 Juin 2026 (risk_mult=0.50 prudent, lots +10%)
-  ETHUSD:
-    timeframe: "H4"
-    max_lot: 0.06               # ↑ 0.05→0.06 (+10%)
-    risk_mult: 0.50             # RÉACTIVÉ — prudent (WR 27.6% live)
-    max_spread_points: 150
-    min_score: 0.70             # RÉACTIVÉ
-    adx_thresh: 20
-    allow_buys: true
-    allow_shorts: true
 
   # EURUSD — Nouveau symbole (Juin 2026), DEUX DIRECTIONS
   EURUSD:
@@ -135,6 +124,6 @@ risk:
   max_dd_pct: 0.10
   min_rr_ratio: 2.0
   cooldown_minutes: 10          # ↑ 3→10 min (recommandé Risk & Compliance)
-  auto_pause_losses: 5          # ↓ 10→5 (recommandé Risk & Compliance)
+  auto_pause_losses: 8          # ↑ 5→8 (24 Juin, Robot Manager)
   max_risk_amount: 1320.0        # ↑ $1,200→$1,320 (+10%)
   circuit_breaker_dd_pct: 0.08

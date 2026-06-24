@@ -470,6 +470,23 @@ class FTMO_SIMPLE:
             )
         if self._state.get("challenge_status"):
             self.ftmo.challenge_status = self._state["challenge_status"]
+        # P5: Restore global_cooldown_until (protection restart)
+        if self._state.get("global_cooldown_until"):
+            try:
+                gcu = datetime.fromisoformat(self._state["global_cooldown_until"])
+                if gcu > datetime.utcnow():
+                    self.ftmo.global_cooldown_until = gcu
+                    logger.info(f"[STATE] Restored global_cooldown_until: {gcu}")
+                else:
+                    # Cooldown expiré, reset consecutive_losses proprement
+                    logger.info(
+                        f"[STATE] global_cooldown_until expired ({gcu}), "
+                        f"resetting consecutive_losses from {self.ftmo.consecutive_losses} to 0"
+                    )
+                    self.ftmo.consecutive_losses = 0
+                    self.ftmo.challenge.consecutive_losses = 0
+            except (ValueError, TypeError) as e:
+                logger.warning(f"[STATE] Cannot restore global_cooldown_until: {e}")
         if self._state.get("consistency_violated"):
             self.ftmo.consistency_violated = True
             self.ftmo.challenge.consistency_violated = True  # sync source (ChallengeTracker)
@@ -781,6 +798,10 @@ class FTMO_SIMPLE:
                 ),
                 # M16: Persist cooldowns per-symbol (survie aux redémarrages)
                 cooldowns={k: v.isoformat() for k, v in self.ftmo.cooldowns.items()} if hasattr(self, "ftmo") else {},
+                # P5: Persist global_cooldown_until (survie aux redémarrages)
+                global_cooldown_until=self.ftmo.global_cooldown_until.isoformat()
+                if hasattr(self, "ftmo") and self.ftmo.global_cooldown_until
+                else None,
                 # M17: Persist _symbol_consecutive_losses (survie aux redémarrages)
                 symbol_consecutive_losses=dict(self.ftmo._symbol_consecutive_losses) if hasattr(self, "ftmo") else {},
             )
@@ -1511,6 +1532,12 @@ class FTMO_SIMPLE:
         total = len(self.ftmo._trade_history)
         if total < 100:
             return
+        # Throttle: logs WR CHECK / PHASE 3 à 1x par minute max (toutes les 4 cycles)
+        if not hasattr(self, "_last_wr_check_cycle"):
+            self._last_wr_check_cycle = 0
+        if self.cycle_count - self._last_wr_check_cycle < 4:
+            return
+        self._last_wr_check_cycle = self.cycle_count
         # Utiliser les trades récents (dernier 200) pour la détection de dérive,
         # pas l'historique global qui peut masquer une dégradation récente
         recent_window = 200
@@ -1525,7 +1552,7 @@ class FTMO_SIMPLE:
             f"  [WR CHECK] {total} trades, global WR={global_wr:.1%}, recent ({len(recent_trades)}) WR={recent_wr:.1%}"
         )
 
-        # PHASE 2.1: Check par symbole → degraded (lot minimum) si WR < 40% sur 20 trades
+        # PHASE 2.1: Check par symbole → degraded (lot minimum) si WR < 35% sur 20 trades
         degraded_symbols = self._state.get("degraded_symbols", {})
         for symbol in cfg.SYMBOLS:
             sym_trades = [t for t in recent_trades if t.get("symbol") == symbol]
@@ -1543,16 +1570,16 @@ class FTMO_SIMPLE:
                 # Utiliser le PF réel (non capé) pour les décisions
                 # Si PF > 5.0, le gel période s'applique (lignes 1724+)
 
-                if sym_wr < 0.40:
+                if sym_wr < 0.35:
                     # Mode dégradé au lieu de disable complet : le symbole continue à trader
                     # mais avec lot minimum (0.01) pour éviter de rater un retournement
                     if symbol not in degraded_symbols:
                         degraded_symbols[symbol] = self.cycle_count
                         self._state["degraded_symbols"] = degraded_symbols
                         logger.warning(
-                            f"[DEGRADED] {symbol}: WR={sym_wr:.1%} < 40% (cycle {self.cycle_count}) → lot minimum"
+                            f"[DEGRADED] {symbol}: WR={sym_wr:.1%} < 35% (cycle {self.cycle_count}) → lot minimum"
                         )
-                        self.notifier.send(f"DEGRADED: {symbol} WR={sym_wr:.1%} < 40% → lot min")
+                        self.notifier.send(f"DEGRADED: {symbol} WR={sym_wr:.1%} < 35% → lot min")
                 elif sym_wr >= 0.50 and symbol in degraded_symbols:
                     # Rétablissement : WR repassé au-dessus de 50% → sortir du mode dégradé
                     del degraded_symbols[symbol]
@@ -1625,11 +1652,11 @@ class FTMO_SIMPLE:
                 return True
             return False
 
-        # Anti-oscillation: ne pas ajuster plus d'une fois tous les 50 trades
+        # Anti-oscillation: ne pas ajuster plus d'une fois tous les 100 trades
         if not hasattr(self, "_phase3_last_adjustment"):
             self._phase3_last_adjustment = 0
         trades_since_last = len(self.ftmo._trade_history) - self._phase3_last_adjustment
-        if trades_since_last < 50:
+        if trades_since_last < 100:
             return  # Cooldown anti-oscillation
 
         from engine_simple.strategy import SYMBOL_MOMENTUM_PERIODS, SYMBOL_CONFIG
@@ -1657,12 +1684,11 @@ class FTMO_SIMPLE:
 
             sym_wr = sum(1 for t in sym_trades if t["profit"] > 0) / len(sym_trades)
 
-            # 🔧 18 Juin 2026: Geler la période si WR < 40% (mode dégradé)
-            # Empêche l'oscillation 22→20→18→reset→22 observée sur ETHUSD
-            if sym_wr < 0.40:
+            # 🔧 24 Juin 2026: Geler la période si WR < 35% (mode dégradé, seuil abaissé)
+            if sym_wr < 0.35:
                 if _should_log(f"wr_low_{symbol}"):
                     logger.debug(
-                        f"[PHASE 3] {symbol}: WR={sym_wr:.1%} < 40% → gel période (mode dégradé, pas d'ajustement)"
+                        f"[PHASE 3] {symbol}: WR={sym_wr:.1%} < 35% → gel période (mode dégradé, pas d'ajustement)"
                     )
                 continue
 
@@ -1681,18 +1707,57 @@ class FTMO_SIMPLE:
             current_period = SYMBOL_MOMENTUM_PERIODS.get(symbol, 20)
             new_period = current_period
 
-            if sym_wr < 0.45 and current_period > MIN_PERIOD + 2:
-                # WR très mauvais → réduire pour plus de signaux
-                new_period = max(MIN_PERIOD, current_period - 2)
-                adjustments[symbol] = (current_period, new_period, "TROP_CONSERVATEUR")
-            elif sym_wr < 0.55 and current_period > MIN_PERIOD + 4:
-                # WR faible → légère réduction
-                new_period = max(MIN_PERIOD + 2, current_period - 1)
-                adjustments[symbol] = (current_period, new_period, "CONSERVATEUR")
-            elif sym_wr > 0.70 and current_period < MAX_PERIOD - 2:
-                # WR excellent → augmenter pour filtrer les faux signaux
-                new_period = min(MAX_PERIOD, current_period + 1)
-                adjustments[symbol] = (current_period, new_period, "AGGRESSIVE")
+            # Hystérésis : tracker la zone précédente par symbole
+            # pour éviter l'oscillation quand WR=45% est pile sur le seuil
+            if not hasattr(self, "_phase3_zone"):
+                self._phase3_zone = {}
+            prev_zone = self._phase3_zone.get(symbol, "OK")
+
+            if prev_zone == "TROP_CONSERVATEUR":
+                # Nécessite WR >= 0.47 pour sortir de TROP_CONSERVATEUR
+                if sym_wr >= 0.47:
+                    self._phase3_zone[symbol] = "OK"
+                    # Laisser new_period = current_period (pas de changement)
+                else:
+                    self._phase3_zone[symbol] = "TROP_CONSERVATEUR"
+                    if current_period > MIN_PERIOD + 2:
+                        new_period = max(MIN_PERIOD, current_period - 2)
+                        adjustments[symbol] = (current_period, new_period, "TROP_CONSERVATEUR")
+            elif prev_zone == "CONSERVATEUR":
+                # Nécessite WR >= 0.57 pour sortir de CONSERVATEUR
+                if sym_wr >= 0.57:
+                    self._phase3_zone[symbol] = "OK"
+                else:
+                    self._phase3_zone[symbol] = "CONSERVATEUR"
+                    if current_period > MIN_PERIOD + 4 and sym_wr < 0.55:
+                        new_period = max(MIN_PERIOD + 2, current_period - 1)
+                        adjustments[symbol] = (current_period, new_period, "CONSERVATEUR")
+            elif prev_zone == "AGGRESSIVE":
+                # Nécessite WR <= 0.68 pour sortir de AGGRESSIVE
+                if sym_wr <= 0.68:
+                    self._phase3_zone[symbol] = "OK"
+                else:
+                    self._phase3_zone[symbol] = "AGGRESSIVE"
+                    if current_period < MAX_PERIOD - 2:
+                        new_period = min(MAX_PERIOD, current_period + 1)
+                        adjustments[symbol] = (current_period, new_period, "AGGRESSIVE")
+            else:
+                # Zone OK : entrée dans une zone ajustée avec seuils stricts
+                if sym_wr < 0.43 and current_period > MIN_PERIOD + 2:
+                    # WR très mauvais → réduire (entrée: < 0.43)
+                    new_period = max(MIN_PERIOD, current_period - 2)
+                    adjustments[symbol] = (current_period, new_period, "TROP_CONSERVATEUR")
+                    self._phase3_zone[symbol] = "TROP_CONSERVATEUR"
+                elif sym_wr < 0.53 and current_period > MIN_PERIOD + 4:
+                    # WR faible → légère réduction (entrée: < 0.53)
+                    new_period = max(MIN_PERIOD + 2, current_period - 1)
+                    adjustments[symbol] = (current_period, new_period, "CONSERVATEUR")
+                    self._phase3_zone[symbol] = "CONSERVATEUR"
+                elif sym_wr > 0.72 and current_period < MAX_PERIOD - 2:
+                    # WR excellent → augmenter (entrée: > 0.72)
+                    new_period = min(MAX_PERIOD, current_period + 1)
+                    adjustments[symbol] = (current_period, new_period, "AGGRESSIVE")
+                    self._phase3_zone[symbol] = "AGGRESSIVE"
 
             if new_period != current_period:
                 # Appliquer le changement de manière bornée et validée

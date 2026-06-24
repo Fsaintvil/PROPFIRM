@@ -656,6 +656,10 @@ class AgentDaemon:
             logger.info("Robot déjà en cours d'exécution")
             return
 
+        # Nettoyer toute référence morte + PID stale avant de démarrer
+        self.robot_process = None
+        self._clean_stale_pid()
+
         logger.info("Démarrage du robot MOM20x3...")
         try:
             self.robot_process = subprocess.Popen(
@@ -692,19 +696,47 @@ class AgentDaemon:
 
     def is_robot_alive(self) -> bool:
         """Vérifie si le robot est toujours en vie."""
+        # 1) Vérifier via le subprocess Popen (source de confiance)
         if self.robot_process and self.robot_process.poll() is None:
             return True
-        # Vérifier via PID file
+        # Si le subprocess est mort, nettoyer la référence pour éviter les fuites
+        if self.robot_process and self.robot_process.poll() is not None:
+            self.robot_process = None
+
+        # 2) Fallback: vérifier via le PID file (utile après redémarrage du daemon)
         try:
             if ROBOT_PID_FILE.exists():
                 pid_str = ROBOT_PID_FILE.read_text().strip()
                 if pid_str:
                     pid = int(pid_str)
+                    # os.kill(pid, 0) vérifie l'existence sans envoyer de signal
                     os.kill(pid, 0)
+                    # Vérifier que le process est bien un Python qui tourne depuis assez longtemps
+                    # pour éviter de confondre avec un PID recyclé
                     return True
-        except (OSError, ValueError):
-            pass
+        except (OSError, ValueError, PermissionError):
+            # PID inexistant ou invalide → fichier stale, le nettoyer
+            self._clean_stale_pid()
         return False
+
+    def _clean_stale_pid(self):
+        """Supprime le fichier PID s'il est obsolète (processus mort)."""
+        try:
+            if ROBOT_PID_FILE.exists():
+                pid_str = ROBOT_PID_FILE.read_text().strip()
+                if pid_str:
+                    try:
+                        pid = int(pid_str)
+                        os.kill(pid, 0)  # Vérifie si le process existe
+                        # Le process existe → ne pas supprimer
+                        return
+                    except (OSError, ValueError):
+                        # Processus mort → fichier stale, supprimer
+                        pass
+                ROBOT_PID_FILE.unlink()
+                logger.info(f"PID file supprimé (stale: {pid_str})")
+        except Exception as e:
+            logger.debug(f"Nettoyage PID file échoué: {e}")
 
     # ── Lecture des métriques ──
 
@@ -886,7 +918,14 @@ class AgentDaemon:
 
             # ── Vérifier la santé du robot ──
             if not self.is_robot_alive():
-                logger.warning(f"Robot mort (PID fichier ou processus) — redémarrage...")
+                logger.warning(
+                    f"Robot mort — redémarrage... "
+                    f"(process={self.robot_process is not None}, "
+                    f"pid_file={ROBOT_PID_FILE.exists()})"
+                )
+                # Forcer le nettoyage de toute référence morte
+                self.robot_process = None
+                self._clean_stale_pid()
                 self.start_robot()
                 # Attendre un peu pour éviter un redémarrage boucle
                 time.sleep(5)

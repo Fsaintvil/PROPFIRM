@@ -242,6 +242,16 @@ class ChallengeTracker:
         else:
             best_day_pct = best_day / positive_days_total
 
+        # 🔒 FIX: Sanity cap — best_day_pct > 100% = données contaminées
+        # (p. ex. daily_pnl_by_date contient des valeurs equity-based au lieu de realized PnL)
+        if best_day_pct > 1.0:
+            logger.warning(
+                f"best_day_pct={best_day_pct:.1%} invalide (>100%) — "
+                f"daily_pnl_by_date probablement contaminé par equity-PnL. "
+                f"Cap à 100% (best_day=${best_day:.2f}, positive_sum=${positive_days_total:.2f})"
+            )
+            best_day_pct = min(best_day_pct, 1.0)
+
         return dict(
             balance=balance,
             equity=equity,

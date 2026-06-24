@@ -24,7 +24,7 @@ risk:
   max_dd_pct: 0.08              # 8% DD max (au lieu de 10%)
   circuit_breaker_dd_pct: 0.05  # 5% DD → arrêt d'urgence (au lieu de 8%)
   cooldown_minutes: 10          # 10 min après perte (au lieu de 5)
-  auto_pause_losses: 5          # 5 pertes consécutives → pause (au lieu de 10)
+  auto_pause_losses: 8          # 8 pertes consécutives → pause
   profit_target_pct: 0          # Pas de profit target en Funded
   min_trading_days: 0           # Pas de minimum de jours
 
@@ -36,7 +36,5 @@ symbol_limits:
   BTCUSD:
     risk_mult: 0.50             # ↓ 0.65→0.50 en Funded
     max_lot: 0.02               # ↓ 0.03→0.02
-  ETHUSD:
-    risk_mult: 0.35             # ↓ 0.50→0.35 en Funded
   EURUSD:
     risk_mult: 0.50             # ↓ 0.75→0.50 en Funded

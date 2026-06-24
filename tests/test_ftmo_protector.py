@@ -253,13 +253,13 @@ class TestCanTrade:
                 assert ok, f"Expected OK, got: {reason}"
 
     def test_consecutive_losses_blocks_after_auto_pause(self):
-        """5 pertes consécutives → pause globale 30min (bloqué jusqu'à expiration)"""
+        """8 pertes consécutives → pause globale 30min (bloqué jusqu'à expiration)"""
         p = make_protector()
         self._mock_symbol_info(p)
         p.mt5.get_account_info.return_value = MagicMock(equity=200000)
-        p.consecutive_losses = 5
+        p.consecutive_losses = 8
         ok, reason = p.can_trade("EURUSD")
-        assert not ok, f"Doit bloquer après 5 pertes: {reason}"
+        assert not ok, f"Doit bloquer après 8 pertes: {reason}"
         assert "cooldown" in reason.lower()
 
     def _as_weekday(self, dt=None):
@@ -282,7 +282,7 @@ class TestCanTrade:
         p = make_protector()
         self._mock_symbol_info(p)
         p.mt5.get_account_info.return_value = MagicMock(equity=200000)
-        p.consecutive_losses = 5
+        p.consecutive_losses = 8
         p.global_cooldown_until = None
         # Force le cooldown pour le test
         with self._as_weekday():
@@ -294,19 +294,19 @@ class TestCanTrade:
         assert p.consecutive_losses == 0
 
     def test_consecutive_losses_sets_cooldown(self):
-        """5 pertes consécutives → pause 30min (cooldown défini)"""
+        """8 pertes consécutives → pause 30min (cooldown défini)"""
         p = make_protector()
         self._mock_symbol_info(p)
         p.mt5.get_account_info.return_value = MagicMock(equity=200000)
-        p.consecutive_losses = 5
+        p.consecutive_losses = 8
         p.global_cooldown_until = None  # pas de cooldown actif
         assert p.global_cooldown_until is None
         with self._as_weekday():
             ok, reason = p.can_trade("EURUSD")
-        assert not ok, f"Devrait bloquer après 5 pertes: {reason}"
+        assert not ok, f"Devrait bloquer après 8 pertes: {reason}"
         assert "cooldown" in reason.lower()
         assert p.global_cooldown_until is not None  # cooldown activé
-        assert p.consecutive_losses == 5  # toujours compté
+        assert p.consecutive_losses == 8  # toujours compté
 
     def test_daily_trade_limit(self):
         p = make_protector(make_config(MAX_TRADES_PER_DAY=5))

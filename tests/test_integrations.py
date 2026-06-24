@@ -1,4 +1,5 @@
 """Tests pour les intégrations Phase 2-4 : market_structure, market_memory, auto_stop."""
+
 import numpy as np
 import pytest
 
@@ -9,6 +10,7 @@ class TestMarketStructureIntegration:
     def _make_signal(self, action="BUY", close_price=100.0, period=20):
         """Génère un signal MOM20x3 minimal pour les tests."""
         from engine_simple.strategy import mom20x3_signal
+
         # Créer des données OHLC synthétiques
         n = period + 30
         close = np.linspace(close_price * 0.98, close_price, n)
@@ -49,6 +51,7 @@ class TestSRLlevelsIntegration:
     def test_signal_includes_sr_fields(self):
         """Le signal doit contenir les champs S/R."""
         from engine_simple.strategy import mom20x3_signal
+
         n = 50
         close = np.linspace(98, 100, n)
         high = close * 1.005
@@ -61,6 +64,7 @@ class TestSRLlevelsIntegration:
     def test_sr_values_are_numeric_or_none(self):
         """nearest_support/resistance doivent être numériques ou None."""
         from engine_simple.strategy import mom20x3_signal
+
         n = 50
         close = np.linspace(98, 100, n)
         high = close * 1.005
@@ -79,6 +83,7 @@ class TestPatternIntegration:
     def test_signal_includes_pattern_fields(self):
         """Le signal doit contenir les champs pattern."""
         from engine_simple.strategy import mom20x3_signal
+
         n = 50
         close = np.linspace(98, 100, n)
         high = close * 1.005
@@ -92,6 +97,7 @@ class TestPatternIntegration:
     def test_pattern_confidence_range(self):
         """pattern_confidence doit être entre 0 et 1."""
         from engine_simple.strategy import mom20x3_signal
+
         n = 50
         close = np.linspace(98, 100, n)
         high = close * 1.005
@@ -108,20 +114,33 @@ class TestAutoStopIntegration:
         """FTMOProtector doit initialiser les attributs auto_stop."""
         from engine_simple.ftmo_protector import FTMOProtector
         from unittest.mock import MagicMock
+
         mt5 = MagicMock()
         config = {
-            "MAX_POSITIONS": 6, "MAX_TRADES_PER_DAY": 20,
-            "MIN_SIGNAL_SCORE": 0.55, "LOT_SIZE": 0.01,
-            "RISK_PER_TRADE": 0.004, "COOLDOWN_MINUTES": 15,
-            "MAX_DAILY_LOSS_PCT": 0.02, "INITIAL_BALANCE": 200000,
-            "MAX_DD_PCT": 0.10, "PROFIT_TARGET_PCT": 0.10,
-            "CONSISTENCY_MAX_PCT": 0.30, "MIN_TRADING_DAYS": 10,
-            "MAGIC": 999001, "MAX_SPREAD_POINTS": 120,
-            "MAX_RISK_AMOUNT": 1600, "TRADING_START_HOUR": 0,
-            "TRADING_END_HOUR": 24, "DANGER_HOURS": [],
-            "SYMBOL_LIMITS": {}, "DAILY_PROFIT_LIMIT_PCT": 0.05,
-            "ZONE2_LOSS_PCT": 0.015, "ZONE3_LOSS_PCT": 0.02,
-            "AUTO_PAUSE_LOSSES": 5, "MAX_CORRELATED_EXPOSURE": 0.15,
+            "MAX_POSITIONS": 6,
+            "MAX_TRADES_PER_DAY": 20,
+            "MIN_SIGNAL_SCORE": 0.55,
+            "LOT_SIZE": 0.01,
+            "RISK_PER_TRADE": 0.004,
+            "COOLDOWN_MINUTES": 15,
+            "MAX_DAILY_LOSS_PCT": 0.02,
+            "INITIAL_BALANCE": 200000,
+            "MAX_DD_PCT": 0.10,
+            "PROFIT_TARGET_PCT": 0.10,
+            "CONSISTENCY_MAX_PCT": 0.30,
+            "MIN_TRADING_DAYS": 10,
+            "MAGIC": 999001,
+            "MAX_SPREAD_POINTS": 120,
+            "MAX_RISK_AMOUNT": 1600,
+            "TRADING_START_HOUR": 0,
+            "TRADING_END_HOUR": 24,
+            "DANGER_HOURS": [],
+            "SYMBOL_LIMITS": {},
+            "DAILY_PROFIT_LIMIT_PCT": 0.05,
+            "ZONE2_LOSS_PCT": 0.015,
+            "ZONE3_LOSS_PCT": 0.02,
+            "AUTO_PAUSE_LOSSES": 8,
+            "MAX_CORRELATED_EXPOSURE": 0.15,
             "CIRCUIT_BREAKER_DD_PCT": 0.08,
         }
         ftmo = FTMOProtector(mt5, config)
@@ -134,20 +153,33 @@ class TestAutoStopIntegration:
         """_check_auto_stop doit retourner True quand pas en pause."""
         from engine_simple.ftmo_protector import FTMOProtector
         from unittest.mock import MagicMock
+
         mt5 = MagicMock()
         config = {
-            "MAX_POSITIONS": 6, "MAX_TRADES_PER_DAY": 20,
-            "MIN_SIGNAL_SCORE": 0.55, "LOT_SIZE": 0.01,
-            "RISK_PER_TRADE": 0.004, "COOLDOWN_MINUTES": 15,
-            "MAX_DAILY_LOSS_PCT": 0.02, "INITIAL_BALANCE": 200000,
-            "MAX_DD_PCT": 0.10, "PROFIT_TARGET_PCT": 0.10,
-            "CONSISTENCY_MAX_PCT": 0.30, "MIN_TRADING_DAYS": 10,
-            "MAGIC": 999001, "MAX_SPREAD_POINTS": 120,
-            "MAX_RISK_AMOUNT": 1600, "TRADING_START_HOUR": 0,
-            "TRADING_END_HOUR": 24, "DANGER_HOURS": [],
-            "SYMBOL_LIMITS": {}, "DAILY_PROFIT_LIMIT_PCT": 0.05,
-            "ZONE2_LOSS_PCT": 0.015, "ZONE3_LOSS_PCT": 0.02,
-            "AUTO_PAUSE_LOSSES": 5, "MAX_CORRELATED_EXPOSURE": 0.15,
+            "MAX_POSITIONS": 6,
+            "MAX_TRADES_PER_DAY": 20,
+            "MIN_SIGNAL_SCORE": 0.55,
+            "LOT_SIZE": 0.01,
+            "RISK_PER_TRADE": 0.004,
+            "COOLDOWN_MINUTES": 15,
+            "MAX_DAILY_LOSS_PCT": 0.02,
+            "INITIAL_BALANCE": 200000,
+            "MAX_DD_PCT": 0.10,
+            "PROFIT_TARGET_PCT": 0.10,
+            "CONSISTENCY_MAX_PCT": 0.30,
+            "MIN_TRADING_DAYS": 10,
+            "MAGIC": 999001,
+            "MAX_SPREAD_POINTS": 120,
+            "MAX_RISK_AMOUNT": 1600,
+            "TRADING_START_HOUR": 0,
+            "TRADING_END_HOUR": 24,
+            "DANGER_HOURS": [],
+            "SYMBOL_LIMITS": {},
+            "DAILY_PROFIT_LIMIT_PCT": 0.05,
+            "ZONE2_LOSS_PCT": 0.015,
+            "ZONE3_LOSS_PCT": 0.02,
+            "AUTO_PAUSE_LOSSES": 8,
+            "MAX_CORRELATED_EXPOSURE": 0.15,
             "CIRCUIT_BREAKER_DD_PCT": 0.08,
         }
         ftmo = FTMOProtector(mt5, config)
@@ -161,6 +193,7 @@ class TestMarketMemoryInit:
     def test_market_memory_importable(self):
         """MarketMemory doit être importable depuis engine_simple."""
         from engine_simple.market_memory import MarketMemory
+
         mm = MarketMemory()
         assert mm is not None
         assert hasattr(mm, "load_all")
@@ -171,6 +204,7 @@ class TestMarketMemoryInit:
     def test_market_structure_importable(self):
         """analyze_market_structure doit être importable."""
         from engine_simple.market_structure import analyze_market_structure
+
         assert analyze_market_structure is not None
         # Test avec données minimales
         high = np.random.uniform(100, 105, 50)
@@ -188,6 +222,7 @@ class TestAutoStopModule:
     def test_compute_adx(self):
         """compute_adx doit retourner une valeur valide."""
         from engine_simple.auto_stop import compute_adx
+
         high = np.random.uniform(100, 105, 30)
         low = high - np.random.uniform(0.5, 2.0, 30)
         close = (high + low) / 2
@@ -198,6 +233,7 @@ class TestAutoStopModule:
     def test_compute_adx_insufficient_data(self):
         """compute_adx doit retourner 0.0 avec données insuffisantes."""
         from engine_simple.auto_stop import compute_adx
+
         high = np.array([100.0, 101.0])
         low = np.array([99.0, 100.0])
         close = np.array([100.5, 100.5])
@@ -208,6 +244,7 @@ class TestAutoStopModule:
         """load_state doit retourner un état par défaut si fichier absent."""
         from engine_simple.auto_stop import load_state
         from unittest.mock import patch
+
         with patch("engine_simple.auto_stop.STATE_FILE") as mock_file:
             mock_file.exists.return_value = False
             state = load_state()
