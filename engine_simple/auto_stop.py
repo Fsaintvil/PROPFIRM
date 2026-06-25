@@ -120,7 +120,8 @@ def check_adx():
         connector = MT5Connector()
         if not connector.connect():
             return 0.0, 0, {}
-    except Exception:
+    except Exception as e:
+        logger.warning(f"  [AUTO_STOP] check_market connector: {e}")
         return 0.0, 0, {}
 
     for sym in symbols:
@@ -137,7 +138,8 @@ def check_adx():
             if is_low:
                 low_count += 1
             details[sym] = {"adx": round(adx_val, 1), "low": is_low}
-        except Exception:
+        except Exception as e:
+            logger.warning(f"  [AUTO_STOP] check_market symbol {sym}: {e}")
             continue
 
     ratio = low_count / max(total, 1)

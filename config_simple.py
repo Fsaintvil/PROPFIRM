@@ -102,7 +102,6 @@ except Exception as e:
         "EURUSD",
         "USDJPY",
         "GBPUSD",
-        "AUDUSD",
         "USDCAD",
     ]
     _fb_log("SYMBOLS", SYMBOLS)
@@ -299,11 +298,9 @@ except Exception as e:
     SYMBOL_TIMEFRAMES = {
         "XAUUSD": "H4",
         "BTCUSD": "H1",
-        "US500.cash": "H4",
         "EURUSD": "H1",
         "USDJPY": "H1",
         "GBPUSD": "H1",
-        "AUDUSD": "H1",
         "USDCAD": "H1",
     }
     ML_EXPERIMENT_TRACKING = False

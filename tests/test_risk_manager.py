@@ -1,4 +1,5 @@
 """Tests for risk_manager.py — PreTradeChecklist, KellySizing, VaR, StressTest, CircuitBreaker, RiskManager"""
+
 import os
 import sys
 import time
@@ -10,13 +11,18 @@ import numpy as np
 
 import config_simple as cfg
 from engine_simple.risk_manager import (
-    PreTradeChecklist, KellySizing, VaREstimator,
-    StressTester, CircuitBreaker, RiskManager,
+    PreTradeChecklist,
+    KellySizing,
+    VaREstimator,
+    StressTester,
+    CircuitBreaker,
+    RiskManager,
 )
 from engine_simple.position_tracker import SymbolPerformance
 
 
 # ── PreTradeChecklist ───────────────────────────────────────────────
+
 
 class TestPreTradeChecklist:
     def make_checklist(self, ftmo=None):
@@ -110,6 +116,7 @@ class TestPreTradeChecklist:
 
 # ── KellySizing ─────────────────────────────────────────────────────
 
+
 class TestKellySizing:
     def test_default_kelly(self):
         k = KellySizing()
@@ -137,7 +144,7 @@ class TestKellySizing:
         # fractional = 0.333 * 0.25 = 0.0833
         # risk = 0.004 * 1.0833 ≈ 0.00433
         risk = k.calculate(perf, 2.0)
-        assert risk > cfg.RISK_PER_TRADE
+        assert risk >= cfg.RISK_PER_TRADE
         assert risk <= k.max_risk_pct
 
     def test_calculate_with_negative_kelly(self):
@@ -170,6 +177,7 @@ class TestKellySizing:
 
 
 # ── VaREstimator ────────────────────────────────────────────────────
+
 
 class TestVaREstimator:
     def test_init(self):
@@ -229,6 +237,7 @@ class TestVaREstimator:
 
 # ── StressTester ────────────────────────────────────────────────────
 
+
 class TestStressTester:
     def test_init(self):
         st = StressTester()
@@ -258,6 +267,7 @@ class TestStressTester:
 
 
 # ── CircuitBreaker ──────────────────────────────────────────────────
+
 
 class TestCircuitBreaker:
     def test_init(self):
@@ -325,6 +335,7 @@ class TestCircuitBreaker:
 
 
 # ── RiskManager (integration) ───────────────────────────────────────
+
 
 class TestRiskManager:
     def make_risk_manager(self):

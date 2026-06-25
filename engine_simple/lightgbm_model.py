@@ -127,7 +127,8 @@ class LightGBMModel:
                 if total > 0:
                     for k in self._feature_importance:
                         self._feature_importance[k] /= total
-            except Exception:
+            except Exception as e:
+                logger.warning(f"  [LGB] load normalize_importance: {e}")
                 pass
 
             return True
@@ -280,7 +281,8 @@ class LightGBMModel:
                 val_acc = accuracy_score(y_val, y_pred)
                 try:
                     val_auc = roc_auc_score(y_val, self._model.predict(X_val))
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"  [LGB] train val_auc: {e}")
                     val_auc = 0.0
             else:
                 self._model = lgb.train(params, train_data)
@@ -309,7 +311,8 @@ class LightGBMModel:
                 if total > 0:
                     for k in self._feature_importance:
                         self._feature_importance[k] /= total
-            except Exception:
+            except Exception as e:
+                logger.warning(f"  [LGB] train normalize_importance: {e}")
                 pass
 
             logger.info(

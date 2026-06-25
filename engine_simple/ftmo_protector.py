@@ -156,9 +156,9 @@ class FTMOProtector:
         short = m.group(1) if m else "RAN"
         self.position_regime[ticket_key] = self.REGIME_FROM_COMMENT.get(short, "RANGING")
 
-    # Corrélations SUPPRIMÉES — mode agressif (Phase 0, Juin 2026)
-    # Les vérifications de corrélation (BTC/ETH 0.89, etc.) sont désactivées.
-    # Risque assumé : positions simultanées possibles sur symboles corrélés.
+    # Corrélations RÉACTIVÉES — 25 Juin 2026 (Risk & Compliance Officer)
+    # Vérifications de corrélation via portfolio_controller.py (groupes de corrélation).
+    # Max 3 trades/groupe, max 2/direction. Limite les pertes simultanées.
 
     def _get_profile(self, symbol):
         """Retourne le profil institutionnel du symbole (caché)."""
@@ -432,14 +432,19 @@ class FTMOProtector:
         # DD from peak
         dd_peak = (self.peak_equity - current_equity) / max(self.peak_equity, 1)
 
-        # Circuit breaker: DD élevé → shorts interdits
-        circuit_breaker_threshold = self.config.get("CIRCUIT_BREAKER_DD_PCT", 0.08)
+        # Circuit breaker progressif (3 niveaux)
+        cb_threshold = self.config.get("CIRCUIT_BREAKER_DD_PCT", 0.08)
         sym_cfg_cb = self.symbol_limits.get(symbol, {})
-        sym_circuit_breaker = sym_cfg_cb.get("circuit_breaker_dd_pct_override")
-        if sym_circuit_breaker is not None:
-            circuit_breaker_threshold = sym_circuit_breaker
-        if dd_peak > circuit_breaker_threshold and signal and signal.get("action") == "SELL":
-            return False, f"Circuit breaker: DD peak {dd_peak:.1%} > {circuit_breaker_threshold:.0%}, shorts disabled"
+        sym_cb_override = sym_cfg_cb.get("circuit_breaker_dd_pct_override")
+        if sym_cb_override is not None:
+            cb_threshold = sym_cb_override
+        # Niveau 1: DD > 6% → shorts interdits (avertissement)
+        dd_warn = 0.06
+        if dd_peak > dd_warn and dd_peak <= cb_threshold and signal and signal.get("action") == "SELL":
+            return False, f"DD warning {dd_peak:.1%} > {dd_warn:.0%}: shorts disabled"
+        # Niveau 2: DD > seuil cb → TOUS les trades bloqués
+        if dd_peak > cb_threshold:
+            return False, f"Circuit breaker: DD {dd_peak:.1%} > {cb_threshold:.0%}, all trades blocked"
 
         # FTMO daily loss limit
         daily_loss = max(0, -daily_equity_change) / self.initial_balance
@@ -452,10 +457,10 @@ class FTMOProtector:
             return False, f"Zone 3: daily DD {daily_loss:.1%} >= {zone3:.1%}, stop"
 
         # Auto-pause après N pertes consécutives
-        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 8)
+        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 6)
         if self.consecutive_losses >= auto_pause:
             if self.global_cooldown_until is None:
-                auto_pause_cooldown = self.config.get("COOLDOWN_MINUTES", 5)
+                auto_pause_cooldown = self.config.get("COOLDOWN_MINUTES", 15)
                 self.global_cooldown_until = datetime.utcnow() + timedelta(minutes=auto_pause_cooldown)
                 logger.warning(
                     f"AUTO PAUSE: {self.consecutive_losses} consecutive losses >= {auto_pause}, "
@@ -630,11 +635,11 @@ class FTMOProtector:
                 mult *= 0.90  # DD > 3% → -10%
 
         # 3. Pertes consécutives (utilise AUTO_PAUSE_LOSSES de la config)
-        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 8)
+        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 6)
         if self.consecutive_losses >= auto_pause:
-            mult *= 0.60  # Pause imminente → risque réduit
+            mult *= 0.50  # Pause imminente → risque réduit de moitié
         elif self.consecutive_losses >= max(3, auto_pause - 2):
-            mult *= 0.50  # Proche du seuil → risque réduit de moitié
+            mult *= 0.65  # Proche du seuil → risque réduit
         elif self.consecutive_losses >= 2:
             mult *= 0.75  # 2 pertes → pré-alerte, risque réduit
 

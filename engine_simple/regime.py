@@ -46,7 +46,8 @@ class RegimeDetector:
                     enter = float(adx_thresh)
                     exit_ = max(enter - HYSTERESIS_OFFSET, 5.0)  # plancher 5
                     return enter, exit_
-        except Exception:
+        except Exception as e:
+            logger.warning(f"  [REGIME] _get_adx_threshold symbol={symbol}: {e}")
             pass
         return ADX_TREND_ENTER_DEFAULT, ADX_TREND_EXIT_DEFAULT
 

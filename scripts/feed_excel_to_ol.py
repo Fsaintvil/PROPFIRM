@@ -22,7 +22,10 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
-STATE_PATH = ROOT / "runtime" / "ol_state.json"
+# ⚠️ Utilise calibration_state.json car ce script écrit la clé "online_history"
+# qui appartient à la calibration, PAS à l'OnlineLearner (qui utilise la clé "history"
+# dans ol_state.json). Voir: adaptive_intelligence.py:OnlineLearner.STATE_FILENAME
+STATE_PATH = ROOT / "runtime" / "calibration_state.json"
 HISTORICAL_DIR = ROOT / "data" / "historical"
 REPORTHISTORY_DIR = ROOT / "data" / "reporthistory"
 

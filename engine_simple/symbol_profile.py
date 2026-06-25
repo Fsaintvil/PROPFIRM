@@ -384,9 +384,13 @@ CORRELATION_MATRIX: dict[str, dict[str, float]] = {
     "USDCAD": {"USDCAD": 1.0, "EURUSD": 0.50, "GBPUSD": 0.45, "USDJPY": 0.20, "AUDUSD": 0.70},
 }
 
-# Groupes pour la gestion de positions (max 1 trade par direction dans un groupe)
+# Groupes pour la gestion de positions (max 2 trades/direction/groupe, max 3 total/groupe)
+# RÉACTIVÉ 25 Juin 2026 — Risk & Compliance Officer
 POSITION_GROUPS: list[list[str]] = [
-    # Groupes de corrélation SUPPRIMÉS — mode agressif (Phase 0, Juin 2026)
+    ["EURUSD", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "USDJPY"],   # FOREX_MAJORS
+    ["BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"],                           # CRYPTO
+    ["US500.cash", "US30.cash", "US100.cash", "JP225.cash"],                       # INDICES
+    ["XAUUSD", "XAGUSD", "USOIL.cash", "UKOIL.cash", "NATGAS.cash"],             # COMMODITIES
 ]
 
 

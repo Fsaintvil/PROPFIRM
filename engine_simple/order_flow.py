@@ -90,7 +90,8 @@ class OrderFlowAnalyzer:
             import MetaTrader5 as mt5
 
             ticks = mt5.copy_ticks_from(symbol, pd.Timestamp.now(tz="UTC") - pd.Timedelta(minutes=30), count)
-        except Exception:
+        except Exception as e:
+            logger.warning(f"  [FLOW] analyze_ticks copy_ticks: {e}")
             ticks = None
 
         if ticks is None or len(ticks) < 20:

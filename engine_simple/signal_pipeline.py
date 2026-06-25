@@ -1,9 +1,13 @@
-"""Signal Pipeline — filtrage multi-couches des signaux MOM20x3.
+"""Signal Pipeline — filtrage simplifié des signaux MOM20x3.
 
-Extrait de main.py:_scan_signals (P1 — Juin 2026).
-Chaque phase est une méthode indépendante, testable unitairement.
+Simplifié le 25 Juin 2026 — retrait des couches qui tuaient le signal :
+  - Phase 8  (Order Flow)      → toujours fallback, jamais de ticks réels
+  - Phase 10 (Market Profile)  → bloquait les signaux (seuil 0.7)
+  - Phase 11 (VWAP)            → complexité inutile
+  - Phase 13 (Feature Scoring) → adj ×0.727 sur XAUUSD, massacre les scores
+  - Phase 14 (LightGBM)        → déjà désactivé, code mort
 
-Flux:
+Flux simplifié:
   process(symbol) → SignalResult | None
     ├── phase1_mom20x3()         ← signal brut MOM20x3
     ├── phase2_adx_filter()      ← ADX threshold + bypass
@@ -13,10 +17,7 @@ Flux:
     ├── phase6_strategy_selector() ← params par régime
     ├── phase7_volume_profile()  ← POC/VAH/VAL
     ├── phase7b_rvol_cmf()       ← RVOL + Chaikin Money Flow
-    ├── phase8_order_flow()      ← tick delta, divergence, OBV divergence
     ├── phase9_mtf_confirm()     ← TF supérieure
-    ├── phase10_market_profile() ← Initial Balance
-    ├── phase11_vwap()           ← Premium/Discount zones
     └── phase12_adaptive_params() ← risk_mult adaptatif
 """
 
@@ -29,8 +30,7 @@ import time
 import pandas as _pd
 import numpy as np
 
-from engine_simple.indicators import chaikin_money_flow, relative_volume, obv, obv_divergence
-from engine_simple.feature_pipeline import compute_all_features, compute_score_adjustment
+from engine_simple.indicators import chaikin_money_flow, relative_volume
 
 logger = logging.getLogger("signal_pipeline")
 
@@ -199,53 +199,34 @@ class SignalPipeline:
         if not self._phase7b_rvol_cmf(symbol, signal):
             return None
 
-        # Phase 8: Order Flow
-        if not self._phase8_order_flow(symbol, signal):
-            return None
-
         # Phase 9: MTF Confirmation
         if not self._phase9_mtf_confirm(symbol, signal):
-            return None
-
-        # Phase 10: Market Profile
-        if not self._phase10_market_profile(symbol, signal):
-            return None
-
-        # Phase 11: VWAP Premium/Discount
-        if not self._phase11_vwap(symbol, signal):
             return None
 
         # Phase 12: Adaptive Params
         self._phase12_adaptive_params(symbol, signal)
 
-        # Phase 13: Feature Scoring (10+ features comme bonus/pénalité)
-        self._phase13_feature_scoring(symbol, signal)
-
-        # Phase 14: LightGBM ajuste score et risque selon sa prédiction
-        self._phase14_lgb_scoring(symbol, signal)
-
         # Dynamic position limits based on confidence
-        # Seuils AGENTS.md (Juin 2026): conf > 0.85 → 4, > 0.70 → 3, sinon → 1
+        # Seuils équilibrés (Juin 2026): conf > 0.85 → 6, > 0.70 → 4, sinon → 2
         # HIGH_CONF_CONFIDENCE = 0.90 : bypass toutes les limites, intervalle 5 min
         sig_conf = signal.get("confidence", 0.0)
         HIGH_CONF_CONFIDENCE = 0.90
         sig_action = signal.get("action")
 
         if sig_conf > HIGH_CONF_CONFIDENCE:
-            # 🔥 HIGH CONFIDENCE BYPASS : aucune limite de positions
-            # conf > 90% → on peut ouvrir un trade toutes les 5 min
-            # indépendamment du nombre de positions déjà ouvertes
+            # 🔥 HIGH CONFIDENCE : positions supplémentaires autorisées
+            # mais corrélation et limites totales protégées par portfolio_controller
             signal["high_confidence"] = True
-            max_per_symbol = 999  # illimité
+            max_per_symbol = 6  # max 6 positions/symbole (même en haute confiance)
             signal["max_per_symbol"] = max_per_symbol
-            logger.debug(f"  [HIGH CONF] {symbol} {sig_action} conf={sig_conf:.2f} — bypass limites positions")
+            logger.debug(f"  [HIGH CONF] {symbol} {sig_action} conf={sig_conf:.2f} — cap={max_per_symbol}/symbole")
         else:
             if sig_conf > 0.85:
-                max_per_symbol = 4
+                max_per_symbol = 6
             elif sig_conf > 0.70:
-                max_per_symbol = 3
+                max_per_symbol = 4
             else:
-                max_per_symbol = 1
+                max_per_symbol = 2
             hard_limit = config_limits.get(symbol, 4)
             max_per_symbol = min(max_per_symbol, hard_limit)
             signal["max_per_symbol"] = max_per_symbol
@@ -287,23 +268,25 @@ class SignalPipeline:
 
         tf = self.symbol_timeframes.get(symbol, "H1")
 
-        # OnlineLearner params
+        # OnlineLearner params — réactivé 25 Juin 2026 (calibration fixée)
         ol_thresh_trending = None
         ol_thresh_ranging = None
+        ol_risk_mult = 0.75  # fallback si OL indisponible
         try:
             ol_params = self.adaptive.learner.get_params(symbol, base_thresh=2.5)
             ol_thresh = ol_params.get("thresh", 2.5)
-            base_trending = _SYMBOL_CFG.get(symbol, {}).get("threshold_trending", 2.0)
-            # ⚠️ P0: OL dépouillé de ses pouvoirs (Supreme Council, 22 Juin 2026)
-            # La condition ol_thresh < base_trending n'a JAMAIS été vraie depuis la création
-            # car le seed produit thresh=2.5 pour WR<70% et base_trending=2.0-2.5.
-            # L'OL continue d'enregistrer les trades et de logger ses recommandations
-            # (observateur passif) mais ses seuils sont ignorés.
-            # Voir: AGENTS.md → Session Robot Manager — 22 Juin 2026
-            if False:
-                ol_thresh_trending = ol_thresh
-                ol_thresh_ranging = max(1.5, ol_thresh - 0.5)
-        except Exception:
+            ol_risk_mult = ol_params.get("risk_mult", 1.0)
+            # Appliquer le seuil OL si disponible, avec bornes sécurité [1.5, 2.5]
+            if ol_thresh is not None:
+                ol_thresh_clamped = max(1.5, min(2.5, ol_thresh))
+                ol_thresh_trending = ol_thresh_clamped
+                ol_thresh_ranging = max(1.5, ol_thresh_clamped - 0.5)
+                logger.debug(
+                    f"  [OL] {symbol}: thresh={ol_thresh_clamped}, risk_mult={ol_risk_mult} "
+                    f"(OL→trending={ol_thresh_trending}, ranging={ol_thresh_ranging})"
+                )
+        except Exception as e:
+            logger.warning(f"  [SIGNAL_PIPELINE] phase1_mom20x3 OL: {e}")
             pass
 
         rates_tf = self.mt5.get_rates(symbol, tf, count=10000)
@@ -335,7 +318,8 @@ class SignalPipeline:
                         h4_conf = 0.80
                     elif raw["action"] == "SELL" and higher_price > higher_ema50 * 1.002:
                         h4_conf = 0.80
-        except Exception:
+        except Exception as e:
+            logger.warning(f"  [SIGNAL_PIPELINE] phase1_mom20x3 higher_tf: {e}")
             pass
 
         # MTF Alignment
@@ -353,7 +337,8 @@ class SignalPipeline:
                     h4_conf = min(1.0, h4_conf * 1.05)
                 elif raw["action"] == "SELL" and bearish_count >= 3:
                     h4_conf = min(1.0, h4_conf * 1.05)
-            except Exception:
+            except Exception as e:
+                logger.warning(f"  [SIGNAL_PIPELINE] phase1_mom20x3 mtf_alignment: {e}")
                 pass
 
         # Enrich signal
@@ -366,14 +351,15 @@ class SignalPipeline:
         if h4_conf < 1.0 and signal.get("score", 0.6) > 0.5:
             signal["score"] = max(0.5, signal["score"] * 0.90)
 
-        # Per-symbol risk_mult (base × constante OL)
-        # ⚠️ P0: OL risk_mult gelé à 0.75 (valeur seed pour WR<70%).
-        # Le OL.get_params() continue d'être loggué mais son risk_mult n'est plus utilisé
-        # car il était désynchronisé avec calibration_state.json.
-        # Supreme Council décision: gel temporaire en attendant Phase 2.
+        # Per-symbol risk_mult (base × OL risk_mult)
+        # 🟢 Réactivé 25 Juin 2026: calibration_state.json séparé et fonctionnel.
+        # OL risk_mult s'adapte au WR :
+        #   WR<70% → ×0.75, WR 78-82% → ×1.05, WR>82% → ×1.15
+        #   expectancy<0 → ×0.5 (protection)
         symbol_config = self.symbol_limits.get(symbol, {})
         base_risk_mult = symbol_config.get("risk_mult", 1.0)
-        signal["risk_mult"] = base_risk_mult * 0.75
+        # ol_risk_mult est capturé dans le bloc OL ci-dessus (fallback=0.75 si exception)
+        signal["risk_mult"] = base_risk_mult * ol_risk_mult
         signal["entry_price"] = entry if raw["action"] == "BUY" else (tick.bid if tick else 0)
         signal["higher_tf_conf"] = round(h4_conf, 2)
         atr_price = signal.get("atr", 0)
@@ -387,7 +373,8 @@ class SignalPipeline:
 
             rsi_arr = ind_rsi(close_prices, period=14)
             signal["rsi"] = round(float(rsi_arr[-1]), 1) if len(rsi_arr) > 0 and not np.isnan(rsi_arr[-1]) else 50.0
-        except Exception:
+        except Exception as e:
+            logger.warning(f"  [SIGNAL_PIPELINE] phase1_mom20x3 rsi: {e}")
             signal["rsi"] = 50.0
 
         return signal
@@ -584,53 +571,6 @@ class SignalPipeline:
             logger.debug(f"  [VP] {symbol}: erreur VolumeProfile: {e}")
         return True
 
-    # ── Phase 8: Order Flow ────────────────────────────────────────────────
-
-    def _phase8_order_flow(self, symbol: str, signal: dict) -> bool:
-        df = None
-        try:
-            flow_metrics = self.order_flow.analyze_ticks_from_mt5(self.mt5, symbol, count=1000)
-            if flow_metrics is None or flow_metrics.total_volume == 0:
-                tf_of = self.symbol_timeframes.get(symbol, "H1")
-                recent_of = self._get_cached_rates(symbol, tf_of, count=100)
-                if recent_of is not None and len(recent_of) >= 20:
-                    df = self._to_dataframe(recent_of)
-                    flow_metrics = self.order_flow.analyze_bars(df)
-            if flow_metrics and flow_metrics.total_volume > 0:
-                sig_action = signal.get("action", "BUY")
-                flow_adj = self.order_flow.get_flow_adjustment(flow_metrics, sig_action)
-                if flow_adj["score_adj"] != 1.0:
-                    old_score = signal["score"]
-                    signal["score"] = min(0.95, max(0.3, signal["score"] * flow_adj["score_adj"]))
-                    signal["flow_adj"] = flow_adj["score_adj"]
-                    signal["flow_divergence"] = flow_adj.get("divergence")
-                    signal["flow_absorption"] = flow_adj.get("absorption")
-                    if signal["score"] < self.cfg.MIN_SIGNAL_SCORE:
-                        logger.debug(
-                            f"  [FLOW] {symbol}: score {signal['score']:.3f} < {self.cfg.MIN_SIGNAL_SCORE} → skip"
-                        )
-                        return False
-            # ── OBV Divergence (pénalités par symbole) ──
-            # Utilise les mêmes barres que l'Order Flow (pas de get_rates() supplémentaire)
-            # Les pénalités sont configurables par symbole (default.yaml).
-            # BTCUSD: high=0.85, low=0.92 (volume crypto bursty → moins pénalisant)
-            # Forex/indices: high=0.70, low=0.85 (standard)
-            if "df" in locals() and df is not None and len(df) >= 20:
-                sym_cfg_of = self.symbol_limits.get(symbol, {})
-                obv_high = sym_cfg_of.get("obv_div_penalty_high", 0.70)
-                obv_low = sym_cfg_of.get("obv_div_penalty_low", 0.85)
-                closes_df = df["close"].values
-                volumes_df = df["volume"].values
-                div_type, div_strength = obv_divergence(closes_df, volumes_df, period=20)
-                if div_type != "none":
-                    penalty = obv_high if div_strength > 0.5 else obv_low
-                    signal["score"] = max(0.3, signal["score"] * penalty)
-                    signal["obv_divergence"] = div_type
-                    signal["obv_div_strength"] = round(div_strength, 2)
-        except Exception as e:
-            logger.debug(f"  [FLOW] {symbol}: erreur OrderFlow: {e}")
-        return True
-
     # ── Phase 9: MTF Confirmation ──────────────────────────────────────────
 
     def _phase9_mtf_confirm(self, symbol: str, signal: dict) -> bool:
@@ -651,54 +591,6 @@ class SignalPipeline:
             logger.debug(f"  [MTF] {symbol}: erreur MTFConfirm: {e}")
         return True
 
-    # ── Phase 10: Market Profile ───────────────────────────────────────────
-
-    def _phase10_market_profile(self, symbol: str, signal: dict) -> bool:
-        try:
-            tf_mp = self.symbol_timeframes.get(symbol, "H1")
-            mp_data = self._get_cached_rates(symbol, tf_mp, count=100)
-            if mp_data is not None and len(mp_data) >= 10:
-                df = self._to_dataframe(mp_data)
-                mp_result = self.market_profile.analyze(df, signal_action=signal.get("action"))
-                mp_adj = mp_result.get("score_adj", 1.0)
-                if mp_adj != 1.0:
-                    old_score = signal["score"]
-                    signal["score"] = max(0.3, min(0.95, signal["score"] * mp_adj))
-                    signal["mp_adj"] = mp_adj
-                    signal["mp_session_type"] = mp_result.get("session_type")
-                    if signal["score"] < self.cfg.MIN_SIGNAL_SCORE:
-                        logger.debug(
-                            f"  [MP] {symbol}: score {signal['score']:.3f} < {self.cfg.MIN_SIGNAL_SCORE} → skip"
-                        )
-                        return False
-        except Exception as e:
-            logger.debug(f"  [MP] {symbol}: erreur MarketProfile: {e}")
-        return True
-
-    # ── Phase 11: VWAP Premium/Discount ────────────────────────────────────
-
-    def _phase11_vwap(self, symbol: str, signal: dict) -> bool:
-        try:
-            tf_vwap = self.symbol_timeframes.get(symbol, "H1")
-            vwap_data = self._get_cached_rates(symbol, tf_vwap, count=100)
-            if vwap_data is not None and len(vwap_data) >= 20:
-                df = self._to_dataframe(vwap_data)
-                vwap_result = self.vwap_analyzer.analyze(df)
-                vwap_adj = vwap_result.get("score_adj", 1.0)
-                if vwap_adj != 1.0:
-                    old_score = signal["score"]
-                    signal["score"] = max(0.3, min(0.95, signal["score"] * vwap_adj))
-                    signal["vwap_adj"] = vwap_adj
-                    signal["vwap_zone"] = vwap_result.get("zone")
-                    if signal["score"] < self.cfg.MIN_SIGNAL_SCORE:
-                        logger.debug(
-                            f"  [VWAP] {symbol}: score {signal['score']:.3f} < {self.cfg.MIN_SIGNAL_SCORE} → skip"
-                        )
-                        return False
-        except Exception as e:
-            logger.debug(f"  [VWAP] {symbol}: erreur VWAPAnalyzer: {e}")
-        return True
-
     # ── Phase 12: Adaptive Params ──────────────────────────────────────────
 
     def _phase12_adaptive_params(self, symbol: str, signal: dict) -> None:
@@ -716,160 +608,7 @@ class SignalPipeline:
         except Exception as e:
             logger.debug(f"  [ADAPTIVE] {symbol}: erreur: {e}")
 
-    # ── Phase 13: Feature Scoring ─────────────────────────────────────────
-
-    def _phase13_feature_scoring(self, symbol: str, signal: dict) -> None:
-        """Calcule 25+ features et ajuste le score avec des bonus/pénalités.
-
-        Les features sont persistées dans le signal pour :
-        - Diagnostic (logs)
-        - Futures phases (Phase 14: LightGBM)
-        - Training data collection
-
-        Facteurs (issus de feature_pipeline.compute_score_adjustment):
-          EMA alignment      : +8% si tendance confirme, -15% si contre-tendance
-          ATR percentile     : -10% si >85%, +5% si <15%
-          Vol expansion      : -12% si >30%
-          RVOL               : +10% si >2.0, -15% si <0.5
-          CMF                : +8% si confirme, -8% si contredit
-          VWAP discount      : +6% si prix sous VWAP en BUY
-          OBV divergence     : +8% si confirme, -15% si contredit
-          Sessions           : +5% London-NY overlap, -5% Asia
-          Spread percentile  : -12% si >80%
-          Range position     : -8% si contre-intuitif
-        """
-        try:
-            tf = self.symbol_timeframes.get(symbol, "H1")
-            rates = self._get_cached_rates(symbol, tf, count=250)
-            if rates is None or len(rates) < 50:
-                return
-
-            df = self._to_dataframe(rates)
-            close = df["close"].values.astype(float)
-            high = df["high"].values.astype(float)
-            low = df["low"].values.astype(float)
-            open_prices = df["open"].values.astype(float) if "open" in df.columns else None
-            volume = df["volume"].values.astype(float) if "volume" in df.columns else None
-
-            # Spread history (collecté au fil de l'eau depuis les ticks)
-            spread = None
-            try:
-                tick = self.mt5.get_tick(symbol)
-                if tick:
-                    spread = getattr(tick, "spread", None) or 0
-            except Exception:
-                pass
-
-            # Calcul des features
-            features = compute_all_features(
-                close=close,
-                high=high,
-                low=low,
-                open_prices=open_prices,
-                volume=volume,
-                spread=spread,
-                symbol=symbol,
-            )
-
-            # Ajustement du score
-            action = signal.get("action", "BUY")
-            adj, reasons = compute_score_adjustment(features, action)
-
-            # Appliquer l'ajustement
-            old_score = signal.get("score", 0.6)
-            new_score = max(0.30, min(0.99, old_score * adj))
-            signal["score"] = new_score
-            signal["feature_adj"] = round(adj, 3)
-            signal["feature_reasons"] = reasons
-            signal["feature_count"] = len(features)
-
-            # Persister les features pour le diagnostic
-            signal["_features"] = {
-                k: round(v, 4) if isinstance(v, float) else v for k, v in features.items() if k not in ("_features",)
-            }
-
-            if adj != 1.0:
-                logger.info(
-                    f"  [FEATURES] {symbol}: adj={adj:.3f} score {old_score:.3f}→{new_score:.3f} "
-                    f"| {len(reasons)} raisons"
-                )
-
-        except Exception as e:
-            logger.debug(f"  [FEATURES] {symbol}: erreur feature scoring: {e}")
-
-    # ── Phase 14: LightGBM ajuste score et risque ──────────────────────────
-
-    def _phase14_lgb_scoring(self, symbol: str, signal: dict) -> None:
-        """LightGBM ajuste le score et le risk_mult selon sa prédiction.
-
-        Les features sont déjà calculées par phase13. LGB prédit la probabilité
-        de succès du trade. Selon la confiance et l'accord avec MOM20x3 :
-
-          Agree + conf>0.3 → bonus score (+12% max) + risk_mult (+15% max)
-          Disagree + conf>0.3 → pénalité score (-20% max) + risk_mult (-25% max)
-          Confiance < 0.3 → aucun changement
-
-        Seuil de confiance 0.3 ≈ proba > 0.65 ou < 0.35.
-        """
-        lgb = getattr(self.adaptive, "lgb", None)
-        if lgb is None or not lgb.available:
-            return
-
-        features = signal.get("_features", {})
-        if len(features) < 10:
-            return
-
-        try:
-            lgb_result = lgb.predict(features)
-            # Valider que le résultat est un vrai dict (pas un mock de test)
-            if not isinstance(lgb_result, dict):
-                logger.debug(f"  [LGB] {symbol}: predict returned {type(lgb_result).__name__}, skip")
-                return
-        except Exception as e:
-            logger.debug(f"  [LGB] {symbol}: predict error: {e}")
-            return
-
-        proba = float(lgb_result.get("probability", 0.5))
-        confidence = float(lgb_result.get("confidence", 0.0))
-        lgb_action = str(lgb_result.get("action", "HOLD"))
-        mom_action = str(signal.get("action", "HOLD"))
-        agrees = lgb_action == mom_action
-
-        # Stocker les métadonnées LGB dans le signal (pour logs, tracking, retraining)
-        signal["_lgb_score"] = proba
-        signal["_lgb_action"] = lgb_action
-        signal["_lgb_agrees"] = agrees
-
-        if confidence < 0.3:
-            signal["_lgb_impact"] = f"neutre (conf={confidence:.2f} < 0.3)"
-            return
-
-        if agrees:
-            # ✅ LGB confirme MOM20x3 → bonus score + risque
-            score_bonus = confidence * 0.12  # max +12%
-            risk_bonus = 1.0 + confidence * 0.15  # max +15%
-            old_score = signal.get("score", 0.5)
-            signal["score"] = min(0.99, old_score * (1 + score_bonus))
-            signal["risk_mult"] = signal.get("risk_mult", 1.0) * risk_bonus
-            signal["_lgb_impact"] = (
-                f"bonus score+{score_bonus:.1%} risk×{risk_bonus:.2f} (agree, conf={confidence:.2f}, proba={proba:.3f})"
-            )
-            logger.info(
-                f"  [LGB] {symbol}: ✅ agree → score {old_score:.3f}→{signal['score']:.3f}, "
-                f"risk×{risk_bonus:.2f} (conf={confidence:.2f}, proba={proba:.3f})"
-            )
-        else:
-            # ❌ LGB contredit MOM20x3 → pénalité score + risque
-            score_penalty = confidence * 0.20  # max -20%
-            risk_penalty = 1.0 - confidence * 0.25  # max -25%, floor 0.5
-            old_score = signal.get("score", 0.5)
-            signal["score"] = max(0.30, old_score * (1 - score_penalty))
-            signal["risk_mult"] = signal.get("risk_mult", 1.0) * max(0.5, risk_penalty)
-            signal["_lgb_impact"] = (
-                f"penalty score-{score_penalty:.1%} risk×{risk_penalty:.2f} "
-                f"(disagree, conf={confidence:.2f}, proba={proba:.3f})"
-            )
-            logger.info(
-                f"  [LGB] {symbol}: ❌ disagree → score {old_score:.3f}→{signal['score']:.3f}, "
-                f"risk×{risk_penalty:.2f} (conf={confidence:.2f}, proba={proba:.3f})"
-            )
+    # ── Phase 13+14: Feature Scoring + LightGBM — RETIRÉES 25 Juin 2026
+    # Ces phases massacraient les signaux (adj ×0.727 sur XAUUSD, feature pipeline
+    # qui n'avait pas assez de données, LGB jamais entraîné). Le code est conservé
+    # dans l'historique git (commit 7eab317f6^).

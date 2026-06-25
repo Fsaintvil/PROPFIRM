@@ -31,12 +31,28 @@ TF_MAP = {
 }
 
 ALL_SYMBOLS = [
+    # Commodities
     "XAUUSD",
     "XAGUSD",
+    "USOIL.cash",
+    # Crypto
     "BTCUSD",
     "ETHUSD",
+    # Indices
     "US500.cash",
     "NAS100.cash",
+    "JP225.cash",
+    # Forex — Majors
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "USDCAD",
+    "AUDUSD",
+    "NZDUSD",
+    "USDCHF",
+    # Forex — Crosses
+    "EURJPY",
+    "GBPJPY",
 ]
 
 # Max candles par timeframe par défaut
@@ -44,9 +60,14 @@ DEFAULT_MAX_CANDLES = {"M15": 500000, "H1": 300000, "H4": 200000, "D1": 10000}
 
 # Max candles personnalisés par symbole (optionnel, ex: récupérer plus de données forex)
 SYMBOL_MAX_CANDLES = {
-    # Forex pairs — augmenté si MT5 maxbars > 100K
-    # "EURUSD": {"H1": 500000},
-    # "GBPUSD": {"H1": 500000},
+    # Forex pairs — max data pour les symboles actifs
+    "EURUSD": {"H1": 500000},
+    "GBPUSD": {"H1": 500000},
+    "USDJPY": {"H1": 500000},
+    "USDCAD": {"H1": 500000},
+    "AUDUSD": {"H1": 500000},
+    "NZDUSD": {"H1": 500000},
+    "USDCHF": {"H1": 500000},
 }
 
 BATCH_SIZE = 50000

@@ -129,7 +129,8 @@ class VWAPAnalyzer:
             atr_arr = atr(high, low, close, self.atr_period)
             if atr_arr is not None and len(atr_arr) > 0 and not np.isnan(atr_arr[-1]):
                 atr_val = float(atr_arr[-1])
-        except Exception:
+        except Exception as e:
+            logger.warning(f"  [VWAP] analyze atr: {e}")
             pass
 
         # Classification zone VWAP standard

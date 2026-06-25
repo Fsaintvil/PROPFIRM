@@ -1,4 +1,5 @@
 """Tests d'intégration pour main.py — cycle complet (signaux → FTMO → exec)"""
+
 import os
 import sys
 import time
@@ -34,23 +35,26 @@ def make_mock_mt5():
 
 
 def make_ftmo(mt5_mock):
-    return FTMOProtector(mt5_mock, dict(
-        MAX_POSITIONS=cfg.MAX_POSITIONS,
-        MAX_TRADES_PER_DAY=cfg.MAX_TRADES_PER_DAY,
-        LOT_SIZE=cfg.LOT_SIZE,
-        RISK_PER_TRADE=cfg.RISK_PER_TRADE,
-        COOLDOWN_MINUTES=cfg.COOLDOWN_MINUTES,
-        MAX_DAILY_LOSS_PCT=cfg.MAX_DAILY_LOSS_PCT,
-        INITIAL_BALANCE=200000,
-        MAX_DD_PCT=cfg.MAX_DD_PCT,
-        PROFIT_TARGET_PCT=cfg.PROFIT_TARGET_PCT,
-        CONSISTENCY_MAX_PCT=cfg.CONSISTENCY_MAX_PCT,
-        MIN_TRADING_DAYS=cfg.MIN_TRADING_DAYS,
-        MAGIC=cfg.ROBOT_MAGIC,
-        MAX_SPREAD_POINTS=cfg.MAX_SPREAD_POINTS,
-        MAX_RISK_AMOUNT=cfg.MAX_RISK_AMOUNT,
-        SYMBOL_LIMITS=cfg.SYMBOL_LIMITS,
-    ))
+    return FTMOProtector(
+        mt5_mock,
+        dict(
+            MAX_POSITIONS=cfg.MAX_POSITIONS,
+            MAX_TRADES_PER_DAY=cfg.MAX_TRADES_PER_DAY,
+            LOT_SIZE=cfg.LOT_SIZE,
+            RISK_PER_TRADE=cfg.RISK_PER_TRADE,
+            COOLDOWN_MINUTES=cfg.COOLDOWN_MINUTES,
+            MAX_DAILY_LOSS_PCT=cfg.MAX_DAILY_LOSS_PCT,
+            INITIAL_BALANCE=200000,
+            MAX_DD_PCT=cfg.MAX_DD_PCT,
+            PROFIT_TARGET_PCT=cfg.PROFIT_TARGET_PCT,
+            CONSISTENCY_MAX_PCT=cfg.CONSISTENCY_MAX_PCT,
+            MIN_TRADING_DAYS=cfg.MIN_TRADING_DAYS,
+            MAGIC=cfg.ROBOT_MAGIC,
+            MAX_SPREAD_POINTS=cfg.MAX_SPREAD_POINTS,
+            MAX_RISK_AMOUNT=cfg.MAX_RISK_AMOUNT,
+            SYMBOL_LIMITS=cfg.SYMBOL_LIMITS,
+        ),
+    )
 
 
 class TestFTMOCycle:
@@ -61,13 +65,18 @@ class TestFTMOCycle:
         ftmo = make_ftmo(mt5)
         ftmo._atr_cache = {"USDCHF": (0.005, time.time())}
 
-        with patch('engine_simple.ftmo_protector.datetime') as mock_dt:
+        with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
-            with patch('engine_simple.ftmo_protector.is_news_blocked', return_value=(False, [])):
-                ok, reason = ftmo.can_trade("USDCHF", signal={
-                    "action": "BUY", "score": 0.70,
-                    "sl": 0.7800, "tp": 0.7900,
-                })
+            with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
+                ok, reason = ftmo.can_trade(
+                    "USDCHF",
+                    signal={
+                        "action": "BUY",
+                        "score": 0.70,
+                        "sl": 0.7800,
+                        "tp": 0.7900,
+                    },
+                )
                 assert ok, f"Expected OK, got: {reason}"
 
     def test_rejected_when_daily_loss_exceeded(self):
@@ -79,13 +88,18 @@ class TestFTMOCycle:
         ftmo.daily_stats["trades"] = 3
         ftmo.daily_stats["day"] = datetime(2026, 5, 27).date()
 
-        with patch('engine_simple.ftmo_protector.datetime') as mock_dt:
+        with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
-            with patch('engine_simple.ftmo_protector.is_news_blocked', return_value=(False, [])):
-                ok, reason = ftmo.can_trade("USDCHF", signal={
-                    "action": "BUY", "score": 0.70,
-                    "sl": 0.7800, "tp": 0.7900,
-                })
+            with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
+                ok, reason = ftmo.can_trade(
+                    "USDCHF",
+                    signal={
+                        "action": "BUY",
+                        "score": 0.70,
+                        "sl": 0.7800,
+                        "tp": 0.7900,
+                    },
+                )
                 assert not ok
                 assert "daily loss" in reason.lower()
 
@@ -93,23 +107,29 @@ class TestFTMOCycle:
         mt5 = make_mock_mt5()
         ftmo = make_ftmo(mt5)
 
-        with patch('engine_simple.ftmo_protector.datetime') as mock_dt:
+        with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
-            with patch('engine_simple.ftmo_protector.is_news_blocked', return_value=(False, [])):
-                ok, reason = ftmo.can_trade("USDCHF", signal={
-                    "action": "BUY", "score": 0.70,
-                    "sl": 0.7800, "tp": 0.7900,
-                }, positions=[MagicMock(magic=cfg.ROBOT_MAGIC, symbol="USDCHF",
-                                        type=0, ticket=1),
-                              MagicMock(magic=cfg.ROBOT_MAGIC, symbol="USDCHF",
-                                        type=0, ticket=2)])
+            with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
+                ok, reason = ftmo.can_trade(
+                    "USDCHF",
+                    signal={
+                        "action": "BUY",
+                        "score": 0.70,
+                        "sl": 0.7800,
+                        "tp": 0.7900,
+                    },
+                    positions=[
+                        MagicMock(magic=cfg.ROBOT_MAGIC, symbol="USDCHF", type=0, ticket=1),
+                        MagicMock(magic=cfg.ROBOT_MAGIC, symbol="USDCHF", type=0, ticket=2),
+                    ],
+                )
                 assert ok, f"Expected OK (correlation check passes for positions list), got: {reason}"
 
     def test_calculate_lot_basic(self):
         mt5 = make_mock_mt5()
         ftmo = make_ftmo(mt5)
         lot = ftmo.calculate_lot("EURUSD", 1.1, 1.09, quality=1.0, direction=0)
-        assert 0.01 <= lot <= 1.0, f"Lot {lot} hors limites (0.5-1.0 adaptatif)"
+        assert 0.01 <= lot <= 1.50, f"Lot {lot} hors limites (Mode MAX: 0.01-1.50)"
 
     def test_calculate_lot_with_max_risk_cap(self):
         mt5 = make_mock_mt5()
@@ -134,14 +154,20 @@ class TestFTMOCycle:
     def test_volatility_circuit_breaker(self):
         mt5 = make_mock_mt5()
         ftmo = make_ftmo(mt5)
-        with patch('engine_simple.ftmo_protector.datetime') as mock_dt:
+        with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
-            with patch('engine_simple.ftmo_protector.is_news_blocked', return_value=(False, [])):
-                ok, reason = ftmo.can_trade("USDCHF", signal={
-                    "action": "BUY", "score": 0.70,
-                    "atr_pct": 3.0, "atr_median_14": 0.5,
-                    "sl": 0.7800, "tp": 0.7900,
-                })
+            with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
+                ok, reason = ftmo.can_trade(
+                    "USDCHF",
+                    signal={
+                        "action": "BUY",
+                        "score": 0.70,
+                        "atr_pct": 3.0,
+                        "atr_median_14": 0.5,
+                        "sl": 0.7800,
+                        "tp": 0.7900,
+                    },
+                )
                 assert not ok
                 assert "Volatility" in reason
 
@@ -153,13 +179,18 @@ class TestFTMOCycle:
         ftmo.daily_pnl_by_date = {"2026-05-26": 12000, "2026-05-27": 8000}  # $20k realized
         ftmo.consistency_violated = True
         mt5.get_account_info.return_value = MagicMock(equity=220000)
-        with patch('engine_simple.ftmo_protector.datetime') as mock_dt:
+        with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
-            with patch('engine_simple.ftmo_protector.is_news_blocked', return_value=(False, [])):
-                ok, reason = ftmo.can_trade("USDCHF", signal={
-                    "action": "BUY", "score": 0.70,
-                    "sl": 0.7800, "tp": 0.7900,
-                })
+            with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
+                ok, reason = ftmo.can_trade(
+                    "USDCHF",
+                    signal={
+                        "action": "BUY",
+                        "score": 0.70,
+                        "sl": 0.7800,
+                        "tp": 0.7900,
+                    },
+                )
                 assert not ok
                 assert "consistency" in reason.lower()
 

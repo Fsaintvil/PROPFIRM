@@ -144,16 +144,92 @@ class Agent:
         """Lit les verdicts des autres agents."""
         return ctx.get("agent_verdicts", {})
 
+    def propose(
+        self,
+        ctx: dict,
+        title: str,
+        description: str,
+        priority: str = "MEDIUM",
+        impact: str = "",
+        effort: str = "MOYEN",
+        rationale: str = "",
+        proposal_type: str = "optimization",
+    ):
+        """Poste une proposition structurée sur le proposal_board.
+
+        Types: optimization, alert, fix, monitoring, parameter_tuning, risk_control
+        Priorités: CRITICAL, HIGH, MEDIUM, LOW
+        Effort: FAIBLE, MOYEN, ÉLEVÉ
+        """
+        board = ctx.get("proposal_board", [])
+        # Éviter les doublons (même titre dans les dernières 24h)
+        now = time.time()
+        for existing in board:
+            if existing.get("title") == title and existing.get("agent") == self.name:
+                age_h = (now - existing.get("_timestamp_s", 0)) / 3600
+                if age_h < 24 and existing.get("status") in ("OPEN", "IN_PROGRESS"):
+                    return  # déjà proposé récemment
+        proposal = {
+            "id": f"PROP-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{len(board) + 1:03d}",
+            "agent": self.name,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "_timestamp_s": now,
+            "type": proposal_type,
+            "title": title,
+            "description": description,
+            "priority": priority,
+            "impact": impact,
+            "effort": effort,
+            "rationale": rationale,
+            "status": "OPEN",
+            "status_history": [{"status": "OPEN", "timestamp": datetime.now(timezone.utc).isoformat()}],
+        }
+        board.append(proposal)
+        logger.info(f"[{self.name}] 📋 PROPOSITION {proposal['id']}: {title}")
+
 
 # ─── Agents Implémentation ──────────────────────────────────────────────
 
 
 class CIOAgent(Agent):
     """Chief Investment Officer — tous les 15s.
-    Synthétise les verdicts de TOUS les agents et coordonne le council."""
+    Synthétise les verdicts de TOUS les agents, priorise les propositions
+    et coordonne le council."""
 
     def __init__(self):
         super().__init__("CIO", interval_s=15, description="Coordination du council")
+
+    def _synthesize_proposals(self, ctx: dict) -> list[dict]:
+        """Synthétise et priorise les propositions du conseil.
+        Retourne les propositions classées par priorité."""
+        board = ctx.get("proposal_board", [])
+        if not board:
+            return []
+
+        # Marquer comme obsolètes les propositions OPEN > 7 jours
+        now = time.time()
+        for p in board:
+            age_s = now - p.get("_timestamp_s", 0)
+            if p.get("status") == "OPEN" and age_s > 7 * 86400:
+                p["status"] = "OBSOLETE"
+                p["status_history"].append({"status": "OBSOLETE", "timestamp": datetime.now(timezone.utc).isoformat()})
+
+        # Classer par priorité
+        priority_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
+        open_props = [p for p in board if p.get("status") == "OPEN"]
+        open_props.sort(key=lambda p: priority_order.get(p.get("priority", "MEDIUM"), 99))
+
+        # Proposer au CIO de recommander les CRITICAL/HIGH au robot
+        for p in open_props[:3]:  # top 3
+            if p["priority"] in ("CRITICAL", "HIGH"):
+                self.post_message(
+                    ctx,
+                    "AUTO_FIXER",
+                    f"Proposition prioritaire: {p['id']} — {p['title']} ({p['agent']})",
+                    "WARNING",
+                )
+
+        return open_props
 
     def execute(self, ctx: dict) -> dict:
         ftmo = ctx.get("ftmo_report", {})
@@ -180,6 +256,15 @@ class CIOAgent(Agent):
         # Niveau = le plus élevé parmi tous les agents
         if agent_levels:
             level = _max_level(agent_levels)
+
+        # ── Synthèse des propositions ──
+        top_proposals = self._synthesize_proposals(ctx)
+        if top_proposals:
+            alert_msgs = []
+            for p in top_proposals[:3]:
+                alert_msgs.append(f"[{p['priority']}] {p['agent']}: {p['title']}")
+            if alert_msgs:
+                alerts.append("PROPOSITIONS: " + " | ".join(alert_msgs))
 
         # ── Vérifier robot vivant ──
         if not pid:
@@ -264,6 +349,30 @@ class SystemMonitorAgent(Agent):
             alerts.append("PERF_ENGINEER_ALERTE")
             level = _max_level([level, "ORANGE"])
 
+        # ── Propositions ──
+        if mem > 1500:
+            self.propose(
+                ctx,
+                title=f"Mémoire élevée ({mem:.0f}MB) — rotation des logs recommandée",
+                description=f"La mémoire du daemon atteint {mem:.0f}MB. Proposer une rotation des logs agressive (max 50MB) et un redémarrage programmé du daemon toutes les 24h.",
+                priority="HIGH" if mem > 2000 else "MEDIUM",
+                impact=f"Réduit la consommation mémoire de {mem:.0f}MB à <500MB",
+                effort="FAIBLE",
+                rationale=f"MEM={mem:.0f}MB {'> 2000' if mem > 2000 else '> 1500'}, risque de OOM ou de swap excessif.",
+                proposal_type="monitoring",
+            )
+        if not pid:
+            self.propose(
+                ctx,
+                title="PID lock manquant — vérifier l'intégrité du démarrage",
+                description="Le fichier robot.pid est absent ou le processus robot est mort. Activer le heartbeat monitoring avec alerte Telegram/email.",
+                priority="CRITICAL",
+                impact="Évite les instances dupliquées et les arrêts non détectés",
+                effort="MOYEN",
+                rationale="PID lock manquant = risque d'instances dupliquées ou de robot arrêté sans alerte.",
+                proposal_type="fix",
+            )
+
         msg = ", ".join(alerts) if alerts else "OK"
         return {"level": level, "message": msg, "data": {"memory_mb": mem}}
 
@@ -321,8 +430,32 @@ class RiskComplianceAgent(Agent):
             alerts.append("DATA_MANAGER_RED — données suspectes, risque accru")
             level = _max_level([level, "ORANGE"])
 
+        # ── Propositions ──
+        if dd > 5.0:
+            self.propose(
+                ctx,
+                title=f"Drawdown {dd:.1f}% — réduire le risque par symbole",
+                description=f"DD à {dd:.1f}% du peak. Proposer de réduire risk_mult de 20% sur les symboles les plus corrélés et activer le mode protection renforcée.",
+                priority="HIGH" if dd > 6.0 else "MEDIUM",
+                impact=f"Réduit le risque de violation FTMO de {dd:.0f}% à <5%",
+                effort="FAIBLE",
+                rationale=f"DD={dd:.1f}% approche la zone de danger (8%). Réduction préventive du risque.",
+                proposal_type="risk_control",
+            )
+        if consistency:
+            self.propose(
+                ctx,
+                title="Consistency FTMO violée — lisser les gains quotidiens",
+                description=f"Un jour représente {best_day_pct:.0f}% du profit total. Proposer de plafonner le gain journalier à 20% via un trailing plus agressif sur les gros trades gagnants.",
+                priority="CRITICAL",
+                impact="Évite le FAIL_CONSISTENCY et sauvegarde le challenge",
+                effort="MOYEN",
+                rationale=f"best_day_pct={best_day_pct:.0f}% > 30%, risque de violation FTMO immédiat.",
+                proposal_type="risk_control",
+            )
+
         msg = ", ".join(alerts) if alerts else "PASS"
-        return {"level": level, "message": msg, "data": {"consistency": consistency}}
+        return {"level": level, "message": msg, "data": {"consistency": consistency, "dd": dd}}
 
 
 class SignalEngineAgent(Agent):
@@ -335,6 +468,20 @@ class SignalEngineAgent(Agent):
         log_errors = ctx.get("log_errors_100", 0)
         level = "GREEN" if log_errors < 3 else "ORANGE" if log_errors < 10 else "RED"
         msg = f"{log_errors} erreurs dans les 100 dernières lignes"
+
+        # ── Propositions ──
+        if log_errors >= 5:
+            self.propose(
+                ctx,
+                title=f"{log_errors} erreurs dans les logs — audit des signaux recommandé",
+                description=f"{log_errors} erreurs détectées dans les 100 dernières lignes. Vérifier les rejets d'ordres, les timeouts MT5 et les symboles problématiques. Envisager de réduire le nombre de symboles actifs.",
+                priority="HIGH" if log_errors >= 10 else "MEDIUM",
+                impact=f"Réduit les erreurs de trading de {log_errors} à <3 / 100 lignes",
+                effort="MOYEN",
+                rationale=f"{log_errors} erreurs/100 lignes indique un problème récurrent dans la boucle de trading.",
+                proposal_type="fix",
+            )
+
         return {"level": level, "message": msg, "data": {"log_errors": log_errors}}
 
 
@@ -353,11 +500,36 @@ class AdaptiveEngineAgent(Agent):
         elif not meta_active:
             level = "ORANGE"
         msg = f"LGB={'OK' if lgb_loaded else 'DOWN'}, META={'OK' if meta_active else 'DOWN'}"
+
+        # ── Propositions ──
+        if not lgb_loaded:
+            self.propose(
+                ctx,
+                title="LightGBM désactivé — réactivation planifiée",
+                description="Le pipeline LightGBM est down. Planifier une réactivation après 500 trades propres avec re-calibration sur les données réelles. Activer d'abord le mode collecte de features.",
+                priority="LOW",
+                impact="Amélioration potentielle du Win Rate de +3-5%",
+                effort="ÉLEVÉ",
+                rationale="LightGBM peut améliorer la sélection de signaux mais nécessite des données non contaminées.",
+                proposal_type="optimization",
+            )
+        if not meta_active:
+            self.propose(
+                ctx,
+                title="Meta-Learner désactivé — diagnostic nécessaire",
+                description="Le Meta-Learner n'est pas actif. Vérifier le fichier meta_learner.json et la calibration des 3 trackers. Proposer une réinitialisation des poids si le déséquilibre persiste.",
+                priority="MEDIUM",
+                impact="Meilleure allocation entre les stratégies MOM20x3 et les prédicteurs ML",
+                effort="MOYEN",
+                rationale="Meta-Learner = arbitrage intelligent entre les signaux. Son absence réduit l'edge.",
+                proposal_type="fix",
+            )
+
         return {"level": level, "message": msg, "data": {"lgb": lgb_loaded, "meta": meta_active}}
 
 
 class QuantAuditorAgent(Agent):
-    """Quant Auditor — toutes les 3600s, valide les performances."""
+    """Quant Auditor — toutes les 3600s, valide les performances et propose des ajustements."""
 
     def __init__(self):
         super().__init__("QUANT_AUDITOR", interval_s=3600, description="Validation statistique")
@@ -367,9 +539,14 @@ class QuantAuditorAgent(Agent):
         rolling = ph.get("rolling", {})
         alerts = []
         level = "GREEN"
+        worst_pf = 1.0
+        worst_window = ""
         for window, data in rolling.items():
             pf = data.get("pf", 1.0)
             wr = data.get("wr", 0.5)
+            if pf < worst_pf:
+                worst_pf = pf
+                worst_window = window
             if pf < 1.0:
                 alerts.append(f"{window}: PF={pf:.2f}<1.0")
                 level = "RED"
@@ -379,12 +556,38 @@ class QuantAuditorAgent(Agent):
             if wr and wr < 0.40:
                 alerts.append(f"{window}: WR={wr:.1%}")
                 level = "RED"
+
+        # ── Propositions ──
+        if worst_pf < 1.0:
+            self.propose(
+                ctx,
+                title=f"Profit Factor {worst_pf:.2f} sur {worst_window} — réduction de risque recommandée",
+                description=f"Le PF sur {worst_window} trades est de {worst_pf:.2f} (sous le seuil de 1.0). Proposer de réduire risk_mult de 30% et de désactiver temporairement les symboles les moins performants jusqu'à retour à PF>1.2.",
+                priority="CRITICAL",
+                impact="Évite un drawdown prolongé et préserve le capital FTMO",
+                effort="FAIBLE",
+                rationale=f"PF={worst_pf:.2f} < 1.0 sur {worst_window} trades = système en perte nette. Action immédiate requise.",
+                proposal_type="risk_control",
+            )
+        elif worst_pf < 1.2:
+            self.propose(
+                ctx,
+                title=f"Profit Factor {worst_pf:.2f} sur {worst_window} — surveiller la tendance",
+                description=f"PF à {worst_pf:.2f} sur {worst_window} trades. Surveiller l'évolution sur les 50 prochains trades. Si la tendance se dégrade, réduire le risque de 15%.",
+                priority="MEDIUM",
+                impact="Maintient le PF au-dessus de 1.2",
+                effort="FAIBLE",
+                rationale=f"PF={worst_pf:.2f} < 1.2 = système en zone de fragilité statistique.",
+                proposal_type="monitoring",
+            )
+
         msg = ", ".join(alerts) if alerts else "Tout vert"
-        return {"level": level, "message": msg, "data": {"rolling": rolling}}
+        return {"level": level, "message": msg, "data": {"rolling": rolling, "worst_pf": worst_pf}}
 
 
 class OptimizerAgent(Agent):
-    """Optimizer — toutes les 86400s (24h), tendances performance."""
+    """Optimizer — toutes les 86400s (24h), tendances performance.
+    Force de proposition : suggère des optimisations paramétriques concrètes."""
 
     def __init__(self):
         super().__init__("OPTIMIZER", interval_s=86400, description="Analyse performance hebdo")
@@ -404,6 +607,18 @@ class OptimizerAgent(Agent):
                 pnl = float(pnl.replace("$", ""))
             except ValueError:
                 pnl = 0.0
+        dd = ftmo.get("dd_from_peak", 0)
+        if isinstance(dd, str):
+            try:
+                dd = float(dd.strip("%"))
+            except ValueError:
+                dd = 0.0
+        profit_progress = ftmo.get("profit_progress", "0%")
+        if isinstance(profit_progress, str):
+            try:
+                profit_progress = float(profit_progress.strip("%"))
+            except ValueError:
+                profit_progress = 0.0
 
         level = "GREEN"
         if win_rate < 45:
@@ -411,12 +626,53 @@ class OptimizerAgent(Agent):
         elif win_rate < 50:
             level = "ORANGE"
 
+        # ── Propositions d'optimisation ──
+        # 1. Si WR bas mais PnL positif → ajuster les seuils de take-profit
+        if win_rate < 50 and pnl > 0:
+            self.propose(
+                ctx,
+                title=f"WR={win_rate:.0f}% bas mais PnL positif — augmenter le ratio RR cible",
+                description=f"WR de {win_rate:.0f}% avec PnL de +${pnl:.0f} suggère que les trades gagnants compensent largement les perdants. Proposer d'augmenter le ratio RR minimum à 2.5 et d'élargir les take-profit de 0.5×ATR pour capturer plus de mouvement.",
+                priority="MEDIUM",
+                impact=f"Peut améliorer le PnL de +15-25% et faire passer le WR à >55%",
+                effort="MOYEN",
+                rationale=f"WR={win_rate:.0f}% < 50% mais PnL positif = les gros trades gagnants portent le système. Optimiser le TP peut décupler cet avantage.",
+                proposal_type="optimization",
+            )
+
+        # 2. Si DD > 3% → proposer ajustement trailing
+        if dd > 3.0:
+            self.propose(
+                ctx,
+                title=f"Drawdown {dd:.1f}% — renforcer le trailing stop",
+                description=f"Le drawdown atteint {dd:.1f}% du peak. Proposer de réduire les intervalles de trailing (passer de 0.50/0.35/0.20/0.10 à 0.40/0.25/0.15/0.08 ×ATR) pour verrouiller les gains plus tôt.",
+                priority="HIGH" if dd > 5.0 else "MEDIUM",
+                impact=f"Limite le DD maximum à {min(dd + 1, 8):.0f}% au lieu de {dd + 5:.0f}% potentiel",
+                effort="FAIBLE",
+                rationale=f"DD={dd:.1f}% en hausse, le trailing actuel est trop large pour le régime en cours.",
+                proposal_type="parameter_tuning",
+            )
+
+        # 3. Si profit_progress < 1% après 10 jours → proposer augmentation risque
+        if profit_progress < 1.0 and total_trades > 50:
+            self.propose(
+                ctx,
+                title=f"Progression {profit_progress:.1f}% seulement — augmenter le risque contrôlé",
+                description=f"Seulement {profit_progress:.1f}% de progression après {total_trades} trades. Avec un DD de {dd:.1f}% et WR de {win_rate:.0f}%, proposer d'augmenter RISK_PER_TRADE de 0.004 à 0.005 (+25%) sur les symboles les plus performants uniquement.",
+                priority="MEDIUM",
+                impact=f"Augmente la progression mensuelle de {profit_progress:.0f}% à {profit_progress * 1.25:.0f}%",
+                effort="FAIBLE",
+                rationale=f"Progression trop lente pour atteindre le target FTMO dans les délais. Marge de sécurité suffisante (DD={dd:.1f}%).",
+                proposal_type="parameter_tuning",
+            )
+
         msg = f"{total_trades} trades, WR={win_rate:.1f}%, PnL={pnl:+.2f}"
-        return {"level": level, "message": msg, "data": {"trades": total_trades, "wr": win_rate, "pnl": pnl}}
+        return {"level": level, "message": msg, "data": {"trades": total_trades, "wr": win_rate, "pnl": pnl, "dd": dd}}
 
 
 class AutoFixerAgent(Agent):
-    """Auto Fixer — toutes les 60s, détecte et diagnostique les erreurs."""
+    """Auto Fixer — toutes les 60s, détecte et diagnostique les erreurs.
+    Force de proposition : suggère des correctifs concrets."""
 
     def __init__(self):
         super().__init__("AUTO_FIXER", interval_s=60, description="Détection et diagnostic bugs")
@@ -443,8 +699,18 @@ class AutoFixerAgent(Agent):
         level = "RED" if any(c > 5 for c in error_types.values()) else "ORANGE"
         msg = f"Erreurs: {error_types}"
 
-        # Poster un message si erreurs MT5 récurrentes
+        # ── Propositions de correction ──
         if error_types.get("MT5_CONNECT", 0) >= 3:
+            self.propose(
+                ctx,
+                title=f"MT5_CONNECT : {error_types['MT5_CONNECT']} erreurs — reconnexion forcée recommandée",
+                description=f"{error_types['MT5_CONNECT']} erreurs de connexion MT5 détectées. Proposer un redémarrage de la connexion MT5 avec timeout=60000ms et réinitialisation du terminal via MT5Terminal.exe.",
+                priority="CRITICAL",
+                impact="Rétablit la connexion MT5 et évite les trades manqués",
+                effort="MOYEN",
+                rationale=f"{error_types['MT5_CONNECT']} échecs de connexion MT5 = risque de trading à l'aveugle ou de positions non surveillées.",
+                proposal_type="fix",
+            )
             self.post_message(
                 ctx,
                 "SYSTEM_MONITOR",
@@ -452,12 +718,37 @@ class AutoFixerAgent(Agent):
                 "WARNING",
             )
 
+        if error_types.get("ORDER_REJECT", 0) >= 3:
+            self.propose(
+                ctx,
+                title=f"Ordres rejetés ×{error_types['ORDER_REJECT']} — vérifier les paramètres de trading",
+                description=f"{error_types['ORDER_REJECT']} ordres rejetés. Causes possibles : spread trop large, lots trop petits, symole non tradable. Proposer d'augmenter MAX_SPREAD_POINTS et vérifier les horaires de trading de chaque symbole.",
+                priority="HIGH",
+                impact="Élimine les rejets d'ordres qui consomment des cycles CPU inutilement",
+                effort="FAIBLE",
+                rationale=f"{error_types['ORDER_REJECT']} rejets = paramètres inadaptés au marché actuel.",
+                proposal_type="fix",
+            )
+
+        if error_types.get("EXCEPTION", 0) >= 3:
+            self.propose(
+                ctx,
+                title=f"Exceptions Python ×{error_types['EXCEPTION']} — ajouter des guards",
+                description=f"{error_types['EXCEPTION']} exceptions Python non gérées. Analyser les stack traces complètes et ajouter des try/except spécifiques autour des appels MT5 et des calculs numpy/pandas.",
+                priority="HIGH",
+                impact="Élimine les crashes silencieux et stabilise le robot",
+                effort="MOYEN",
+                rationale=f"{error_types['EXCEPTION']} exceptions = code fragile qui peut planter à tout moment.",
+                proposal_type="fix",
+            )
+
         return {"level": level, "message": msg, "data": error_types}
 
 
 class KillSwitchAgent(Agent):
     """Kill Switch — toutes les 15s, arrêt d'urgence.
-    Peut être déclenché par les autres agents via le council_board."""
+    Peut être déclenché par les autres agents via le council_board.
+    Force de proposition : suggère des mesures préventives avant l'urgence."""
 
     def __init__(self):
         super().__init__("KILL_SWITCH", interval_s=15, description="Arrêt d'urgence")
@@ -499,6 +790,30 @@ class KillSwitchAgent(Agent):
                     "data": {"action": "KILL", "source": msg.get("from")},
                 }
 
+        # ── Propositions préventives ──
+        if dd > 7.0:
+            self.propose(
+                ctx,
+                title=f"DD={dd:.1f}% proche du seuil critique — réduire positions agressivement",
+                description=f"DD à {dd:.1f}% (seuil d'arrêt à 9.5%). Proposer de fermer 50% des positions les moins performantes et de passer en mode survie (risk_mult ×0.3) jusqu'à retour sous 5%.",
+                priority="CRITICAL",
+                impact="Évite l'arrêt automatique et préserve le challenge FTMO",
+                effort="FAIBLE",
+                rationale=f"DD={dd:.1f}% > 7%, seuil d'arrêt à 9.5%. Marge de sécurité insuffisante pour absorber un choc.",
+                proposal_type="risk_control",
+            )
+        elif dd > 5.0:
+            self.propose(
+                ctx,
+                title=f"DD={dd:.1f}% en zone orange — plan de contingence",
+                description=f"DD à {dd:.1f}%. Activer le plan de contingence : réduire le risque de 30%, n'ouvrir que des trades avec RR>3.0, désactiver les symboles les plus volatils.",
+                priority="HIGH",
+                impact="Maintient le DD sous 7% et évite la zone rouge",
+                effort="FAIBLE",
+                rationale=f"DD={dd:.1f}% en zone orange, anticiper plutôt que subir.",
+                proposal_type="risk_control",
+            )
+
         return {"level": "GREEN", "message": "Standing by", "data": {}}
 
 
@@ -523,9 +838,9 @@ class DataManagerAgent(Agent):
         # 2. Intégrité des fichiers Parquet
         parquet_dir = BASE / "data" / "historical"
         parquet_files: list = []
+        stale_count = 0
         if parquet_dir.exists():
             parquet_files = list(parquet_dir.glob("*.parquet"))
-            stale_count = 0
             now = time.time()
             for f in parquet_files:
                 age_days = (now - f.stat().st_mtime) / 86400
@@ -536,23 +851,63 @@ class DataManagerAgent(Agent):
                 level = max(level, "ORANGE")
 
         # 3. Taille des fichiers runtime
+        large_files = []
         if RUNTIME.exists():
             for f in RUNTIME.glob("*.json"):
                 size_mb = f.stat().st_size / (1024 * 1024)
                 if size_mb > 10:
+                    large_files.append(f.name)
                     alerts.append(f"RUNTIME_FILE_LARGE: {f.name}={size_mb:.1f}MB")
                     level = max(level, "ORANGE")
+
+        # ── Propositions ──
+        if log_age > 180:
+            self.propose(
+                ctx,
+                title=f"Logs figés depuis {log_age:.0f}s — vérifier le heartbeat du robot",
+                description=f"Les logs n'ont pas été mis à jour depuis {log_age:.0f} secondes. Activer un heartbeat forcé toutes les 30s et une alerte immédiate si >60s sans écriture.",
+                priority="CRITICAL" if log_age > 300 else "HIGH",
+                impact="Détecte les arrêts du robot en <60s au lieu de minutes",
+                effort="FAIBLE",
+                rationale=f"Logs figés depuis {log_age:.0f}s = robot probablement bloqué ou crashé.",
+                proposal_type="monitoring",
+            )
+
+        if stale_count > 5:
+            self.propose(
+                ctx,
+                title=f"{stale_count} fichiers Parquet obsolètes — rafraîchir les données historiques",
+                description=f"{stale_count} fichiers de données historiques ont plus de 30 jours. Lancer un téléchargement MT5 pour mettre à jour les données H1/H4/D1 des 15 symboles.",
+                priority="LOW",
+                impact="Améliore la qualité des backtests et de la détection de régime",
+                effort="MOYEN",
+                rationale=f"{stale_count} fichiers > 30 jours = données historiques potentiellement dépassées pour l'analyse de régime.",
+                proposal_type="optimization",
+            )
+
+        if large_files:
+            self.propose(
+                ctx,
+                title=f"Fichiers runtime volumineux ({', '.join(large_files)}) — rotation nécessaire",
+                description=f"Les fichiers runtime suivants dépassent 10MB : {', '.join(large_files)}. Mettre en place une rotation automatique (conserver 7 jours, supprimer les plus anciens).",
+                priority="MEDIUM",
+                impact="Libère de l'espace disque et accélère les lectures/écritures JSON",
+                effort="FAIBLE",
+                rationale=f"Fichiers runtime > 10MB = lectures/écritures JSON ralenties et risque de corruption.",
+                proposal_type="monitoring",
+            )
 
         msg = ", ".join(alerts) if alerts else "Données OK"
         return {
             "level": level,
             "message": msg,
-            "data": {"parquet_count": len(parquet_files) if parquet_dir.exists() else 0},
+            "data": {"parquet_count": len(parquet_files) if parquet_dir.exists() else 0, "stale_count": stale_count},
         }
 
 
 class PerformanceEngineerAgent(Agent):
-    """Performance Engineer — toutes les 300s, mesure cycle time, mémoire, logs, uptime."""
+    """Performance Engineer — toutes les 300s, mesure cycle time, mémoire, logs, uptime.
+    Force de proposition : suggère des optimisations de performance concrètes."""
 
     def __init__(self):
         super().__init__("PERFORMANCE_ENGINEER", interval_s=300, description="Performance et stabilité")
@@ -573,6 +928,7 @@ class PerformanceEngineerAgent(Agent):
         if len(self._memory_samples) > 60:
             self._memory_samples.pop(0)
 
+        has_mem_leak = False
         if mem > 2000:
             alerts.append(f"MEM={mem:.0f}MB > 2000")
             level = "RED"
@@ -584,6 +940,7 @@ class PerformanceEngineerAgent(Agent):
             if growth_pct > 50:
                 alerts.append(f"MEM_LEAK: +{growth_pct:.0f}% depuis baseline ({self._baseline_memory:.0f}MB)")
                 level = "ORANGE"
+                has_mem_leak = True
 
         # 2. Taille des logs
         total_log_mb = 0.0
@@ -609,11 +966,50 @@ class PerformanceEngineerAgent(Agent):
             level = "RED"
 
         # 4. Tendance mémoire
+        mem_drift = False
         if len(self._memory_samples) >= 10:
             recent = self._memory_samples[-10:]
             if recent[-1] > recent[0] * 1.1 and recent[-1] - recent[0] > 50:
                 alerts.append(f"MEM_DRIFT: +{(recent[-1] - recent[0]) / recent[0] * 100:.0f}% sur 10 échantillons")
                 level = max(level, "ORANGE")
+                mem_drift = True
+
+        # ── Propositions ──
+        if has_mem_leak or mem_drift:
+            self.propose(
+                ctx,
+                title=f"Fuite mémoire détectée — diagnostic GC/python requis",
+                description=f"La mémoire du daemon augmente de façon anormale (baseline={self._baseline_memory:.0f}MB, actuel={mem:.0f}MB). Vérifier les références circulaires, les callbacks non libérés, et les fichiers JSON qui s'accumulent. Ajouter gc.collect() tous les 100 cycles.",
+                priority="HIGH",
+                impact=f"Stabilise la mémoire à {self._baseline_memory:.0f}MB et évite le OOM",
+                effort="MOYEN",
+                rationale=f"MEM drift de +{(mem / self._baseline_memory - 1) * 100:.0f}% = fuite probable. Risque de crash mémoire dans les prochaines heures.",
+                proposal_type="fix",
+            )
+
+        if total_log_mb > 500:
+            self.propose(
+                ctx,
+                title=f"Logs volumineux ({total_log_mb:.0f}MB) — rotation urgente",
+                description=f"Les logs occupent {total_log_mb:.0f}MB. Mettre en place une rotation quotidienne avec compression gzip, conserver 7 jours max, et réduire le niveau de log de DEBUG à INFO pour les modules les plus bavards (feature_pipeline, strategy).",
+                priority="HIGH" if total_log_mb > 1000 else "MEDIUM",
+                impact=f"Réduit l'espace disque logs de {total_log_mb:.0f}MB à <100MB",
+                effort="FAIBLE",
+                rationale=f"{total_log_mb:.0f}MB de logs = espace disque gaspillé et lectures ralenties.",
+                proposal_type="monitoring",
+            )
+
+        if not pid:
+            self.propose(
+                ctx,
+                title="Robot arrêté — redémarrage immédiat recommandé",
+                description="Le robot n'est pas en cours d'exécution (PID manquant). Lancer un redémarrage immédiat et activer le monitoring heartbeat toutes les 15s.",
+                priority="CRITICAL",
+                impact="Rétablit le trading et évite les opportunités manquées",
+                effort="FAIBLE",
+                rationale="Robot down = pas de trading = perte d'opportunités et risque de positions orphelines.",
+                proposal_type="fix",
+            )
 
         msg = ", ".join(alerts) if alerts else f"OK (mem={data.get('memory_mb', 0)}MB, logs={data.get('logs_mb', 0)}MB)"
         return {"level": level, "message": msg, "data": data}
@@ -631,6 +1027,7 @@ class AgentDaemon:
         self.robot_process: subprocess.Popen | None = None
         self.agent_verdicts: dict[str, dict] = {}  # inter-agent communication
         self.council_board: list[dict] = []  # message board between agents
+        self.proposal_board: list[dict] = []  # proposal board — force de proposition
         self.agents: list[Agent] = [
             CIOAgent(),
             RiskComplianceAgent(),
@@ -647,6 +1044,7 @@ class AgentDaemon:
         self.cycle_count = 0
         self.last_heartbeat = 0.0
         self.robot_start_attempts = 0
+        self._load_proposals()
 
     # ── Gestion du robot sous-processus ──
 
@@ -676,21 +1074,81 @@ class AgentDaemon:
             logger.error(f"ÉCHEC démarrage robot: {e}")
             self.robot_process = None
 
+    def _close_mt5_positions(self):
+        """Ferme toutes les positions MT5 du robot directement.
+        Utilisé en dernier recours quand le robot ne répond plus."""
+        try:
+            import MetaTrader5 as _mt5
+            import config_simple as _cfg
+
+            if not _mt5.initialize(timeout=5000, portable=True):
+                logger.error("[KILL] Impossible d'initialiser MT5 pour fermeture positions")
+                return
+
+            magic = _cfg.ROBOT_MAGIC
+            positions = _mt5.positions_get()
+            if positions is None:
+                logger.warning("[KILL] Aucune position MT5 trouvée")
+                _mt5.shutdown()
+                return
+
+            closed = 0
+            for pos in positions:
+                if pos.magic != magic:
+                    continue
+                close_type = _mt5.ORDER_TYPE_BUY if pos.type == 0 else _mt5.ORDER_TYPE_SELL
+                tick = _mt5.symbol_info_tick(pos.symbol)
+                if tick is None:
+                    logger.error(f"[KILL] Tick indisponible pour {pos.symbol} — fermeture impossible")
+                    continue
+                price = tick.ask if close_type == _mt5.ORDER_TYPE_BUY else tick.bid
+                req = {
+                    "action": _mt5.TRADE_ACTION_DEAL,
+                    "symbol": pos.symbol,
+                    "volume": pos.volume,
+                    "type": close_type,
+                    "position": pos.ticket,
+                    "price": price,
+                    "deviation": 100,
+                    "magic": magic,
+                    "comment": "KILL_SWITCH",
+                    "type_time": _mt5.ORDER_TIME_GTC,
+                    "type_filling": _mt5.ORDER_FILLING_IOC,
+                }
+                result = _mt5.order_send(req)
+                if result and result.retcode == 10009:
+                    logger.info(f"[KILL] #{pos.ticket} {pos.symbol} fermée OK")
+                    closed += 1
+                else:
+                    retcode = result.retcode if result else "NO_RESULT"
+                    logger.error(f"[KILL] Échec fermeture #{pos.ticket} {pos.symbol}: retcode={retcode}")
+
+            logger.info(f"[KILL] {closed} position(s) fermée(s) avant arrêt robot")
+            _mt5.shutdown()
+        except Exception as e:
+            logger.error(f"[KILL] Erreur fermeture positions MT5: {e}")
+
     def stop_robot(self):
-        """Arrête le robot proprement."""
+        """Arrête le robot proprement — ferme d'abord les positions MT5."""
+        # 1. Fermer les positions MT5 directement (même si le robot ne répond plus)
+        logger.info("[STOP] Fermeture des positions MT5 avant arrêt...")
+        self._close_mt5_positions()
+
+        # 2. Tuer le processus robot
         if self.robot_process and self.robot_process.poll() is None:
             pid = self.robot_process.pid
-            logger.info(f"Arrêt du robot PID {pid}...")
+            logger.info(f"[STOP] Arrêt du robot PID {pid}...")
             self.robot_process.terminate()
             try:
                 self.robot_process.wait(timeout=10)
-                logger.info(f"Robot PID {pid} arrêté")
+                logger.info(f"[STOP] Robot PID {pid} arrêté")
             except subprocess.TimeoutExpired:
-                logger.warning(f"Robot PID {pid} ne répond pas — kill")
+                logger.warning(f"[STOP] Robot PID {pid} ne répond pas — kill")
                 self.robot_process.kill()
                 self.robot_process.wait(timeout=5)
         self.robot_process = None
-        # Nettoyer le PID file
+
+        # 3. Nettoyer le PID file
         if ROBOT_PID_FILE.exists():
             ROBOT_PID_FILE.unlink()
 
@@ -748,6 +1206,39 @@ class AgentDaemon:
         except Exception:
             pass
         return {}
+
+    # ── Persistance des propositions ──
+
+    PROPOSAL_FILE = RUNTIME / "council_proposals.json"
+
+    def _load_proposals(self):
+        """Charge les propositions existantes depuis le fichier."""
+        try:
+            if self.PROPOSAL_FILE.exists():
+                data = json.loads(self.PROPOSAL_FILE.read_text(encoding="utf-8"))
+                self.proposal_board = data.get("proposals", [])
+                logger.info(f"📋 {len(self.proposal_board)} propositions chargées")
+        except Exception as e:
+            logger.debug(f"Erreur chargement propositions: {e}")
+            self.proposal_board = []
+
+    def _save_proposals(self):
+        """Sauvegarde les propositions dans le fichier."""
+        try:
+            # Nettoyer les _timestamp_s (interne, non sérialisable)
+            clean = []
+            for p in self.proposal_board:
+                entry = {k: v for k, v in p.items() if k != "_timestamp_s"}
+                clean.append(entry)
+            data = {
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "total_proposals": len(clean),
+                "open_count": sum(1 for p in clean if p.get("status") == "OPEN"),
+                "proposals": clean,
+            }
+            self.PROPOSAL_FILE.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
+        except Exception as e:
+            logger.error(f"Erreur sauvegarde propositions: {e}")
 
     def read_performance_history(self) -> dict:
         try:
@@ -944,6 +1435,8 @@ class AgentDaemon:
                 # ── Inter-agent communication ──
                 "agent_verdicts": dict(self.agent_verdicts),
                 "council_board": self.council_board,
+                # ── Proposal board : force de proposition ──
+                "proposal_board": self.proposal_board,
             }
             ctx["log_errors_100"] = self.count_log_errors(ctx["log_tail"])
 
@@ -962,13 +1455,39 @@ class AgentDaemon:
                 else:
                     results.append({"level": agent.last_verdict, "message": "", "data": {}})
 
+            # ── Vérifier si un agent a déclenché un KILL (bug C1 fix) ──
+            for agent, result in zip(self.agents, results):
+                if result.get("data", {}).get("action") == "KILL":
+                    logger.critical(
+                        f"🚨 KILL SWITCH DECLENCHÉ par {agent.name}: "
+                        f"{result['data'].get('message', '')}"
+                    )
+                    # Fermer positions + tuer robot + sortir
+                    self.stop_robot()
+                    self.running = False
+                    break
+
+            if not self.running:
+                break
+
             # ── Sauvegarder et logger ──
             self.save_status(results)
             self.log_council(results)
+            self._save_proposals()  # ← Persistance des propositions
 
             # ── Nettoyer le board des vieux messages (garder les 50 derniers) ──
             if len(self.council_board) > 100:
                 self.council_board = self.council_board[-50:]
+
+            # ── Nettoyer le proposal_board des propositions obsolètes (>14 jours) ──
+            if len(self.proposal_board) > 200:
+                now = time.time()
+                fresh = [
+                    p
+                    for p in self.proposal_board
+                    if p.get("status") == "OPEN" or (now - p.get("_timestamp_s", 0)) < 14 * 86400
+                ]
+                self.proposal_board = fresh[-100:]  # garder max 100 récentes
 
             # ── Logger les résultats ──
             reds = [r for r in results if r["level"] == "RED"]
@@ -1036,6 +1555,63 @@ def show_status():
         print("\nPID file absent — daemon arrêté")
 
 
+def show_proposals():
+    """Affiche toutes les propositions en cours du council."""
+    prop_file = RUNTIME / "council_proposals.json"
+    if not prop_file.exists():
+        print("📋 Aucune proposition — le daemon n'a pas encore tourné avec le nouveau système.")
+        print("   Redémarrez le daemon pour activer le système de propositions.")
+        return
+
+    data = json.loads(prop_file.read_text(encoding="utf-8"))
+    proposals = data.get("proposals", [])
+    print(f"\n╔══════════════════════════════════════════════════════════╗")
+    print(f"║    C O U N C I L   —   F O R C E   D E   P R O P O S I T I O N  ║")
+    print(f"╚══════════════════════════════════════════════════════════╝")
+    print(f"  Total: {data.get('total_proposals', 0)} | Ouvertes: {data.get('open_count', 0)}")
+    print(f"  Dernière mise à jour: {data.get('timestamp', 'N/A')}")
+    print()
+
+    # Filtrer par statut
+    open_props = [p for p in proposals if p.get("status") == "OPEN"]
+    other_props = [p for p in proposals if p.get("status") != "OPEN"]
+
+    if open_props:
+        print(f"─── PROPOSITIONS ACTIVES ({len(open_props)}) ───")
+        print()
+        priority_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
+        open_props.sort(key=lambda p: priority_order.get(p.get("priority", "MEDIUM"), 99))
+        for i, p in enumerate(open_props, 1):
+            icon = {"CRITICAL": "🔴", "HIGH": "🟠", "MEDIUM": "🟡", "LOW": "⚪"}.get(p.get("priority", "MEDIUM"), "⚪")
+            print(f"  {icon} #{i} [{p['priority']}] {p['title']}")
+            print(
+                f"     Agent: {p.get('agent', '?')}  |  Type: {p.get('type', '?')}  |  Effort: {p.get('effort', '?')}"
+            )
+            print(f"     ID: {p.get('id', '?')}")
+            print(f"     {p.get('description', '')}")
+            if p.get("impact"):
+                print(f"     → Impact: {p['impact']}")
+            if p.get("rationale"):
+                print(f"     → Raison: {p['rationale']}")
+            print()
+
+    if other_props:
+        print(f"─── HISTORIQUE ({len(other_props)} fermées/obsolètes) ───")
+        for p in other_props[-5:]:
+            print(f"  [{p.get('status', '?')}] {p.get('title')} — {p.get('agent')}")
+        print()
+
+    # Résumé par agent
+    print(f"─── RÉSUMÉ PAR AGENT ───")
+    by_agent: dict[str, list] = {}
+    for p in proposals:
+        by_agent.setdefault(p.get("agent", "?"), []).append(p)
+    for agent, props in sorted(by_agent.items()):
+        open_ct = sum(1 for p in props if p.get("status") == "OPEN")
+        total_ct = len(props)
+        print(f"  {agent}: {open_ct} ouvertes / {total_ct} total")
+
+
 def stop_daemon():
     """Arrête le daemon + robot proprement."""
     if PID_FILE.exists():
@@ -1053,7 +1629,9 @@ def stop_daemon():
 
 
 if __name__ == "__main__":
-    if "--status" in sys.argv:
+    if "--proposals" in sys.argv:
+        show_proposals()
+    elif "--status" in sys.argv:
         show_status()
     elif "--stop" in sys.argv:
         stop_daemon()

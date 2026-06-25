@@ -76,7 +76,8 @@ class PositionManager:
                 # MOM20x3: signal parallèle (analyse seule, pas de décision)
                 from engine_simple.strategy import MOM20x3
 
-                mom = MOM20x3(rates, symbol)
+                h1_rates = rates.get("H1", []) if isinstance(rates, dict) else rates
+                mom = MOM20x3(h1_rates, symbol)
                 mom_signal = mom.analyze()
                 if mom_signal and mom_signal.get("action") not in (None, "HOLD"):
                     regime_meta = result.get("regime_meta", {})

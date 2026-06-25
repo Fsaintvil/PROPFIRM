@@ -76,6 +76,8 @@ def _acquire_mutex():
     """Acquiert un named mutex Windows. Retourne True si acquis, False sinon.
     Le mutex est automatiquement libéré par l'OS si le processus crashe."""
     global _mutex_handle
+    if _mutex_handle is not None:
+        return True  # déjà acquis par ce processus — appel ré-entrant
     if os.name != "nt":
         return True  # Pas de mutex Windows sur Linux/Mac
     try:
@@ -266,8 +268,8 @@ class FTMO_SIMPLE:
             errors.append(f"MAX_DD_PCT={cfg.MAX_DD_PCT} — doit être entre 0 et 12%")
         if cfg.MIN_RR_RATIO < 1.0:
             errors.append(f"MIN_RR_RATIO={cfg.MIN_RR_RATIO} < 1.0 — risque de non-rentabilité")
-        if cfg.MAX_POSITIONS > 50:
-            errors.append(f"MAX_POSITIONS={cfg.MAX_POSITIONS} trop élevé pour FTMO 200K (max 50 pour 8 symboles)")
+        if cfg.MAX_POSITIONS > 100:
+            errors.append(f"MAX_POSITIONS={cfg.MAX_POSITIONS} trop élevé (max 100 pour Mode MAX)")
         if cfg.RISK_PER_TRADE <= 0 or cfg.RISK_PER_TRADE > 0.02:
             errors.append(f"RISK_PER_TRADE={cfg.RISK_PER_TRADE} — doit être entre 0.001 et 0.02")
         if errors:
@@ -328,7 +330,11 @@ class FTMO_SIMPLE:
         self._stop_trading = False  # Désactivé — mode production continue (sans arret)
         # MOM20x3 pur — strategy.py est l'unique source de signaux
         self.signals = None  # interface conservée pour compatibilité
-        self.adaptive = AdaptiveEngine(self.mt5, calibration_path="runtime/ol_state.json")
+        # ⚠️ calibration_path DOIT être différent de OnlineLearner.STATE_FILENAME ("runtime/ol_state.json")
+        # pour éviter que _save_calibration() et OnlineLearner.save_state() s'écrasent mutuellement
+        # (l'une écrit "online_history", l'autre écrit "history" — clés incompatibles).
+        # Voir: adaptive_intelligence.py:OnlineLearner.STATE_FILENAME
+        self.adaptive = AdaptiveEngine(self.mt5, calibration_path="runtime/calibration_state.json")
 
         # PHASE 2.2: MetaLearner intégré dans AdaptiveEngine
         # (instance self.adaptive.meta créée dans AdaptiveEngine.__init__)
@@ -515,6 +521,7 @@ class FTMO_SIMPLE:
                             "symbol": sym,
                             "profit": t.get("profit", 0),
                             "time": time_val,
+                            "historical": t.get("historical", False),
                         }
                     )
                 except (ValueError, TypeError):
@@ -548,11 +555,21 @@ class FTMO_SIMPLE:
         if hasattr(self, "ftmo") and self.ftmo._trade_history:
             self.ftmo.trading_days.clear()
             self.ftmo.daily_pnl_by_date.clear()
+            historical_count = 0
+            age_skipped = 0
+            now = datetime.utcnow()
             for t in self.ftmo._trade_history:
+                if t.get("historical"):
+                    historical_count += 1
+                    continue
                 try:
                     time_val = t.get("time")
                     if isinstance(time_val, datetime):
                         d = time_val.date()
+                        # Skip trades > 48h old (imported from MT5 history without flag)
+                        if (now - time_val).total_seconds() > 48 * 3600:
+                            age_skipped += 1
+                            continue
                     elif isinstance(time_val, str):
                         d = datetime.fromisoformat(time_val).date()
                     else:
@@ -563,7 +580,8 @@ class FTMO_SIMPLE:
                     pass
             logger.info(
                 f"[STATE] Reconstruit {len(self.ftmo.trading_days)} jours trading, "
-                f"{len(self.ftmo.daily_pnl_by_date)} daily_pnl depuis trade_history"
+                f"{len(self.ftmo.daily_pnl_by_date)} daily_pnl depuis trade_history "
+                f"(filtrés {historical_count} historiques + {age_skipped} âgés)"
             )
             # Recalculer la règle de consistance FTMO à partir des daily_pnl_by_date reconstruits
             self.ftmo._check_consistency()
@@ -841,6 +859,12 @@ class FTMO_SIMPLE:
     def stop(self):
         self.running = False
         self._save_state()
+        # Fermer toutes les positions MT5 avant de déconnecter (bug C2 fix)
+        try:
+            logger.info("[STOP] Fermeture de toutes les positions MT5...")
+            self.mt5.close_all_positions(magic=cfg.ROBOT_MAGIC)
+        except Exception as e:
+            logger.error(f"[STOP] Erreur fermeture positions: {e}")
         if hasattr(self, "audit"):
             self.audit.log_state_change("robot_stop", "running", "stopped")
             self.audit.close()

@@ -82,7 +82,10 @@ class Trailer:
             prev_close = np.roll(close, 1)
             prev_close[0] = close[0]
             tr = np.maximum(high - low, np.maximum(np.abs(high - prev_close), np.abs(low - prev_close)))
-            val = float(tr[-period:].mean())
+            # Wilder smoothing (au lieu de SMA) — aligné avec indicators.py:210-212
+            val = float(np.mean(tr[:period]))  # initialisation SMA
+            for i in range(period, len(tr)):
+                val = (val * (period - 1) + tr[i]) / period
             self._atr_cache[symbol] = (val, now)
             return val
         except Exception as e:

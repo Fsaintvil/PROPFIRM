@@ -51,7 +51,8 @@ class MarketRegime:
             try:
                 _ms = analyze_market_structure(highs, lows, closes)
                 structure_trend = _ms.get("trend", "unknown")
-            except Exception:
+            except Exception as e:
+                logger.warning(f"  [ADAPTIVE] enrich_signal market_structure: {e}")
                 structure_trend = "unknown"
         else:
             structure_trend = "unknown"
@@ -157,7 +158,8 @@ class OnlineLearner:
                         try:
                             lock.unlink()
                             logger.info("[OnlineLearner] Lock seed nettoyé (state.json absent)")
-                        except Exception:
+                        except Exception as e:
+                            logger.warning(f"  [ADAPTIVE] _load_state seed_lock: {e}")
                             pass
                 return
             with open(path, "r", encoding="utf-8") as f:
@@ -214,7 +216,8 @@ class OnlineLearner:
         # Marquer seed comme appliqué
         try:
             lock.write_text("done")
-        except Exception:
+        except Exception as e:
+            logger.warning(f"  [ADAPTIVE] _seed_from_csv lock: {e}")
             pass
         # Persister immédiatement pour que le seed survive aux redémarrages
         try:
@@ -436,21 +439,27 @@ class AdaptiveEngine:
             # Restore OnlineLearner history
             ol = state.get("online_history", {})
 
-            # ⚠️ P0: Désactivé — l'overwrite de learner.history depuis calibration_state.json
-            # causait la perte des 145 IMPORT trades (race condition). L'OL garde son
-            # propre historique dans online_learner_state.json via _load_state().
-            # La calibration ne restaure que les adapted_params (ci-dessous).
-            # Voir: AGENTS.md → Supreme Council décision 22 Juin 2026
+            # ⚠️ Restaure l'history depuis calibration UNIQUEMENT si l'OL est vide
+            # (moins de 5 trades). Cela couvre 2 scénarios:
+            #   1. ol_state.json corrompu (écrasé par _save_calibration avec "online_history")
+            #   2. Premier démarrage après migration calibration_state.json séparé
+            # Si l'OL a déjà des trades réels, on les préserve.
+            # Voir: main.py:333 (calibration_path séparé de OnlineLearner.STATE_FILENAME)
             for sym, hist_list in ol.items():
-                if False:  # P0: préservation historique OL
-                    from engine_simple.position_tracker import _SYMBOLS_SKIP_OL_IMPORT
-
-                    if sym in _SYMBOLS_SKIP_OL_IMPORT:
-                        logger.info(f"  [CAL] Restoring {sym} from calibration (skip list ignored)")
+                current_count = len(self.learner.history.get(sym, []))
+                if current_count < 5:
+                    logger.info(
+                        f"  [CAL] Restoring {sym} history: {len(hist_list)} trades "
+                        f"from calibration (current={current_count})"
+                    )
                     self.learner.history[sym] = deque(maxlen=self.learner.window)
                     for h in hist_list:
                         self.learner.history[sym].append(h)
                     self.learner._update_params(sym)
+                else:
+                    logger.debug(
+                        f"  [CAL] {sym}: preserving {current_count} existing trades (skip calibration restore)"
+                    )
             # ⚠️ Restaurer adapted_params depuis la calibration (survit aux redémarrages)
             cal_adapted = state.get("adapted_params", {})
             if cal_adapted:
@@ -775,7 +784,8 @@ class AdaptiveEngine:
                 else:
                     adapted["score"] = max(0.30, adapted.get("score", 0.5) - 0.05)
                     adapted["confidence"] = max(0.30, adapted.get("confidence", 0.5) - 0.04)
-        except Exception:
+        except Exception as e:
+            logger.warning(f"  [ADAPTIVE] get_adapted_params session_boost: {e}")
             pass
 
         # Meta confidence boost

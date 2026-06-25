@@ -129,6 +129,41 @@ class MT5Connector:
         )
         return mt5.order_send(req)
 
+    def close_all_positions(self, magic=None):
+        """Ferme toutes les positions du bot via MT5.
+
+        Args:
+            magic: Magic number filtré (None = toutes les positions)
+        """
+        try:
+            positions = mt5.positions_get()
+        except Exception as e:
+            logger.error(f"close_all_positions: positions_get failed: {e}")
+            return
+
+        if positions is None:
+            logger.warning("close_all_positions: aucune position ou positions_get=None")
+            return
+
+        closed = 0
+        errors = 0
+        for pos in positions:
+            if magic is not None and pos.magic != magic:
+                continue
+            result = self.close_position(pos)
+            if result is None:
+                logger.error(f"close_all_positions: echec fermeture #{pos.ticket} {pos.symbol} (tick indisponible)")
+                errors += 1
+            elif result.retcode != 10009:
+                logger.error(f"close_all_positions: retcode={result.retcode} pour #{pos.ticket} {pos.symbol}")
+                errors += 1
+            else:
+                logger.info(f"close_all_positions: #{pos.ticket} {pos.symbol} {pos.volume} fermee OK")
+                closed += 1
+
+        logger.info(f"close_all_positions: {closed} fermee(s), {errors} erreur(s)")
+        return {"closed": closed, "errors": errors}
+
     def update_sl(self, position, new_sl):
         req = dict(
             action=mt5.TRADE_ACTION_SLTP,
@@ -160,7 +195,8 @@ class MT5Connector:
         for attempt in range(3):
             try:
                 mt5.shutdown()
-            except Exception:
+            except Exception as e:
+                logger.warning(f"  [MT5] reconnect shutdown: {e}")
                 pass
             import time as _time
 

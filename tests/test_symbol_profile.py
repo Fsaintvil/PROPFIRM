@@ -82,14 +82,16 @@ class TestCorrelation:
         assert get_correlation("XXX", "YYY") == 0.0
 
     def test_get_same_group(self):
-        # POSITION_GROUPS vidé volontairement (mode agressif)
+        # POSITION_GROUPS restauré (25 Juin 2026) — BTCUSD dans CRYPTO
         siblings = get_same_group("BTCUSD")
-        assert siblings == []
+        assert len(siblings) >= 1  # retourne les autres symboles du groupe CRYPTO
+        assert "ETHUSD" in siblings  # BTCUSD et ETHUSD sont dans CRYPTO
 
     def test_get_opposite_group(self):
-        # POSITION_GROUPS vidé volontairement (mode agressif)
-        opp = get_opposite_group("BTCUSD")
-        assert opp == []
+        # POSITION_GROUPS restauré (25 Juin 2026)
+        # get_opposite_group utilise other_idx=1-i — avec 4 groupes, seul le groupe à l'index 1 a un opposé
+        opp = get_opposite_group("BTCUSD")  # BTCUSD à l'index 1 (CRYPTO), other_idx=0 (FOREX_MAJORS)
+        assert len(opp) >= 1  # retourne FOREX_MAJORS
 
 
 class TestTradingHelpers:
@@ -170,8 +172,10 @@ class TestPerSymbolParameters:
                 assert start < end
 
     def test_position_group_completeness(self):
-        """POSITION_GROUPS vidé volontairement (mode agressif)."""
-        assert POSITION_GROUPS == []  # Mode agressif: pas de restriction de groupe
+        """POSITION_GROUPS restauré (25 Juin 2026 — Risk & Compliance)."""
+        assert len(POSITION_GROUPS) >= 4  # 4 groupes: FOREX_MAJORS, CRYPTO, INDICES, COMMODITIES
+        for group in POSITION_GROUPS:
+            assert len(group) >= 1  # chaque groupe a au moins 1 symbole
 
     def test_pip_factor_by_type(self):
         """Verify pip_factor by symbol type"""

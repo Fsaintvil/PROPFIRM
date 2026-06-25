@@ -1,129 +1,67 @@
 # ============================================================================
-# PRODUCTION OVERRIDES — 8 Actifs Actifs (24 Juin 2026)
+# PRODUCTION OVERRIDES — 6 Actifs Actifs (25 Juin 2026)
 # ============================================================================
-# Corrélation désactivée — tous les symboles tradent sans restriction.
-# Lots augmentés de 10% sur tous les symboles.
-# ============================================================================
+# Corrélation RÉACTIVÉE — max 3 trades/groupe, max 2/direction.
+# Paramètres FTMO-safe (RISK_PER_TRADE=0.44%, min_rr_ratio=2.0, auto_pause=8).
+# AUDUSD, US500.cash désactivés (PF < 0.8 toxiques).
 # Fusionné avec default.yaml (deep merge).
-# Seuls les champs qui surchargent default.yaml sont listés ici.
 # ============================================================================
 
-# ── Trading — Production continue (1 trade/symbole/5min) ──────────────────
+# ── Corrélation — Override production ───────────────────────────────────
+correlation:
+  enabled: true
+  max_trades_per_group: 3
+  max_trades_per_direction_in_group: 2
+
+# ── Trading — Calibré (25 Juin 2026) ────────────────────────────────────
 trading:
-  max_positions: 40             # 8 symboles × 5 positions max
-  max_positions_per_symbol: 3   # jusqu'à 3 positions par symbole
-  max_trades_per_day: 240       # 8 symboles × ~30 trades/jour
-  max_signals_per_cycle: 16     # 8 symboles
-  history_lookback_days: 3          # réduit 7→3 jours (moins de contamination historique)
+  max_positions: 20             # 6 symboles × ~4 positions max, limité par corrélation
+  max_positions_per_symbol: 4   # max 4 par symbole (aligné pipeline conf>85%)
+  max_trades_per_day: 30        # 6 symboles × ~5 trades/jour
 
-# ── Symbol Limits — Production ──────────────────────────────────────────
-# Surcharges par rapport à default.yaml
+# ── Signal ─────────────────────────────────────────────────────────────
+signal:
+  min_score: 0.55               # restauré valeur originale (avant Mode MAX 0.70)
+
+# ── Symbol Limits — Calibration FTMO-safe ────────────────────────────
 symbol_limits:
-  # XAUUSD H4 — 23 Juin 2026: WR 36.4% Phase 3, PF 0.60 → RISK RÉDUIT
   XAUUSD:
-    timeframe: "H4"           # H4 (H1 = -$187K/12ans → HORS-JEU)
-    max_lot: 0.06             # ↑ 0.05→0.06 (+10%)
-    risk_mult: 0.85           # ↑ 0.60→0.85 (WR 65.8% live justifie, recommandé par optimizer)
-    max_spread_points: 60     # élargi (était 40)
-    min_score: 0.70           # ↑ 0.63→0.70 (min global 0.70, pas d'ordre < 70% de chance)
-    adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    max_lot: 0.06               # calibré backtest
+    risk_mult: 1.10             # WR 67.7%, PF 2.04 → star
+    min_score: 0.70
 
-  # BTCUSD — RÉACTIVÉ 23 Juin 2026 (WR 32.3% Phase 3 → risk_mult réduit)
-  # Surveillance: momentum > threshold requis (ADX 20 permissif)
   BTCUSD:
-    timeframe: "H1"           # H1 — crypto 24/7
-    max_lot: 0.06             # ↑ 0.05→0.06 (+10%)
-    risk_mult: 0.30           # ↑ 0.0→0.30 (RÉACTIVÉ 23 Juin) : risque prudent, WR Phase 3 à surveiller
-    max_spread_points: 150
-    min_score: 0.70           # ↑ 0.60→0.70 (plus sélectif, >70% de chance requis)
-    adx_thresh: 20
-    allow_buys: true
-    allow_shorts: true
-    # ── Volume filter thresholds (22 Juin 2026) ──
-    # BTCUSD H1: volume crypto bursty → CMF moins sensible, OBV moins pénalisant
-    cmf_threshold: 0.20          # ↑ 0.10→0.20 (35.3% des signaux pénalisés à 0.10)
-    obv_div_penalty_high: 0.85   # ↑ 0.70→0.85 (21.2% des signaux pénalisés à 0.70)
-    obv_div_penalty_low: 0.92    # ↑ 0.85→0.92
-    max_daily_loss_pct_override: 0.015   # 1.5% daily loss (plus strict)
-    circuit_breaker_dd_pct_override: 0.06  # 6% DD → arrêt
+    max_lot: 0.06               # calibré backtest
+    risk_mult: 0.60             # WR 41.9% → risque réduit
+    min_score: 0.70
 
-  # EURUSD — Nouveau symbole (Juin 2026), DEUX DIRECTIONS
   EURUSD:
-    timeframe: "H1"           # H1 (WR 68.6% 12ans, PF 1.12, DD 3.7%)
-    max_lot: 0.22             # ↑ 0.20→0.22 (+10%)
-    risk_mult: 1.00           # ↑ 0.75→1.00 (19 Juin) : WR 80% live, PF 29.4
-    max_spread_points: 40     # serré (EURUSD très liquide)
-    min_score: 0.70           # 22 Juin: nouvelles pénalités volume (RVOL×0.75 CMF×0.85 OBV×0.70) actives
-    adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true        # DEUX DIRECTIONS — le MOM20x3 + risk management gèrent le risque
+    max_lot: 0.10
+    risk_mult: 1.00             # WR 76.6% → solide
+    min_score: 0.70
 
-  # USDJPY — RÉACTIVÉ 24 Juin 2026 (corrélation désactivée, lots +10%)
   USDJPY:
-    timeframe: "H1"
-    max_lot: 0.17               # ↑ 0.15→0.17 (+10%)
+    max_lot: 0.10
     risk_mult: 1.00
-    max_spread_points: 45
-    min_score: 0.75
-    adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    min_score: 0.70
 
-  # GBPUSD — RÉACTIVÉ 24 Juin 2026 (corrélation désactivée, lots +10%)
   GBPUSD:
-    timeframe: "H1"
-    max_lot: 0.17               # ↑ 0.15→0.17 (+10%)
-    risk_mult: 0.90
-    max_spread_points: 50
-    min_score: 0.75
-    adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
-    news_minutes_before: 20
-    news_minutes_after: 20
+    max_lot: 0.10
+    risk_mult: 1.00
+    min_score: 0.70
 
-  # AUDUSD — RÉACTIVÉ 24 Juin 2026 (corrélation désactivée, lots +10%)
-  AUDUSD:
-    timeframe: "H1"
-    max_lot: 0.13               # ↑ 0.12→0.13 (+10%)
-    risk_mult: 0.75
-    max_spread_points: 45
-    min_score: 0.75
-    adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
-
-  # USDCAD — RÉACTIVÉ 24 Juin 2026 (corrélation désactivée, lots +10%)
   USDCAD:
-    timeframe: "H1"
-    max_lot: 0.17               # ↑ 0.15→0.17 (+10%)
-    risk_mult: 0.85
-    max_spread_points: 45
-    min_score: 0.75
-    adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    max_lot: 0.10
+    risk_mult: 1.00
+    min_score: 0.70
 
-  # US500.cash H4 — RÉACTIVÉ 23 Juin 2026 (risk_mult=0.50 prudent, min_score=0.75)
-  US500.cash:
-    timeframe: "H4"
-    max_lot: 0.06             # ↑ 0.05→0.06 (+10%)
-    risk_mult: 0.50
-    max_spread_points: 40
-    min_score: 0.75
-    adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
-
-# ── Risk — Production ───────────────────────────────────────────────────
+# ── Risk — FTMO-safe (calibré 25 Juin 2026) ──────────────────────────
 risk:
-  per_trade_pct: 0.0066          # ↑ 0.6%→0.66% (+10%)
-  max_daily_loss_pct: 0.02
-  max_dd_pct: 0.10
-  min_rr_ratio: 2.0
-  cooldown_minutes: 10          # ↑ 3→10 min (recommandé Risk & Compliance)
-  auto_pause_losses: 8          # ↑ 5→8 (24 Juin, Robot Manager)
-  max_risk_amount: 1320.0        # ↑ $1,200→$1,320 (+10%)
+  per_trade_pct: 0.004          # 0.40% par trade (restauré calibré, était 0.44%)
+  max_daily_loss_pct: 0.02      # FTMO: 2% daily loss
+  max_dd_pct: 0.10              # FTMO: 10% max drawdown
+  min_rr_ratio: 2.0             # RR≥2.0 obligatoire
+  cooldown_minutes: 15          # 15 min de refroidissement
+  auto_pause_losses: 5          # 5 pertes avant pause (restauré calibré, était 8)
+  max_risk_amount: 800.0        # $800 max risque par trade (était $880)
   circuit_breaker_dd_pct: 0.08

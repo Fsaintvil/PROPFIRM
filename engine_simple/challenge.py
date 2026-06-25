@@ -5,7 +5,7 @@ Gère : record_trade_result, consistency, daily loss, drawdown, progress report.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 logger = logging.getLogger("ftmo")
 
@@ -37,7 +37,7 @@ class ChallengeTracker:
         self._daily_trades_per_symbol: dict[str, int] = {}
         self._opened_today = 0
         self._daily_profit_reduced = False
-        self.daily_pnl_by_date: dict[datetime, float] = {}  # date -> realized PnL
+        self.daily_pnl_by_date: dict[date, float] = {}  # date -> realized PnL
 
         # ── Historiques ──────────────────────────────────────────────
         self.trading_days: set = set()
@@ -79,7 +79,7 @@ class ChallengeTracker:
                 add_to_history = False
 
         if add_to_history:
-            self._trade_history.append(dict(symbol=symbol, profit=profit, time=now))
+            self._trade_history.append(dict(symbol=symbol, profit=profit, time=now, historical=historical))
         if len(self._trade_history) > 1000:
             self._trade_history[:] = self._trade_history[-1000:]
 
@@ -413,3 +413,53 @@ class ChallengeTracker:
                     )
                 except (ValueError, TypeError):
                     pass
+
+        # ── Contamination Guard ──────────────────────────────────────────
+        # Valide daily_pnl_by_date contre _trade_history (source de vérité).
+        # Les valeurs equity-PnL contaminées (ex: daily_pnl_by_date écrit avec
+        # equity-based PnL au lieu du realized PnL) sont détectées et corrigées.
+        # Voir Session Robot Manager — Juin 2026 (AGENTS.md).
+        if self._trade_history and self.daily_pnl_by_date:
+            # Reconstruire daily_pnl_by_date depuis trade_history (atomique)
+            rebuilt: dict[date, float] = {}
+            for t in self._trade_history:
+                trade_time = t.get("time")
+                if isinstance(trade_time, datetime):
+                    d = trade_time.date()
+                    rebuilt[d] = rebuilt.get(d, 0.0) + t.get("profit", 0.0)
+
+            if rebuilt:
+                # Comparer les dates communes
+                common_dates = set(self.daily_pnl_by_date.keys()) & set(rebuilt.keys())
+                discrepancies = 0
+                for d in common_dates:
+                    loaded = self.daily_pnl_by_date[d]
+                    truth = rebuilt[d]
+                    # Tolérance: 10% ou $1 (arrondis flottants)
+                    if abs(loaded - truth) > max(abs(truth) * 0.1, 1.0):
+                        discrepancies += 1
+
+                if discrepancies > 0:
+                    pct = discrepancies / len(common_dates)
+                    if pct > 0.2:  # >20% des dates communes sont divergentes → contamination
+                        logger.warning(
+                            f"[CONTAMINATION] daily_pnl_by_date: {discrepancies}/{len(common_dates)} "
+                            f"dates diffèrent de trade_history ({pct:.1%}) — "
+                            f"correction depuis trade_history"
+                        )
+                        # Corriger: utiliser rebuilt pour les dates communes
+                        for d, pnl in rebuilt.items():
+                            self.daily_pnl_by_date[d] = pnl
+                        # Signaler les dates orphelines (dans daily_pnl_by_date mais pas dans trade_history)
+                        orphan_dates = set(self.daily_pnl_by_date.keys()) - set(rebuilt.keys())
+                        if orphan_dates:
+                            logger.warning(
+                                f"[CONTAMINATION] {len(orphan_dates)} date(s) orpheline(s) "
+                                f"conservée(s) intacte(s): "
+                                f"{', '.join(str(d) for d in sorted(orphan_dates)[:5])}"
+                            )
+                    else:
+                        logger.info(
+                            f"[CONTAMINATION] {discrepancies} divergence(s) mineure(s) "
+                            f"({pct:.1%} des dates) — sous le seuil de correction, ignoré"
+                        )

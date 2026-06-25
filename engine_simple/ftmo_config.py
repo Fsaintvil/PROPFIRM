@@ -232,7 +232,8 @@ RISK_MULT_CAP = {
     "USDCAD": 1.25,
 }
 
-# Per-symbol max positions (total BUY+SELL) — EURUSD ajouté
+# Per-symbol max positions (total BUY+SELL) — calibré 25 Juin 2026
+# Aligné sur max_positions_per_symbol=4 (pipeline conf>85%→4 max)
 MAX_POS_PER_SYMBOL = {
     "XAUUSD": 4,
     "BTCUSD": 4,

@@ -1,7 +1,7 @@
 # ============================================================================
 # CONFIGURATION PRODUCTION — FTMO 200K Challenge (24 Juin 2026)
 # 8 actifs : XAUUSD (H4), BTCUSD (H1), EURUSD (H1),
-#            USDJPY (H1), GBPUSD (H1), AUDUSD (H1), USDCAD (H1), US500.cash (H4)
+#            USDJPY (H1), GBPUSD (H1), USDCAD (H1)
 # Corrélation désactivée — tous les symboles tradent sans restriction.
 # Lots augmentés de 10% sur tous les symboles.
 # Aucun paramètre identique entre deux actifs sans justification statistique.
@@ -27,15 +27,15 @@ trading:
     - EURUSD      # H1 — WR 68.6%, PF 1.12, DD 3.7% (backtest 12+ ans)
     - USDJPY      # H1 — RÉACTIVÉ 24 Juin — WR 82.1% backtest
     - GBPUSD      # H1 — RÉACTIVÉ 24 Juin — WR 80.7% backtest
-    - AUDUSD      # H1 — RÉACTIVÉ 24 Juin — WR 79.4% backtest
     - USDCAD      # H1 — RÉACTIVÉ 24 Juin — WR 80.7% backtest
-    - US500.cash  # H4 — WR 68.4% 12ans, PF 1.07 H4
+                    # AUDUSD désactivé 25 Juin (PF 0.40 toxique)
+                    # US500.cash désactivé 25 Juin (PF 0.39 toxique)
 
-  # Limites globales — 8 symboles + lots +10% (24 Juin 2026)
-  max_positions: 40             # 8 symboles x 5 positions max
-  max_positions_per_symbol: 3   # jusqu'à 3 par symbole
-  max_trades_per_day: 240       # 8 symboles x ~30 trades/jour
-  max_signals_per_cycle: 16     # marge pour signaux simultanés (8 symboles)
+  # Limites globales — 6 symboles (calibré 25 Juin 2026)
+  max_positions: 20             # 6 symboles x ~4 positions max, limité corrélation
+  max_positions_per_symbol: 4   # jusqu'à 4 par symbole (aligné pipeline conf>85%)
+  max_trades_per_day: 30        # 6 symboles x ~5 trades/jour
+  max_signals_per_cycle: 12     # marge pour signaux simultanés (6 symboles)
   max_orders_per_minute: 10     # 1 trade/min/symbole + marge
   lot_size: 0.06                # ↑ 0.05→0.06 (+10%)
   min_trade_interval_sec: 300   # 5 min minimum entre trades par symbole
@@ -47,7 +47,7 @@ trading:
 
 # ── Signal ───────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.70               # ↑ 0.60→0.70 (23 Juin) : aucun ordre exécuté avec <70% de chance
+  min_score: 0.55               # restauré valeur originale calibrée (était 0.70 Mode MAX)
   daily_profit_limit_pct: 0.008  # 0.8% profit/jour max (FTMO consistency)
 
 # ── Risque FTMO ─────────────────────────────────────────────────────────
@@ -61,17 +61,17 @@ risk:
   max_trading_days: 0            # pas de limite max
 
   # --- Risque par trade ---
-  per_trade_pct: 0.0044          # ↑ 0.4%→0.44% (+10%) : lots +10%
+  per_trade_pct: 0.004           # 0.40% par trade (restauré calibré, était 0.44%)
   short_mult: 1.0                # même risque long/short
-  max_risk_amount: 880.0         # ↑ $800→$880 (+10%) max risque par trade
+  max_risk_amount: 800.0         # $800 max risque par trade (restauré calibré, était $880)
 
   # --- Qualité ---
   min_rr_ratio: 2.0              # RR≥2.0 obligatoire (validé backtest)
   atr_multiplier: 1.5            # multiplicateur ATR pour SL
 
   # --- Cooldown ---
-  cooldown_minutes: 15          # ↑ 5→15min (22 Juin, Supreme Council) : vrai refroidissement après perte
-  auto_pause_losses: 8           # ↑ 5→8 (24 Juin, Robot Manager) : 8 pertes avant pause
+  cooldown_minutes: 15          # 15min de refroidissement après perte
+  auto_pause_losses: 5           # 5 pertes avant pause automatique (restauré calibré, était 8-6)
 
   # --- Volatilité ---
   max_spread_points: 120         # spread max global (overridden par symbole)
@@ -125,9 +125,9 @@ symbol_limits:
     tp_atr_ranging: 3.5         # TP 3.5×ATR ranging (RR 2.33 — était 4.0, plus réaliste H4)
     adx_slope_threshold: -14.0             # mode modéré (synchro strategy.py)
     adx_slope_threshold_strong: -18.0      # pour raw_score > 0.70 (synchro strategy.py)
-    # Seuils momentum conservés (validés backtest 12+ ans)
-    threshold_trending: 2.5     # inchangé
-    threshold_ranging: 2.0      # inchangé
+    # Seuils momentum synchronisés avec strategy.py (25 Juin 2026)
+    threshold_trending: 2.0     # mode modéré (×0.8 vs standard 2.5)
+    threshold_ranging: 1.5      # mode modéré (×0.75 vs standard 2.0)
     # Pullback bandes (H4 → pullbacks plus larges)
     pullback_band_trending: 0.5 # 0.5×ATR (était 0.4)
     pullback_band_ranging: 0.3  # 0.3×ATR (était 0.25)
@@ -259,7 +259,7 @@ symbol_limits:
 
   # ═══════════════════════════════════════════════════════════════════════
   # ═══════════════════════════════════════════════════════════════════════
-  # USDJPY — RÉACTIVÉ 24 Juin 2026 (corrélation désactivée)
+  # USDJPY — RÉACTIVÉ 24 Juin 2026 (corrélation active — groupe FOREX_MAJORS)
   # ═══════════════════════════════════════════════════════════════════════
   USDJPY:
     timeframe: "H1"
@@ -291,7 +291,7 @@ symbol_limits:
     news_minutes_after: 0
 
   # ═══════════════════════════════════════════════════════════════════════
-  # GBPUSD — RÉACTIVÉ 24 Juin 2026 (corrélation désactivée)
+  # GBPUSD — RÉACTIVÉ 24 Juin 2026 (corrélation active — groupe FOREX_MAJORS)
   # ═══════════════════════════════════════════════════════════════════════
   GBPUSD:
     timeframe: "H1"
@@ -323,7 +323,7 @@ symbol_limits:
     news_minutes_after: 0
 
   # ═══════════════════════════════════════════════════════════════════════
-  # AUDUSD — RÉACTIVÉ 24 Juin 2026 (corrélation désactivée)
+  # AUDUSD — DÉSACTIVÉ 25 Juin 2026 (PF 0.40 toxique — laissé pour référence)
   # ═══════════════════════════════════════════════════════════════════════
   AUDUSD:
     timeframe: "H1"
@@ -355,7 +355,7 @@ symbol_limits:
     news_minutes_after: 0
 
   # ═══════════════════════════════════════════════════════════════════════
-  # USDCAD — RÉACTIVÉ 24 Juin 2026 (corrélation désactivée)
+  # USDCAD — RÉACTIVÉ 24 Juin 2026 (corrélation active — groupe FOREX_MAJORS)
   # ═══════════════════════════════════════════════════════════════════════
   USDCAD:
     timeframe: "H1"
@@ -387,7 +387,7 @@ symbol_limits:
     news_minutes_after: 0
 
   # ═══════════════════════════════════════════════════════════════════════
-  # US500.cash — S&P 500 Index (TIMEFRAME H4)
+  # US500.cash — DÉSACTIVÉ 25 Juin 2026 (PF 0.39 toxique — laissé pour référence)
   # 24/7 — plus de blocage horaire
   # ═══════════════════════════════════════════════════════════════════════
   US500.cash:
@@ -418,6 +418,32 @@ symbol_limits:
     weekend_trading: true        # 24/7
     news_minutes_before: 0
     news_minutes_after: 0
+
+# ── Corrélation — Groupes de symboles corrélés ────────────────────────────
+# RÈGLE: max 3 trades TOTAL par groupe, max 2 dans la même DIRECTION.
+# Empêche les pertes simultanées sur symboles à corrélation élevée.
+# Justification: 8 symboles actifs dont 5 FOREX_MAJORS corrélés USD.
+#   Événement macro (NFP, FOMC, CPI) → toutes les paires USD impactées.
+#   Corrélation Pearson H1 12+ ans: EURUSD/GBPUSD=0.70, EURUSD/USDCHF=0.65, etc.
+# Réactivé 25 Juin 2026 — Risk & Compliance Officer
+# ============================================================================
+correlation:
+  enabled: true
+  max_trades_per_group: 3              # max 3 positions TOTAL dans un groupe corrélé
+  max_trades_per_direction_in_group: 2 # max 2 positions dans la même direction dans un groupe
+  groups:
+    FOREX_MAJORS:
+      symbols: ["EURUSD", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "USDJPY"]
+      reason: "Paires USD → corrélées entre elles (Pearson 0.50-0.70 H1)"
+    CRYPTO:
+      symbols: ["BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"]
+      reason: "Cryptos corrélées au Bitcoin (Pearson 0.75-0.89)"
+    INDICES:
+      symbols: ["US500.cash", "US30.cash", "US100.cash", "JP225.cash"]
+      reason: "Indices actions corrélés aux marchés US"
+    COMMODITIES:
+      symbols: ["XAUUSD", "XAGUSD", "USOIL.cash", "UKOIL.cash", "NATGAS.cash"]
+      reason: "Matières premières sensibles au USD et aux taux"
 
 # ── ML Pipeline ──────────────────────────────────────────────────────────
 ml:

@@ -200,7 +200,8 @@ class MarketProfile:
             if atr_arr is not None and len(atr_arr) > 0 and not np.isnan(atr_arr[-1]):
                 atr_val = float(atr_arr[-1])
                 ib_range_atr = round(ib_range / max(atr_val, 1e-10), 2)
-        except Exception:
+        except Exception as e:
+            logger.warning(f"  [MARKET_PROFILE] analyze ib_atr: {e}")
             pass
 
         result = MarketProfileResult(

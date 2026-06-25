@@ -50,14 +50,23 @@ class PortfolioState:
 
 
 # ============================================================================
-# CORRELATION SUPPRIMÉE — mode agressif (Phase 0, Juin 2026)
-# Les groupes de corrélation, matrices et limites associées sont désactivés.
-# Positions simultanées possibles sur tous les symboles, y compris corrélés.
+# GROUPES DE CORRÉLATION — réactivé 25 Juin 2026 (Risk & Compliance)
+# Limite à max 3 trades total par groupe, max 2 dans la même direction.
+# Empêche les pertes simultanées sur symboles corrélés (Pearson > 0.70 H1).
 # ============================================================================
-# Limites FTMO (corrélation désactivée)
-MAX_POSITIONS_TOTAL = 14  # Max positions totales (↑ 6→14, 19 Juin 2026 — capacité multi-positions)
-MAX_POSITIONS_PER_SYMBOL = 4  # Max positions par symbole (harmonisé avec ftmo_config MAX_POS_PER_SYMBOL)
-MAX_POSITIONS_PER_DIRECTION = 6  # ↑ 3→6 (19 Juin) : bear market TREND_DOWN cohérent, 6 SELL simultanés possibles
+POSITION_GROUPS: dict[str, list[str]] = {
+    "FOREX_MAJORS": ["EURUSD", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "USDJPY"],
+    "CRYPTO": ["BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"],
+    "INDICES": ["US500.cash", "US30.cash", "US100.cash", "JP225.cash"],
+    "COMMODITIES": ["XAUUSD", "XAGUSD", "USOIL.cash", "UKOIL.cash", "NATGAS.cash"],
+}
+
+# Limites d'exposition avec corrélation active (calibré 25 Juin 2026)
+MAX_POSITIONS_TOTAL = 20  # 6 symboles × ~4 positions max (corrélation réduit capacité)
+MAX_POSITIONS_PER_SYMBOL = 4  # max 4 positions par symbole (aligné pipeline conf>85%)
+MAX_POSITIONS_PER_DIRECTION = 8  # max 8 positions dans la même direction
+MAX_TRADES_PER_GROUP = 3  # max 3 positions TOTAL dans un groupe corrélé
+MAX_TRADES_PER_DIRECTION_IN_GROUP = 2  # max 2 positions dans la même direction dans un groupe
 
 
 class PortfolioController:
@@ -68,6 +77,19 @@ class PortfolioController:
         self._symbol_dd: dict[str, float] = {}
         self._daily_pnl: float = 0.0
         self._initial_balance: float = 200_000.0
+
+    @staticmethod
+    def _get_group_for_symbol(symbol: str) -> str | None:
+        """Retourne le groupe de corrélation d'un symbole, ou None."""
+        for group_name, symbols in POSITION_GROUPS.items():
+            if symbol in symbols:
+                return group_name
+        return None
+
+    @staticmethod
+    def _get_dir(p) -> str:
+        """Extrait la direction d'une position (Position ou MT5 TradePosition)."""
+        return p.direction if hasattr(p, "direction") else ("BUY" if getattr(p, "type", -1) == 0 else "SELL")
 
     def set_positions(self, positions: list[Position]):
         """Met à jour les positions actuelles."""
@@ -94,15 +116,31 @@ class PortfolioController:
         if positions is None:
             positions = self._positions
 
-        # 🔥 HIGH CONFIDENCE BYPASS (>90%) : aucune limite de positions
+        # 🔥 HIGH CONFIDENCE (>90%) : relaxe les limites par symbole/direction
+        # mais PRÉSERVE les limites de corrélation (protection FTMO)
         if high_confidence:
-            # Vérifier seulement le DD et daily loss (protection FTMO)
+            # Vérifier le DD et daily loss en premier (protection FTMO)
             sym_dd = self._symbol_dd.get(symbol, 0.0)
             if sym_dd > 0.08:
                 return False, f"DD {symbol} trop élevé ({sym_dd * 100:.1f}%)"
             if self._daily_pnl < -self._initial_balance * 0.02:
                 return False, f"Daily loss limit atteint ({self._daily_pnl:.2f})"
-            return True, "HIGH CONFIDENCE bypass"
+            # ✅ Correlation group limits TOUJOURS actives (même en high confidence)
+            group = self._get_group_for_symbol(symbol)
+            if group:
+                group_positions = [p for p in positions if self._get_group_for_symbol(p.symbol) == group]
+                group_dir_positions = [p for p in group_positions if self._get_dir(p) == direction]
+                if len(group_positions) >= MAX_TRADES_PER_GROUP:
+                    return False, f"Groupe {group}: déjà {len(group_positions)} positions (max {MAX_TRADES_PER_GROUP})"
+                if len(group_dir_positions) >= MAX_TRADES_PER_DIRECTION_IN_GROUP:
+                    return (
+                        False,
+                        f"Groupe {group}: déjà {len(group_dir_positions)} positions {direction} (max {MAX_TRADES_PER_DIRECTION_IN_GROUP})",
+                    )
+            # ✅ Limite max positions total TOUJOURS active
+            if len(positions) >= MAX_POSITIONS_TOTAL:
+                return False, f"Max positions total atteint ({MAX_POSITIONS_TOTAL})"
+            return True, "HIGH CONFIDENCE bypass (corrélation protégée)"
 
         # 1. Max positions total
         if len(positions) >= MAX_POSITIONS_TOTAL:
@@ -114,15 +152,26 @@ class PortfolioController:
             return False, f"Max positions {symbol} atteint ({MAX_POSITIONS_PER_SYMBOL})"
 
         # 3. Max positions par direction
-        # Gère Position.direction (str "BUY"/"SELL") et MT5 TradePosition.type (int 0/1)
-        def _get_dir(p):
-            return p.direction if hasattr(p, "direction") else ("BUY" if getattr(p, "type", -1) == 0 else "SELL")
-
-        dir_positions = [p for p in positions if _get_dir(p) == direction]
+        dir_positions = [p for p in positions if self._get_dir(p) == direction]
         if len(dir_positions) >= MAX_POSITIONS_PER_DIRECTION:
             return False, f"Max positions {direction} atteint ({MAX_POSITIONS_PER_DIRECTION})"
 
-        # 4. Correlation group check SUPPRIMÉ — mode agressif
+        # 4. Correlation group check — réactivé 25 Juin 2026
+        group = self._get_group_for_symbol(symbol)
+        if group:
+            group_positions = [p for p in positions if self._get_group_for_symbol(p.symbol) == group]
+            group_dir_positions = [p for p in group_positions if self._get_dir(p) == direction]
+
+            # Max 3 trades TOTAL dans un groupe corrélé
+            if len(group_positions) >= MAX_TRADES_PER_GROUP:
+                return False, f"Groupe {group}: déjà {len(group_positions)} positions (max {MAX_TRADES_PER_GROUP})"
+
+            # Max 2 trades dans la MÊME direction dans un groupe
+            if len(group_dir_positions) >= MAX_TRADES_PER_DIRECTION_IN_GROUP:
+                return (
+                    False,
+                    f"Groupe {group}: déjà {len(group_dir_positions)} positions {direction} (max {MAX_TRADES_PER_DIRECTION_IN_GROUP})",
+                )
 
         # 5. DD check per symbol
         sym_dd = self._symbol_dd.get(symbol, 0.0)

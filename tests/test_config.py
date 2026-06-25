@@ -27,17 +27,15 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # 8 actifs actifs (24 Juin 2026) — ETHUSD désactivé (WR 36.8% live)
-    assert len(cfg.trading.symbols) == 8
+    # 6 actifs (25 Juin 2026) — ETHUSD désactivé (WR 36.8%), AUDUSD+US500.cash toxiques retirés
+    assert len(cfg.trading.symbols) == 6
     assert "XAUUSD" in cfg.trading.symbols
     assert "BTCUSD" in cfg.trading.symbols
     assert "EURUSD" in cfg.trading.symbols
     assert "USDJPY" in cfg.trading.symbols  # réactivé 24 Juin
     assert "GBPUSD" in cfg.trading.symbols  # réactivé 24 Juin
-    assert "AUDUSD" in cfg.trading.symbols  # réactivé 24 Juin
     assert "USDCAD" in cfg.trading.symbols  # réactivé 24 Juin
-    assert "US500.cash" in cfg.trading.symbols
-    assert cfg.risk.per_trade_pct == 0.0044  # ↑ 0.4%→0.44% (+10%)
+    assert cfg.risk.per_trade_pct == 0.004  # calibré 25 Juin 2026 (était 0.44% Mode MAX)
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 2.0  # RR≥2.0 (validé backtest)
 
@@ -52,8 +50,8 @@ def test_as_flat_dict():
     cfg = load_config("default")
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
-    assert flat["RISK_PER_TRADE_PCT"] == 0.0044  # ↑ 0.4%→0.44% (+10%)
-    assert flat["TRADING_MAX_POSITIONS"] == 40  # 24 Juin: 8 symboles × 5 positions
+    assert flat["RISK_PER_TRADE_PCT"] == 0.004  # calibré 25 Juin 2026 (était 0.44%)
+    assert flat["TRADING_MAX_POSITIONS"] == 20  # calibré 25 Juin 2026 (était 40 Mode MAX)
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -130,9 +128,10 @@ def test_config_simple_compat():
     import config_simple as cfg
 
     assert cfg.ROBOT_MAGIC == 999001
-    assert cfg.RISK_PER_TRADE == 0.0066  # ↑ 0.6%→0.66% (+10%)
+    assert cfg.RISK_PER_TRADE == 0.004  # calibré 25 Juin 2026 (était 0.44%)
     assert cfg.MAX_ORDERS_PER_MINUTE == 10  # 1 trade/min/symbole + marge (8 symboles)
     assert cfg.__version__ == "4.1.0"
+    assert cfg.MIN_SIGNAL_SCORE == 0.55  # restauré calibré (était 0.70 Mode MAX)
 
 
 def test_config_reload():

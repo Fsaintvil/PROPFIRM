@@ -113,7 +113,8 @@ def _log_real_trade(closing, meta: dict) -> None:
         from engine_simple.lightgbm_model import FEATURE_COLUMNS
 
         features_vec = [features.get(col, 0.0) for col in FEATURE_COLUMNS]
-    except Exception:
+    except Exception as e:
+        logger.warning(f"  [TRACKER] _record_trade features_vec: {e}")
         features_vec = []
 
     record = {
@@ -244,7 +245,8 @@ class PositionTracker:
                             trade_age = time.time() - trade_ts
                         if trade_age > 48 * 3600:
                             continue
-                    except Exception:
+                    except Exception as e:
+                        logger.warning(f"  [TRACKER] import_history trade_age: {e}")
                         pass
                 pos_key = f"{d.position_id}_{d.symbol}"
                 if pos_key in self._recorded_position_ids:
@@ -286,7 +288,8 @@ class PositionTracker:
             if hasattr(self.adaptive, "_save_calibration"):
                 try:
                     self.adaptive._save_calibration()
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"  [TRACKER] import_history calibration: {e}")
                     pass
 
     def track_new(self):

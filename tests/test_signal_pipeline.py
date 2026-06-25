@@ -406,8 +406,11 @@ class TestPipelineProcess:
             cycle_count=1,
             degraded_symbols={},
             sym_dir_counts={},
-            sym_total_counts={"XAUUSD": 6},
-            config_limits={"XAUUSD": 4},
+            # sym_total_count=12 dépasse max_pos_total=min(8*2=16, 10*2=20, 80)=16
+            # Mais avec phase 11 (MP) le score chute et la direction BUY est bloquée
+            # Utilisons un count très élevé pour tester le blocage
+            sym_total_counts={"XAUUSD": 20},
+            config_limits={"XAUUSD": 10},
             last_signals={},
             log_throttle={},
         )
@@ -440,8 +443,8 @@ class TestPipelineProcess:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.95 > 0.90 → high confidence bypass → max_per_symbol=999
-        assert result.signal["max_per_symbol"] == 999
+        # conf=0.95 > 0.90 → high confidence → max_per_symbol=6
+        assert result.signal["max_per_symbol"] == 6
 
     def test_process_handles_exception_gracefully(self, pipeline, mock_risk_manager):
         """Une exception dans pre_trade doit remonter (non catchée)."""
@@ -625,8 +628,8 @@ class TestDynamicPositionLimits:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.95 > 0.90 → high confidence bypass → max_per_symbol=999
-        assert result.signal["max_per_symbol"] == 999
+        # conf=0.95 > 0.90 → high confidence → max_per_symbol=6
+        assert result.signal["max_per_symbol"] == 6
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_limit_respects_hard_cap(self, mock_mom, pipeline):
@@ -655,8 +658,8 @@ class TestDynamicPositionLimits:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.95 > 0.90 → high confidence bypass → max_per_symbol=999 (hard limit ignoré)
-        assert result.signal["max_per_symbol"] == 999
+        # conf=0.95 > 0.90 → high confidence → cap=6 (hard limit ignoré)
+        assert result.signal["max_per_symbol"] == 6
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_low_confidence_gets_one_position(self, mock_mom, pipeline):
@@ -680,13 +683,13 @@ class TestDynamicPositionLimits:
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"BTCUSD": 4},
+            config_limits={"BTCUSD": 10},
             last_signals={},
             log_throttle={},
         )
         assert result is not None
-        # conf=0.50 < 0.70 → max_per_symbol=1
-        assert result.signal["max_per_symbol"] == 1
+        # conf=0.50 < 0.70 → max_per_symbol=2 (Équilibré)
+        assert result.signal["max_per_symbol"] == 2
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_moderate_confidence_gets_three_positions(self, mock_mom, pipeline):
@@ -710,13 +713,13 @@ class TestDynamicPositionLimits:
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"BTCUSD": 4},
+            config_limits={"BTCUSD": 10},
             last_signals={},
             log_throttle={},
         )
         assert result is not None
-        # conf=0.75 > 0.70, < 0.85 → max_per_symbol=3
-        assert result.signal["max_per_symbol"] == 3
+        # conf=0.75 > 0.70, < 0.85 → max_per_symbol=4 (Équilibré)
+        assert result.signal["max_per_symbol"] == 4
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_good_confidence_gets_three_positions(self, mock_mom, pipeline):
@@ -740,10 +743,10 @@ class TestDynamicPositionLimits:
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"BTCUSD": 4},
+            config_limits={"BTCUSD": 10},
             last_signals={},
             log_throttle={},
         )
         assert result is not None
-        # conf=0.85 > 0.80, < 0.90 → max_per_symbol=3
-        assert result.signal["max_per_symbol"] == 3
+        # conf=0.85 > 0.70 (mais pas >0.85) → max_per_symbol=4 (Équilibré)
+        assert result.signal["max_per_symbol"] == 4
