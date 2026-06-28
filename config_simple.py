@@ -99,8 +99,9 @@ except Exception as e:
     SYMBOLS = [
         "XAUUSD",
         "BTCUSD",
-        "EURUSD",
+        "US30.cash",  # AJOUTÉ 28 Juin 2026 — remplace EURUSD (Supreme Council)
         "USDJPY",  # RÉACTIVÉ 24 Juin 2026 — surveillance active
+        # EURUSD désactivé 28 Juin 2026 (PF 0.75 après coûts, 6.7% WR live)
         # GBPUSD désactivé 26 Juin 2026 (WR 0.0% Phase 3 — toxique)
         # USDCAD désactivé 26 Juin 2026 (WR 33.3% Phase 3 — toxique)
     ]
@@ -119,8 +120,8 @@ except Exception as e:
     _fb_log("MIN_TRADE_INTERVAL_SEC", 300)
     BATCH_INTERVAL_SEC = 1
     _fb_log("BATCH_INTERVAL_SEC", 1)
-    MIN_SIGNAL_SCORE = 0.60
-    _fb_log("MIN_SIGNAL_SCORE", 0.60)
+    MIN_SIGNAL_SCORE = 0.50
+    _fb_log("MIN_SIGNAL_SCORE", 0.50)
     MAX_SIGNALS_PER_CYCLE = 10
     _fb_log("MAX_SIGNALS_PER_CYCLE", 10)
     MAX_ORDERS_PER_MINUTE = 6
@@ -161,8 +162,8 @@ except Exception as e:
     _fb_log("TRADING_START_HOUR", 0)
     TRADING_END_HOUR = 24
     _fb_log("TRADING_END_HOUR", 24)
-    DANGER_HOURS = [12]
-    _fb_log("DANGER_HOURS", [12])
+    DANGER_HOURS = [7, 17]
+    _fb_log("DANGER_HOURS", [7, 17])
     RECALIBRATION_FREQUENCY = 50
     _fb_log("RECALIBRATION_FREQUENCY", 50)
     AUTO_PAUSE_LOSSES = 5
@@ -218,20 +219,21 @@ except Exception as e:
             sl_atr_ranging=1.2,
             tp_atr_ranging=3.0,
         ),
-        # EURUSD H1 (fallback — synchronisé 25 Juin 2026)
-        "EURUSD": dict(
-            max_lot=0.22,
-            risk_mult=1.00,
-            max_spread_points=40,
+        # US30.cash H1 (fallback — ajouté 28 Juin 2026 — remplace EURUSD)
+        "US30.cash": dict(
+            max_lot=0.03,
+            risk_mult=0.50,
+            max_spread_points=60,
             adx_thresh=22,
             allow_buys=True,
             allow_shorts=True,
-            momentum_period=18,
+            momentum_period=20,
             sl_atr_trending=1.5,
             tp_atr_trending=4.5,
             sl_atr_ranging=1.2,
             tp_atr_ranging=3.0,
         ),
+        # EURUSD désactivé 28 Juin 2026 (PF 0.75 après coûts, 6.7% WR live)
         # USDJPY H1 (fallback — synchronisé 25 Juin 2026)
         "USDJPY": dict(
             max_lot=0.17,
@@ -278,10 +280,11 @@ except Exception as e:
     SYMBOL_TIMEFRAMES = {
         "XAUUSD": "H4",
         "BTCUSD": "H1",
-        "EURUSD": "H1",
+        "US30.cash": "H1",
         "USDJPY": "H1",
         "GBPUSD": "H1",
         "USDCAD": "H1",
+        "EURUSD": "H1",
     }
     ML_EXPERIMENT_TRACKING = False
     ML_TRACKING_URI = ""

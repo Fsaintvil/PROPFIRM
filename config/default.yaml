@@ -31,11 +31,12 @@ robot:
 trading:
   symbols:
     - XAUUSD      # H4 — WR 68.6%, PF 1.16, DD 6.9% (backtest 12+ ans)
-    - BTCUSD      # H1 — WR 32.3% Phase 3, PF 0.71
-    - EURUSD      # H1 — WR 68.6%, PF 1.12, DD 3.7% (backtest 12+ ans)
+    - BTCUSD      # H1 — WR 69.8%, PF 1.19, DD 5.6% (backtest 12+ ans)
+    - US30.cash   # H1 — WR 74.8%, PF 1.19, DD 8.5% (backtest 12+ ans avec coûts)
     - USDJPY      # H1 — RÉACTIVÉ 24 Juin — WR 82.1% backtest
     - GBPUSD      # H1 — RÉACTIVÉ 24 Juin — WR 80.7% backtest
     - USDCAD      # H1 — RÉACTIVÉ 24 Juin — WR 80.7% backtest
+                    # EURUSD désactivé 28 Juin 2026 (PF 0.75 après coûts, 6.7% WR live)
                     # AUDUSD désactivé 25 Juin (PF 0.40 toxique)
                     # US500.cash désactivé 25 Juin (PF 0.39 toxique)
 
@@ -50,12 +51,12 @@ trading:
   batch_interval_sec: 1         # 1s = signaux chaque cycle (15s), pas de restriction batch
   trading_start_hour: 0
   trading_end_hour: 24          # 24/7 — sans arret
-  danger_hours: [12]            # 12:00 UTC = 0% WR (historique 47 trades live FTMO Juin 2026)
+  danger_hours: [7, 17]         # 07:00=fermeture Asie (25% WR, -$318) / 17:00=fermeture Europe (21.7% WR, -$218) — Supreme Council 28 Juin
   history_lookback_days: 7
 
 # ── Signal ───────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.38               # ↓ 0.55→0.38 26 Juin — plus de trades (signal filtré par RVOL/CMF)
+  min_score: 0.50               # ↑ 0.38→0.50 28 Juin 2026 — Supreme Council: meilleure qualité, ~20-25% des signaux faibles filtrés
   daily_profit_limit_pct: 0.008  # 0.8% profit/jour max (FTMO consistency)
 
 # ── Risque FTMO ─────────────────────────────────────────────────────────
@@ -393,6 +394,44 @@ symbol_limits:
     weekend_trading: false       # forex fermé samedi-dimanche
     news_minutes_before: 15      # protection news FED/Canada
     news_minutes_after: 15
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # US30.cash — Dow Jones (TIMEFRAME H1) — AJOUTÉ 28 Juin 2026
+  # Caractéristiques: Indice US, tendances longues, forte liquidité
+  # Sessions: US market hours (13:30-21:00 UTC)
+  # Backtest H1 12+ ans avec coûts: WR 74.8%, PF 1.19, DD 8.5% — edge robuste
+  #   → p<0.001, IC 95% [73.2%, 76.4%]
+  #   → Remplacé EURUSD (PF 0.75, -$225K) — Supreme Council 28 Juin
+  # ═══════════════════════════════════════════════════════════════════════
+  US30.cash:
+    timeframe: "H1"
+    max_lot: 0.03               # lot réduit (surveillance renforcée — Supreme Council)
+    min_lot: 0.01
+    risk_mult: 0.50             # 50% du risque standard (pas d'historique live)
+    max_spread_points: 60       # spread Dow Jones typique 20-40pts
+
+    adx_thresh: 22
+    allow_buys: true
+    allow_shorts: true
+    momentum_period: 20
+    sl_atr_trending: 1.5
+    tp_atr_trending: 4.5
+    sl_atr_ranging: 1.2
+    tp_atr_ranging: 3.0
+    adx_slope_threshold: -5.0
+    adx_slope_threshold_strong: -8.0
+    threshold_trending: 2.5
+    threshold_ranging: 2.0
+    pullback_band_trending: 0.3
+    pullback_band_ranging: 0.2
+    cmf_threshold: 0.10
+    obv_div_penalty_high: 0.70
+    obv_div_penalty_low: 0.85
+    preferred_hours: [13,14,15,16,17,18,19,20,21]  # US market hours (13:30-21:00 UTC)
+    weekend_trading: false       # marché fermé weekend
+    news_minutes_before: 15      # protection news FOMC/NFP/CPI
+    news_minutes_after: 15
+    major_news_symbols: []
 
   # ═══════════════════════════════════════════════════════════════════════
   # US500.cash — DÉSACTIVÉ 25 Juin 2026 (PF 0.39 toxique — laissé pour référence)

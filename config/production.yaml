@@ -21,7 +21,7 @@ trading:
 
 # ── Signal ─────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.38               # ↓ 0.55→0.38 26 Juin — plus de trades (signal filtré par RVOL/CMF)
+  min_score: 0.50               # ↑ 0.38→0.50 28 Juin 2026 — Supreme Council
 
 # ── Symbol Limits — Calibration FTMO-safe ────────────────────────────
 symbol_limits:
@@ -33,9 +33,9 @@ symbol_limits:
     max_lot: 0.06               # calibré backtest
     risk_mult: 0.30             # WR 32.3% Phase 3 → risque fortement réduit (était 0.60)
 
-  EURUSD:
-    max_lot: 0.10
-    risk_mult: 1.00             # WR 76.6% → solide
+  US30.cash:
+    max_lot: 0.03
+    risk_mult: 0.50             # Supreme Council 28 Juin — surveillance renforcée 7 jours
 
   USDJPY:
     max_lot: 0.10

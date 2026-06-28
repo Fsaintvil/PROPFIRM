@@ -31,7 +31,7 @@ def test_load_default_config():
     assert len(cfg.trading.symbols) == 6
     assert "XAUUSD" in cfg.trading.symbols
     assert "BTCUSD" in cfg.trading.symbols
-    assert "EURUSD" in cfg.trading.symbols
+    assert "US30.cash" in cfg.trading.symbols  # ajouté 28 Juin 2026 — remplace EURUSD
     assert "USDJPY" in cfg.trading.symbols  # réactivé 24 Juin
     assert "GBPUSD" in cfg.trading.symbols  # réactivé 24 Juin
     assert "USDCAD" in cfg.trading.symbols  # réactivé 24 Juin
@@ -131,7 +131,7 @@ def test_config_simple_compat():
     assert cfg.RISK_PER_TRADE == 0.004  # calibré 25 Juin 2026 (était 0.44%)
     assert cfg.MAX_ORDERS_PER_MINUTE == 10  # 1 trade/min/symbole + marge (8 symboles)
     assert cfg.__version__ == "4.1.0"
-    assert cfg.MIN_SIGNAL_SCORE == 0.38  # global — ↓ 0.55→0.38 (26 Juin 2026, plus de trades, filtré par RVOL/CMF)
+    assert cfg.MIN_SIGNAL_SCORE == 0.50  # global — ↑ 0.38→0.50 (28 Juin 2026, Supreme Council: meilleure qualité)
 
 
 def test_config_reload():
