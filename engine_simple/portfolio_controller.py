@@ -65,8 +65,8 @@ POSITION_GROUPS: dict[str, list[str]] = {
 MAX_POSITIONS_TOTAL = 20  # 6 symboles × ~4 positions max (corrélation réduit capacité)
 MAX_POSITIONS_PER_SYMBOL = 4  # max 4 positions par symbole (aligné pipeline conf>85%)
 MAX_POSITIONS_PER_DIRECTION = 8  # max 8 positions dans la même direction
-MAX_TRADES_PER_GROUP = 3  # max 3 positions TOTAL dans un groupe corrélé
-MAX_TRADES_PER_DIRECTION_IN_GROUP = 2  # max 2 positions dans la même direction dans un groupe
+MAX_TRADES_PER_GROUP = 5  # max 5 positions TOTAL dans un groupe corrélé (↑ 3→5 pour + de trades)
+MAX_TRADES_PER_DIRECTION_IN_GROUP = 3  # max 3 positions dans la même direction dans un groupe (↑ 2→3 pour + de trades)
 
 
 class PortfolioController:
@@ -118,6 +118,7 @@ class PortfolioController:
 
         # 🔥 HIGH CONFIDENCE (>90%) : relaxe les limites par symbole/direction
         # mais PRÉSERVE les limites de corrélation (protection FTMO)
+        # 🐛 FIX 26 Juin 2026: ajout des limites per-symbol et per-direction manquantes
         if high_confidence:
             # Vérifier le DD et daily loss en premier (protection FTMO)
             sym_dd = self._symbol_dd.get(symbol, 0.0)
@@ -125,6 +126,16 @@ class PortfolioController:
                 return False, f"DD {symbol} trop élevé ({sym_dd * 100:.1f}%)"
             if self._daily_pnl < -self._initial_balance * 0.02:
                 return False, f"Daily loss limit atteint ({self._daily_pnl:.2f})"
+            # ✅ Limite max positions par symbole (doublée pour high confidence)
+            sym_positions = [p for p in positions if p.symbol == symbol]
+            sym_max = MAX_POSITIONS_PER_SYMBOL * 2  # 8 au lieu de 4 pour high conf
+            if len(sym_positions) >= sym_max:
+                return False, f"Max positions {symbol} atteint ({len(sym_positions)}/{sym_max})"
+            # ✅ Limite max positions par direction (doublée)
+            dir_positions = [p for p in positions if self._get_dir(p) == direction]
+            dir_max = MAX_POSITIONS_PER_DIRECTION * 2  # 16 au lieu de 8
+            if len(dir_positions) >= dir_max:
+                return False, f"Max positions {direction} atteint ({len(dir_positions)}/{dir_max})"
             # ✅ Correlation group limits TOUJOURS actives (même en high confidence)
             group = self._get_group_for_symbol(symbol)
             if group:

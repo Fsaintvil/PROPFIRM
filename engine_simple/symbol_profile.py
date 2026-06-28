@@ -387,10 +387,10 @@ CORRELATION_MATRIX: dict[str, dict[str, float]] = {
 # Groupes pour la gestion de positions (max 2 trades/direction/groupe, max 3 total/groupe)
 # RÉACTIVÉ 25 Juin 2026 — Risk & Compliance Officer
 POSITION_GROUPS: list[list[str]] = [
-    ["EURUSD", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "USDJPY"],   # FOREX_MAJORS
-    ["BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"],                           # CRYPTO
-    ["US500.cash", "US30.cash", "US100.cash", "JP225.cash"],                       # INDICES
-    ["XAUUSD", "XAGUSD", "USOIL.cash", "UKOIL.cash", "NATGAS.cash"],             # COMMODITIES
+    ["EURUSD", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "USDJPY"],  # FOREX_MAJORS
+    ["BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"],  # CRYPTO
+    ["US500.cash", "US30.cash", "US100.cash", "JP225.cash"],  # INDICES
+    ["XAUUSD", "XAGUSD", "USOIL.cash", "UKOIL.cash", "NATGAS.cash"],  # COMMODITIES
 ]
 
 
@@ -415,11 +415,12 @@ def get_same_group(symbol: str) -> list[str]:
 def get_opposite_group(symbol: str) -> list[str]:
     """Retourne les symboles du groupe opposé (corrélation négative).
 
+    Apparie les groupes 2 à 2 : (0↔1, 2↔3, ...) via XOR du dernier bit.
     Si le symbole n'est dans aucun groupe ou n'a pas de groupe opposé, retourne [].
     """
     for i, group in enumerate(POSITION_GROUPS):
         if symbol in group:
-            other_idx = 1 - i
+            other_idx = i ^ 1  # XOR toggles last bit: 0↔1, 2↔3, 4↔5...
             if other_idx < len(POSITION_GROUPS):
                 return list(POSITION_GROUPS[other_idx])
             return []

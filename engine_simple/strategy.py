@@ -1,6 +1,13 @@
 """
 MOM20x3 — Stratégie Momentum 20 périodes avec filtres avancés.
 
+⚠️ ATTENTION — DUAL SOURCE OF TRUTH ⚠️
+Ce fichier (strategy.py:SYMBOL_CONFIG) est la VRAIE source des paramètres
+techniques du signal (momentum_period, thresholds SL/TP, ADX slope).
+Le fichier config/default.yaml est la DOCUMENTATION de ces paramètres —
+un changement dans le YAML n'a AUCUN effet sur les signaux réels.
+Pour modifier un paramètre de signal, il faut changer strategy.py.
+
 Principe :
   c[i] - c[i-20] > seuil × ATR  →  Breakout haussier (BUY)
   c[i-20] - c[i] > seuil × ATR  →  Breakout baissier (SELL)
@@ -21,10 +28,12 @@ Aucun overlay ICT/SMC (FVG, Order Blocks, Killzones, etc.)
 """
 
 import logging
+from types import MappingProxyType
 
 import numpy as np
 
 from engine_simple.indicators import adx, atr, ema
+from engine_simple.ftmo_config import PULLBACK_FILTER_SCORE_THRESHOLD
 
 try:
     from engine_simple.market_structure import analyze_market_structure
@@ -80,16 +89,13 @@ SYMBOL_CONFIG = {
         # Seuils ATR (validés backtest 12+ ans, assouplis mode modéré)
         "threshold_trending": 2.0,  # Mode modéré: -0.5 vs 2.5
         "threshold_ranging": 1.5,  # Mode modéré: -0.5 vs 2.0
-        # Filtres ADX (plus stricts en H4 — tendances plus pures)
-        "adx_slope_threshold": -14.0,  # Mode modéré: +75% vs -8.0
-        "adx_slope_threshold_strong": -20.0,  # Scénario A: assoupli -18.0→-20.0 pour +20% trades (plus de signaux forts passent l'ADX slope)
+        # Filtres ADX (standard AGENTS.md)
+        "adx_slope_threshold": -8.0,  # standard XAUUSD H4 (AGENTS.md)
+        "adx_slope_threshold_strong": -8.0,  # XAUUSD H4 pas de relaxation
         # Pullback bandes (H4 → pullbacks plus larges)
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        # Volume filter thresholds (standard forex/indices)
-        "cmf_threshold": 0.10,
-        "obv_div_penalty_high": 0.70,
-        "obv_div_penalty_low": 0.85,
+        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
         # Sessions préférées (London+NY overlap élargi)
         "preferred_hours": list(range(24)),  # 24/7 — pas de blocage horaire
         # News filter
@@ -115,16 +121,13 @@ SYMBOL_CONFIG = {
         # Seuils ATR (abaissés — ADX crypto peu fiable, capter plus de signaux)
         "threshold_trending": 2.0,
         "threshold_ranging": 1.5,
-        # Filtres ADX (très permissifs — ADX crypto bruité)
-        "adx_slope_threshold": -6.0,  # Mode modéré: 2x vs -3.0
-        "adx_slope_threshold_strong": -10.0,  # Mode modéré: +67% vs -6.0
+        # Filtres ADX (très permissifs — ADX crypto bruité, abaissé 26 Juin pour + de trades)
+        "adx_slope_threshold": -10.0,  # très permissif (26 Juin: ↓ -5.0→-10.0 pour débloquer BTCUSD)
+        "adx_slope_threshold_strong": -15.0,  # relaxation pour signaux forts (26 Juin: ↓ -8.0→-15.0)
         # Pullback bandes larges (BTC fait des pullbacks violents)
         "pullback_band_trending": 0.8,
         "pullback_band_ranging": 0.5,
-        # Volume filter thresholds (crypto — volume bursty → relaxed)
-        "cmf_threshold": 0.20,
-        "obv_div_penalty_high": 0.85,
-        "obv_div_penalty_low": 0.92,
+        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
         # Sessions 24/7 — crypto ne dort jamais
         "preferred_hours": list(range(24)),
         # News filter
@@ -152,16 +155,13 @@ SYMBOL_CONFIG = {
         # Seuils ATR (abaissés — US500 moins volatile en H4)
         "threshold_trending": 2.0,
         "threshold_ranging": 1.5,
-        # Filtres ADX (plus permissifs — H4 moins de bougies)
-        "adx_slope_threshold": -10.0,  # Mode modéré: 2x vs -5.0
-        "adx_slope_threshold_strong": -14.0,  # Mode modéré: +40% vs -10.0
+        # Filtres ADX (standard)
+        "adx_slope_threshold": -5.0,  # standard (AGENTS.md)
+        "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
         # Pullback bandes serrées (indices font peu de pullbacks profonds)
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
-        # Volume filter thresholds (standard indices)
-        "cmf_threshold": 0.10,
-        "obv_div_penalty_high": 0.70,
-        "obv_div_penalty_low": 0.85,
+        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
         # Sessions préférées (US market hours élargies)
         "preferred_hours": list(range(24)),  # 24/7 — pas de blocage horaire
         # News filter (renforcé — indice sensible aux news US)
@@ -185,19 +185,16 @@ SYMBOL_CONFIG = {
         # SL/TP ranging: 1.2/3.0 (RR 2.5)
         "sl_atr_ranging": 1.2,
         "tp_atr_ranging": 3.0,
-        # Seuils ATR (standard MOM20x3, validés backtest 12+ ans)
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
-        # Filtres ADX (standard forex)
-        "adx_slope_threshold": -12.0,  # ↑ -5.0→-12.0 (22 Juin, Supreme Council) : ADX slope constant -9.0 bloquait tout
-        "adx_slope_threshold_strong": -16.0,  # ↑ -8.0→-16.0 : pour raw_score > 0.70, débloque EURUSD (WR live 69.2%)
+        # Seuils ATR (abaissés 26 Juin — EURUSD mom=0.00248 sous thresh=0.00295, besoin de + de trades)
+        "threshold_trending": 1.8,
+        "threshold_ranging": 1.5,
+        # Filtres ADX (standard forex — restauré AGENTS.md)
+        "adx_slope_threshold": -5.0,  # standard forex (AGENTS.md)
+        "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
         # Pullback bandes modérées (EURUSD pullbacks modérés)
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
-        # Volume filter thresholds (standard forex)
-        "cmf_threshold": 0.10,
-        "obv_div_penalty_high": 0.70,
-        "obv_div_penalty_low": 0.85,
+        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
         # Sessions préférées (London+NY overlap)
         "preferred_hours": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
         # News filter
@@ -218,13 +215,11 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 3.0,
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
-        "adx_slope_threshold": -10.0,
-        "adx_slope_threshold_strong": -14.0,
+        "adx_slope_threshold": -5.0,  # standard forex (AGENTS.md)
+        "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
-        "cmf_threshold": 0.10,
-        "obv_div_penalty_high": 0.70,
-        "obv_div_penalty_low": 0.85,
+        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
         "preferred_hours": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
@@ -242,13 +237,11 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 3.0,
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
-        "adx_slope_threshold": -10.0,
-        "adx_slope_threshold_strong": -14.0,
+        "adx_slope_threshold": -5.0,  # standard forex (AGENTS.md)
+        "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
-        "cmf_threshold": 0.10,
-        "obv_div_penalty_high": 0.70,
-        "obv_div_penalty_low": 0.85,
+        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
         "preferred_hours": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 20,
         "news_minutes_after": 20,
@@ -266,13 +259,11 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 3.0,
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
-        "adx_slope_threshold": -10.0,
-        "adx_slope_threshold_strong": -14.0,
+        "adx_slope_threshold": -5.0,  # standard forex (AGENTS.md)
+        "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
-        "cmf_threshold": 0.10,
-        "obv_div_penalty_high": 0.70,
-        "obv_div_penalty_low": 0.85,
+        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
         "preferred_hours": [0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
@@ -290,13 +281,11 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 3.0,
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
-        "adx_slope_threshold": -10.0,
-        "adx_slope_threshold_strong": -14.0,
+        "adx_slope_threshold": -5.0,  # standard forex (AGENTS.md)
+        "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
-        "cmf_threshold": 0.10,
-        "obv_div_penalty_high": 0.70,
-        "obv_div_penalty_low": 0.85,
+        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
         "preferred_hours": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
@@ -312,21 +301,20 @@ DEFAULT_SYMBOL_CONFIG = {
     "tp_atr_ranging": 4.0,
     "threshold_trending": 2.5,
     "threshold_ranging": 2.0,
-    "adx_slope_threshold": -10.0,  # Mode modéré: +67% vs -6.0
-    "adx_slope_threshold_strong": -14.0,  # Mode modéré: +40% vs -10.0
+    "adx_slope_threshold": -5.0,  # standard (AGENTS.md)
+    "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
     "pullback_band_trending": 0.5,
     "pullback_band_ranging": 0.3,
-    # Volume filter thresholds (default — standard forex/indices)
-    "cmf_threshold": 0.10,
-    "obv_div_penalty_high": 0.70,
-    "obv_div_penalty_low": 0.85,
+    # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
     "preferred_hours": list(range(24)),
     "news_minutes_before": 5,
     "news_minutes_after": 5,
 }
 
 # Compatibilité avec l'ancien code (momentum periods)
-SYMBOL_MOMENTUM_PERIODS = {sym: cfg["momentum_period"] for sym, cfg in SYMBOL_CONFIG.items()}
+# 🔒 MappingProxyType = immutable — empêche les modifications à chaud depuis Phase 3
+_SYMBOL_MOMENTUM_PERIODS = {sym: cfg["momentum_period"] for sym, cfg in SYMBOL_CONFIG.items()}
+SYMBOL_MOMENTUM_PERIODS = MappingProxyType(_SYMBOL_MOMENTUM_PERIODS)
 
 # Périodes par défaut
 DEFAULT_SYMBOL_MOMENTUM_PERIOD = 20
@@ -643,8 +631,6 @@ def mom20x3_signal(
     # MOM20x3 est une stratégie momentum qui entre sur breakouts, pas sur retracements EMA20.
     # Le pullback est informatif pour les signaux forts (score >= seuil config).
     # Pour les signaux faibles (score < seuil), un pullback actif est requis comme confirmation.
-    from engine_simple.ftmo_config import PULLBACK_FILTER_SCORE_THRESHOLD
-
     if not pullback_active and pullback_band > 0:
         if score < PULLBACK_FILTER_SCORE_THRESHOLD:
             logger.info(

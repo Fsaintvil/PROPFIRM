@@ -174,14 +174,14 @@ class TestOnlineLearner:
 
     def test_update_params_wr_above_82(self):
         ol = OnlineLearner(window=40)
-        # 36 wins out of 40 = 90% WR > 82% → risk_mult=1.15, thresh=2.0
+        # 36 wins out of 40 = 90% WR > 82% → risk_mult=1.15, thresh=1.5
         for _ in range(36):
             ol.record_trade("EURUSD", 1.0, "TREND_UP")
         for _ in range(4):
             ol.record_trade("EURUSD", -1.0, "RANGING")
         params = ol.get_params("EURUSD")
         assert params["risk_mult"] == 1.15
-        assert params["thresh"] == 2.0
+        assert params["thresh"] == 1.5  # ↓ 2.0→1.5 (OL recalibré pour + de trades)
 
     def test_update_params_wr_78_to_82(self):
         ol = OnlineLearner(window=40)
@@ -192,7 +192,7 @@ class TestOnlineLearner:
             ol.record_trade("EURUSD", -1.0, "RANGING")
         params = ol.get_params("EURUSD")
         assert params["risk_mult"] == 1.05
-        assert params["thresh"] == 2.3
+        assert params["thresh"] == 1.8  # ↓ 2.3→1.8 (OL recalibré pour + de trades)
 
     def test_update_params_wr_70_to_78_neutral(self):
         ol = OnlineLearner(window=20)
@@ -203,18 +203,18 @@ class TestOnlineLearner:
             ol.record_trade("EURUSD", -1.0, "RANGING")
         params = ol.get_params("EURUSD")
         assert params["risk_mult"] == 1.0
-        assert params["thresh"] == 2.5
+        assert params["thresh"] == 2.0  # ↓ 2.5→2.0 (OL recalibré pour + de trades)
 
     def test_update_params_wr_below_70(self):
         ol = OnlineLearner(window=40)
-        # 16 wins out of 40 = 40% WR < 70%, expectancy=0.1 > 0 → risk_mult=0.75, thresh=2.5
+        # 16 wins out of 40 = 40% WR < 70%, expectancy=0.1 > 0 → risk_mult=0.75, thresh=2.0
         for _ in range(16):
             ol.record_trade("EURUSD", 1.0, "TREND_UP")
         for _ in range(24):
             ol.record_trade("EURUSD", -0.5, "RANGING")
         params = ol.get_params("EURUSD")
         assert params["risk_mult"] == 0.75
-        assert params["thresh"] == 2.5
+        assert params["thresh"] == 2.0  # ↓ 2.5→2.0 (OL recalibré pour + de trades)
 
     def test_update_params_expectancy_negative_overrides_risk(self):
         ol = OnlineLearner(window=40)

@@ -198,7 +198,7 @@ class TestPositionTracker:
         tracker.track_new()
         assert 1 in tracker._position_meta
         assert tracker._position_meta[1]["symbol"] == "XAUUSD"
-        assert tracker._position_meta[1]["regime"] == "RAN"
+        assert tracker._position_meta[1]["regime"] == "RANGING"
 
     def test_detect_closed_position(self):
         mt5 = make_mock_mt5()

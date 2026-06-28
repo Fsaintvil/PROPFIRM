@@ -187,19 +187,8 @@ class TestAutoStopIntegration:
         assert ok is True
 
 
-class TestMarketMemoryInit:
-    """Tests pour le chargement de MarketMemory dans main.py."""
-
-    def test_market_memory_importable(self):
-        """MarketMemory doit être importable depuis engine_simple."""
-        from engine_simple.market_memory import MarketMemory
-
-        mm = MarketMemory()
-        assert mm is not None
-        assert hasattr(mm, "load_all")
-        assert hasattr(mm, "get_nearby_levels")
-        assert hasattr(mm, "get_mtf_alignment")
-        assert hasattr(mm, "get_pattern_context")
+class TestMarketStructureInit:
+    """Tests pour le chargement de MarketStructure depuis engine_simple."""
 
     def test_market_structure_importable(self):
         """analyze_market_structure doit être importable."""

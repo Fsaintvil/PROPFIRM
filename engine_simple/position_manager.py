@@ -73,7 +73,13 @@ class PositionManager:
                             f"old={result.get('regime', '?')} new={new_regime} "
                             f"(adx={new_meta.get('adx', 0):.0f})"
                         )
-                # MOM20x3: signal parallèle (analyse seule, pas de décision)
+                # MOM20x3: signal parallèle H1 (analyse seule, pas de décision)
+                # ⚠️ Les logs [MOM20x3] BUY/SELL générés ci-dessous sont INFORMATIFS.
+                # Le vrai signal de trading vient du pipeline qui utilise le timeframe H4 pour XAUUSD.
+                logger.debug(
+                    f"  [PARALLEL_H1] {symbol}: analyse MOM20x3 H1 (informative, "
+                    f"pas un signal de trading — voir pipeline pour le signal réel)"
+                )
                 from engine_simple.strategy import MOM20x3
 
                 h1_rates = rates.get("H1", []) if isinstance(rates, dict) else rates
@@ -94,7 +100,16 @@ class PositionManager:
                 pos = positions.get(symbol)
                 if pos:
                     comment = pos.comment or ""
-                    entry_regime = comment.replace("ADAPT_", "")[:12] if comment.startswith("ADAPT_") else "?"
+                    raw_regime = comment.replace("ADAPT_", "") if comment.startswith("ADAPT_") else "?"
+                    # Re-traduire le code court (3 lettres) en nom complet
+                    REGIME_SHORT_TO_FULL = {
+                        "TRE": "TREND_UP",
+                        "DOW": "TREND_DOWN",
+                        "RAN": "RANGING",
+                        "HIG": "HIGH_VOL",
+                        "LOW": "LOW_VOL",
+                    }
+                    entry_regime = REGIME_SHORT_TO_FULL.get(raw_regime, raw_regime)
                     if entry_regime not in ("?", "LIMIT") and result["regime"] not in ("?", "LIMIT"):
                         if result["regime"] != entry_regime:
                             logger.info(

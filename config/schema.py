@@ -192,6 +192,26 @@ class MLConfig(BaseModel):
     concept_drift: ConceptDriftConfig = ConceptDriftConfig()
 
 
+class CorrelationGroup(BaseModel):
+    """Groupe de symboles corrélés."""
+
+    symbols: list[str] = Field(default_factory=list)
+    reason: str = ""
+
+
+class CorrelationConfig(BaseModel):
+    """Configuration de corrélation — limite l'exposition aux symboles corrélés.
+
+    Les groupes et leurs limites sont hardcodés dans portfolio_controller.py.
+    Cette section du YAML est documentaire et validée par Pydantic.
+    """
+
+    enabled: bool = True
+    max_trades_per_group: int = Field(default=3, ge=1, le=10)
+    max_trades_per_direction_in_group: int = Field(default=2, ge=1, le=5)
+    groups: dict[str, CorrelationGroup] = Field(default_factory=dict)
+
+
 class NewsConfig(BaseModel):
     enabled: bool = True
     minutes_before: int = Field(default=15, ge=0, le=60)
@@ -206,6 +226,7 @@ class ConfigSchema(BaseModel):
     risk: RiskConfig = RiskConfig()
     ml: MLConfig = MLConfig()
     news: NewsConfig = NewsConfig()
+    correlation: CorrelationConfig = CorrelationConfig()
     symbol_limits: dict[str, SymbolLimit] = Field(default_factory=dict)
     secrets: SecretsConfig = SecretsConfig()
     _env_name: str = "default"

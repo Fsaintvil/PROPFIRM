@@ -261,7 +261,7 @@ TIME_STOP_MIN_PROFIT_ATR = 0.5  # minimum profit in ATR to trigger time-stop
 # ============================================================================
 # PULLBACK FILTER — Score threshold for pullback enforcement
 # ============================================================================
-PULLBACK_FILTER_SCORE_THRESHOLD = 0.60  # Scénario A: abaissé 0.65→0.60 pour +20% trades
+PULLBACK_FILTER_SCORE_THRESHOLD = 0.50  # ↓ 0.60→0.50 pour + de trades (plus de signaux sans pullback)
 
 # Premier lock par symbole — Harmonisé avec TRAILING_BY_SYMBOL (19 Juin 2026)
 # Les valeurs correspondent au premier threshold ATR de TRAILING_BY_SYMBOL pour TREND_UP

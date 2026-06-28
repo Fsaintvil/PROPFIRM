@@ -105,17 +105,6 @@ def mock_volume_profile():
 
 
 @pytest.fixture
-def mock_order_flow():
-    m = MagicMock()
-    m.analyze_ticks_from_mt5.return_value = MagicMock(
-        total_volume=1000,
-        net_delta=500,
-    )
-    m.get_flow_adjustment.return_value = {"score_adj": 1.0}
-    return m
-
-
-@pytest.fixture
 def mock_mtf_confirm():
     m = MagicMock()
     m.confirm.return_value = (True, 1.0)
@@ -126,13 +115,6 @@ def mock_mtf_confirm():
 def mock_market_profile():
     m = MagicMock()
     m.analyze.return_value = {"score_adj": 1.0, "session_type": "normal"}
-    return m
-
-
-@pytest.fixture
-def mock_vwap_analyzer():
-    m = MagicMock()
-    m.analyze.return_value = {"score_adj": 1.0, "zone": "neutral"}
     return m
 
 
@@ -193,10 +175,7 @@ def pipeline(
     mock_news_filter,
     mock_strategy_selector,
     mock_volume_profile,
-    mock_order_flow,
     mock_mtf_confirm,
-    mock_market_profile,
-    mock_vwap_analyzer,
     mock_risk_manager,
     mock_config,
 ):
@@ -210,10 +189,7 @@ def pipeline(
         news_filter=mock_news_filter,
         strategy_selector=mock_strategy_selector,
         volume_profile=mock_volume_profile,
-        order_flow=mock_order_flow,
         mtf_confirm=mock_mtf_confirm,
-        market_profile=mock_market_profile,
-        vwap_analyzer=mock_vwap_analyzer,
         risk_manager=mock_risk_manager,
         config=mock_config,
         symbol_limits=mock_config.SYMBOL_LIMITS,
@@ -244,10 +220,7 @@ class TestSignalPipelineInit:
         mock_news_filter,
         mock_strategy_selector,
         mock_volume_profile,
-        mock_order_flow,
         mock_mtf_confirm,
-        mock_market_profile,
-        mock_vwap_analyzer,
         mock_risk_manager,
     ):
         """Le pipeline doit fonctionner même si session_filter est None."""
@@ -260,10 +233,7 @@ class TestSignalPipelineInit:
             news_filter=mock_news_filter,
             strategy_selector=mock_strategy_selector,
             volume_profile=mock_volume_profile,
-            order_flow=mock_order_flow,
             mtf_confirm=mock_mtf_confirm,
-            market_profile=mock_market_profile,
-            vwap_analyzer=mock_vwap_analyzer,
             risk_manager=mock_risk_manager,
             config=mock_config,
             symbol_limits=mock_config.SYMBOL_LIMITS,
@@ -323,7 +293,10 @@ class TestPipelineProcess:
         assert result.signal["max_per_symbol"] > 0
 
     def test_process_none_on_pre_trade_fail(self, pipeline, mock_risk_manager):
-        mock_risk_manager.pre_trade.return_value = (False, [{"rule": "danger_hours", "pass": False}])
+        mock_risk_manager.pre_trade.return_value = (
+            False,
+            [{"rule": "danger_hours", "pass": False, "reason": "Danger hours block"}],
+        )
         result = pipeline.process(
             symbol="XAUUSD",
             cycle_count=1,
@@ -533,22 +506,22 @@ class TestPhase3SessionFilter:
     """Tests du filtre de session."""
 
     def test_accepts_good_session(self, pipeline):
+        """SessionFilter retiré — toujours pass-through."""
         signal = {}
         result = pipeline._phase3_session_filter("XAUUSD", signal)
         assert result is True
-        assert "session_score" in signal
 
     def test_skip_without_filter(self, pipeline, mock_session_filter):
-        pipeline.session_filter = None
+        """SessionFilter retiré — toujours pass-through."""
         signal = {}
         result = pipeline._phase3_session_filter("XAUUSD", signal)
         assert result is True
 
     def test_rejects_low_session(self, pipeline, mock_session_filter):
-        mock_session_filter.get_session_score.return_value = 0.2
+        """SessionFilter retiré — toujours pass-through."""
         signal = {}
         result = pipeline._phase3_session_filter("XAUUSD", signal)
-        assert result is False
+        assert result is True
 
 
 # ── Phase 5: Direction = Régime ──────────────────────────────────────────

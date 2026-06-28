@@ -48,10 +48,15 @@ STATE_FILE = RUNTIME / "auto_state.json"
 ADX_LOW_THRESHOLD = 22  # ADX < 22 = RANGING (hystérésis entrée)
 ADX_HIGH_THRESHOLD = 18  # ADX >= 18 = TRENDING (hystérésis sortie, aligné regime.py 22/18)
 RATIO_STOP = 0.50  # >50% des symboles en ranging → STOP
-SYMBOLS_MIN_RESUME = 3  # >=3 symboles avec ADX >= 22 → RESUME
+SYMBOLS_MIN_RESUME = 2  # >=2 symboles avec ADX >= 22 → RESUME (était 3, réduit pour 3 actifs)
 PAUSE_MIN_DURATION = 1800  # 30 min de pause minimum
 ADX_SNAPSHOT_TTL = 300  # snapshot ADX valide 5 min
 STATE_TTL = 86400  # state max 24h (reset auto)
+
+# 🐛 FIX 26 Juin 2026: Ne vérifier que les symboles activement tradés
+# Les symboles inactifs (USDJPY, GBPUSD, USDCAD) ont un ADX souvent bas
+# et déclenchent de faux STOP (3/6 = 50% → RATIO_STOP atteint)
+ACTIVE_SYMBOLS = ["XAUUSD", "BTCUSD", "EURUSD"]
 
 
 def compute_adx(high_arr, low_arr, close_arr, period=14):
@@ -80,11 +85,61 @@ def compute_adx(high_arr, low_arr, close_arr, period=14):
     return dx
 
 
+class _NumpyEncoder(json.JSONEncoder):
+    """JSON Encoder qui gère les types numpy (np.bool_, np.float64, etc.)."""
+
+    def default(self, obj):
+        if isinstance(obj, (np.bool_,)):
+            return bool(obj)
+        if isinstance(obj, (np.integer,)):
+            return int(obj)
+        if isinstance(obj, (np.floating,)):
+            return float(obj)
+        if isinstance(obj, (np.ndarray,)):
+            return obj.tolist()
+        return super().default(obj)
+
+
+def _validate_adx_snapshot(snapshot: dict) -> dict:
+    """Valide et répare les données ADX snapshot corrompues.
+
+    Problème connu : np.bool_ sérialisé avec default=str donnait
+    des chaînes "False"/"True" au lieu de booléens. Cette fonction
+    les convertit en vrais booléens.
+    """
+    if not isinstance(snapshot, dict):
+        return {}
+    for sym, data in snapshot.items():
+        if not isinstance(data, dict):
+            snapshot[sym] = {"adx": 0.0, "low": False}
+            continue
+        # Réparer les booléens stockés comme chaînes "False"/"True"
+        low_raw = data.get("low")
+        if isinstance(low_raw, str):
+            data["low"] = low_raw.lower() == "true"
+        elif not isinstance(low_raw, bool):
+            data["low"] = bool(low_raw)
+        # Réparer les flottants stockés comme chaînes
+        adx_raw = data.get("adx")
+        if isinstance(adx_raw, str):
+            try:
+                data["adx"] = float(adx_raw)
+            except (ValueError, TypeError):
+                data["adx"] = 0.0
+        elif not isinstance(adx_raw, (int, float)):
+            data["adx"] = 0.0
+    return snapshot
+
+
 def load_state():
     """Charge l'état auto depuis STATE_FILE."""
     if STATE_FILE.exists():
         try:
-            return json.loads(STATE_FILE.read_text())
+            state = json.loads(STATE_FILE.read_text())
+            # Valider et réparer les données corrompues (bug np.bool_)
+            if "adx_snapshot" in state:
+                state["adx_snapshot"] = _validate_adx_snapshot(state["adx_snapshot"])
+            return state
         except (json.JSONDecodeError, OSError):
             pass
     return {
@@ -100,29 +155,55 @@ def save_state(state):
     """Sauvegarde l'état auto."""
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     try:
-        STATE_FILE.write_text(json.dumps(state, indent=2, default=str))
+        # Utiliser _NumpyEncoder au lieu de default=str pour éviter
+        # la corruption des types booléens (np.bool_ → chaîne "False"/"True")
+        STATE_FILE.write_text(json.dumps(state, indent=2, cls=_NumpyEncoder))
     except OSError as e:
         logger.error(f"Erreur sauvegarde auto_state: {e}")
 
 
-def check_adx():
-    """Check ADX sur tous les symboles actifs. Retourne (ratio_low, total, details)."""
+def check_adx(mt5_connector=None):
+    """Check ADX sur tous les symboles actifs. Retourne (ratio_low, total, details).
+
+    Args:
+        mt5_connector: Instance MT5Connector existante (optionnel).
+                        Si None, crée sa propre connexion (fallback).
+    """
     if cfg is None or MT5Connector is None:
         return 0.0, 0, {}
 
-    symbols = cfg.SYMBOLS
+    # 🐛 FIX 26 Juin 2026: utiliser ACTIVE_SYMBOLS au lieu de cfg.SYMBOLS
+    # pour éviter les faux STOP dus aux symboles inactifs (USDJPY, GBPUSD, USDCAD)
+    # qui ont un ADX bas et faussent le ratio (3/6 = 50% → STOP)
+    symbols = ACTIVE_SYMBOLS
     low_count = 0
     total = 0
     details = {}
 
-    # Créer une instance MT5Connector temporaire pour get_rates
-    try:
-        connector = MT5Connector()
-        if not connector.connect():
+    # 🐛 FIX 26 Juin 2026: utiliser le connector passé si disponible
+    # au lieu d'en créer un nouveau (MT5Connector() sans arguments plantait)
+    own_connector = False
+    connector = mt5_connector
+    if connector is None:
+        # Fallback: utiliser l'API MT5 directement
+        try:
+            import MetaTrader5 as mt5
+
+            if not mt5.initialize(timeout=5000):
+                logger.debug("  [AUTO_STOP] MT5 initialize failed (fallback)")
+                return 0.0, 0, {}
+
+            # Créer un wrapper minimal pour get_rates
+            class _MiniConnector:
+                @staticmethod
+                def get_rates(sym, tf, count):
+                    return mt5.copy_rates_from_pos(sym, eval(f"mt5.TIMEFRAME_{tf}"), 0, count)
+
+            connector = _MiniConnector()
+            own_connector = True
+        except Exception as e:
+            logger.debug(f"  [AUTO_STOP] fallback connector: {e}")
             return 0.0, 0, {}
-    except Exception as e:
-        logger.warning(f"  [AUTO_STOP] check_market connector: {e}")
-        return 0.0, 0, {}
 
     for sym in symbols:
         try:
@@ -134,10 +215,13 @@ def check_adx():
             close = [r[4] for r in rates[-26:]]
             adx_val = compute_adx(high, low, close)
             total += 1
-            is_low = adx_val < ADX_LOW_THRESHOLD
+            # 🐛 FIX 26 Juin 2026: np.bool_ n'est pas JSON-serializable → utiliser bool()
+            # pour éviter que json.dumps(default=str) le convertisse en chaîne "False"/"True"
+            # qui est truthy en Python au rechargement.
+            is_low = bool(adx_val < ADX_LOW_THRESHOLD)
             if is_low:
                 low_count += 1
-            details[sym] = {"adx": round(adx_val, 1), "low": is_low}
+            details[sym] = {"adx": float(round(adx_val, 1)), "low": is_low}
         except Exception as e:
             logger.warning(f"  [AUTO_STOP] check_market symbol {sym}: {e}")
             continue
@@ -146,13 +230,17 @@ def check_adx():
     return ratio, total, details
 
 
-def decision(force_check=False):
+def decision(force_check=False, mt5_connector=None):
     """
     Retourne le verdict auto_stop :
       "STOP"  → arrêter le trading
       "RESUME" → reprendre le trading
       "NOOP"  → pas de changement
       "WAIT"  → en pause, attendre la fin
+
+    Args:
+        force_check: Forcer la vérification ADX même si cache valide
+        mt5_connector: Instance MT5Connector existante (optionnel)
 
     Stocke la décision dans STATE_FILE.
     """
@@ -163,8 +251,8 @@ def decision(force_check=False):
     paused_at = state.get("auto_paused_at")
     if paused_at:
         try:
-            paused_ts = datetime.fromisoformat(paused_at).timestamp()
-            if now - paused_ts > STATE_TTL:
+            paused_dt = datetime.fromisoformat(paused_at)
+            if (datetime.utcnow() - paused_dt).total_seconds() > STATE_TTL:
                 state["auto_paused"] = False
                 state["auto_paused_until"] = None
                 state["auto_paused_at"] = None
@@ -176,15 +264,15 @@ def decision(force_check=False):
         pause_until = state.get("auto_paused_until")
         if pause_until:
             try:
-                until_ts = datetime.fromisoformat(pause_until).timestamp()
-                if now < until_ts:
+                pause_dt = datetime.fromisoformat(pause_until)
+                if datetime.utcnow() < pause_dt:
                     save_state(state)
                     return "WAIT", state
             except (ValueError, TypeError):
                 pass
 
         # Pause finie → vérifier si on peut reprendre
-        ratio, total, details = check_adx()
+        ratio, total, details = check_adx(mt5_connector=mt5_connector)
         state["adx_snapshot"] = details
         state["adx_snapshot_ts"] = now
 
@@ -211,7 +299,7 @@ def decision(force_check=False):
     # Vérifier le cache ADX
     snapshot_ts = state.get("adx_snapshot_ts", 0)
     if force_check or (now - snapshot_ts > ADX_SNAPSHOT_TTL):
-        ratio, total, details = check_adx()
+        ratio, total, details = check_adx(mt5_connector=mt5_connector)
         state["adx_snapshot"] = details
         state["adx_snapshot_ts"] = now
         save_state(state)

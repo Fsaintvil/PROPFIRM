@@ -4,7 +4,6 @@ from engine_simple.adaptive_intelligence import AdaptiveEngine, MarketRegime, On
 from engine_simple.audit_trail import AuditTrail
 from engine_simple.broker import Broker
 from engine_simple.ftmo_protector import FTMOProtector
-from engine_simple.market_memory import MarketMemory
 from engine_simple.monitoring import HealthServer, MetricsCollector
 from engine_simple.mt5_connector import MT5Connector
 from engine_simple.notifier import Notifier
@@ -24,7 +23,6 @@ __all__ = [
     "Broker",
     "FTMOProtector",
     "HealthServer",
-    "MarketMemory",
     "MarketRegime",
     "MetricsCollector",
     "MOM20x3",

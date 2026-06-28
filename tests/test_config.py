@@ -37,7 +37,7 @@ def test_load_default_config():
     assert "USDCAD" in cfg.trading.symbols  # réactivé 24 Juin
     assert cfg.risk.per_trade_pct == 0.004  # calibré 25 Juin 2026 (était 0.44% Mode MAX)
     assert cfg.risk.max_dd_pct == 0.10
-    assert cfg.risk.min_rr_ratio == 2.0  # RR≥2.0 (validé backtest)
+    assert cfg.risk.min_rr_ratio == 1.5  # ↓ 2.0→1.5 (26 Juin 2026, plus de trades)
 
 
 def test_load_production_config():
@@ -74,7 +74,7 @@ def test_symbol_limits_new_portfolio():
     assert btc.allow_buys is True
     assert btc.allow_shorts is True
     assert btc.max_lot == 0.06  # ↑ 0.05→0.06 (+10%)
-    assert btc.min_score == 0.70  # ↑ 0.60→0.70 (23 Juin, min global 0.70)
+    assert btc.min_score is None  # per-symbol retiré — global 0.60 s'applique
 
 
 def test_env_interpolation():
@@ -131,7 +131,7 @@ def test_config_simple_compat():
     assert cfg.RISK_PER_TRADE == 0.004  # calibré 25 Juin 2026 (était 0.44%)
     assert cfg.MAX_ORDERS_PER_MINUTE == 10  # 1 trade/min/symbole + marge (8 symboles)
     assert cfg.__version__ == "4.1.0"
-    assert cfg.MIN_SIGNAL_SCORE == 0.55  # restauré calibré (était 0.70 Mode MAX)
+    assert cfg.MIN_SIGNAL_SCORE == 0.38  # global — ↓ 0.55→0.38 (26 Juin 2026, plus de trades, filtré par RVOL/CMF)
 
 
 def test_config_reload():

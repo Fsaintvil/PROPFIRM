@@ -219,7 +219,9 @@ class FTMOProtector:
         try:
             from engine_simple.auto_stop import decision
 
-            verdict, state = decision()
+            # 🐛 FIX 26 Juin 2026: passer self.mt5 au lieu de laisser auto_stop
+            # créer sa propre connexion (MT5Connector() sans arguments plantait)
+            verdict, state = decision(mt5_connector=self.mt5)
             if verdict == "STOP":
                 self._auto_stop_paused = True
                 self._auto_stop_until = state.get("auto_paused_until")
@@ -228,7 +230,11 @@ class FTMOProtector:
                 self._auto_stop_paused = False
                 self._auto_stop_until = None
             elif verdict == "WAIT" and self._auto_stop_paused:
-                return False, f"AUTO_STOP: Still paused until {self._auto_stop_until}"
+                # 🐛 FIX 26 Juin 2026: utiliser state.get() au lieu de self._auto_stop_until
+                # car ce dernier n'est pas mis à jour par les prolongations de pause (15min).
+                actual_until = state.get("auto_paused_until", self._auto_stop_until)
+                self._auto_stop_until = actual_until  # sync pour prochains cycles
+                return False, f"AUTO_STOP: Still paused until {actual_until}"
         except ImportError:
             pass  # auto_stop module non disponible
         except Exception as e:
@@ -311,14 +317,10 @@ class FTMOProtector:
         if not sym_cfg.get("allow_buys", True) and signal.get("action") == "BUY":
             return False, f"Buys not allowed on {symbol} (per-symbol config)"
 
-        # P4: Correlation groups — limite positions simultanées
-        CORR_GROUPS = {"crypto": ["BTCUSD"]}
-        MAX_PER_GROUP = 4
-        sym_group = next((g for g, members in CORR_GROUPS.items() if symbol in members), None)
-        if sym_group and positions:
-            group_count = sum(1 for p in positions if hasattr(p, "symbol") and p.symbol in CORR_GROUPS[sym_group])
-            if group_count >= MAX_PER_GROUP:
-                return False, f"Max positions in {sym_group} group ({MAX_PER_GROUP})"
+        # P4: Correlation groups — supprimé Juin 2026
+        # La corrélation est centralisée dans portfolio_controller.py
+        # (CORR_GROUPS avec FOREX_MAJORS 7 sym, CRYPTO, COMMODITIES, INDICES)
+        # Ce bloc était incomplet (crypto seulement) → délégué à portfolio_controller
 
         # Signal quality gate (per-symbol override)
         min_score = self.config.get("MIN_SIGNAL_SCORE", 0.55)

@@ -45,7 +45,9 @@ class PerformanceMonitor:
     def __init__(self):
         self.history = self._load_history()
         self._ensure_structure()
-        self._lock = threading.Lock()  # C-02: protection race condition
+        self._lock = (
+            threading.RLock()
+        )  # C-02: protection race condition (RLock pour réentrance _save() dans record_trade())
         self._import_from_csv()  # Sync CSV → performance_history
         self._last_alert_time = {}  # Déduplication: metric → last timestamp
 
@@ -220,114 +222,110 @@ class PerformanceMonitor:
 
     def record_trade(self, symbol, profit, regime="UNKNOWN", direction="BUY"):
         """Enregistre un trade fermé dans l'historique."""
-        today = datetime.utcnow().strftime("%Y-%m-%d")
+        with self._lock:
+            today = datetime.utcnow().strftime("%Y-%m-%d")
 
-        # === DAILY ===
-        if today not in self.history["daily"]:
-            self.history["daily"][today] = {
-                "trades": 0,
-                "wins": 0,
-                "losses": 0,
-                "pnl": 0.0,
-                "gross_profit": 0.0,
-                "gross_loss": 0.0,
-                "symbols": {},
-            }
-        d = self.history["daily"][today]
-        d["trades"] += 1
-        d["pnl"] += profit
-        if profit > 0:
-            d["wins"] += 1
-            d["gross_profit"] += profit
-        elif profit < 0:
-            d["losses"] += 1
-            d["gross_loss"] += abs(profit)
+            # === DAILY ===
+            if today not in self.history["daily"]:
+                self.history["daily"][today] = {
+                    "trades": 0,
+                    "wins": 0,
+                    "losses": 0,
+                    "pnl": 0.0,
+                    "gross_profit": 0.0,
+                    "gross_loss": 0.0,
+                    "symbols": {},
+                }
+            d = self.history["daily"][today]
+            d["trades"] += 1
+            d["pnl"] += profit
+            if profit > 0:
+                d["wins"] += 1
+                d["gross_profit"] += profit
+            elif profit < 0:
+                d["losses"] += 1
+                d["gross_loss"] += abs(profit)
 
-        # Par symbole dans la journée
-        if symbol not in d["symbols"]:
-            d["symbols"][symbol] = {"trades": 0, "wins": 0, "losses": 0, "pnl": 0.0}
-        sd = d["symbols"][symbol]
-        sd["trades"] += 1
-        sd["pnl"] += profit
-        if profit > 0:
-            sd["wins"] += 1
-        elif profit < 0:
-            sd["losses"] += 1
+            # Par symbole dans la journée
+            if symbol not in d["symbols"]:
+                d["symbols"][symbol] = {"trades": 0, "wins": 0, "losses": 0, "pnl": 0.0}
+            sd = d["symbols"][symbol]
+            sd["trades"] += 1
+            sd["pnl"] += profit
+            if profit > 0:
+                sd["wins"] += 1
+            elif profit < 0:
+                sd["losses"] += 1
 
-        # === SYMBOLS (cumulatif) ===
-        if symbol not in self.history["symbols"]:
-            self.history["symbols"][symbol] = {
-                "trades": 0,
-                "wins": 0,
-                "losses": 0,
-                "pnl": 0.0,
-                "gross_profit": 0.0,
-                "gross_loss": 0.0,
-                "regime_stats": {},
-                "direction_stats": {
-                    "BUY": {"wins": 0, "losses": 0, "pnl": 0.0},
-                    "SELL": {"wins": 0, "losses": 0, "pnl": 0.0},
-                },
-            }
-        s = self.history["symbols"][symbol]
-        s["trades"] = s.get("trades", 0) + 1
-        s["pnl"] = s.get("pnl", 0.0) + profit
-        if profit > 0:
-            s["wins"] = s.get("wins", 0) + 1
-            s["gross_profit"] = s.get("gross_profit", 0.0) + profit
-        elif profit < 0:
-            s["losses"] = s.get("losses", 0) + 1
-            s["gross_loss"] = s.get("gross_loss", 0.0) + abs(profit)
+            # === SYMBOLS (cumulatif) ===
+            if symbol not in self.history["symbols"]:
+                self.history["symbols"][symbol] = {
+                    "trades": 0,
+                    "wins": 0,
+                    "losses": 0,
+                    "pnl": 0.0,
+                    "gross_profit": 0.0,
+                    "gross_loss": 0.0,
+                    "regime_stats": {},
+                    "direction_stats": {
+                        "BUY": {"wins": 0, "losses": 0, "pnl": 0.0},
+                        "SELL": {"wins": 0, "losses": 0, "pnl": 0.0},
+                    },
+                }
+            s = self.history["symbols"][symbol]
+            s["trades"] = s.get("trades", 0) + 1
+            s["pnl"] = s.get("pnl", 0.0) + profit
+            if profit > 0:
+                s["wins"] = s.get("wins", 0) + 1
+                s["gross_profit"] = s.get("gross_profit", 0.0) + profit
+            elif profit < 0:
+                s["losses"] = s.get("losses", 0) + 1
+                s["gross_loss"] = s.get("gross_loss", 0.0) + abs(profit)
 
-        # Par régime
-        if regime not in s["regime_stats"]:
-            s["regime_stats"][regime] = {"trades": 0, "wins": 0, "pnl": 0.0}
-        rs = s["regime_stats"][regime]
-        rs["trades"] += 1
-        rs["pnl"] += profit
-        if profit > 0:
-            rs["wins"] += 1
+            # Par régime
+            if regime not in s["regime_stats"]:
+                s["regime_stats"][regime] = {"trades": 0, "wins": 0, "pnl": 0.0}
+            rs = s["regime_stats"][regime]
+            rs["trades"] += 1
+            rs["pnl"] += profit
+            if profit > 0:
+                rs["wins"] += 1
 
-        # Par direction
-        ds = s["direction_stats"].get(direction, {"wins": 0, "losses": 0, "pnl": 0.0})
-        ds["pnl"] += profit
-        if profit > 0:
-            ds["wins"] += 1
-        elif profit < 0:
-            ds["losses"] += 1
-        s["direction_stats"][direction] = ds
+            # Par direction
+            ds = s["direction_stats"].get(direction, {"wins": 0, "losses": 0, "pnl": 0.0})
+            ds["pnl"] += profit
+            if profit > 0:
+                ds["wins"] += 1
+            elif profit < 0:
+                ds["losses"] += 1
+            s["direction_stats"][direction] = ds
 
-        # === RECENT_TRADES (pour rolling windows exactes) ===
-        # Chaque trade a un timestamp UTC pour validation et filtrage temporel
-        if "recent_trades" not in self.history:
-            self.history["recent_trades"] = []
-        self.history["recent_trades"].append(
-            {
-                "profit": profit,
-                "symbol": symbol,
-                "regime": regime,
-                "direction": direction,
-                "ts": datetime.utcnow().isoformat(),
-            }
-        )
-        # Garder assez de trades pour TOUTES les fenêtres glissantes:
-        # Chaque fenêtre a besoin de window trades, donc il faut AU MOINS
-        # max(ROLLING_WINDOWS) trades valides dans recent_trades.
-        # On garde 500 trades pour couvrir last_200 + marge.
-        MAX_RECENT = 500
-        if len(self.history["recent_trades"]) > MAX_RECENT:
-            self.history["recent_trades"] = self.history["recent_trades"][-MAX_RECENT:]
+            # === RECENT_TRADES (pour rolling windows exactes) ===
+            if "recent_trades" not in self.history:
+                self.history["recent_trades"] = []
+            self.history["recent_trades"].append(
+                {
+                    "profit": profit,
+                    "symbol": symbol,
+                    "regime": regime,
+                    "direction": direction,
+                    "ts": datetime.utcnow().isoformat(),
+                }
+            )
+            MAX_RECENT = 500
+            if len(self.history["recent_trades"]) > MAX_RECENT:
+                self.history["recent_trades"] = self.history["recent_trades"][-MAX_RECENT:]
 
-        # Nettoyage : garder max 365 jours
-        daily_keys = sorted(self.history["daily"].keys())
-        while len(daily_keys) > 365:
-            del self.history["daily"][daily_keys.pop(0)]
+            # Nettoyage : garder max 365 jours
             daily_keys = sorted(self.history["daily"].keys())
+            while len(daily_keys) > 365:
+                del self.history["daily"][daily_keys.pop(0)]
+                daily_keys = sorted(self.history["daily"].keys())
 
-        # Mise à jour des rolling windows
-        self._update_rolling()
+            # Mise à jour des rolling windows
+            self._update_rolling()
 
-        self._save()
+            self._save()
 
     def _update_rolling(self):
         """Met à jour les métriques glissantes (20, 50, 100, 200 trades).
@@ -367,35 +365,36 @@ class PerformanceMonitor:
 
         ftmo_data: dict avec balance, equity, peak_equity, drawdown, status, etc.
         """
-        c = self.history["challenge"]
-        c["last_update"] = datetime.utcnow().isoformat()
-        for key in [
-            "balance",
-            "equity",
-            "peak_equity",
-            "dd_from_initial",
-            "dd_from_peak",
-            "profit_progress",
-            "profit_remaining",
-            "trading_days",
-            "days_remaining",
-            "total_trades",
-            "status",
-            "daily_pnl",
-            "win_rate",
-        ]:
-            if key in ftmo_data:
-                c[key] = ftmo_data[key]
+        with self._lock:
+            c = self.history["challenge"]
+            c["last_update"] = datetime.utcnow().isoformat()
+            for key in [
+                "balance",
+                "equity",
+                "peak_equity",
+                "dd_from_initial",
+                "dd_from_peak",
+                "profit_progress",
+                "profit_remaining",
+                "trading_days",
+                "days_remaining",
+                "total_trades",
+                "status",
+                "daily_pnl",
+                "win_rate",
+            ]:
+                if key in ftmo_data:
+                    c[key] = ftmo_data[key]
 
-        # Progression estimée
-        if "profit_progress" in ftmo_data:
-            pp_str = str(ftmo_data["profit_progress"]).replace("%", "").replace("+", "")
-            try:
-                c["profit_progress_pct"] = float(pp_str)
-            except ValueError:
-                c["profit_progress_pct"] = 0.0
+            # Progression estimée
+            if "profit_progress" in ftmo_data:
+                pp_str = str(ftmo_data["profit_progress"]).replace("%", "").replace("+", "")
+                try:
+                    c["profit_progress_pct"] = float(pp_str)
+                except ValueError:
+                    c["profit_progress_pct"] = 0.0
 
-        self._save()
+            self._save()
 
     def _dedup_alert(self, metric: str) -> bool:
         """Déduplication: n'ajoute une alerte que si la dernière identique date de > 1h."""

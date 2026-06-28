@@ -1,0 +1,72 @@
+{
+  "params": {
+    "threshold_mult": 1.0,
+    "risk_mult": 1.0,
+    "sl_mult": 1.0,
+    "tp_mult": 1.0,
+    "trailing_mult": 1.0,
+    "win_rate": 0.5,
+    "profit_factor": 1.0,
+    "avg_pnl": 0.0,
+    "sample_size": 0,
+    "last_update": 0.0,
+    "confidence": 0.225
+  },
+  "trades": [
+    {
+      "pnl": 0.1,
+      "win": true,
+      "time": 1782327435.7568436,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": 0.07,
+      "win": true,
+      "time": 1782327435.7766817,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": 0.07,
+      "win": true,
+      "time": 1782330622.3407326,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": -3.1,
+      "win": false,
+      "time": 1782333940.405219,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 0.68,
+      "win": true,
+      "time": 1782417192.6199229,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 0.22,
+      "win": true,
+      "time": 1782417612.8069243,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 0.12,
+      "win": true,
+      "time": 1782417612.8243837,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 0.23,
+      "win": true,
+      "time": 1782417612.9425583,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 0.28,
+      "win": true,
+      "time": 1782417613.3247497,
+      "regime": "DOW"
+    }
+  ],
+  "last_update": 1782417613.3247497
+}

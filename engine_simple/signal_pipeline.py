@@ -30,7 +30,7 @@ import time
 import pandas as _pd
 import numpy as np
 
-from engine_simple.indicators import chaikin_money_flow, relative_volume
+from engine_simple.indicators import chaikin_money_flow, obv_divergence, relative_volume
 
 logger = logging.getLogger("signal_pipeline")
 
@@ -57,10 +57,7 @@ class SignalPipeline:
         news_filter,
         strategy_selector,
         volume_profile,
-        order_flow,
         mtf_confirm,
-        market_profile,
-        vwap_analyzer,
         risk_manager,
         config,
         symbol_limits,
@@ -74,10 +71,7 @@ class SignalPipeline:
         self.news_filter = news_filter
         self.strategy_selector = strategy_selector
         self.volume_profile = volume_profile
-        self.order_flow = order_flow
         self.mtf_confirm = mtf_confirm
-        self.market_profile = market_profile
-        self.vwap_analyzer = vwap_analyzer
         self.risk_manager = risk_manager
         self.cfg = config
         self.symbol_limits = symbol_limits
@@ -142,7 +136,8 @@ class SignalPipeline:
         pre_ok, pre_checks = self.risk_manager.pre_trade(symbol)
         if not pre_ok:
             failed = [c["rule"] for c in pre_checks if not c["pass"]]
-            logger.debug(f"  [PRECHECK] {symbol}: echec {failed}")
+            reasons = {c["rule"]: c["reason"] for c in pre_checks if not c["pass"]}
+            logger.debug(f"  [PRECHECK] {symbol}: echec {failed}, reasons={reasons}")
             return None
 
         # Phase 1: MOM20x3 signal
@@ -160,15 +155,6 @@ class SignalPipeline:
         # Phase 2: ADX threshold
         if not self._phase2_adx_filter(symbol, signal, cycle_count, log_throttle):
             return None
-
-        # Log signal debug
-        logger.debug(
-            f"  [SIGNAL] {symbol}: score={signal['score']:.2f}, "
-            f"conf={signal['confidence']:.2f}, action={signal['action']}, "
-            f"strat={signal.get('details', '?')}, "
-            f"+DI={signal.get('plus_di', '?'):>5} -DI={signal.get('minus_di', '?'):>5} "
-            f"slope={signal.get('adx_slope', '?'):>5}"
-        )
 
         # Phase 3: Session filter
         if not self._phase3_session_filter(symbol, signal):
@@ -198,6 +184,9 @@ class SignalPipeline:
         # Phase 7b: RVOL + CMF
         if not self._phase7b_rvol_cmf(symbol, signal):
             return None
+
+        # Phase 7c: OBV Divergence
+        self._phase7c_obv_divergence(symbol, signal)
 
         # Phase 9: MTF Confirmation
         if not self._phase9_mtf_confirm(symbol, signal):
@@ -258,6 +247,22 @@ class SignalPipeline:
                     )
                 return None
 
+        # 🐛 FIX 26 Juin 2026: utiliser signal["score"] (modifié par les phases)
+        # au lieu du score capturé à l'entrée (ligne 147) qui n'était jamais mis à jour.
+        # Cause du bug : toutes les phases modifient signal["score"] in-place mais
+        # le score retourné dans SignalResult restait celui d'origine, créant un
+        # décalage entre result.score (tri) et signal["score"] (check FTMO).
+        # Log signal final APRÈS toutes les phases (y compris pénalités RVOL/CMF/OBV/VP/MTF)
+        logger.debug(
+            f"  [SIGNAL] {symbol}: score={signal.get('score', 0):.2f}, "
+            f"conf={signal.get('confidence', 0):.2f}, action={signal.get('action', '?')}, "
+            f"strat={signal.get('details', '?')}, "
+            f"rvol_adj={signal.get('rvol_adj', 1.0):.2f} "
+            f"cmf_adj={signal.get('cmf_adj', 1.0):.2f} "
+            f"risk_mult={signal.get('risk_mult', 1.0):.2f}"
+        )
+
+        score = signal.get("score", score)
         return SignalResult(symbol=symbol, signal=signal, score=score)
 
     # ── Phase 1: MOM20x3 Signal ───────────────────────────────────────────
@@ -278,7 +283,7 @@ class SignalPipeline:
             ol_risk_mult = ol_params.get("risk_mult", 1.0)
             # Appliquer le seuil OL si disponible, avec bornes sécurité [1.5, 2.5]
             if ol_thresh is not None:
-                ol_thresh_clamped = max(1.5, min(2.5, ol_thresh))
+                ol_thresh_clamped = max(1.5, min(2.0, ol_thresh))  # cap à 2.0 (↓ 2.5 pour + de trades)
                 ol_thresh_trending = ol_thresh_clamped
                 ol_thresh_ranging = max(1.5, ol_thresh_clamped - 0.5)
                 logger.debug(
@@ -387,7 +392,7 @@ class SignalPipeline:
         sym_cfg = self.symbol_limits.get(symbol, {})
         signal_score = signal.get("score", 0.6)
 
-        ADX_BYPASS_MIN = 15
+        ADX_BYPASS_MIN = 12  # Juin 2026: réduit 15→12 pour EURUSD (ADX typique 12-14 en range)
         if signal_score >= 0.80 and signal_adx >= ADX_BYPASS_MIN:
             logger.debug(f"  [ADX] {symbol}: bypass (score={signal_score:.2f} >= 0.80, ADX={signal_adx:.1f})")
             return True
@@ -404,29 +409,14 @@ class SignalPipeline:
                 return False
         return True
 
-    # ── Phase 3: Session Filter ────────────────────────────────────────────
+    # ── Phase 3: Session Filter — RETIRÉ 26 Juin 2026 ────────────────────
+    # Le module session_filter.py a été déplacé dans retired/ car il utilisait
+    # des horaires fixes qui ne correspondaient pas aux symboles 24/7.
+    # Les heures dangereuses (12:00 UTC) sont gérées par DANGER_HOURS dans
+    # main.py et ftmo_protector.py.
+    # Le champ self.session_filter est toujours None (main.py:346).
 
     def _phase3_session_filter(self, symbol: str, signal: dict) -> bool:
-        if self.session_filter:
-            hour_utc = datetime.now(timezone.utc).hour
-            session_score = self.session_filter.get_session_score(symbol, hour_utc)
-            if session_score < 0.3:
-                # Bypass pour signaux forts (score≥0.80 ET ADX≥15)
-                # Même règle que DANGER_HOURS — un signal technique fort peut
-                # trader en dehors des heures de liquidité optimales
-                sig_score = signal.get("score", 0)
-                sig_adx = signal.get("adx", 0)
-                if sig_score >= 0.80 and sig_adx >= 15:
-                    signal["session_score"] = session_score
-                    signal["session_bypass"] = True
-                    logger.debug(
-                        f"  [SESSION] {symbol}: score {session_score:.2f} < 0.3 "
-                        f"mais BYPASS pour signal fort (score={sig_score:.2f}, ADX={sig_adx:.0f})"
-                    )
-                    return True
-                logger.debug(f"  [SESSION] {symbol}: score {session_score:.2f} < 0.3 → skip")
-                return False
-            signal["session_score"] = session_score
         return True
 
     # ── Phase 4: News Filter ──────────────────────────────────────────────
@@ -497,8 +487,8 @@ class SignalPipeline:
             # ── RVOL ──
             rvol = relative_volume(volumes, period=50)
             if rvol < 0.5:
-                signal["score"] = max(0.3, signal["score"] * 0.75)
-                signal["rvol_adj"] = 0.75
+                signal["score"] = max(0.3, signal["score"] * 0.90)
+                signal["rvol_adj"] = 0.90
                 signal["rvol_note"] = "FAIBLE"
             elif rvol > 2.0:
                 signal["score"] = min(0.95, signal["score"] * 1.10)
@@ -536,6 +526,61 @@ class SignalPipeline:
         except Exception as e:
             logger.debug(f"  [VOL] {symbol}: erreur RVOL/CMF: {e}")
         return True
+
+    # ── Phase 7c: OBV Divergence ──────────────────────────────────────────
+
+    def _phase7c_obv_divergence(self, symbol: str, signal: dict) -> None:
+        """OBV Divergence — conflit prix/volume.
+
+        Détecte les divergences entre la tendance prix et l'OBV (On-Balance Volume).
+        - OBV bullish divergence (prix baisse, OBV monte) → accumulation cachée
+        - OBV bearish divergence (prix monte, OBV baisse) → distribution cachée
+
+        Les pénalités sont configurables par symbole dans default.yaml.
+        BTCUSD utilise 0.85/0.92 (volume crypto moins fiable), forex 0.70/0.85.
+        """
+        try:
+            tf = self.symbol_timeframes.get(symbol, "H1")
+            rates = self._get_cached_rates(symbol, tf, count=100)
+            if rates is None or len(rates) < 50:
+                return
+            df = self._to_dataframe(rates)
+            closes = df["close"].values
+            volumes = df["volume"].values
+
+            div_type, div_strength = obv_divergence(closes, volumes, period=20)
+
+            sym_cfg = self.symbol_limits.get(symbol, {})
+            penalty_high = sym_cfg.get("obv_div_penalty_high", 0.70)
+            penalty_low = sym_cfg.get("obv_div_penalty_low", 0.85)
+            sig_action = signal.get("action", "BUY")
+
+            if div_type != "none" and div_strength > 0.1:
+                direction_ok = (div_type == "bullish" and sig_action == "BUY") or (
+                    div_type == "bearish" and sig_action == "SELL"
+                )
+                if direction_ok:
+                    # Divergence dans la même direction → bonus léger
+                    signal["score"] = min(0.95, signal["score"] * 1.05)
+                    signal["obv_div"] = div_type
+                    signal["obv_strength"] = round(div_strength, 3)
+                    signal["obv_note"] = "confirms"
+                else:
+                    # Divergence en conflit → pénalité
+                    penalty = penalty_low if div_strength < 0.5 else penalty_high
+                    signal["score"] = max(0.3, signal["score"] * penalty)
+                    signal["obv_div"] = div_type
+                    signal["obv_strength"] = round(div_strength, 3)
+                    signal["obv_note"] = f"conflict_penalty={penalty:.2f}"
+            else:
+                signal["obv_div"] = "none"
+                signal["obv_strength"] = 0.0
+                signal["obv_note"] = "none"
+        except Exception as e:
+            logger.debug(f"  [OBV] {symbol}: erreur OBV Divergence: {e}")
+            signal["obv_div"] = "none"
+            signal["obv_strength"] = 0.0
+            signal["obv_note"] = "error"
 
     # ── Phase 7: Volume Profile ────────────────────────────────────────────
 

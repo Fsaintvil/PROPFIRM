@@ -32,6 +32,7 @@ Usage:
 
 import json
 import logging
+from logging.handlers import RotatingFileHandler
 import os
 import signal
 import subprocess
@@ -60,7 +61,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler(LOG_DIR / "agent_daemon.log", encoding="utf-8"),
+        RotatingFileHandler(LOG_DIR / "agent_daemon.log", maxBytes=10_485_760, backupCount=5, encoding="utf-8"),
         logging.StreamHandler(sys.stdout),
     ],
 )
@@ -495,11 +496,13 @@ class AdaptiveEngineAgent(Agent):
         level = "GREEN"
         lgb_loaded = ctx.get("lgb_available", False)
         meta_active = ctx.get("meta_active", False)
+        # LightGBM désactivé intentionnellement (docstring AGENTS.md: pas assez de trades)
+        # → ORANGE au lieu de RED pour ne pas polluer le niveau global du council
         if not lgb_loaded:
-            level = "RED"
+            level = "ORANGE"
         elif not meta_active:
             level = "ORANGE"
-        msg = f"LGB={'OK' if lgb_loaded else 'DOWN'}, META={'OK' if meta_active else 'DOWN'}"
+        msg = f"LGB={'OK' if lgb_loaded else 'OFF'}, META={'OK' if meta_active else 'OFF'}"
 
         # ── Propositions ──
         if not lgb_loaded:
@@ -1044,35 +1047,81 @@ class AgentDaemon:
         self.cycle_count = 0
         self.last_heartbeat = 0.0
         self.robot_start_attempts = 0
+        self._last_log_message: str = ""  # debounce : ne pas loguer 2× le même message
         self._load_proposals()
 
     # ── Gestion du robot sous-processus ──
 
     def start_robot(self):
-        """Lance main.py comme sous-processus."""
+        """Lance main.py comme sous-processus avec tentatives multiples et backoff.
+
+        Le mutex Windows (CreateMutexW) peut persister quelques secondes après
+        la mort du processus précédent. On réessaie avec un délai croissant.
+
+        Vérifie d'abord si un robot est déjà en cours via robot.pid :
+        - Si oui, on le monitor simplement sans en lancer un nouveau.
+        - Si le PID est mort, on nettoie et on démarre.
+        """
+        # Vérifier si un robot tourne déjà (lancé manuellement ou par une session précédente)
+        existing_pid = self._detect_existing_robot()
+        if existing_pid:
+            logger.info(f"Robot déjà en cours (PID {existing_pid}) — monitoring sans redémarrage")
+            return
+
         if self.robot_process and self.robot_process.poll() is None:
-            logger.info("Robot déjà en cours d'exécution")
+            logger.info("Robot déjà en cours d'exécution (sous-processus)")
             return
 
         # Nettoyer toute référence morte + PID stale avant de démarrer
         self.robot_process = None
         self._clean_stale_pid()
 
-        logger.info("Démarrage du robot MOM20x3...")
-        try:
-            self.robot_process = subprocess.Popen(
-                [sys.executable, "main.py"],
-                cwd=str(BASE),
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+        max_attempts = 5
+        base_delay = 3  # secondes
+        startup_log = BASE / "logs" / "_startup_debug.log"
+
+        for attempt in range(1, max_attempts + 1):
+            delay = base_delay * attempt  # 3, 6, 9, 12, 15s
+            logger.info(
+                f"Démarrage du robot MOM20x3 (tentative {attempt}/{max_attempts}, "
+                f"attente {delay}s pour libération mutex)..."
             )
-            # Écrire le PID dans le fichier (pour compatibilité robot.ps1, main.py)
-            ROBOT_PID_FILE.write_text(str(self.robot_process.pid))
-            self.robot_start_attempts += 1
-            logger.info(f"Robot démarré avec PID {self.robot_process.pid}")
-        except Exception as e:
-            logger.error(f"ÉCHEC démarrage robot: {e}")
-            self.robot_process = None
+            time.sleep(delay)
+
+            try:
+                proc = subprocess.Popen(
+                    [sys.executable, "main.py"],
+                    cwd=str(BASE),
+                    stdout=open(startup_log, "a"),
+                    stderr=subprocess.STDOUT,
+                )
+                self.robot_process = proc
+                # ⚠️ NE PAS écrire dans robot.pid ici — c'est le robot lui-même
+                # qui gère son PID lock via _acquire_lock(). Écrire depuis le daemon
+                # crée une race condition avec le write du robot au démarrage.
+
+                # Petite pause pour laisser le robot s'initialiser
+                time.sleep(2)
+
+                # Vérifier si le robot est toujours en vie (mutex acquis ?)
+                if proc.poll() is None:
+                    self.robot_start_attempts += 1
+                    logger.info(f"Robot démarré avec succès PID {proc.pid} (tentative {attempt}/{max_attempts})")
+                    return  # ✅ Succès
+
+                # Le robot est déjà mort — probablement échec mutex
+                logger.warning(
+                    f"Robot mort immédiatement après démarrage (PID {proc.pid}) "
+                    f"— mutex Windows probablement pas libéré, tentative suivante..."
+                )
+                self.robot_process = None
+
+            except Exception as e:
+                logger.error(f"ÉCHEC démarrage robot (tentative {attempt}): {e}")
+                self.robot_process = None
+
+        # Toutes les tentatives ont échoué
+        logger.critical(f"Impossible de démarrer le robot après {max_attempts} tentatives. Vérifier manuellement.")
 
     def _close_mt5_positions(self):
         """Ferme toutes les positions MT5 du robot directement.
@@ -1167,15 +1216,42 @@ class AgentDaemon:
                 pid_str = ROBOT_PID_FILE.read_text().strip()
                 if pid_str:
                     pid = int(pid_str)
-                    # os.kill(pid, 0) vérifie l'existence sans envoyer de signal
-                    os.kill(pid, 0)
-                    # Vérifier que le process est bien un Python qui tourne depuis assez longtemps
-                    # pour éviter de confondre avec un PID recyclé
-                    return True
+                    # Sur Windows, os.kill(pid, 0) ne fait PAS un simple test
+                    # d'existence — il envoie un signal et peut échouer sur des
+                    # processus valides. Utiliser ctypes à la place.
+                    alive = self._pid_exists_windows(pid)
+                    if alive:
+                        return True
         except (OSError, ValueError, PermissionError):
-            # PID inexistant ou invalide → fichier stale, le nettoyer
-            self._clean_stale_pid()
+            pass
+        # PID inexistant ou invalide → fichier stale, le nettoyer
+        self._clean_stale_pid()
         return False
+
+    @staticmethod
+    def _pid_exists_windows(pid: int) -> bool:
+        """Vérifie si un process existe sur Windows via ctypes.
+
+        Sur Windows, os.kill(pid, 0) ne fait pas un simple test d'existence
+        (il envoie un signal et peut bloquer). On utilise OpenProcess à la place.
+        """
+        try:
+            import ctypes
+
+            kernel32 = ctypes.windll.kernel32
+            # PROCESS_QUERY_INFORMATION = 0x0400 | PROCESS_VM_READ = 0x0010
+            handle = kernel32.OpenProcess(0x0400 | 0x0010, False, pid)
+            if handle:
+                kernel32.CloseHandle(handle)
+                return True
+            return False
+        except Exception:
+            # Fallback: os.kill pour Linux/Mac ou si ctypes échoue
+            try:
+                os.kill(pid, 0)
+                return True
+            except (OSError, ValueError, PermissionError):
+                return False
 
     def _clean_stale_pid(self):
         """Supprime le fichier PID s'il est obsolète (processus mort)."""
@@ -1185,16 +1261,57 @@ class AgentDaemon:
                 if pid_str:
                     try:
                         pid = int(pid_str)
-                        os.kill(pid, 0)  # Vérifie si le process existe
-                        # Le process existe → ne pas supprimer
-                        return
-                    except (OSError, ValueError):
-                        # Processus mort → fichier stale, supprimer
+                        if self._pid_exists_windows(pid):
+                            return
+                    except ValueError:
                         pass
                 ROBOT_PID_FILE.unlink()
                 logger.info(f"PID file supprimé (stale: {pid_str})")
         except Exception as e:
             logger.debug(f"Nettoyage PID file échoué: {e}")
+
+    def _detect_existing_robot(self) -> int | None:
+        """Détecte si un robot tourne déjà via le PID lock file.
+
+        Lit runtime/robot.pid, vérifie si le PID est vivant et confirme
+        que c'est bien un processus python (évite les faux positifs).
+
+        Returns:
+            int | None: Le PID du robot existant, ou None si pas de robot.
+        """
+        try:
+            if not ROBOT_PID_FILE.exists():
+                return None
+            pid_str = ROBOT_PID_FILE.read_text().strip()
+            if not pid_str:
+                return None
+            pid = int(pid_str)
+            if not self._pid_exists_windows(pid):
+                logger.info(f"PID file {pid} trouvé mais processus mort — nettoyage")
+                ROBOT_PID_FILE.unlink(missing_ok=True)
+                return None
+            # Vérifier que le processus est bien python (évite faux PID recyclé)
+            try:
+                import psutil
+
+                proc = psutil.Process(pid)
+                if "python" not in proc.name().lower():
+                    logger.warning(
+                        f"PID {pid} trouvé dans robot.pid mais processus={proc.name()} "
+                        f"(pas python) — PID recyclé, nettoyage"
+                    )
+                    ROBOT_PID_FILE.unlink(missing_ok=True)
+                    return None
+            except ImportError:
+                pass  # psutil optionnel, on fait confiance au PID
+            except psutil.NoSuchProcess:
+                ROBOT_PID_FILE.unlink(missing_ok=True)
+                return None
+            logger.info(f"Robot existant détecté: PID {pid}")
+            return pid
+        except (ValueError, OSError) as e:
+            logger.debug(f"Erreur détection robot existant: {e}")
+            return None
 
     # ── Lecture des métriques ──
 
@@ -1338,6 +1455,25 @@ class AgentDaemon:
         data["council_board"] = self.council_board[-20:]  # 20 derniers messages
         STATUS_FILE.write_text(json.dumps(data, indent=2, default=str))
 
+        # ═══ Écrire le verdict consolidé dans VERDICT_FILE (H3 fix) ═══
+        try:
+            verdict = {
+                "timestamp": data["timestamp"],
+                "cycle": self.cycle_count,
+                "global_level": data["global_level"],
+                "robot_alive": data["robot_alive"],
+                "agents": {name: {"level": a["level"], "message": a["message"]} for name, a in data["agents"].items()},
+                "summary": {
+                    "red": sum(1 for a in data["agents"].values() if a["level"] == "RED"),
+                    "orange": sum(1 for a in data["agents"].values() if a["level"] == "ORANGE"),
+                    "green": sum(1 for a in data["agents"].values() if a["level"] == "GREEN"),
+                },
+            }
+            VERDICT_FILE.parent.mkdir(parents=True, exist_ok=True)
+            VERDICT_FILE.write_text(json.dumps(verdict, indent=2, default=str))
+        except Exception as e:
+            logger.error(f"Erreur écriture verdict: {e}")
+
     def log_council(self, results: list[dict]):
         """Écrit le résumé du cycle dans council_log.md avec synthèse inter-agents."""
         try:
@@ -1458,10 +1594,7 @@ class AgentDaemon:
             # ── Vérifier si un agent a déclenché un KILL (bug C1 fix) ──
             for agent, result in zip(self.agents, results):
                 if result.get("data", {}).get("action") == "KILL":
-                    logger.critical(
-                        f"🚨 KILL SWITCH DECLENCHÉ par {agent.name}: "
-                        f"{result['data'].get('message', '')}"
-                    )
+                    logger.critical(f"🚨 KILL SWITCH DECLENCHÉ par {agent.name}: {result['data'].get('message', '')}")
                     # Fermer positions + tuer robot + sortir
                     self.stop_robot()
                     self.running = False
@@ -1489,30 +1622,44 @@ class AgentDaemon:
                 ]
                 self.proposal_board = fresh[-100:]  # garder max 100 récentes
 
-            # ── Logger les résultats ──
+            # ── Logger les résultats (debounce : ne loguer que si le message change) ──
             reds = [r for r in results if r["level"] == "RED"]
             oranges = [r for r in results if r["level"] == "ORANGE"]
             if reds:
-                logger.warning(
-                    f"[Cycle {self.cycle_count}] 🔴 {len(reds)} rouge(s): "
-                    + "; ".join(f"{a.name}={r['message']}" for a, r in zip(self.agents, results) if r["level"] == "RED")
-                )
+                msg = "; ".join(f"{a.name}={r['message']}" for a, r in zip(self.agents, results) if r["level"] == "RED")
+                log_line = f"🔴 {len(reds)} rouge(s): {msg}"
             elif oranges:
-                logger.info(
-                    f"[Cycle {self.cycle_count}] 🟡 {len(oranges)} orange(s): "
-                    + "; ".join(
-                        f"{a.name}={r['message']}" for a, r in zip(self.agents, results) if r["level"] == "ORANGE"
-                    )
+                msg = "; ".join(
+                    f"{a.name}={r['message']}" for a, r in zip(self.agents, results) if r["level"] == "ORANGE"
                 )
+                log_line = f"🟡 {len(oranges)} orange(s): {msg}"
+            else:
+                log_line = "✅ ALL GREEN"
 
-            # Heartbeat toutes les 5 min
+            # Debounce : ne logger que si le message change, ou tous les 30 cycles (rappel)
+            if log_line != self._last_log_message or (self.cycle_count % 30 == 0):
+                self._last_log_message = log_line
+                if reds:
+                    logger.warning(f"[Cycle {self.cycle_count}] {log_line}")
+                elif oranges:
+                    logger.info(f"[Cycle {self.cycle_count}] {log_line}")
+                else:
+                    logger.info(f"[Cycle {self.cycle_count}] {log_line}")
+
+            # Heartbeat compact toutes les 5 min
             if time.time() - self.last_heartbeat > 300:
                 self.last_heartbeat = time.time()
-                status = STATUS_FILE.read_text() if STATUS_FILE.exists() else "{}"
+                level = "N/A"
+                if STATUS_FILE.exists():
+                    try:
+                        st = json.loads(STATUS_FILE.read_text())
+                        level = st.get("global_level", "N/A")
+                    except (json.JSONDecodeError, KeyError):
+                        level = "N/A"
                 logger.info(
-                    f"[HEARTBEAT] Cycle {self.cycle_count} | Agents: {len(self.agents)} | "
+                    f"[HEARTBEAT] Cycle {self.cycle_count} | {len(self.agents)} agents | "
                     f"Robot: {'ALIVE' if self.is_robot_alive() else 'DEAD'} | "
-                    f"Status: {status[:120]}"
+                    f"Niveau: {level}"
                 )
 
             time.sleep(5)

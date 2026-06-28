@@ -181,7 +181,7 @@ class TestTradeExecutor:
     def test_init(self):
         ex = self.make_executor()
         assert ex.rate_limiter is not None
-        assert ex.rate_limiter.max_per_minute == 2  # Mode modéré: 2 trades/min/symbole
+        assert ex.rate_limiter.max_per_minute == 6  # Mode agressif: 6 trades/min/symbole (26 Juin 2026)
 
     def test_get_signal_value_dict(self):
         ex = self.make_executor()

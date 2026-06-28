@@ -187,7 +187,9 @@ class Trailer:
 
     def _persist_partial_closed(self):
         try:
-            state_path = Path("runtime/robot_state.json")
+            # 🐛 FIX 26 Juin 2026: utiliser le chemin absolu depuis le fichier
+            # au lieu du CWD pour éviter les écritures au mauvais endroit
+            state_path = Path(__file__).resolve().parent.parent / "runtime" / "robot_state.json"
             if state_path.exists():
                 d = json.loads(state_path.read_text())
                 d["partial_closed"] = list(self.partial_closed)
@@ -374,7 +376,9 @@ class Trailer:
             if rates is not None and len(rates) > 5:
                 pos_open_ts = None
                 try:
-                    pos_open_ts = position.time.timestamp()
+                    # 🐛 FIX 26 Juin 2026: position.time est un int (Unix timestamp)
+                    # dans l'API MT5, pas un datetime. .timestamp() lève AttributeError.
+                    pos_open_ts = position.time if isinstance(position.time, (int, float)) else None
                 except (AttributeError, TypeError):
                     pass
                 if pos_open_ts is not None:
@@ -426,7 +430,12 @@ class Trailer:
     # ── Structure exit ────────────────────────────────────────────────
 
     def _check_structure_exit(self, position):
-        """Structure-based exit: ferme si BOS/CHoCH invalide la direction."""
+        """Structure-based exit: resserre le SL si BOS/CHoCH invalide la direction.
+
+        Au lieu de fermer en market order (perdait le trailing ATR),
+        on modifie le SL au niveau BOS pour laisser le trailing ou le marché
+        décider de la sortie. Préserve les gains déjà verrouillés par le trailing.
+        """
         symbol = position.symbol
         now = time.time()
         cached = self._rates_cache.get(symbol)
@@ -445,34 +454,53 @@ class Trailer:
         should_exit, reason, candle_idx = structure_exit_signal(position.type, h1h, h1l, h1c, window=5)
         if not should_exit or candle_idx is None:
             return
+
+        # 🐛 FIX 26 Juin 2026: position.time est un int (Unix timestamp)
+        # 🐛 CORRIGÉ 26 Juin: ce bloc était APRÈS un `return` → dead code
         try:
-            pos_open_ts = position.time.timestamp()
+            pos_open_ts = position.time if isinstance(position.time, (int, float)) else None
             candle_ts = h1t[candle_idx]
-            if candle_ts <= pos_open_ts:
+            if pos_open_ts is not None and candle_ts <= pos_open_ts:
                 return
         except (AttributeError, IndexError, TypeError):
             return
-        tick = self.mt5.get_tick(symbol)
-        if tick is None:
+
+        # Extraire le niveau BOS du message (ex: "BEARISH_BOS @ 1.13829")
+        level = None
+        if "@" in reason:
+            try:
+                level = float(reason.split("@")[1].strip())
+            except (ValueError, IndexError):
+                pass
+        if level is None or level <= 0:
             return
-        ct = 1 if position.type == 0 else 0
-        price = tick.ask if ct == 0 else tick.bid
-        req = dict(
-            action=mt5.TRADE_ACTION_DEAL,
-            symbol=symbol,
-            volume=position.volume,
-            type=ct,
-            position=position.ticket,
-            price=price,
-            deviation=20,
-            magic=cfg.ROBOT_MAGIC,
-            comment=f"STRUCT_{reason[:8]}",
+
+        # RESSERRER LE SL au niveau BOS au lieu de fermer en market order.
+        # Cela préserve le trailing ATR qui continue de protéger les gains.
+        info = self.mt5.get_symbol_info(symbol)
+        if info is None:
+            return
+        is_buy = position.type == 0
+        proposed_sl = round(level, info.digits)
+
+        # Vérifier que le nouveau SL améliore la protection
+        sl_improves = (position.sl is None) or (
+            (is_buy and proposed_sl > position.sl) or (not is_buy and proposed_sl < position.sl)
         )
-        result = self.mt5.order_send(req)
+        if not sl_improves:
+            # Le SL actuel (trailing ATR) est déjà meilleur → laisser le trailing gérer
+            logger.debug(f"  [STRUCT_SL] {symbol}: BOS={level} mais SL actuel={position.sl} meilleur → skip")
+            return
+
+        result = self.mt5.update_sl(position, proposed_sl)
         if result and result.retcode == 10009:
-            logger.info(f"Structure exit: {symbol} ({reason}) profit={position.profit:.2f}")
+            try:
+                position.sl = proposed_sl
+            except AttributeError:
+                pass
+            logger.info(f"Structure SL: {symbol} SL→{proposed_sl} ({reason}) profit={position.profit:.2f}")
         elif result and result.retcode != 10009:
-            logger.warning(f"STRUCTURE EXIT FAILED {symbol}: retcode={result.retcode}")
+            logger.warning(f"STRUCTURE SL FAILED {symbol}: retcode={result.retcode}")
 
     # ── SL/TP calculation ─────────────────────────────────────────────
 
@@ -483,10 +511,11 @@ class Trailer:
         digits = info.digits
         if atr_val and atr_val > 0:
             min_dist = cfg.ATR_MULTIPLIER * atr_val
-            jitter_sl = 1.0 + random.uniform(-0.05, 0.05)
-            jitter_tp = 1.0 + random.uniform(-0.05, 0.05)
-            sl_dist = max(sl_mult * atr_val * jitter_sl, min_dist)
-            tp_dist = max(tp_mult * atr_val * jitter_tp, min_dist)
+            # 🐛 FIX 26 Juin 2026: jitter unique pour SL et TP pour préserver RR ratio
+            # Avant: jitter_sl et jitter_tp indépendants → RR pouvait tomber à 1.8
+            jitter = 1.0 + random.uniform(-0.05, 0.05)  # ±5% sur les deux
+            sl_dist = max(sl_mult * atr_val * jitter, min_dist)
+            tp_dist = max(tp_mult * atr_val * jitter, min_dist)
         else:
             sl_dist = self.config.get("SL_PIPS", 15) * (0.0001 if "JPY" not in symbol else 0.01)
             tp_dist = sl_dist * self.config.get("TP_MULTIPLIER", 2.0)

@@ -29,15 +29,12 @@ random.seed(42)  # Reproductible
 # ============================================================
 # Données par symbole — WR backtest 2026 (ajusté conservateur)
 # Juin 2026: 3 symboles actifs (XAUUSD H4, BTCUSD H1, EURUSD H1)
+# >= Juin 2026: seuls les 3 symboles actifs sont seedés
 # ============================================================
 SYMBOL_CONFIG = {
     "XAUUSD": {"wr": 0.62, "trades": 200, "rr_win": 2.5, "rr_loss": -1.0, "volume": 0.10},
     "BTCUSD": {"wr": 0.65, "trades": 200, "rr_win": 2.5, "rr_loss": -1.0, "volume": 0.05},
     "EURUSD": {"wr": 0.63, "trades": 200, "rr_win": 2.3, "rr_loss": -1.0, "volume": 0.10},
-    "USDJPY": {"wr": 0.65, "trades": 200, "rr_win": 2.3, "rr_loss": -1.0, "volume": 0.10},
-    "GBPUSD": {"wr": 0.63, "trades": 200, "rr_win": 2.3, "rr_loss": -1.0, "volume": 0.10},
-    "AUDUSD": {"wr": 0.62, "trades": 200, "rr_win": 2.2, "rr_loss": -1.0, "volume": 0.10},
-    "USDCAD": {"wr": 0.63, "trades": 200, "rr_win": 2.3, "rr_loss": -1.0, "volume": 0.10},
 }
 
 # Régimes réalistes (Distribution: 40% RANGING, 25% TREND_UP, 25% TREND_DOWN, 5% HIGH_VOL, 5% LOW_VOL)

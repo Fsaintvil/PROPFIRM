@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 from collections import defaultdict
 
 logger = logging.getLogger("meta_learner")
@@ -48,7 +49,9 @@ class MetaLearner:
         self.recalibration_freq: int = recalibration_freq
         self.trades_since_recal: int = 0
         self.model_base_weights: dict[str, float] = {
-            "MOM20x3": 1.0, "DL_LSTM": 1.0, "LGB": 0.0,
+            "MOM20x3": 1.0,
+            "DL_LSTM": 1.0,
+            "LGB": 0.0,
         }
         self._init_trackers()
 
@@ -101,8 +104,9 @@ class MetaLearner:
             return "SELL", sell_w / total_w, details
         return "HOLD", max(buy_w, sell_w) / total_w if total_w > 0 else 0.5, details
 
-    def devil_advocate_check(self, regime: str, predictions: dict,
-                             signal_action: str, symbol: str | None = None) -> list:
+    def devil_advocate_check(
+        self, regime: str, predictions: dict, signal_action: str, symbol: str | None = None
+    ) -> list:
         disagreement: list = []
         weights = self.get_weights(regime, symbol=symbol)
         for model_name, pred in predictions.items():
@@ -113,8 +117,7 @@ class MetaLearner:
                 disagreement.append({"model": model_name, "weight": w, "score": score, "says": action})
         if disagreement and any(d["score"] > 0.65 for d in disagreement):
             models_str = [d["model"] for d in disagreement]
-            logger.info(f"  [DEVIL] {len(disagreement)} model(s) disagree with "
-                        f"{signal_action}: {models_str}")
+            logger.info(f"  [DEVIL] {len(disagreement)} model(s) disagree with {signal_action}: {models_str}")
             return disagreement
         return []
 
@@ -126,46 +129,47 @@ class MetaLearner:
 
     def should_recalibrate(self) -> bool:
         return self.trades_since_recal >= self.recalibration_freq
-    
+
     def initialize_from_history(self, trade_history: list[dict]) -> None:
         """PHASE 2.2: Initialiser les traces à partir des trades historiques.
-        
+
         Simule des prédictions pour les modèles MOM20x3, DL_LSTM, LGB basées
         sur l'historique réel pour bootstrapper les poids du Meta-Learner.
         """
         if not trade_history or len(trade_history) == 0:
             logger.info("[META] Historique vide — initialisation par défaut")
             return
-        
+
         # MOM20x3 a toujours généré le signal → on assume qu'il a raison 100%
         # DL_LSTM + LGB : on assume une performance moyenne (50-60%)
         logger.info(f"[META] Initialisation à partir de {len(trade_history)} trades")
-        
+
         for trade in trade_history[-200:]:  # Derniers 200 trades seulement
             symbol = trade.get("symbol", "UNKNOWN")
             regime = trade.get("regime", "RANGING")
             profit = trade.get("profit", 0)
             correct = profit > 0
-            
+
             # MOM20x3: assume tout le crédit (il a généré les signaux)
             self.trackers["MOM20x3"].record(regime, symbol, correct)
-            
+
             # DL_LSTM: assume 55% de précision (légèrement meilleur que random)
-            import random
-            random.seed(hash((trade.get("ticket", 0), "DL")) % (2**31))
-            dl_correct = random.random() < 0.55
+            _dl_rng = random.Random(hash((trade.get("ticket", 0), "DL")) % (2**31))
+            dl_correct = _dl_rng.random() < 0.55
             self.trackers["DL_LSTM"].record(regime, symbol, dl_correct)
-            
+
             # LGB: assume 50% de précision (random)
-            random.seed(hash((trade.get("ticket", 0), "LGB")) % (2**31))
-            lgb_correct = random.random() < 0.50
+            _lgb_rng = random.Random(hash((trade.get("ticket", 0), "LGB")) % (2**31))
+            lgb_correct = _lgb_rng.random() < 0.50
             self.trackers["LGB"].record(regime, symbol, lgb_correct)
-        
-        logger.info(f"[META] Initialisation complétée — "
-                   f"MOM20x3 {self.trackers['MOM20x3'].global_stats}, "
-                   f"DL_LSTM {self.trackers['DL_LSTM'].global_stats}, "
-                   f"LGB {self.trackers['LGB'].global_stats}")
-    
+
+        logger.info(
+            f"[META] Initialisation complétée — "
+            f"MOM20x3 {self.trackers['MOM20x3'].global_stats}, "
+            f"DL_LSTM {self.trackers['DL_LSTM'].global_stats}, "
+            f"LGB {self.trackers['LGB'].global_stats}"
+        )
+
     def get_calibration_status(self) -> dict:
         """Retourne l'état de calibration du Meta-Learner."""
         return {
@@ -177,7 +181,7 @@ class MetaLearner:
                     "weight": self.get_weights("RANGING").get(name, 0),  # Exemple avec RANGING
                 }
                 for name, tracker in self.trackers.items()
-            }
+            },
         }
 
     def save_state(self, path: str = "runtime/meta_learner.json") -> None:
@@ -203,9 +207,7 @@ class MetaLearner:
                     # Restore global_stats (wins/losses/total) — critical pour le suivi
                     gs = tracker_data.get("global_stats", {})
                     if gs:
-                        tracker.global_stats.update({
-                            k: int(v) for k, v in gs.items()
-                        })
+                        tracker.global_stats.update({k: int(v) for k, v in gs.items()})
                     # Restore regime_penalty
                     tracker.regime_penalty.update(
                         {k: float(v) for k, v in tracker_data.get("regime_penalty", {}).items()}
@@ -226,6 +228,8 @@ class MetaLearner:
                 elif regime_wr > 0.55:
                     tracker.regime_penalty[regime] = max(tracker.regime_penalty.get(regime, 1.0) - 0.05, 0.5)
                     n_adjusted += 1
-            logger.info(f"  [META] {name}: WR={global_wr:.0%} | per regime: " +
-                ", ".join(f"{r}={tracker.win_rate(regime=r):.0%}" for r in REGIMES))
+            logger.info(
+                f"  [META] {name}: WR={global_wr:.0%} | per regime: "
+                + ", ".join(f"{r}={tracker.win_rate(regime=r):.0%}" for r in REGIMES)
+            )
         logger.info(f"  [META] Recalibration done: {n_adjusted} regime weights adjusted")

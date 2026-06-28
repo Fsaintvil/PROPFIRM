@@ -198,13 +198,18 @@ class StrategySelector:
         return params
 
     def get_regime_for_signal(self, regime: str, action: str) -> str:
-        """Ajuste le régime en fonction de la direction du signal."""
+        """Ajuste le régime en fonction de la direction du signal.
+
+        Contre-tendance : un signal BUY en TREND_DOWN ou SELL en TREND_UP
+        est ramené à RANGING pour utiliser des paramètres plus conservateurs
+        (SL 1.5×ATR, TP 4.0×ATR au lieu de 2.0/5.0).
+        """
         if action == "BUY":
-            if regime in ("STRONG_DOWNTREND", "WEAK_DOWNTREND"):
-                return "RANGING"  # Pas de BUY en downtrend
+            if regime == "TREND_DOWN":
+                return "RANGING"  # Contre-tendance : plus conservateur
         elif action == "SELL":
-            if regime in ("STRONG_UPTREND", "WEAK_UPTREND"):
-                return "RANGING"  # Pas de SELL en uptrend
+            if regime == "TREND_UP":
+                return "RANGING"  # Contre-tendance : plus conservateur
         return regime
 
     def should_trade(self, symbol: str, regime: str, score: float, adx: float = 22) -> tuple[bool, str]:

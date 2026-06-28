@@ -12,6 +12,7 @@ Usage:
     audit.log_decision("execution", {"symbol": "EURUSD", "action": "BUY", ...})
     audit.log_risk_check("PASS", {"daily_loss": 0.5, "dd": 3.2})
 """
+
 import json
 import logging
 import uuid
@@ -23,7 +24,7 @@ logger = logging.getLogger("robot.audit")
 
 
 class AuditTrail:
-    def __init__(self, log_dir="logs/audit", max_bytes=50 * 1024 * 1024, backup_count=30):
+    def __init__(self, log_dir="logs/audit", max_bytes=10 * 1024 * 1024, backup_count=5):
         self.log_dir = Path(log_dir)
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self._audit_logger = logging.getLogger("audit_trail")
@@ -54,50 +55,67 @@ class AuditTrail:
         self._audit_logger.info(json.dumps(entry))
         self._decisions.append(entry)
         if len(self._decisions) > self._max_memory:
-            self._decisions = self._decisions[-self._max_memory // 2:]
+            self._decisions = self._decisions[-self._max_memory // 2 :]
 
     def log_signal(self, symbol, action, score, confidence, regime, details=None):
-        self.log_decision("signal", {
-            "symbol": symbol,
-            "action": action,
-            "score": round(score, 4),
-            "confidence": round(confidence, 4),
-            "regime": regime,
-            "details": details,
-        })
+        self.log_decision(
+            "signal",
+            {
+                "symbol": symbol,
+                "action": action,
+                "score": round(score, 4),
+                "confidence": round(confidence, 4),
+                "regime": regime,
+                "details": details,
+            },
+        )
 
     def log_risk_check(self, result, symbol=None, metrics=None):
-        self.log_decision("risk_check", {
-            "symbol": symbol,
-            "result": result,
-            "metrics": metrics or {},
-        })
+        self.log_decision(
+            "risk_check",
+            {
+                "symbol": symbol,
+                "result": result,
+                "metrics": metrics or {},
+            },
+        )
 
     def log_execution(self, symbol, action, entry, sl, tp, lot, status="sent", retcode=None):
-        self.log_decision("execution", {
-            "symbol": symbol,
-            "action": action,
-            "entry": entry,
-            "sl": sl,
-            "tp": tp,
-            "lot": lot,
-            "status": status,
-            "retcode": retcode,
-        }, status=status)
+        self.log_decision(
+            "execution",
+            {
+                "symbol": symbol,
+                "action": action,
+                "entry": entry,
+                "sl": sl,
+                "tp": tp,
+                "lot": lot,
+                "status": status,
+                "retcode": retcode,
+            },
+            status=status,
+        )
 
     def log_error(self, source, message, exc_info=None):
-        self.log_decision("error", {
-            "source": source,
-            "message": message,
-            "exception": str(exc_info) if exc_info else None,
-        }, status="ERROR")
+        self.log_decision(
+            "error",
+            {
+                "source": source,
+                "message": message,
+                "exception": str(exc_info) if exc_info else None,
+            },
+            status="ERROR",
+        )
 
     def log_state_change(self, key, old_value, new_value):
-        self.log_decision("state_change", {
-            "key": key,
-            "from": old_value,
-            "to": new_value,
-        })
+        self.log_decision(
+            "state_change",
+            {
+                "key": key,
+                "from": old_value,
+                "to": new_value,
+            },
+        )
 
     def recent_decisions(self, n=10, decision_type=None):
         filtered = self._decisions

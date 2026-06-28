@@ -1,16 +1,22 @@
 """Persist position features across restarts using SQLite."""
+
 import contextlib
 import json
 import os
 import sqlite3
+from pathlib import Path
 
 
 class FeatureStore:
-    def __init__(self, path="runtime/position_features.db"):
+    def __init__(self, path=None):
+        if path is None:
+            path = str(Path(__file__).resolve().parent.parent / "runtime" / "position_features.db")
         parent = os.path.dirname(path)
         if parent:
             os.makedirs(parent, exist_ok=True)
-        self.conn = sqlite3.connect(path)
+        # 🐛 FIX 26 Juin 2026: check_same_thread=False pour accès multi-thread
+        # + chemin absolu pour éviter les problèmes de CWD
+        self.conn = sqlite3.connect(path, check_same_thread=False)
         self.conn.execute("PRAGMA journal_mode=WAL")  # C-03: WAL mode
         self.conn.execute("PRAGMA busy_timeout=5000")  # évite contention
         self.conn.execute("""

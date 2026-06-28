@@ -100,25 +100,25 @@ except Exception as e:
         "XAUUSD",
         "BTCUSD",
         "EURUSD",
-        "USDJPY",
-        "GBPUSD",
-        "USDCAD",
+        "USDJPY",  # RÉACTIVÉ 24 Juin 2026 — surveillance active
+        # GBPUSD désactivé 26 Juin 2026 (WR 0.0% Phase 3 — toxique)
+        # USDCAD désactivé 26 Juin 2026 (WR 33.3% Phase 3 — toxique)
     ]
     _fb_log("SYMBOLS", SYMBOLS)
     ROBOT_MAGIC = 999001
     _fb_log("ROBOT_MAGIC", 999001)
-    MAX_POSITIONS = 4
-    _fb_log("MAX_POSITIONS", 4)
-    MAX_POSITIONS_PER_SYMBOL = 2
-    _fb_log("MAX_POSITIONS_PER_SYMBOL", 2)
-    MAX_TRADES_PER_DAY = 80
-    _fb_log("MAX_TRADES_PER_DAY", 80)
-    LOT_SIZE = 0.05
-    _fb_log("LOT_SIZE", 0.05)
+    MAX_POSITIONS = 20
+    _fb_log("MAX_POSITIONS", 20)
+    MAX_POSITIONS_PER_SYMBOL = 4
+    _fb_log("MAX_POSITIONS_PER_SYMBOL", 4)
+    MAX_TRADES_PER_DAY = 30
+    _fb_log("MAX_TRADES_PER_DAY", 30)
+    LOT_SIZE = 0.06
+    _fb_log("LOT_SIZE", 0.06)
     MIN_TRADE_INTERVAL_SEC = 300
     _fb_log("MIN_TRADE_INTERVAL_SEC", 300)
-    BATCH_INTERVAL_SEC = 60
-    _fb_log("BATCH_INTERVAL_SEC", 60)
+    BATCH_INTERVAL_SEC = 1
+    _fb_log("BATCH_INTERVAL_SEC", 1)
     MIN_SIGNAL_SCORE = 0.60
     _fb_log("MIN_SIGNAL_SCORE", 0.60)
     MAX_SIGNALS_PER_CYCLE = 10
@@ -147,8 +147,8 @@ except Exception as e:
     _fb_log("MIN_RR_RATIO", 2.0)
     ATR_MULTIPLIER = 1.5
     _fb_log("ATR_MULTIPLIER", 1.5)
-    COOLDOWN_MINUTES = 5
-    _fb_log("COOLDOWN_MINUTES", 5)
+    COOLDOWN_MINUTES = 15
+    _fb_log("COOLDOWN_MINUTES", 15)
     MIN_TRADING_DAYS = 10
     _fb_log("MIN_TRADING_DAYS", 10)
     MAX_TRADING_DAYS = 0
@@ -161,10 +161,12 @@ except Exception as e:
     _fb_log("TRADING_START_HOUR", 0)
     TRADING_END_HOUR = 24
     _fb_log("TRADING_END_HOUR", 24)
+    DANGER_HOURS = [12]
+    _fb_log("DANGER_HOURS", [12])
     RECALIBRATION_FREQUENCY = 50
     _fb_log("RECALIBRATION_FREQUENCY", 50)
-    AUTO_PAUSE_LOSSES = 8
-    _fb_log("AUTO_PAUSE_LOSSES", 8)
+    AUTO_PAUSE_LOSSES = 5
+    _fb_log("AUTO_PAUSE_LOSSES", 5)
     MAX_CORRELATED_EXPOSURE = 1.5
     _fb_log("MAX_CORRELATED_EXPOSURE", 1.5)
     CIRCUIT_BREAKER_DD_PCT = 0.08
@@ -174,58 +176,54 @@ except Exception as e:
     HISTORY_LOOKBACK_DAYS = 7
     _fb_log("HISTORY_LOOKBACK_DAYS", 7)
     SYMBOL_LIMITS = {
-        # XAUUSD H4 (fallback YAML)
+        # XAUUSD H4 (fallback — synchronisé avec default.yaml 25 Juin 2026)
         "XAUUSD": dict(
-            max_lot=0.10,
-            risk_mult=1.00,
+            max_lot=0.06,
+            risk_mult=1.10,
             max_spread_points=60,
             adx_thresh=22,
-            min_score=0.55,
             allow_buys=True,
             allow_shorts=True,
-            momentum_period=20,
+            momentum_period=18,
             sl_atr_trending=1.8,
             tp_atr_trending=5.0,
             sl_atr_ranging=1.5,
             tp_atr_ranging=3.5,
         ),
-        # BTCUSD H1 (fallback YAML)
+        # BTCUSD H1 (fallback — synchronisé 25 Juin 2026)
         "BTCUSD": dict(
-            max_lot=0.03,
-            risk_mult=0.65,
+            max_lot=0.06,
+            risk_mult=0.30,
             max_spread_points=150,
             adx_thresh=20,
-            min_score=0.60,
             allow_buys=True,
             allow_shorts=True,
-            momentum_period=24,
+            momentum_period=22,
             sl_atr_trending=3.0,
             tp_atr_trending=7.0,
             sl_atr_ranging=2.5,
             tp_atr_ranging=5.0,
         ),
-        # US500.cash H4 (fallback YAML)
+        # US500.cash H4 (fallback — désactivé 25 Juin 2026)
         "US500.cash": dict(
-            max_lot=0.10,
-            risk_mult=0.80,
+            max_lot=0.06,
+            risk_mult=0.50,
             max_spread_points=40,
             adx_thresh=22,
-            min_score=0.60,
             allow_buys=True,
             allow_shorts=True,
-            momentum_period=20,
+            momentum_period=18,
             sl_atr_trending=1.5,
             tp_atr_trending=4.0,
             sl_atr_ranging=1.2,
             tp_atr_ranging=3.0,
         ),
-        # EURUSD H1 (fallback YAML) — Juin 2026
+        # EURUSD H1 (fallback — synchronisé 25 Juin 2026)
         "EURUSD": dict(
-            max_lot=0.10,
-            risk_mult=0.50,
+            max_lot=0.22,
+            risk_mult=1.00,
             max_spread_points=40,
             adx_thresh=22,
-            min_score=0.60,
             allow_buys=True,
             allow_shorts=True,
             momentum_period=18,
@@ -234,13 +232,12 @@ except Exception as e:
             sl_atr_ranging=1.2,
             tp_atr_ranging=3.0,
         ),
-        # USDJPY H1 (fallback YAML) — 23 Juin 2026
+        # USDJPY H1 (fallback — synchronisé 25 Juin 2026)
         "USDJPY": dict(
-            max_lot=0.10,
+            max_lot=0.17,
             risk_mult=1.00,
             max_spread_points=45,
             adx_thresh=22,
-            min_score=0.60,
             allow_buys=True,
             allow_shorts=True,
             momentum_period=20,
@@ -249,13 +246,12 @@ except Exception as e:
             sl_atr_ranging=1.2,
             tp_atr_ranging=3.0,
         ),
-        # GBPUSD H1 (fallback YAML) — 23 Juin 2026
+        # GBPUSD H1 (fallback — synchronisé 25 Juin 2026)
         "GBPUSD": dict(
-            max_lot=0.10,
+            max_lot=0.17,
             risk_mult=0.90,
             max_spread_points=50,
             adx_thresh=22,
-            min_score=0.60,
             allow_buys=True,
             allow_shorts=True,
             momentum_period=20,
@@ -264,28 +260,12 @@ except Exception as e:
             sl_atr_ranging=1.2,
             tp_atr_ranging=3.0,
         ),
-        # AUDUSD H1 (fallback YAML) — 23 Juin 2026
-        "AUDUSD": dict(
-            max_lot=0.10,
-            risk_mult=0.75,
-            max_spread_points=45,
-            adx_thresh=22,
-            min_score=0.60,
-            allow_buys=True,
-            allow_shorts=True,
-            momentum_period=20,
-            sl_atr_trending=1.5,
-            tp_atr_trending=4.5,
-            sl_atr_ranging=1.2,
-            tp_atr_ranging=3.0,
-        ),
-        # USDCAD H1 (fallback YAML) — 23 Juin 2026
+        # USDCAD H1 (fallback — synchronisé 25 Juin 2026)
         "USDCAD": dict(
-            max_lot=0.10,
+            max_lot=0.17,
             risk_mult=0.85,
             max_spread_points=45,
             adx_thresh=22,
-            min_score=0.60,
             allow_buys=True,
             allow_shorts=True,
             momentum_period=20,

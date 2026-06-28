@@ -103,7 +103,9 @@ class ChallengeTracker:
                 # Cooldown progressif: 5 min pour 1 perte, 10 min pour 2+ consécutives
                 sym_losses = self._symbol_consecutive_losses.get(symbol, 0) + 1
                 self._symbol_consecutive_losses[symbol] = sym_losses
-                cd_minutes = 5 if sym_losses <= 1 else 10
+                cd_minutes = self.symbol_limits.get(symbol, {}).get(
+                    "cooldown_minutes", getattr(self, "cooldown_minutes", 15)
+                )
                 self.cooldowns[symbol] = datetime.utcnow() + timedelta(minutes=cd_minutes)
                 logger.info(f"  [COOLDOWN] {symbol}: {sym_losses} perte(s) consecutive(s) → {cd_minutes}min")
             elif profit > 0:
@@ -123,28 +125,35 @@ class ChallengeTracker:
         Règle FTMO 1-Step authentique: le meilleur jour ≤ 30% × profit total réalisé.
         Exemple: profit total $1,000 → max $300/jour.
 
-        Corrigé 23 Juin 2026:
+        Corrigé 26 Juin 2026:
+          - Reset consistency_violated AVANT l'early return pour éviter
+            le blocage à True quand on passe de 2+ jours à 1 jour (recalcul)
           - Le dénominateur est la SOMME DES JOURS POSITIFS (règle FTMO réelle)
-          - Le guard utilise le nombre de jours tradés (≥3), pas un seuil $500
+          - Le guard utilise le nombre de jours tradés (≥2), pas un seuil $500
           - Évite le bug 763% quand une grosse perte compresse le PnL net"""
+        # Reset consistency_violated AVANT tout calcul (peut se résoudre
+        # quand le nombre de jours augmente et dilue best_day_pct).
+        # Important: doit être AVANT l'early return pour éviter qu'un
+        # flag True ne reste bloqué quand on retombe à 1 jour.
+        self.consistency_violated = False
+
+        # Pas assez de jours pour juger la consistance
+        total_net = sum(self.daily_pnl_by_date.values())
         positive_days = [v for v in self.daily_pnl_by_date.values() if v > 0]
-        total_profitable = sum(positive_days)
-        if len(self.daily_pnl_by_date) < 2 or total_profitable <= 0:
+        if len(self.daily_pnl_by_date) < 2 or total_net <= 0:
             return
         best_day = max(positive_days)
-        max_per_day = total_profitable * self.consistency_max_pct  # FTMO: 30% des jours positifs
-        # Reset consistency_violated avant recalcul (peut se résoudre)
-        self.consistency_violated = False
+        max_per_day = total_net * self.consistency_max_pct  # FTMO: 30% du PnL NET
         for day, day_pnl in sorted(self.daily_pnl_by_date.items()):
             if day_pnl <= 0:
                 continue
             if day_pnl > max_per_day:
                 self.consistency_violated = True
-                day_pct_of_profitable = day_pnl / total_profitable if total_profitable > 0 else 0
+                day_pct_of_net = day_pnl / total_net if total_net > 0 else 0
                 logger.critical(
                     f"FTMO CONSISTENCY VIOLATED: {day} = ${day_pnl:.0f} "
-                    f"({day_pct_of_profitable:.1%} des jours positifs ${total_profitable:.0f}) "
-                    f"> max {self.consistency_max_pct:.0%} × jours positifs"
+                    f"({day_pct_of_net:.1%} du PnL net ${total_net:.0f}) "
+                    f"> max {self.consistency_max_pct:.0%} du PnL net"
                 )
 
     def _check_daily_loss_limit(self, symbol=None):
@@ -419,7 +428,7 @@ class ChallengeTracker:
         # Les valeurs equity-PnL contaminées (ex: daily_pnl_by_date écrit avec
         # equity-based PnL au lieu du realized PnL) sont détectées et corrigées.
         # Voir Session Robot Manager — Juin 2026 (AGENTS.md).
-        if self._trade_history and self.daily_pnl_by_date:
+        if self._trade_history:
             # Reconstruire daily_pnl_by_date depuis trade_history (atomique)
             rebuilt: dict[date, float] = {}
             for t in self._trade_history:
@@ -428,7 +437,19 @@ class ChallengeTracker:
                     d = trade_time.date()
                     rebuilt[d] = rebuilt.get(d, 0.0) + t.get("profit", 0.0)
 
-            if rebuilt:
+            # ── Recovery: daily_pnl_by_date vide mais trade_history dispo ──
+            if not self.daily_pnl_by_date and rebuilt:
+                logger.info(
+                    f"[RECOVERY] daily_pnl_by_date vide — "
+                    f"reconstruction depuis trade_history ({len(rebuilt)} jours, "
+                    f"{len(self._trade_history)} trades)"
+                )
+                self.daily_pnl_by_date = dict(rebuilt)
+                # Reconstruire aussi trading_days
+                for d in rebuilt:
+                    self.trading_days.add(d)
+
+            if self.daily_pnl_by_date and rebuilt:
                 # Comparer les dates communes
                 common_dates = set(self.daily_pnl_by_date.keys()) & set(rebuilt.keys())
                 discrepancies = 0

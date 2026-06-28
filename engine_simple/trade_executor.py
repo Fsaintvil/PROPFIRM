@@ -15,10 +15,9 @@ import config_simple as cfg
 logger = logging.getLogger("executor")
 
 # Intervalle minimum entre deux trades sur le MÊME symbole (secondes)
-# 30s = permet jusqu'à 2 trades/min/symbole si le signal est assez fort
-# pour être regénéré 2 cycles plus tard. Évite le blocage XAUUSD qui génère
-# un signal valide (score 0.83) toutes les 15s mais était bloqué 3 fois/4.
-MIN_SYMBOL_INTERVAL_S = 30  # 30s (↓ 60→30 Juin 2026: +de chances pour signaux forts consécutifs)
+# 5s = très permissif, permet plusieurs trades par cycle si le signal est fort.
+# ⚠️ La protection FTMO (DD 10%, daily loss) est la vraie barrière, pas le rate limiter.
+MIN_SYMBOL_INTERVAL_S = 5  # 5s (↓ 30→5 le 26 Juin: laisser passer tous les signaux valides)
 
 # Intervalle minimum entre deux trades HIGH CONFIDENCE (>90%) sur le même symbole
 # 300s = 5 min — le tradeur veut un rythme soutenu mais pas du scalping
@@ -202,10 +201,11 @@ class TradeExecutor:
         self.signals = signals
         self.adaptive = adaptive
         self.audit = audit
-        # Rate limiter par symbole: max 1 trade/min/symbole + 5min intervalle
+        # Rate limiter par symbole: max 6 trades/min/symbole + 5s intervalle
+        # 26 Juin: ↑ 2→6 trades/min pour laisser passer tous les signaux valides
         self.rate_limiter = PerSymbolRateLimiter(
-            max_per_minute=2, window_seconds=60
-        )  # Mode modéré: 2 trades/min/symbole (était 1)
+            max_per_minute=6, window_seconds=60
+        )  # Mode agressif: 6 trades/min/symbole (était 2)
         # Rate limiter HIGH CONFIDENCE : 1 trade/5min/symbole, aucune limite de positions
         self.high_conf_rate_limiter = PerSymbolRateLimiter(
             max_per_minute=1, window_seconds=300, min_interval_s=HIGH_CONFIDENCE_INTERVAL_S

@@ -1,0 +1,372 @@
+{
+  "params": {
+    "threshold_mult": 0.95,
+    "risk_mult": 1.2100000000000002,
+    "sl_mult": 1.0,
+    "tp_mult": 1.2,
+    "trailing_mult": 1.0,
+    "win_rate": 0.9661016949152542,
+    "profit_factor": 230.52857142857144,
+    "avg_pnl": 144.3306779661017,
+    "sample_size": 59,
+    "last_update": 1781852530.738223,
+    "confidence": 0.59
+  },
+  "trades": [
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781621546.6990619,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": -10.28,
+      "win": false,
+      "time": 1781632397.1324441,
+      "regime": "TRE"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781634465.4366026,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781634543.0035415,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781635222.9435155,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781635293.7719564,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781635367.4442527,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781635540.808627,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781636528.6328392,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781636602.062207,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781641225.2556183,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": -26.82,
+      "win": false,
+      "time": 1781670455.486751,
+      "regime": "TRE"
+    },
+    {
+      "pnl": 42.42,
+      "win": true,
+      "time": 1781688741.1153457,
+      "regime": "RAN"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781696045.5477965,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781707929.051377,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781710653.5614476,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781710891.4625998,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781721399.0884106,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781721662.913119,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781722317.8324585,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781761734.9127395,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781762056.769669,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781791023.3780503,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781798781.2056131,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781798954.4554281,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781799299.7872815,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781801046.8447328,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781802676.238371,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781802946.8455384,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781803341.863701,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781803767.769397,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781803774.928137,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781803828.133852,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781803844.1515026,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781803889.241498,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781809588.2889364,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781810103.7750645,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 70.72,
+      "win": true,
+      "time": 1781811593.519388,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 70.72,
+      "win": true,
+      "time": 1781811603.925802,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781812189.6722846,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781812217.4245772,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781821168.277558,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781821226.52601,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781821268.7328796,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781821365.5150998,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781821697.8990977,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781822248.7935724,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781823571.63179,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781823673.4092095,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 418.75,
+      "win": true,
+      "time": 1781845309.557895,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781846405.0328403,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781846440.9990458,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781846962.237193,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781847009.029912,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781847065.3661788,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781848320.9450874,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781848823.7006543,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781851561.4741027,
+      "regime": "RANGING"
+    },
+    {
+      "pnl": 150.0,
+      "win": true,
+      "time": 1781852530.738223,
+      "regime": "RANGING"
+    }
+  ],
+  "last_update": 1781852530.738223
+}

@@ -21,46 +21,40 @@ trading:
 
 # ── Signal ─────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.55               # restauré valeur originale (avant Mode MAX 0.70)
+  min_score: 0.38               # ↓ 0.55→0.38 26 Juin — plus de trades (signal filtré par RVOL/CMF)
 
 # ── Symbol Limits — Calibration FTMO-safe ────────────────────────────
 symbol_limits:
   XAUUSD:
     max_lot: 0.06               # calibré backtest
     risk_mult: 1.10             # WR 67.7%, PF 2.04 → star
-    min_score: 0.70
 
   BTCUSD:
     max_lot: 0.06               # calibré backtest
-    risk_mult: 0.60             # WR 41.9% → risque réduit
-    min_score: 0.70
+    risk_mult: 0.30             # WR 32.3% Phase 3 → risque fortement réduit (était 0.60)
 
   EURUSD:
     max_lot: 0.10
     risk_mult: 1.00             # WR 76.6% → solide
-    min_score: 0.70
 
   USDJPY:
     max_lot: 0.10
     risk_mult: 1.00
-    min_score: 0.70
 
   GBPUSD:
     max_lot: 0.10
     risk_mult: 1.00
-    min_score: 0.70
 
   USDCAD:
     max_lot: 0.10
     risk_mult: 1.00
-    min_score: 0.70
 
 # ── Risk — FTMO-safe (calibré 25 Juin 2026) ──────────────────────────
 risk:
   per_trade_pct: 0.004          # 0.40% par trade (restauré calibré, était 0.44%)
   max_daily_loss_pct: 0.02      # FTMO: 2% daily loss
   max_dd_pct: 0.10              # FTMO: 10% max drawdown
-  min_rr_ratio: 2.0             # RR≥2.0 obligatoire
+  min_rr_ratio: 1.5             # ↓ 2.0→1.5 26 Juin — plus de trades (RR moyen des signaux est ~1.9)
   cooldown_minutes: 15          # 15 min de refroidissement
   auto_pause_losses: 5          # 5 pertes avant pause (restauré calibré, était 8)
   max_risk_amount: 800.0        # $800 max risque par trade (était $880)

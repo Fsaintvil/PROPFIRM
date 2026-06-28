@@ -1,0 +1,198 @@
+{
+  "params": {
+    "threshold_mult": 1.0,
+    "risk_mult": 1.1,
+    "sl_mult": 1.0,
+    "tp_mult": 1.0,
+    "trailing_mult": 1.0,
+    "win_rate": 0.5,
+    "profit_factor": 1.1597611048898844,
+    "avg_pnl": 1.1413333333333329,
+    "sample_size": 30,
+    "last_update": 1782441030.5315976,
+    "confidence": 0.3
+  },
+  "trades": [
+    {
+      "pnl": -23.74,
+      "win": false,
+      "time": 1782163232.6302402,
+      "regime": "RAN"
+    },
+    {
+      "pnl": -25.44,
+      "win": false,
+      "time": 1782163292.6416047,
+      "regime": "RAN"
+    },
+    {
+      "pnl": -25.22,
+      "win": false,
+      "time": 1782163352.6767015,
+      "regime": "RAN"
+    },
+    {
+      "pnl": -3.9,
+      "win": false,
+      "time": 1782189549.5686376,
+      "regime": "RAN"
+    },
+    {
+      "pnl": -3.35,
+      "win": false,
+      "time": 1782189624.6099257,
+      "regime": "RAN"
+    },
+    {
+      "pnl": -3.77,
+      "win": false,
+      "time": 1782189714.6641989,
+      "regime": "RAN"
+    },
+    {
+      "pnl": 6.95,
+      "win": true,
+      "time": 1782196368.1867526,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": 6.66,
+      "win": true,
+      "time": 1782196368.2082443,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": 24.29,
+      "win": true,
+      "time": 1782203347.211796,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": 23.48,
+      "win": true,
+      "time": 1782203347.2338216,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": 22.07,
+      "win": true,
+      "time": 1782203347.3583765,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": -3.48,
+      "win": false,
+      "time": 1782234690.0178292,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": -11.7,
+      "win": false,
+      "time": 1782234690.068298,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": -0.85,
+      "win": false,
+      "time": 1782234690.6074722,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": -0.35,
+      "win": false,
+      "time": 1782235170.253319,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": -38.34,
+      "win": false,
+      "time": 1782265887.8269312,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 9.94,
+      "win": true,
+      "time": 1782271845.9864914,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": 9.31,
+      "win": true,
+      "time": 1782271846.0691607,
+      "regime": "UNKNOWN"
+    },
+    {
+      "pnl": -5.75,
+      "win": false,
+      "time": 1782356832.7636514,
+      "regime": "DOW"
+    },
+    {
+      "pnl": -6.44,
+      "win": false,
+      "time": 1782356907.7922623,
+      "regime": "DOW"
+    },
+    {
+      "pnl": -8.63,
+      "win": false,
+      "time": 1782356982.8055944,
+      "regime": "DOW"
+    },
+    {
+      "pnl": -53.36,
+      "win": false,
+      "time": 1782380482.8353512,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 38.76,
+      "win": true,
+      "time": 1782412573.0156767,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 37.08,
+      "win": true,
+      "time": 1782412633.051567,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 7.66,
+      "win": true,
+      "time": 1782417012.2939112,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 7.86,
+      "win": true,
+      "time": 1782417012.3273096,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 5.06,
+      "win": true,
+      "time": 1782417057.5642066,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 8.9,
+      "win": true,
+      "time": 1782417057.614335,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 19.92,
+      "win": true,
+      "time": 1782441030.4999142,
+      "regime": "DOW"
+    },
+    {
+      "pnl": 20.62,
+      "win": true,
+      "time": 1782441030.5315976,
+      "regime": "DOW"
+    }
+  ],
+  "last_update": 1782441030.5315976
+}
