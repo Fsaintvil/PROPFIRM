@@ -47,7 +47,8 @@ from engine_simple.performance_monitor import update_challenge, get_monitor
 from engine_simple.strategy_selector import StrategySelector, get_strategy_params
 from engine_simple.news_filter import NewsFilter, is_news_blocked
 from engine_simple.volume_profile import VolumeProfile, analyze as vp_analyze
-from engine_simple.order_flow import OrderFlowAnalyzer, analyze_bars as flow_analyze
+
+# order_flow retiré — phases supprimées 25 Juin 2026
 from engine_simple.mtf_confirm import MultiTimeframeConfirmer, confirm as mtf_confirm
 from engine_simple.adaptive_params import AdaptiveParameters, get_adapted_params
 
@@ -55,8 +56,7 @@ from engine_simple.adaptive_params import AdaptiveParameters, get_adapted_params
 from engine_simple.dashboard import Dashboard, generate_report as dash_report
 
 # ── Nouveaux modules Juin 2026 ──
-from engine_simple.vwap_analyzer import VWAPAnalyzer, analyze as vwap_analyze_fn
-from engine_simple.market_profile import MarketProfile, analyze as mp_analyze
+# vwap_analyzer + market_profile retirés — phases supprimées 25 Juin 2026
 
 # ── P1: Signal Pipeline — filtrage multi-couches extrait de _scan_signals ──
 from engine_simple.signal_pipeline import SignalPipeline
@@ -339,28 +339,11 @@ class FTMO_SIMPLE:
         # PHASE 2.2: MetaLearner intégré dans AdaptiveEngine
         # (instance self.adaptive.meta créée dans AdaptiveEngine.__init__)
 
-        # PHASE 3: MarketMemory — S/R levels, MTF alignment, patterns
+        # PHASE 3: MarketMemory — retiré (code mort, déplacé dans retired/)
         self.market_memory = None
-        try:
-            from engine_simple.market_memory import MarketMemory
 
-            self.market_memory = MarketMemory()
-            self.market_memory.load_all()
-            logger.info(f"[MARKET_MEMORY] Chargé pour {len(self.market_memory.profiles)} symboles")
-        except Exception as e:
-            logger.warning(f"[MARKET_MEMORY] Impossible de charger: {e}")
-            self.market_memory = None
-
-        # PHASE 5: SessionFilter — Filtre de session par symbole
+        # PHASE 5: SessionFilter — retiré (code mort, déplacé dans retired/)
         self.session_filter = None
-        try:
-            from engine_simple.session_filter import SessionFilter
-
-            self.session_filter = SessionFilter()
-            logger.info("[SESSION_FILTER] Chargé — 5 symboles")
-        except Exception as e:
-            logger.warning(f"[SESSION_FILTER] Impossible de charger: {e}")
-            self.session_filter = None
 
         # PHASE 6: PortfolioController — Gestion exposition multi-symboles
         self.portfolio_controller = None
@@ -386,9 +369,7 @@ class FTMO_SIMPLE:
         self.volume_profile = VolumeProfile()
         logger.info("[VOLUME_PROFILE] Chargé — 50 bins, 100 lookback")
 
-        # Phase 10: Order Flow
-        self.order_flow = OrderFlowAnalyzer()
-        logger.info("[ORDER_FLOW] Chargé — analyse barres active")
+        # Phase 10: Order Flow — RETIRÉ 25 Juin 2026 (phases mortes)
 
         # Phase 11: MTF Confirmation
         self.mtf_confirm = MultiTimeframeConfirmer()
@@ -402,13 +383,8 @@ class FTMO_SIMPLE:
         self.dashboard = Dashboard()
         logger.info("[DASHBOARD] Chargé — monitoring temps réel")
 
-        # Phase 17: VWAP Analyzer
-        self.vwap_analyzer = VWAPAnalyzer()
-        logger.info("[VWAP_ANALYZER] Chargé — premium/discount zones")
-
-        # Phase 18: Market Profile
-        self.market_profile = MarketProfile()
-        logger.info("[MARKET_PROFILE] Chargé — Initial Balance + TAP")
+        # Phase 17: VWAP Analyzer — RETIRÉ 25 Juin 2026 (phases mortes)
+        # Phase 18: Market Profile — RETIRÉ 25 Juin 2026 (phases mortes)
 
         self.ftmo = FTMOProtector(
             self.mt5,
@@ -438,7 +414,6 @@ class FTMO_SIMPLE:
                 ZONE2_LOSS_PCT=cfg.ZONE2_LOSS_PCT,
                 ZONE3_LOSS_PCT=cfg.ZONE3_LOSS_PCT,
                 AUTO_PAUSE_LOSSES=cfg.AUTO_PAUSE_LOSSES,
-                MAX_CORRELATED_EXPOSURE=cfg.MAX_CORRELATED_EXPOSURE,
                 CIRCUIT_BREAKER_DD_PCT=cfg.CIRCUIT_BREAKER_DD_PCT,
             ),
         )
@@ -623,15 +598,6 @@ class FTMO_SIMPLE:
                         self.ftmo.challenge.daily_start_equity = _new_eq
                     logger.info(f"[STATE] daily_start_equity recalculé: {_old}→{_new_eq} (restart intra-jour)")
 
-        # PHASE 2.2: Initialiser le Meta-Learner (dans AdaptiveEngine) à partir de l'historique
-        # Meta-Learner désactivé (P7: _meta_active=False) — l'import et l'instanciation sont
-        # dynamiques dans AdaptiveEngine.__init__ et ne se produisent que si _meta_active=True.
-        if self.adaptive._meta_active and self.ftmo._trade_history:
-            logger.info(f"[META] Initialisation à partir de {len(self.ftmo._trade_history)} trades historiques")
-            self.adaptive.meta.initialize_from_history(self.ftmo._trade_history)
-            meta_status = self.adaptive.meta.get_calibration_status()
-            logger.info(f"[META] Calibration: {meta_status}")
-
         class _Cache:
             def __init__(self, mt5_conn):
                 self._mt5 = mt5_conn
@@ -670,10 +636,7 @@ class FTMO_SIMPLE:
             news_filter=self.news_filter,
             strategy_selector=self.strategy_selector,
             volume_profile=self.volume_profile,
-            order_flow=self.order_flow,
             mtf_confirm=self.mtf_confirm,
-            market_profile=self.market_profile,
-            vwap_analyzer=self.vwap_analyzer,
             risk_manager=self.risk_manager,
             config=cfg,
             symbol_limits=cfg.SYMBOL_LIMITS,
@@ -844,6 +807,15 @@ class FTMO_SIMPLE:
 
     def start(self):
         self.running = True
+        # Enregistrer le timestamp de ce démarrage dans l'état persistant
+        now_ts = time.time()
+        timestamps = self._state.get("restart_timestamps", [])
+        timestamps.append(now_ts)
+        timestamps = [t for t in timestamps if now_ts - t < 3600 * 24 * 7]  # garder 7 jours
+        self._state["restart_timestamps"] = timestamps
+        self._state["restart_count"] = self._state.get("restart_count", 0) + 1
+        self._state["last_restart_utc"] = datetime.now(timezone.utc).isoformat()
+        self._save_state()
         logger.info("Robot demarre - Mode trading FTMO")
         try:
             self.trading_loop()
@@ -1196,13 +1168,6 @@ class FTMO_SIMPLE:
                 collected = gc.collect()
                 logger.debug(f"[MEM] GC collecte: {collected} objets libérés (cycle {self.cycle_count})")
 
-            # 🆕 Phase 14c: Retraining hebdomadaire LightGBM (tous les ~2000 cycles ≈ 8h)
-            if self.cycle_count % 2000 == 0 and self.cycle_count > 0:
-                try:
-                    self._check_weekly_retrain()
-                except Exception as _e_rt:
-                    logger.debug(f"[LGB RETRAIN] Check failed: {_e_rt}")
-
             elapsed = time.time() - cycle_start
             sleep_time = max(5, cfg.CYCLE_SECONDS - elapsed)
             time.sleep(sleep_time)
@@ -1421,6 +1386,10 @@ class FTMO_SIMPLE:
         logger.info(
             f"[BATCH] Batch signaux terminé — {executed} trade(s), prochain batch dans {cfg.BATCH_INTERVAL_SEC}s"
         )
+        # Diagnostic quand aucun trade n'est exécuté (affiche les scores finaux des candidats)
+        if executed == 0 and candidates:
+            diag = "; ".join(f"{sym}: score={sc:.2f}" for sc, sym, sig, _ in candidates)
+            logger.info(f"  [DIAG] Signaux filtrés — {diag}")
 
     def _restore_last_signals(self):
         """M15: Restaure les signaux pré-crash depuis last_signals.json.
@@ -1686,11 +1655,11 @@ class FTMO_SIMPLE:
         if trades_since_last < 100:
             return  # Cooldown anti-oscillation
 
-        from engine_simple.strategy import SYMBOL_MOMENTUM_PERIODS, SYMBOL_CONFIG
+        from engine_simple.strategy import _SYMBOL_MOMENTUM_PERIODS, SYMBOL_CONFIG
 
         # FIX m1: Sauvegarder les périodes initiales au premier appel (reset possible)
         if not hasattr(self, "_initial_mom_periods"):
-            self._initial_mom_periods = dict(SYMBOL_MOMENTUM_PERIODS)
+            self._initial_mom_periods = dict(_SYMBOL_MOMENTUM_PERIODS)
 
         recent_trades = self.ftmo._trade_history[-100:]
         adjustments = {}
@@ -1731,7 +1700,7 @@ class FTMO_SIMPLE:
                         logger.debug(f"[PHASE 3] {symbol}: PF={sym_pf:.1f} > 5.0 (contaminé) → gel période")
                     continue
 
-            current_period = SYMBOL_MOMENTUM_PERIODS.get(symbol, 20)
+            current_period = _SYMBOL_MOMENTUM_PERIODS.get(symbol, 20)
             new_period = current_period
 
             # Hystérésis : tracker la zone précédente par symbole
@@ -1749,7 +1718,7 @@ class FTMO_SIMPLE:
                     self._phase3_zone[symbol] = "TROP_CONSERVATEUR"
                     if current_period > MIN_PERIOD + 2:
                         new_period = max(MIN_PERIOD, current_period - 2)
-                        adjustments[symbol] = (current_period, new_period, "TROP_CONSERVATEUR")
+                        adjustments[symbol] = (current_period, new_period, "TROP_CONSERVATEUR", sym_wr)
             elif prev_zone == "CONSERVATEUR":
                 # Nécessite WR >= 0.57 pour sortir de CONSERVATEUR
                 if sym_wr >= 0.57:
@@ -1758,7 +1727,7 @@ class FTMO_SIMPLE:
                     self._phase3_zone[symbol] = "CONSERVATEUR"
                     if current_period > MIN_PERIOD + 4 and sym_wr < 0.55:
                         new_period = max(MIN_PERIOD + 2, current_period - 1)
-                        adjustments[symbol] = (current_period, new_period, "CONSERVATEUR")
+                        adjustments[symbol] = (current_period, new_period, "CONSERVATEUR", sym_wr)
             elif prev_zone == "AGGRESSIVE":
                 # Nécessite WR <= 0.68 pour sortir de AGGRESSIVE
                 if sym_wr <= 0.68:
@@ -1767,23 +1736,23 @@ class FTMO_SIMPLE:
                     self._phase3_zone[symbol] = "AGGRESSIVE"
                     if current_period < MAX_PERIOD - 2:
                         new_period = min(MAX_PERIOD, current_period + 1)
-                        adjustments[symbol] = (current_period, new_period, "AGGRESSIVE")
+                        adjustments[symbol] = (current_period, new_period, "AGGRESSIVE", sym_wr)
             else:
                 # Zone OK : entrée dans une zone ajustée avec seuils stricts
                 if sym_wr < 0.43 and current_period > MIN_PERIOD + 2:
                     # WR très mauvais → réduire (entrée: < 0.43)
                     new_period = max(MIN_PERIOD, current_period - 2)
-                    adjustments[symbol] = (current_period, new_period, "TROP_CONSERVATEUR")
+                    adjustments[symbol] = (current_period, new_period, "TROP_CONSERVATEUR", sym_wr)
                     self._phase3_zone[symbol] = "TROP_CONSERVATEUR"
                 elif sym_wr < 0.53 and current_period > MIN_PERIOD + 4:
                     # WR faible → légère réduction (entrée: < 0.53)
                     new_period = max(MIN_PERIOD + 2, current_period - 1)
-                    adjustments[symbol] = (current_period, new_period, "CONSERVATEUR")
+                    adjustments[symbol] = (current_period, new_period, "CONSERVATEUR", sym_wr)
                     self._phase3_zone[symbol] = "CONSERVATEUR"
                 elif sym_wr > 0.72 and current_period < MAX_PERIOD - 2:
                     # WR excellent → augmenter (entrée: > 0.72)
                     new_period = min(MAX_PERIOD, current_period + 1)
-                    adjustments[symbol] = (current_period, new_period, "AGGRESSIVE")
+                    adjustments[symbol] = (current_period, new_period, "AGGRESSIVE", sym_wr)
                     self._phase3_zone[symbol] = "AGGRESSIVE"
 
             if new_period != current_period:
@@ -1795,145 +1764,28 @@ class FTMO_SIMPLE:
                     new_period = initial
                     logger.info(f"[PHASE 3] {symbol}: période reset à {initial} (dérive > 4 unités)")
                 if new_period != current_period:
-                    SYMBOL_MOMENTUM_PERIODS[symbol] = new_period
+                    _SYMBOL_MOMENTUM_PERIODS[symbol] = new_period
                     logger.info(
                         f"[PHASE 3] {symbol}: période {current_period}→{new_period} "
                         f"(WR={sym_wr:.1%}, raison: {adjustments[symbol][2]})"
                     )
 
         if adjustments:
-            self._state["mom_period_adjustments"] = {k: v[:2] for k, v in adjustments.items()}
+            now_utc = datetime.now(timezone.utc).isoformat()
+            details = {}
+            for sym, (old_p, new_p, reason, wr_val) in adjustments.items():
+                details[sym] = {
+                    "old_period": old_p,
+                    "new_period": new_p,
+                    "reason": reason,
+                    "timestamp": now_utc,
+                    "wr": wr_val,
+                }
+            self._state["mom_period_adjustments"] = details
+            self._state["mom_period_last_adjustment_utc"] = now_utc
             self._save_state()
 
-    # ── Phase 14c: Retraining hebdomadaire LightGBM ────────────────────────
-
-    def _check_weekly_retrain(self) -> None:
-        """Vérifie si un retraining LightGBM est nécessaire et le lance.
-
-        Conditions :
-        1. Au moins 7 jours depuis le dernier retraining
-        2. Au moins 50 nouveaux trades réels collectés depuis le dernier retraining
-        3. Modèle chargé (on vérifie via self.adaptive.lgb)
-
-        Lance scripts/train_lightgbm.py --seed-only en sous-processus.
-        """
-        import json
-        import os
-        import subprocess
-        from pathlib import Path
-
-        meta_path = "runtime/lgb_model_meta.json"
-        real_trades_path = "runtime/lgb_real_trades.jsonl"
-
-        # Vérifier que le modèle LGB est actif
-        lgb_available = hasattr(self.adaptive, "lgb") and self.adaptive.lgb is not None and self.adaptive.lgb.available
-        if not lgb_available:
-            return
-
-        # Vérifier la date du dernier retraining
-        last_retrain = 0.0
-        if os.path.exists(meta_path):
-            try:
-                with open(meta_path) as f:
-                    meta = json.load(f)
-                last_retrain = meta.get("last_retrain_ts", 0.0)
-                if isinstance(last_retrain, str):
-                    from datetime import datetime as _dt
-
-                    last_retrain = _dt.fromisoformat(last_retrain).timestamp()
-                last_retrain = float(last_retrain)  # ensure float (LSP safety)
-            except Exception:
-                pass
-
-        days_since = (time.time() - last_retrain) / 86400
-        if days_since < 7:
-            return  # Pas encore une semaine
-
-        # Compter les nouveaux trades depuis le dernier retraining
-        new_trades = 0
-        if os.path.exists(real_trades_path):
-            try:
-                total_lines = sum(1 for _ in open(real_trades_path) if _.strip())
-                # Estimer les trades post-retrain : si le fichier est plus récent que le retrain
-                file_mtime = os.path.getmtime(real_trades_path)
-                if last_retrain > 0:
-                    # Compter les lignes ajoutées après last_retrain via le timestamp closed_at
-                    new_trades = 0
-                    with open(real_trades_path) as f:
-                        for line in f:
-                            line = line.strip()
-                            if not line:
-                                continue
-                            try:
-                                rec = json.loads(line)
-                                # Ne compter que les trades avec vraies features
-                                features = rec.get("features", {})
-                                if not features or len(features) < 5:
-                                    continue
-                                closed = rec.get("closed_at", 0)
-                                if isinstance(closed, str):
-                                    from datetime import datetime as _dt2
-
-                                    closed = _dt2.fromisoformat(closed).timestamp()
-                                if closed > last_retrain:
-                                    new_trades += 1
-                            except Exception:
-                                pass
-                else:
-                    # Premier retrain : tous les trades avec features comptent
-                    new_trades = sum(
-                        1 for l in open(real_trades_path) if l.strip() and len(json.loads(l).get("features", {})) >= 5
-                    )
-            except Exception:
-                pass
-
-        if new_trades < 50:
-            logger.info(
-                f"[LGB RETRAIN] {new_trades} nouveaux trades < 50, "
-                f"attendre ({days_since:.0f} jours depuis dernier retrain)"
-            )
-            return
-
-        # Lancer le retraining
-        logger.info(
-            f"[LGB RETRAIN] Lancement retraining: {new_trades} nouveaux trades, "
-            f"{days_since:.0f} jours depuis dernier retrain"
-        )
-        try:
-            script = Path(__file__).resolve().parent / "scripts" / "train_lightgbm.py"
-            if not script.exists():
-                script = Path("scripts/train_lightgbm.py")
-            result = subprocess.run(
-                [sys.executable, str(script), "--seed-only", "--force"],
-                capture_output=True,
-                text=True,
-                timeout=300,  # 5 min max
-            )
-            if result.returncode == 0:
-                logger.info(f"[LGB RETRAIN] Succès! {result.stdout[-500:]}")
-                # Mettre à jour la date de retraining
-                if os.path.exists(meta_path):
-                    try:
-                        with open(meta_path) as f:
-                            meta = json.load(f)
-                        meta["last_retrain_ts"] = time.time()
-                        meta["new_trades_since_last"] = new_trades
-                        with open(meta_path, "w") as f:
-                            json.dump(meta, f, indent=2)
-                    except Exception:
-                        pass
-                # Recharger le modèle
-                try:
-                    self.adaptive.lgb.load()
-                    logger.info("[LGB RETRAIN] Modèle rechargé après retraining")
-                except Exception as e:
-                    logger.warning(f"[LGB RETRAIN] Rechargement modèle échoué: {e}")
-            else:
-                logger.warning(f"[LGB RETRAIN] Échec (code={result.returncode}): {result.stderr[:500]}")
-        except subprocess.TimeoutExpired:
-            logger.warning("[LGB RETRAIN] Timeout (5 min dépassé)")
-        except Exception as e:
-            logger.warning(f"[LGB RETRAIN] Erreur: {e}")
+    # ── Phase 14c: LightGBM retraining — SUPPRIMÉ (module désactivé) ────────
 
 
 def main():

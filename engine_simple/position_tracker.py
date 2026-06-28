@@ -108,14 +108,8 @@ def _log_real_trade(closing, meta: dict) -> None:
     pos_dir = "SELL" if closing.type == 1 else "BUY"
     r1_usd = meta.get("r1_usd", 1)
     r_multiple = round(closing.profit / r1_usd, 2) if r1_usd > 0 else 0
-    # Features vectorisées dans l'ordre du modèle (pour retraining direct)
-    try:
-        from engine_simple.lightgbm_model import FEATURE_COLUMNS
-
-        features_vec = [features.get(col, 0.0) for col in FEATURE_COLUMNS]
-    except Exception as e:
-        logger.warning(f"  [TRACKER] _record_trade features_vec: {e}")
-        features_vec = []
+    # Features vectorisées — LightGBM désactivé, fallback vide
+    features_vec = []
 
     record = {
         "symbol": closing.symbol,
@@ -301,7 +295,17 @@ class PositionTracker:
             if p.ticket not in self._position_meta:
                 order_type = self.mt5.ORDER_TYPE_BUY if p.type == 0 else self.mt5.ORDER_TYPE_SELL
                 r1 = self.mt5.calc_profit(order_type, p.symbol, p.volume, p.price_open, p.sl)
-                regime = p.comment.replace("ADAPT_", "")[:5] if p.comment.startswith("ADAPT_") else "LEGACY"
+                raw_regime = p.comment.replace("ADAPT_", "") if p.comment.startswith("ADAPT_") else "LEGACY"
+                # Re-traduire le code court (3 lettres) en nom complet de régime
+                # Le commentaire MT5 stocke "RAN" pour "RANGING", "DOW" pour "TREND_DOWN", etc.
+                REGIME_SHORT_TO_FULL = {
+                    "TRE": "TREND_UP",
+                    "DOW": "TREND_DOWN",
+                    "RAN": "RANGING",
+                    "HIG": "HIGH_VOL",
+                    "LOW": "LOW_VOL",
+                }
+                regime = REGIME_SHORT_TO_FULL.get(raw_regime, raw_regime)
                 meta = dict(
                     symbol=p.symbol,
                     entry=p.price_open,
