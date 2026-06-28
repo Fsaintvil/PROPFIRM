@@ -169,6 +169,40 @@ SYMBOL_CONFIG = {
         "news_minutes_after": 20,
     },
     # ═══════════════════════════════════════════════════════════════════════
+    # US30.cash H1 — Dow Jones Industrial Average (AJOUTÉ 28 Juin 2026)
+    # Caractéristiques: Indice US, tendances longues, forte liquidité
+    # Backtest H1 12+ ans avec coûts: WR 74.8%, PF 1.19, DD 8.5%
+    #   → p<0.001 — edge robuste après coûts
+    #   → Remplace EURUSD (PF 0.75 après coûts) — Supreme Council 28 Juin
+    # Timeframe: H1
+    # Justification complète dans config/default.yaml:US30.cash
+    # ═══════════════════════════════════════════════════════════════════════
+    "US30.cash": {
+        # Momentum 20 périodes H1 = 20h (standard MOM20x3)
+        "momentum_period": 20,
+        # SL/TP trending: 1.5/4.5 (RR 3.0 — SL serré, Dow moins volatile)
+        "sl_atr_trending": 1.5,
+        "tp_atr_trending": 4.5,
+        # SL/TP ranging: 1.2/3.0 (RR 2.5)
+        "sl_atr_ranging": 1.2,
+        "tp_atr_ranging": 3.0,
+        # Seuils ATR standard
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        # Filtres ADX standard (indices US)
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        # Pullback bandes serrées (indices font peu de pullbacks profonds)
+        "pullback_band_trending": 0.3,
+        "pullback_band_ranging": 0.2,
+        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
+        # Sessions US market hours
+        "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
+        # News filter (protection news US)
+        "news_minutes_before": 15,
+        "news_minutes_after": 15,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
     # EURUSD H1 — Euro/Dollar US (Juin 2026 — réactivé 17 Juin)
     # Caractéristiques: Forex majeur, spreads serrés, liquidité extrême
     # Backtest H1 12+ ans: WR 68.6%, PF 1.12, DD 3.7% (excellent)
