@@ -197,12 +197,24 @@ class SignalPipeline:
 
         # Dynamic position limits based on confidence
         # Seuils équilibrés (Juin 2026): conf > 0.85 → 6, > 0.70 → 4, sinon → 2
-        # HIGH_CONF_CONFIDENCE = 0.90 : bypass toutes les limites, intervalle 5 min
+        # HIGH_CONF_CONFIDENCE = seuil par symbole depuis SYMBOL_CONFIDENCE_GATES
+        # (0.90 pour forex reactivés, 0.80 pour target_80, pas de gate pour CORE)
+        # Les gates sont lues depuis ftmo.config (passées par main.py)
         sig_conf = signal.get("confidence", 0.0)
-        HIGH_CONF_CONFIDENCE = 0.90
+        HIGH_CONF_CONFIDENCE = 0.90  # fallback par défaut
+        try:
+            _gate_cfg = (self.ftmo.config if hasattr(self, "ftmo") and hasattr(self.ftmo, "config") else {}).get(
+                "SYMBOL_CONFIDENCE_GATES", {}
+            )
+            if isinstance(_gate_cfg, dict):
+                _gate_val = _gate_cfg.get(symbol, 0.90)
+                if isinstance(_gate_val, (int, float)) and _gate_val > 0:
+                    HIGH_CONF_CONFIDENCE = float(_gate_val)
+        except Exception:
+            pass  # fallback à 0.90
         sig_action = signal.get("action")
 
-        if sig_conf > HIGH_CONF_CONFIDENCE:
+        if sig_conf >= HIGH_CONF_CONFIDENCE - 0.0001:
             # 🔥 HIGH CONFIDENCE : positions supplémentaires autorisées
             # mais corrélation et limites totales protégées par portfolio_controller
             signal["high_confidence"] = True

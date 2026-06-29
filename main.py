@@ -81,11 +81,37 @@ if _env_syms:
 if not ACTIVE_SYMBOLS:
     ACTIVE_SYMBOLS = {"XAUUSD", "BTCUSD", "US30.cash"}
 
-# ── Symboles CORE (trading normal) vs REACTIVATED (confiance ≥90% requise) ──
+# ── Catégories de symboles (29 Juin 2026 — Confidence Gates par symbole) ──
+# CORE : trading normal, pas de gate de confiance
+# TARGET_80 : gate de confiance individuelle (vise 80% WR)
+# REACTIVATED : gate 0.90 (forex majeurs, WR 57-61% après coûts)
 CORE_SYMBOLS: set[str] = {"XAUUSD", "BTCUSD", "US30.cash"}
-REACTIVATED_SYMBOLS: set[str] = ACTIVE_SYMBOLS - CORE_SYMBOLS
-# Seuil de confiance pour les symboles réactivés (nécessite high_confidence)
-REACTIVATED_CONFIDENCE_THRESHOLD = 0.90
+TARGET_80_SYMBOLS: set[str] = {"ETHUSD", "US100.cash", "US500.cash", "XAGUSD"}
+REACTIVATED_SYMBOLS: set[str] = ACTIVE_SYMBOLS - CORE_SYMBOLS - TARGET_80_SYMBOLS
+
+# ── Seuils de confiance par symbole (29 Juin 2026) ──
+# Basés sur backtest 12+ ans avec coûts réels (spread + commission ECN).
+# Le gate filtre les signaux faibles pour viser ~80% WR sur trades exécutés.
+# Source: backtest_universe_report.json (WR après coûts)
+SYMBOL_CONFIDENCE_GATES: dict[str, float] = {
+    # ── CORE (pas de gate) : trading normal ──
+    # XAUUSD H4: WR 72.7% après coûts → pas de gate (trading normal)
+    # BTCUSD H1: WR 75.6% après coûts → pas de gate
+    # US30.cash H1: WR 74.8% après coûts → pas de gate
+    # ── TARGET_80 WR (gate 0.80) : vise 80% WR ──
+    "ETHUSD": 0.80,  # WR 73.2% après coûts → gate 0.80
+    "US100.cash": 0.80,  # WR 74.0% après coûts → gate 0.80
+    "US500.cash": 0.80,  # WR 73.6% après coûts → gate 0.80
+    "XAGUSD": 0.80,  # WR 73.6% après coûts → gate 0.80 (DD 18.1% ⚠️)
+    # ── REACTIVATED (gate 0.90) : forex majeurs, très stricts ──
+    "EURUSD": 0.90,  # WR 57.1% après coûts (−11.7% vs brut)
+    "GBPUSD": 0.90,  # WR 59.8% après coûts (−8.7%)
+    "USDJPY": 0.90,  # WR 60.8% après coûts (−8.5%)
+    "USDCAD": 0.90,  # WR 57.7% après coûts (−10.8%)
+    "AUDUSD": 0.90,  # WR 58.2% après coûts (−10.0%)
+    "NZDUSD": 0.90,  # WR 58.4% après coûts (−9.2%)
+    "USDCHF": 0.90,  # WR 59.0% après coûts (−10.5%)
+}
 
 _mutex_handle = None
 
@@ -427,9 +453,11 @@ class FTMO_SIMPLE:
                 TRADING_END_HOUR=cfg.TRADING_END_HOUR,
                 DANGER_HOURS=cfg.DANGER_HOURS,
                 SYMBOL_LIMITS=cfg.SYMBOL_LIMITS,
-                # 🔥 High Confidence Gate pour symboles réactivés (29 Juin 2026)
-                REACTIVATED_SYMBOLS=ACTIVE_SYMBOLS - CORE_SYMBOLS,
-                REACTIVATED_CONFIDENCE_THRESHOLD=REACTIVATED_CONFIDENCE_THRESHOLD,
+                # 🔥 Confidence Gates par symbole (29 Juin 2026)
+                CORE_SYMBOLS=CORE_SYMBOLS,
+                TARGET_80_SYMBOLS=TARGET_80_SYMBOLS,
+                REACTIVATED_SYMBOLS=REACTIVATED_SYMBOLS,
+                SYMBOL_CONFIDENCE_GATES=SYMBOL_CONFIDENCE_GATES,
                 # Clés ajoutées — audit Juin 2026 (étaient manquantes, utilisaient
                 # les valeurs par défaut hardcodées dans ftmo_protector)
                 DAILY_PROFIT_LIMIT_PCT=cfg.DAILY_PROFIT_LIMIT_PCT,
@@ -1353,6 +1381,10 @@ class FTMO_SIMPLE:
                     "XAUUSD": 1.50,
                     "BTCUSD": 1.25,
                     "US30.cash": 1.30,
+                    "ETHUSD": 1.15,
+                    "US100.cash": 1.20,
+                    "US500.cash": 1.15,
+                    "XAGUSD": 1.10,
                 }
                 cap = _FINAL_CAP.get(symbol, 1.0)
                 if signal["risk_mult"] > cap:

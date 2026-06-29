@@ -291,6 +291,86 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 5,
         "news_minutes_after": 5,
     },
+    # ═══════════════════════════════════════════════════════════════════════
+    # ETHUSD H1 — Ethereum (AJOUTÉ 29 Juin 2026 — Target 80% WR)
+    # Backtest avec coûts: WR 73.2%, PF 1.14, DD 10.4%
+    # ═══════════════════════════════════════════════════════════════════════
+    "ETHUSD": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.0,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 1.5,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -3.0,
+        "adx_slope_threshold_strong": -6.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": list(range(24)),
+        "news_minutes_before": 0,
+        "news_minutes_after": 0,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # US100.cash H1 — Nasdaq 100 (AJOUTÉ 29 Juin 2026 — Target 80% WR)
+    # Backtest avec coûts: WR 74.0%, PF 1.09, DD 6.4%
+    # ═══════════════════════════════════════════════════════════════════════
+    "US100.cash": {
+        "momentum_period": 20,
+        "sl_atr_trending": 1.5,
+        "tp_atr_trending": 4.5,
+        "sl_atr_ranging": 1.2,
+        "tp_atr_ranging": 3.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.3,
+        "pullback_band_ranging": 0.2,
+        "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
+        "news_minutes_before": 15,
+        "news_minutes_after": 15,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # US500.cash H1 — S&P 500 (AJOUTÉ 29 Juin 2026 — Target 80% WR)
+    # Backtest avec coûts: WR 73.6%, PF 1.04, DD 10.5%
+    # ═══════════════════════════════════════════════════════════════════════
+    "US500.cash": {
+        "momentum_period": 20,
+        "sl_atr_trending": 1.5,
+        "tp_atr_trending": 4.5,
+        "sl_atr_ranging": 1.2,
+        "tp_atr_ranging": 3.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.3,
+        "pullback_band_ranging": 0.2,
+        "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
+        "news_minutes_before": 15,
+        "news_minutes_after": 15,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # XAGUSD H1 — Argent (AJOUTÉ 29 Juin 2026 — Target 80% WR)
+    # Backtest avec coûts: WR 73.6%, PF 1.07, DD 18.1%
+    # ═══════════════════════════════════════════════════════════════════════
+    "XAGUSD": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.0,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 1.5,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": list(range(24)),
+        "news_minutes_before": 5,
+        "news_minutes_after": 5,
+    },
 }
 
 # Fallback par défaut

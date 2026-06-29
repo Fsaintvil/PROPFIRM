@@ -331,19 +331,20 @@ class FTMOProtector:
         if sig_score < min_score:
             return False, f"Signal score too low: {sig_score:.2f} < {min_score}"
 
-        # 🔥 HIGH CONFIDENCE GATE pour symboles réactivés
-        # Les symboles REACTIVATED (non-CORE) ne trade QUE si confidence ≥ 0.90
-        # Cela permet de trader toutes les paires primaires sans risquer le challenge
-        # sur des signaux faibles.
-        _reactivated = self.config.get("REACTIVATED_SYMBOLS", set())
-        if symbol in _reactivated:
-            _conf_threshold = self.config.get("REACTIVATED_CONFIDENCE_THRESHOLD", 0.90)
+        # 🔥 SYMBOL_CONFIDENCE_GATES — gate de confiance par symbole (29 Juin 2026)
+        # Chaque symbole a son propre seuil minimum de confiance :
+        #   CORE (XAUUSD, BTCUSD, US30.cash) : pas de gate (trading normal)
+        #   TARGET_80 (ETHUSD, US100.cash, US500.cash, XAGUSD) : gate 0.80
+        #   REACTIVATED (forex majeurs) : gate 0.90
+        # Le signal doit avoir confidence >= gate pour être tradé.
+        # Le flag high_confidence (calculé par signal_pipeline.py) est utilisé
+        # pour le bypass des limites de positions (pas pour le gate lui-même).
+        _gates = self.config.get("SYMBOL_CONFIDENCE_GATES", {})
+        conf_gate = _gates.get(symbol, 0.0)
+        if conf_gate > 0:
             sig_confidence = signal.get("confidence", 0.0)
-            if sig_confidence < _conf_threshold:
-                return False, (
-                    f"Reactivated {symbol}: conf={sig_confidence:.2f} < {_conf_threshold} "
-                    f"(CORE symbols only, high confidence gate)"
-                )
+            if sig_confidence < conf_gate - 0.0001:  # floating point guard
+                return False, (f"Confidence gate {symbol}: conf={sig_confidence:.2f} < gate={conf_gate:.2f}")
 
         # FIX #3: SL OBLIGATOIRE — calcul auto si ATR disponible, sinon blocage
         sl = signal.get("sl")

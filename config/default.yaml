@@ -438,37 +438,144 @@ symbol_limits:
     major_news_symbols: []
 
   # ═══════════════════════════════════════════════════════════════════════
-  # US500.cash — DÉSACTIVÉ 25 Juin 2026 (PF 0.39 toxique — laissé pour référence)
-  # 24/7 — plus de blocage horaire
+  # ETHUSD H1 — Ethereum (AJOUTÉ 29 Juin 2026 — Target 80% WR)
+  # Backtest avec coûts: WR 73.2%, PF 1.14, DD 10.4%
+  # Volatilité extrême (ATR ~2-3% H1), 24/7, corrélé BTCUSD
+  # Confidence gate: 0.80 (SYMBOL_CONFIDENCE_GATES)
   # ═══════════════════════════════════════════════════════════════════════
-  US500.cash:
-    timeframe: "H4"
-    max_lot: 0.06
+  ETHUSD:
+    timeframe: "H1"
+    max_lot: 0.04               # lot réduit — DD 10.4% backtest, volatilité forte
     min_lot: 0.01
-    risk_mult: 0.50
-    max_spread_points: 40
+    risk_mult: 0.40             # prudent — pas d'historique live FTMO
+    max_spread_points: 120      # spread crypto large
+
+    adx_thresh: 20              # crypto plus bruitée que forex
+    allow_buys: true
+    allow_shorts: true
+    momentum_period: 20
+    sl_atr_trending: 2.5        # SL large pour gaps crypto
+    tp_atr_trending: 6.0        # TP large (RR 2.4)
+    sl_atr_ranging: 2.0
+    tp_atr_ranging: 4.0
+    adx_slope_threshold: -3.0           # permissif — ADX crypto peu fiable
+    adx_slope_threshold_strong: -6.0
+    threshold_trending: 2.0             # seuils abaissés pour capter + de signaux
+    threshold_ranging: 1.5
+    pullback_band_trending: 0.6         # pullbacks crypto profonds
+    pullback_band_ranging: 0.4
+    cmf_threshold: 0.20                 # volume crypto bursty
+    obv_div_penalty_high: 0.85
+    obv_div_penalty_low: 0.92
+    preferred_hours: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]  # 24/7
+    weekend_trading: true               # crypto 24/7
+    news_minutes_before: 0
+    news_minutes_after: 0
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # US100.cash H1 — Nasdaq 100 (AJOUTÉ 29 Juin 2026 — Target 80% WR)
+  # Backtest avec coûts: WR 74.0%, PF 1.09, DD 6.4%
+  # Sessions US market hours, forte liquidité, tendances tech
+  # Confidence gate: 0.80 (SYMBOL_CONFIDENCE_GATES)
+  # ═══════════════════════════════════════════════════════════════════════
+  US100.cash:
+    timeframe: "H1"
+    max_lot: 0.04               # lot réduit — pas d'historique live FTMO
+    min_lot: 0.01
+    risk_mult: 0.50             # 50% du risque standard
+    max_spread_points: 60       # spread indices US typique
 
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
-    momentum_period: 18
+    momentum_period: 20
     sl_atr_trending: 1.5
-    tp_atr_trending: 4.0
+    tp_atr_trending: 4.5
     sl_atr_ranging: 1.2
     tp_atr_ranging: 3.0
-    adx_slope_threshold: -5.0              # standard (était -10.0)
-    adx_slope_threshold_strong: -8.0       # relaxation (était -14.0)
-    threshold_trending: 2.0
-    threshold_ranging: 1.5
+    adx_slope_threshold: -5.0
+    adx_slope_threshold_strong: -8.0
+    threshold_trending: 2.5
+    threshold_ranging: 2.0
     pullback_band_trending: 0.3
     pullback_band_ranging: 0.2
     cmf_threshold: 0.10
     obv_div_penalty_high: 0.70
     obv_div_penalty_low: 0.85
+    preferred_hours: [13,14,15,16,17,18,19,20,21]  # US market hours
+    weekend_trading: false       # marché fermé weekend
+    news_minutes_before: 15
+    news_minutes_after: 15
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # US500.cash H1 — S&P 500 (RÉACTIVÉ 29 Juin 2026 — Target 80% WR)
+  # Backtest avec coûts: WR 73.6%, PF 1.04, DD 10.5%
+  # Anciennement désactivé 25 Juin (PF 0.39 toxique live — échantillon trop petit)
+  # Réactivation avec confidence gate 0.80 + risk_mult prudent
+  # ═══════════════════════════════════════════════════════════════════════
+  US500.cash:
+    timeframe: "H1"             # ← H4→H1 : aligné strategy.py (SYMBOL_CONFIG)
+    max_lot: 0.04               # lot réduit — DD 10.5% backtest, pas d'historique live
+    min_lot: 0.01
+    risk_mult: 0.40             # très prudent — ancien PF 0.39 live (échantillon biaisé)
+    max_spread_points: 50       # spread S&P 500 typique
+
+    adx_thresh: 22
+    allow_buys: true
+    allow_shorts: true
+    momentum_period: 20         # aligné strategy.py
+    sl_atr_trending: 1.5
+    tp_atr_trending: 4.5
+    sl_atr_ranging: 1.2
+    tp_atr_ranging: 3.0
+    adx_slope_threshold: -5.0
+    adx_slope_threshold_strong: -8.0
+    threshold_trending: 2.5
+    threshold_ranging: 2.0
+    pullback_band_trending: 0.3
+    pullback_band_ranging: 0.2
+    cmf_threshold: 0.10
+    obv_div_penalty_high: 0.70
+    obv_div_penalty_low: 0.85
+    preferred_hours: [13,14,15,16,17,18,19,20,21]  # US market hours
+    weekend_trading: false       # marché fermé weekend
+    news_minutes_before: 15
+    news_minutes_after: 15
+
+  # ═══════════════════════════════════════════════════════════════════════
+  # XAGUSD H1 — Silver (AJOUTÉ 29 Juin 2026 — Target 80% WR)
+  # Backtest avec coûts: WR 73.6%, PF 1.07, DD 18.1% ⚠️ DD ÉLEVÉE
+  # Volatilité très forte (ATR ~2-3% H1), gaps fréquents
+  # Confidence gate: 0.80 (SYMBOL_CONFIDENCE_GATES) + risk_mult très prudent
+  # ═══════════════════════════════════════════════════════════════════════
+  XAGUSD:
+    timeframe: "H1"
+    max_lot: 0.03               # lot très réduit — DD 18.1% backtest
+    min_lot: 0.01
+    risk_mult: 0.30             # 30% du risque standard — extrêmement prudent
+    max_spread_points: 80       # spread argent parfois large
+
+    adx_thresh: 22
+    allow_buys: true
+    allow_shorts: true
+    momentum_period: 20
+    sl_atr_trending: 2.0        # SL large pour gaps argent
+    tp_atr_trending: 5.0
+    sl_atr_ranging: 1.5
+    tp_atr_ranging: 4.0
+    adx_slope_threshold: -5.0
+    adx_slope_threshold_strong: -8.0
+    threshold_trending: 2.5
+    threshold_ranging: 2.0
+    pullback_band_trending: 0.5
+    pullback_band_ranging: 0.3
+    cmf_threshold: 0.10
+    obv_div_penalty_high: 0.70
+    obv_div_penalty_low: 0.85
     preferred_hours: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]  # 24/7
-    weekend_trading: true        # 24/7
-    news_minutes_before: 0
-    news_minutes_after: 0
+    weekend_trading: true        # métaux précieux 24/7
+    news_minutes_before: 10
+    news_minutes_after: 10
 
 # ── Market Regime — Détection des régimes de marché (regime.py) ────────────
 market_regime:
