@@ -14,6 +14,7 @@ Usage:
 
 import json
 import logging
+import os
 import random
 import time
 from datetime import datetime
@@ -215,7 +216,11 @@ class Trailer:
         if position.profit > max_profit:
             self.position_meta.setdefault(ticket, {})["max_profit"] = position.profit
             max_profit = position.profit
-        max_hours = 12 if max_profit > 0 else 4.0
+        max_hours = (
+            float(os.environ.get("TIME_STOP_MAX_HOURS_PROFIT", "12"))
+            if max_profit > 0
+            else float(os.environ.get("TIME_STOP_MAX_HOURS_LOSS", "4"))
+        )
         if hours < max_hours:
             return
 

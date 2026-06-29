@@ -18,6 +18,7 @@ Peut aussi être appelé standalone : python -m engine_simple.auto_stop
 
 import json
 import logging
+import os
 import sys
 import time
 from datetime import datetime, timedelta
@@ -44,19 +45,35 @@ logger = logging.getLogger("auto_stop")
 RUNTIME = Path(__file__).parent.parent / "runtime"
 STATE_FILE = RUNTIME / "auto_state.json"
 
-# Seuils
-ADX_LOW_THRESHOLD = 22  # ADX < 22 = RANGING (hystérésis entrée)
-ADX_HIGH_THRESHOLD = 18  # ADX >= 18 = TRENDING (hystérésis sortie, aligné regime.py 22/18)
-RATIO_STOP = 0.50  # >50% des symboles en ranging → STOP
-SYMBOLS_MIN_RESUME = 2  # >=2 symboles avec ADX >= 22 → RESUME (était 3, réduit pour 3 actifs)
-PAUSE_MIN_DURATION = 1800  # 30 min de pause minimum
-ADX_SNAPSHOT_TTL = 300  # snapshot ADX valide 5 min
-STATE_TTL = 86400  # state max 24h (reset auto)
+# ── Seuils lus depuis la config YAML (config/default.yaml) avec fallback ──
+try:
+    ADX_LOW_THRESHOLD = cfg.AUTO_STOP_ADX_LOW_THRESHOLD if cfg else 22
+    ADX_HIGH_THRESHOLD = cfg.AUTO_STOP_ADX_HIGH_THRESHOLD if cfg else 18
+    RATIO_STOP = cfg.AUTO_STOP_RATIO_STOP if cfg else 0.50
+    SYMBOLS_MIN_RESUME = cfg.AUTO_STOP_SYMBOLS_MIN_RESUME if cfg else 2
+    PAUSE_MIN_DURATION = cfg.AUTO_STOP_PAUSE_MIN_DURATION if cfg else 1800
+    ADX_SNAPSHOT_TTL = cfg.AUTO_STOP_ADX_SNAPSHOT_TTL if cfg else 300
+    STATE_TTL = cfg.AUTO_STOP_STATE_TTL if cfg else 86400
+except Exception:
+    logger.warning("Config YAML indisponible, utilisation des fallbacks hardcodes")
+    ADX_LOW_THRESHOLD = 22
+    ADX_HIGH_THRESHOLD = 18
+    RATIO_STOP = 0.50
+    SYMBOLS_MIN_RESUME = 2
+    PAUSE_MIN_DURATION = 1800
+    ADX_SNAPSHOT_TTL = 300
+    STATE_TTL = 86400
 
 # 🐛 FIX 26 Juin 2026: Ne vérifier que les symboles activement tradés
 # Les symboles inactifs (USDJPY, GBPUSD, USDCAD) ont un ADX souvent bas
 # et déclenchent de faux STOP (3/6 = 50% → RATIO_STOP atteint)
-ACTIVE_SYMBOLS = ["XAUUSD", "BTCUSD", "EURUSD"]
+# 🔧 FIX 28 Juin 2026: Utiliser os.environ.SYMBOLS (3 actifs) au lieu de cfg.SYMBOLS (6 totaux)
+# car cfg.SYMBOLS inclut USDJPY/GBPUSD/USDCAD qui ne sont plus tradés et faussent le ratio.
+_env_syms = os.environ.get("SYMBOLS", "").strip()
+if _env_syms:
+    ACTIVE_SYMBOLS = [s.strip() for s in _env_syms.split(",") if s.strip()]
+else:
+    ACTIVE_SYMBOLS = ["XAUUSD", "BTCUSD", "US30.cash"]  # fallback si .env non dispo
 
 
 def compute_adx(high_arr, low_arr, close_arr, period=14):

@@ -1,4 +1,5 @@
 """Tests for position_manager.py — PositionManager"""
+
 import os
 import sys
 import time
@@ -11,18 +12,20 @@ import numpy as np
 import pytest
 
 import config_simple as cfg
-from engine_simple.position_manager import PositionManager
+from engine_simple.position_manager import PositionManager, _PM_ACTIVE
 
 
 class TestPositionManager:
-    def make_manager(self, mt5=None, ftmo=None, adaptive=None,
-                     signals=None, regime=None, pos_cache=None):
+    def make_manager(self, mt5=None, ftmo=None, adaptive=None, signals=None, regime=None, pos_cache=None):
         mt5 = mt5 or MagicMock()
         ftmo = ftmo or MagicMock()
         # PositionGuard SUPPRIMÉ (FIX #23) — plus de paramètre
         adaptive = adaptive or MagicMock()
         adaptive.vigilance.return_value = {
-            "regime": "RANGING", "adx": 15, "atr": 0.003, "action": "HOLD",
+            "regime": "RANGING",
+            "adx": 15,
+            "atr": 0.003,
+            "action": "HOLD",
         }
         signals = signals or MagicMock()
         regime = regime or MagicMock()
@@ -31,9 +34,19 @@ class TestPositionManager:
         pos_cache.get.return_value = []
         return PositionManager(mt5, ftmo, adaptive, signals, regime, pos_cache)
 
-    def make_pos(self, ticket=1, symbol="EURUSD", ptype=0, volume=0.1,
-                 price_open=1.1000, sl=1.0900, tp=1.1300, profit=0.0,
-                 comment="ADAPT_RAN", magic=None):
+    def make_pos(
+        self,
+        ticket=1,
+        symbol="EURUSD",
+        ptype=0,
+        volume=0.1,
+        price_open=1.1000,
+        sl=1.0900,
+        tp=1.1300,
+        profit=0.0,
+        comment="ADAPT_RAN",
+        magic=None,
+    ):
         pos = MagicMock()
         pos.ticket = ticket
         pos.symbol = symbol
@@ -96,32 +109,39 @@ class TestPositionManager:
 
     def test_vigilance_scan_calls_adaptive_vigilance(self):
         pm = self.make_manager()
-        rates = {"H1": [(1, 1.1, 1.1, 1.1, 1.1, 100)] * 30,
-                 "M15": [(1, 1.1, 1.1, 1.1, 1.1, 100)] * 30,
-                 "M5": [(1, 1.1, 1.1, 1.1, 1.1, 100)] * 30}
+        rates = {
+            "H1": [(1, 1.1, 1.1, 1.1, 1.1, 100)] * 30,
+            "M15": [(1, 1.1, 1.1, 1.1, 1.1, 100)] * 30,
+            "M5": [(1, 1.1, 1.1, 1.1, 1.1, 100)] * 30,
+        }
         pm._get_rates_for_vigilance = MagicMock(return_value=rates)
         pm.vigilance_scan()
-        # Should call adaptive.vigilance for EACH symbol in cfg.SYMBOLS
-        assert pm.adaptive.vigilance.call_count == len(cfg.SYMBOLS)
+        # Vigilance scanne uniquement les symboles ACTIFS (intersection _PM_ACTIVE & cfg.SYMBOLS)
+        expected = len(_PM_ACTIVE & set(cfg.SYMBOLS))
+        assert pm.adaptive.vigilance.call_count == expected
 
     def test_vigilance_scan_regime_detect(self):
         pm = self.make_manager()
-        rates = {"H1": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)],
-                 "M15": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)],
-                 "M5": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)]}
+        rates = {
+            "H1": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)],
+            "M15": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)],
+            "M5": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)],
+        }
         pm._get_rates_for_vigilance = MagicMock(return_value=rates)
         pm.vigilance_scan()
-        # regime_detector.detect should be called
-        assert pm._regime_detector.detect.call_count == len(cfg.SYMBOLS)
+        # regime_detector.detect ne doit être appelé que pour les symboles ACTIFS
+        expected = len(_PM_ACTIVE & set(cfg.SYMBOLS))
+        assert pm._regime_detector.detect.call_count == expected
 
     def test_vigilance_scan_with_open_position(self):
         pm = self.make_manager()
-        rates = {"H1": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)],
-                 "M15": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)],
-                 "M5": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)]}
+        rates = {
+            "H1": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)],
+            "M15": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)],
+            "M5": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)],
+        }
         pm._get_rates_for_vigilance = MagicMock(return_value=rates)
-        pos = self.make_pos(ticket=1, symbol=cfg.SYMBOLS[0], profit=10.0,
-                            comment="ADAPT_TREND")
+        pos = self.make_pos(ticket=1, symbol=cfg.SYMBOLS[0], profit=10.0, comment="ADAPT_TREND")
         pm._pos_cache.get.return_value = [pos]  # has position for first symbol
         pm.vigilance_scan()
         # Should not crash
@@ -129,12 +149,13 @@ class TestPositionManager:
 
     def test_vigilance_detects_regime_shift(self):
         pm = self.make_manager()
-        rates = {"H1": [(i, 1.1, 1.1, 1.12, 1.1, 100) for i in range(30)],
-                 "M15": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)],
-                 "M5": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)]}
+        rates = {
+            "H1": [(i, 1.1, 1.1, 1.12, 1.1, 100) for i in range(30)],
+            "M15": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)],
+            "M5": [(i, 1.1, 1.1, 1.1, 1.1, 100) for i in range(30)],
+        }
         pm._get_rates_for_vigilance = MagicMock(return_value=rates)
-        pos = self.make_pos(ticket=1, symbol=cfg.SYMBOLS[0], profit=15.0,
-                            comment="ADAPT_RAN")
+        pos = self.make_pos(ticket=1, symbol=cfg.SYMBOLS[0], profit=15.0, comment="ADAPT_RAN")
         pm._pos_cache.get.return_value = [pos]
         pm.vigilance_scan()
         # No crash with regime comparison
@@ -153,8 +174,7 @@ class TestPositionManager:
 
     def test_get_rates_cache_miss(self):
         pm = self.make_manager()
-        pm.mt5.get_rates_multi_tf.return_value = {
-            "H1": [(1, 1.1, 1.1, 1.1, 1.1, 100)]}
+        pm.mt5.get_rates_multi_tf.return_value = {"H1": [(1, 1.1, 1.1, 1.1, 1.1, 100)]}
         rates = pm._get_rates_for_vigilance("EURUSD")
         assert rates is not None
         assert "H1" in rates

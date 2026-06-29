@@ -219,6 +219,38 @@ class NewsConfig(BaseModel):
     manual_file: str = "config/economic_events.json"
 
 
+class MarketRegimeConfig(BaseModel):
+    """Paramètres de détection de régime de marché (regime.py)."""
+
+    adx_trend_enter_default: int = Field(default=22, ge=5, le=50, description="Seuil ADX pour entrer en mode TREND")
+    adx_trend_exit_default: int = Field(default=18, ge=5, le=50, description="Seuil ADX pour sortir du mode TREND")
+    hysteresis_offset: int = Field(default=4, ge=1, le=20, description="Décalage entrée/sortie ADX (enter - exit)")
+    slope_bullish: float = Field(default=0.002, ge=0.0, le=0.1, description="Pente MA20 minimale pour TREND_UP")
+    slope_bearish: float = Field(default=-0.002, ge=-0.1, le=0.0, description="Pente MA20 maximale pour TREND_DOWN")
+    vol_high_ratio: float = Field(default=0.015, ge=0.001, le=0.5, description="ATR/prix > ce ratio = HIGH_VOL")
+    vol_low_ratio: float = Field(default=0.003, ge=0.0001, le=0.1, description="ATR/prix < ce ratio = LOW_VOL")
+
+
+class AutoStopConfig(BaseModel):
+    """Paramètres de l'auto-stop/resume (auto_stop.py)."""
+
+    adx_low_threshold: int = Field(default=22, ge=5, le=50, description="ADX < ce seuil = RANGING (hystérésis entrée)")
+    adx_high_threshold: int = Field(
+        default=18, ge=5, le=50, description="ADX >= ce seuil = TRENDING (hystérésis sortie)"
+    )
+    ratio_stop: float = Field(
+        default=0.50, ge=0.1, le=1.0, description="Ratio de symboles en ranging déclenchant le STOP"
+    )
+    symbols_min_resume: int = Field(
+        default=2, ge=1, le=10, description="Nombre min de symboles avec ADX >= seuil pour RESUME"
+    )
+    pause_min_duration: int = Field(default=1800, ge=60, le=86400, description="Durée minimale de pause (secondes)")
+    adx_snapshot_ttl: int = Field(
+        default=300, ge=30, le=3600, description="Durée de validité du snapshot ADX (secondes)"
+    )
+    state_ttl: int = Field(default=86400, ge=3600, le=604800, description="Durée de vie max de l'état (secondes, 24h)")
+
+
 class ConfigSchema(BaseModel):
     robot: RobotConfig = RobotConfig()
     trading: TradingConfig = TradingConfig()
@@ -226,6 +258,8 @@ class ConfigSchema(BaseModel):
     risk: RiskConfig = RiskConfig()
     ml: MLConfig = MLConfig()
     news: NewsConfig = NewsConfig()
+    market_regime: MarketRegimeConfig = MarketRegimeConfig()
+    auto_stop: AutoStopConfig = AutoStopConfig()
     correlation: CorrelationConfig = CorrelationConfig()
     symbol_limits: dict[str, SymbolLimit] = Field(default_factory=dict)
     secrets: SecretsConfig = SecretsConfig()

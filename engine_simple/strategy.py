@@ -49,10 +49,12 @@ THRESHOLD_MAX = 2.5  # Plafond absolu (clamping sécurité)
 THRESHOLD_MIN = 1.5  # Plancher absolu (clamping sécurité)
 
 # ============================================================================
-# PARAMÈTRES SPÉCIFIQUES PAR ACTIF — Calibration Production
+# PARAMÈTRES SPÉCIFIQUES PAR ACTIF — 3 Symboles Actifs
 # ============================================================================
-# Chaque actif a des caractéristiques de volatilité différentes.
-# Les paramètres ci-dessous sont calibrés individuellement.
+# ⚠️ 28 Juin 2026: Nettoyage des symboles inactifs.
+# Seuls XAUUSD, BTCUSD, US30.cash sont activement tradés.
+# Les symboles désactivés (EURUSD, USDJPY, GBPUSD, etc.) utilisent
+# DEFAULT_SYMBOL_CONFIG et sont référencés dans config/default.yaml.
 #
 # Sources:
 #   - Backtest 12+ ans (158,964 trades)
@@ -66,8 +68,8 @@ THRESHOLD_MIN = 1.5  # Plancher absolu (clamping sécurité)
 #   → Migration de H1 (perdant 12 ans) vers H4 (WR 68.6%, DD 6.9%)
 # BTCUSD H1: Bitcoin — volatilité EXTRÊME (ATR 8.7% H1), momentum rapide
 #   → risk_mult 0.50 pour DD FTMO-safe (~9.0% attendu)
-# US500.cash H1: S&P 500 — volatilité modérée, sessions US limitées
-#   → Le plus stable des 3 (DD 6.5%, risk_mult 1.0)
+# US30.cash H1: Dow Jones — tendances longues, forte liquidité
+#   → Nouveau 28 Juin 2026 (remplace EURUSD — Supreme Council)
 
 SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
@@ -135,39 +137,9 @@ SYMBOL_CONFIG = {
         "news_minutes_after": 15,
     },
     # ═══════════════════════════════════════════════════════════════════════
-    # US500.cash H4 — S&P 500 Index (Juin 2026 — MIGRÉ DE H1)
-    # Caractéristiques: Volatilité modérée (VIX-dependent), sessions US
-    # Backtest H4 12+ ans: WR 68.4%, PF 1.07, DD 6.5%
-    #   → H1 2026 YTD PF 0.95 (-$2,861) → HORS-JEU
-    #   → H4 2026 YTD PF 1.51 (+$3,625) → MIGRATION
-    # Timeframe: H4 (H1 perdant en 2026)
-    # Justification complète dans config/default.yaml:US500.cash
+    # US500.cash — DÉSACTIVÉ 25 Juin 2026 (PF 0.39 toxique)
+    # Retiré de SYMBOL_CONFIG. Utilise DEFAULT_SYMBOL_CONFIG si réactivé.
     # ═══════════════════════════════════════════════════════════════════════
-    "US500.cash": {
-        # Momentum 18 périodes H4 = 72h (Scénario A: +20% trades)
-        "momentum_period": 18,
-        # SL/TP trending: 1.5/4.0 (RR 2.67 — SL serré, US500 H4 peu volatile)
-        "sl_atr_trending": 1.5,
-        "tp_atr_trending": 4.0,
-        # SL/TP ranging: 1.2/3.0 (RR 2.5)
-        "sl_atr_ranging": 1.2,
-        "tp_atr_ranging": 3.0,
-        # Seuils ATR (abaissés — US500 moins volatile en H4)
-        "threshold_trending": 2.0,
-        "threshold_ranging": 1.5,
-        # Filtres ADX (standard)
-        "adx_slope_threshold": -5.0,  # standard (AGENTS.md)
-        "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
-        # Pullback bandes serrées (indices font peu de pullbacks profonds)
-        "pullback_band_trending": 0.3,
-        "pullback_band_ranging": 0.2,
-        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
-        # Sessions préférées (US market hours élargies)
-        "preferred_hours": list(range(24)),  # 24/7 — pas de blocage horaire
-        # News filter (renforcé — indice sensible aux news US)
-        "news_minutes_before": 20,
-        "news_minutes_after": 20,
-    },
     # ═══════════════════════════════════════════════════════════════════════
     # US30.cash H1 — Dow Jones Industrial Average (AJOUTÉ 28 Juin 2026)
     # Caractéristiques: Indice US, tendances longues, forte liquidité
@@ -203,127 +175,13 @@ SYMBOL_CONFIG = {
         "news_minutes_after": 15,
     },
     # ═══════════════════════════════════════════════════════════════════════
-    # EURUSD H1 — Euro/Dollar US (Juin 2026 — réactivé 17 Juin)
-    # Caractéristiques: Forex majeur, spreads serrés, liquidité extrême
-    # Backtest H1 12+ ans: WR 68.6%, PF 1.12, DD 3.7% (excellent)
-    # Live FTMO (Juin 2026): WR 77.3% sur 22 trades (nettoyé des simulés)
-    # Timeframe: H1 (seul TF viable pour EURUSD intraday)
-    # Justification complète dans config/default.yaml:EURUSD
+    # Symboles désactivés — gardés pour référence dans config/default.yaml
+    # EURUSD  → désactivé 28 Juin 2026 (PF 0.75 après coûts)
+    # USDJPY  → désactivé (en attente réactivation)
+    # GBPUSD  → désactivé (en attente réactivation)
+    # AUDUSD  → désactivé 25 Juin 2026 (PF 0.40 toxique)
+    # USDCAD  → désactivé (en attente réactivation)
     # ═══════════════════════════════════════════════════════════════════════
-    "EURUSD": {
-        # Momentum 18 périodes H1 = 18h (plus réactif que 20 — reco analyse 9 Juin)
-        "momentum_period": 18,
-        # SL/TP trending: 1.5/4.5 (RR 3.0 — SL serré, EURUSD moins volatile)
-        "sl_atr_trending": 1.5,
-        "tp_atr_trending": 4.5,
-        # SL/TP ranging: 1.2/3.0 (RR 2.5)
-        "sl_atr_ranging": 1.2,
-        "tp_atr_ranging": 3.0,
-        # Seuils ATR (abaissés 26 Juin — EURUSD mom=0.00248 sous thresh=0.00295, besoin de + de trades)
-        "threshold_trending": 1.8,
-        "threshold_ranging": 1.5,
-        # Filtres ADX (standard forex — restauré AGENTS.md)
-        "adx_slope_threshold": -5.0,  # standard forex (AGENTS.md)
-        "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
-        # Pullback bandes modérées (EURUSD pullbacks modérés)
-        "pullback_band_trending": 0.3,
-        "pullback_band_ranging": 0.2,
-        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
-        # Sessions préférées (London+NY overlap)
-        "preferred_hours": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-        # News filter
-        "news_minutes_before": 15,
-        "news_minutes_after": 15,
-    },
-    # ═══════════════════════════════════════════════════════════════════════
-    # USDJPY H1 — Dollar/Yen (23 Juin 2026 — NOUVEAU)
-    # Caractéristiques: Forex majeur, tendances longues, spread serré
-    # Backtest réaliste 2010-2026: WR 82.1%, PF 1.68, DD 2.5%, +$329K
-    #   → Meilleur performer des nouveaux symboles
-    # ═══════════════════════════════════════════════════════════════════════
-    "USDJPY": {
-        "momentum_period": 20,
-        "sl_atr_trending": 1.5,
-        "tp_atr_trending": 4.5,
-        "sl_atr_ranging": 1.2,
-        "tp_atr_ranging": 3.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
-        "adx_slope_threshold": -5.0,  # standard forex (AGENTS.md)
-        "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
-        "pullback_band_trending": 0.3,
-        "pullback_band_ranging": 0.2,
-        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
-        "preferred_hours": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-        "news_minutes_before": 15,
-        "news_minutes_after": 15,
-    },
-    # ═══════════════════════════════════════════════════════════════════════
-    # GBPUSD H1 — Livre/Dollar (23 Juin 2026 — NOUVEAU)
-    # Caractéristiques: Forex majeur, volatilité élevée, spread modéré
-    # Backtest réaliste 2010-2026: WR 80.7%, PF 1.42, DD 1.9%, +$86K
-    # ═══════════════════════════════════════════════════════════════════════
-    "GBPUSD": {
-        "momentum_period": 20,
-        "sl_atr_trending": 1.5,
-        "tp_atr_trending": 4.5,
-        "sl_atr_ranging": 1.2,
-        "tp_atr_ranging": 3.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
-        "adx_slope_threshold": -5.0,  # standard forex (AGENTS.md)
-        "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
-        "pullback_band_trending": 0.3,
-        "pullback_band_ranging": 0.2,
-        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
-        "preferred_hours": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-        "news_minutes_before": 20,
-        "news_minutes_after": 20,
-    },
-    # ═══════════════════════════════════════════════════════════════════════
-    # AUDUSD H1 — Australien/Dollar (23 Juin 2026 — NOUVEAU)
-    # Caractéristiques: Forex mineur, sessions Asia+London
-    # Backtest réaliste 2010-2026: WR 79.4%, PF 1.24, DD 3.6%, +$45K
-    # ═══════════════════════════════════════════════════════════════════════
-    "AUDUSD": {
-        "momentum_period": 20,
-        "sl_atr_trending": 1.5,
-        "tp_atr_trending": 4.5,
-        "sl_atr_ranging": 1.2,
-        "tp_atr_ranging": 3.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
-        "adx_slope_threshold": -5.0,  # standard forex (AGENTS.md)
-        "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
-        "pullback_band_trending": 0.3,
-        "pullback_band_ranging": 0.2,
-        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
-        "preferred_hours": [0, 1, 2, 3, 4, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-        "news_minutes_before": 15,
-        "news_minutes_after": 15,
-    },
-    # ═══════════════════════════════════════════════════════════════════════
-    # USDCAD H1 — Dollar US/Dollar Canadien (23 Juin 2026 — NOUVEAU)
-    # Caractéristiques: Forex majeur, corrélé au pétrole, DD excellent
-    # Backtest réaliste 2010-2026: WR 80.7%, PF 1.40, DD 1.2%, +$64K
-    # ═══════════════════════════════════════════════════════════════════════
-    "USDCAD": {
-        "momentum_period": 20,
-        "sl_atr_trending": 1.5,
-        "tp_atr_trending": 4.5,
-        "sl_atr_ranging": 1.2,
-        "tp_atr_ranging": 3.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
-        "adx_slope_threshold": -5.0,  # standard forex (AGENTS.md)
-        "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
-        "pullback_band_trending": 0.3,
-        "pullback_band_ranging": 0.2,
-        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
-        "preferred_hours": [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-        "news_minutes_before": 15,
-        "news_minutes_after": 15,
-    },
 }
 
 # Fallback par défaut

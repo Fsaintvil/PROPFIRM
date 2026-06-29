@@ -1,4 +1,8 @@
-"""Détection de régime de marché : ADX, pente MA, percentile volatilité."""
+"""Détection de régime de marché : ADX, pente MA, percentile volatilité.
+
+Les paramètres sont lus depuis la configuration YAML (config/default.yaml).
+Les valeurs hardcodées ici sont des FALLBACKS si la config est indisponible.
+"""
 
 import logging
 
@@ -8,19 +12,30 @@ from engine_simple.indicators import adx, atr
 
 logger = logging.getLogger("regime")
 
-# Valeurs par défaut (utilisées si le symbole n'a pas de adx_thresh dans la config)
-ADX_TREND_ENTER_DEFAULT = 22  # Seuil pour entrer en mode TREND (hystérésis)
-ADX_TREND_EXIT_DEFAULT = 18  # Seuil pour sortir du mode TREND (hystérésis)
+# ── Chargement depuis la config YAML avec fallback ──
+try:
+    import config_simple as _cfg
+
+    ADX_TREND_ENTER_DEFAULT = getattr(_cfg, "REGIME_ADX_TREND_ENTER", 22)
+    ADX_TREND_EXIT_DEFAULT = getattr(_cfg, "REGIME_ADX_TREND_EXIT", 18)
+    HYSTERESIS_OFFSET = getattr(_cfg, "REGIME_HYSTERESIS_OFFSET", 4)
+    SLOPE_BULLISH = getattr(_cfg, "REGIME_SLOPE_BULLISH", 0.002)
+    SLOPE_BEARISH = getattr(_cfg, "REGIME_SLOPE_BEARISH", -0.002)
+    VOL_HIGH_RATIO = getattr(_cfg, "REGIME_VOL_HIGH_RATIO", 0.015)
+    VOL_LOW_RATIO = getattr(_cfg, "REGIME_VOL_LOW_RATIO", 0.003)
+except Exception:
+    logger.warning("Config YAML indisponible, utilisation des fallbacks hardcodes")
+    ADX_TREND_ENTER_DEFAULT = 22
+    ADX_TREND_EXIT_DEFAULT = 18
+    HYSTERESIS_OFFSET = 4
+    SLOPE_BULLISH = 0.002
+    SLOPE_BEARISH = -0.002
+    VOL_HIGH_RATIO = 0.015
+    VOL_LOW_RATIO = 0.003
 
 # Alias de compatibilité pour les tests existants
 ADX_TREND_ENTER = ADX_TREND_ENTER_DEFAULT
 ADX_TREND_EXIT = ADX_TREND_EXIT_DEFAULT
-HYSTERESIS_OFFSET = 4  # Décalage entrée/sortie (22→18 = 4 points par défaut)
-SLOPE_BULLISH = 0.002
-SLOPE_BEARISH = -0.002
-# Volatilité basée sur ratio ATR/prix fixe (pas percentile instable sur peu d'échantillons)
-VOL_HIGH_RATIO = 0.015  # ATR > 1.5% du prix = HIGH_VOL
-VOL_LOW_RATIO = 0.003  # ATR < 0.3% du prix = LOW_VOL
 
 
 class RegimeDetector:

@@ -70,6 +70,24 @@ try:
     NEWS_MINUTES_BEFORE: int = _cfg.news.minutes_before
     NEWS_MINUTES_AFTER: int = _cfg.news.minutes_after
 
+    # ── Market Regime (regime.py) ──
+    REGIME_ADX_TREND_ENTER: int = _cfg.market_regime.adx_trend_enter_default
+    REGIME_ADX_TREND_EXIT: int = _cfg.market_regime.adx_trend_exit_default
+    REGIME_HYSTERESIS_OFFSET: int = _cfg.market_regime.hysteresis_offset
+    REGIME_SLOPE_BULLISH: float = _cfg.market_regime.slope_bullish
+    REGIME_SLOPE_BEARISH: float = _cfg.market_regime.slope_bearish
+    REGIME_VOL_HIGH_RATIO: float = _cfg.market_regime.vol_high_ratio
+    REGIME_VOL_LOW_RATIO: float = _cfg.market_regime.vol_low_ratio
+
+    # ── Auto-Stop (auto_stop.py) ──
+    AUTO_STOP_ADX_LOW_THRESHOLD: int = _cfg.auto_stop.adx_low_threshold
+    AUTO_STOP_ADX_HIGH_THRESHOLD: int = _cfg.auto_stop.adx_high_threshold
+    AUTO_STOP_RATIO_STOP: float = _cfg.auto_stop.ratio_stop
+    AUTO_STOP_SYMBOLS_MIN_RESUME: int = _cfg.auto_stop.symbols_min_resume
+    AUTO_STOP_PAUSE_MIN_DURATION: int = _cfg.auto_stop.pause_min_duration
+    AUTO_STOP_ADX_SNAPSHOT_TTL: int = _cfg.auto_stop.adx_snapshot_ttl
+    AUTO_STOP_STATE_TTL: int = _cfg.auto_stop.state_ttl
+
     # ── Validation startup : détecter les dérives de configuration ──
     _expected_ranges = {
         "RISK_PER_TRADE": (0.001, 0.01, "risque par trade anormal"),
@@ -96,14 +114,13 @@ except Exception as e:
     _fb_log("MT5_PASSWORD", "(masqué)")
     MT5_SERVER = ""
     _fb_log("MT5_SERVER", "(vide)")
+    # ⚠️ 28 Juin 2026: 3 symboles actifs uniquement
+    # XAUUSD, BTCUSD, US30.cash sont les SEULS activement tradés.
+    # Tout symbole ajouté ici DOIT être aussi dans .env:SYMBOLS et YAML.
     SYMBOLS = [
         "XAUUSD",
         "BTCUSD",
-        "US30.cash",  # AJOUTÉ 28 Juin 2026 — remplace EURUSD (Supreme Council)
-        "USDJPY",  # RÉACTIVÉ 24 Juin 2026 — surveillance active
-        # EURUSD désactivé 28 Juin 2026 (PF 0.75 après coûts, 6.7% WR live)
-        # GBPUSD désactivé 26 Juin 2026 (WR 0.0% Phase 3 — toxique)
-        # USDCAD désactivé 26 Juin 2026 (WR 33.3% Phase 3 — toxique)
+        "US30.cash",
     ]
     _fb_log("SYMBOLS", SYMBOLS)
     ROBOT_MAGIC = 999001
@@ -205,21 +222,7 @@ except Exception as e:
             sl_atr_ranging=2.5,
             tp_atr_ranging=5.0,
         ),
-        # US500.cash H4 (fallback — désactivé 25 Juin 2026)
-        "US500.cash": dict(
-            max_lot=0.06,
-            risk_mult=0.50,
-            max_spread_points=40,
-            adx_thresh=22,
-            allow_buys=True,
-            allow_shorts=True,
-            momentum_period=18,
-            sl_atr_trending=1.5,
-            tp_atr_trending=4.0,
-            sl_atr_ranging=1.2,
-            tp_atr_ranging=3.0,
-        ),
-        # US30.cash H1 (fallback — ajouté 28 Juin 2026 — remplace EURUSD)
+        # US30.cash H1 (fallback — ajouté 28 Juin 2026)
         "US30.cash": dict(
             max_lot=0.03,
             risk_mult=0.50,
@@ -233,58 +236,14 @@ except Exception as e:
             sl_atr_ranging=1.2,
             tp_atr_ranging=3.0,
         ),
-        # EURUSD désactivé 28 Juin 2026 (PF 0.75 après coûts, 6.7% WR live)
-        # USDJPY H1 (fallback — synchronisé 25 Juin 2026)
-        "USDJPY": dict(
-            max_lot=0.17,
-            risk_mult=1.00,
-            max_spread_points=45,
-            adx_thresh=22,
-            allow_buys=True,
-            allow_shorts=True,
-            momentum_period=20,
-            sl_atr_trending=1.5,
-            tp_atr_trending=4.5,
-            sl_atr_ranging=1.2,
-            tp_atr_ranging=3.0,
-        ),
-        # GBPUSD H1 (fallback — synchronisé 25 Juin 2026)
-        "GBPUSD": dict(
-            max_lot=0.17,
-            risk_mult=0.90,
-            max_spread_points=50,
-            adx_thresh=22,
-            allow_buys=True,
-            allow_shorts=True,
-            momentum_period=20,
-            sl_atr_trending=1.5,
-            tp_atr_trending=4.5,
-            sl_atr_ranging=1.2,
-            tp_atr_ranging=3.0,
-        ),
-        # USDCAD H1 (fallback — synchronisé 25 Juin 2026)
-        "USDCAD": dict(
-            max_lot=0.17,
-            risk_mult=0.85,
-            max_spread_points=45,
-            adx_thresh=22,
-            allow_buys=True,
-            allow_shorts=True,
-            momentum_period=20,
-            sl_atr_trending=1.5,
-            tp_atr_trending=4.5,
-            sl_atr_ranging=1.2,
-            tp_atr_ranging=3.0,
-        ),
+        # ⚠️ Symboles inactifs retirés du fallback 28 Juin 2026:
+        # US500.cash, EURUSD, USDJPY, GBPUSD, AUDUSD, USDCAD
+        # La config YAML reste la source de vérité si réactivation.
     }
     SYMBOL_TIMEFRAMES = {
         "XAUUSD": "H4",
         "BTCUSD": "H1",
         "US30.cash": "H1",
-        "USDJPY": "H1",
-        "GBPUSD": "H1",
-        "USDCAD": "H1",
-        "EURUSD": "H1",
     }
     ML_EXPERIMENT_TRACKING = False
     ML_TRACKING_URI = ""
@@ -315,7 +274,10 @@ def reload_config() -> bool:
     Retourne True si la config a change."""
     global _cfg, _env
     try:
-        new = hot_reload(_env)
+        # 🔧 FIX: Import local pour éviter NameError si l'import global a échoué
+        from config.schema import hot_reload as _hot_reload
+
+        new = _hot_reload(_env)
         if new is None:
             return False
         _cfg = new

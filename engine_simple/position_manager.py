@@ -12,6 +12,15 @@ from datetime import datetime
 import numpy as np
 
 import config_simple as cfg
+import os
+
+# 🔥 Seuls les symboles .env:SYMBOLS + positions ouvertes sont scannés
+_env_syms = os.environ.get("SYMBOLS", "").strip()
+_PM_ACTIVE: set[str] = set()
+if _env_syms:
+    _PM_ACTIVE = {s.strip() for s in _env_syms.split(",") if s.strip()}
+if not _PM_ACTIVE:
+    _PM_ACTIVE = {"XAUUSD", "BTCUSD", "US30.cash"}
 
 logger = logging.getLogger("position.mgr")
 
@@ -52,7 +61,7 @@ class PositionManager:
     def vigilance_scan(self):
         """DL/regime pipeline pour TOUS les symboles chaque cycle."""
         positions = {p.symbol: p for p in self._pos_cache.get() if p.magic == cfg.ROBOT_MAGIC}
-        for symbol in cfg.SYMBOLS:
+        for symbol in _PM_ACTIVE & set(cfg.SYMBOLS):
             try:
                 rates = self._get_rates_for_vigilance(symbol)
                 if rates is None:

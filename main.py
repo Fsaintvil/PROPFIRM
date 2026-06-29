@@ -63,12 +63,23 @@ from engine_simple.signal_pipeline import SignalPipeline
 
 warnings.filterwarnings("ignore", message="X does not have valid feature names")
 
-STATE_FILE = "runtime/robot_state.json"
-HEARTBEAT_FILE = "runtime/heartbeat.txt"
-PID_FILE = "runtime/robot.pid"
+# ── Paths dynamiques (configurables via .env ou YAML) ────────────────
+STATE_FILE = os.environ.get("ROBOT_STATE_FILE", "runtime/robot_state.json")
+HEARTBEAT_FILE = os.environ.get("ROBOT_HEARTBEAT_FILE", "runtime/heartbeat.txt")
+PID_FILE = os.environ.get("ROBOT_PID_FILE", "runtime/robot.pid")
 
 # Named mutex Windows — plus fiable que le fichier PID (auto-libéré par l'OS)
-_MUTEX_NAME = "Global\\MT5_FTMO_MOM20x3"
+_MUTEX_NAME = os.environ.get("ROBOT_MUTEX_NAME", "Global\\MT5_FTMO_MOM20x3")
+
+# ── Symboles activement tradés — depuis .env, PAS cfg.SYMBOLS (qui a 6 symboles) ──
+# 🔥 CRITIQUE: cfg.SYMBOLS contient 6 symboles (YAML).
+# Seuls ceux dans .env:SYMBOLS doivent être tradés.
+_env_syms = os.environ.get("SYMBOLS", "").strip()
+ACTIVE_SYMBOLS: set[str] = set()
+if _env_syms:
+    ACTIVE_SYMBOLS = {s.strip() for s in _env_syms.split(",") if s.strip()}
+if not ACTIVE_SYMBOLS:
+    ACTIVE_SYMBOLS = {"XAUUSD", "BTCUSD", "US30.cash"}
 _mutex_handle = None
 
 
@@ -290,7 +301,8 @@ class FTMO_SIMPLE:
         self.audit.log_state_change("robot_start", None, f"v{cfg.__version__}" if hasattr(cfg, "__version__") else "?")
         self.metrics = MetricsCollector()
         self.metrics.gauge("initial_balance", 0)
-        self.health_server = HealthServer(port=9090, metrics=self.metrics, health_check=self._health_status)
+        _health_port = int(os.environ.get("ROBOT_HEALTH_PORT", "9090"))
+        self.health_server = HealthServer(port=_health_port, metrics=self.metrics, health_check=self._health_status)
         try:
             self.health_server.start()
             logger.info(f"[MONITORING] Health server demarre sur port 9090")
@@ -865,7 +877,8 @@ class FTMO_SIMPLE:
 
             # Watchdog: detect MT5 freeze / stuck cycles (augmenté 120s→180s)
             since_last = time.time() - self._last_cycle_time
-            if since_last > 180:  # Augmenté de 120s → 180s (3 min)
+            _wd_threshold = int(os.environ.get("ROBOT_WATCHDOG_SECONDS", "180"))
+            if since_last > _wd_threshold:  # Augmenté de 120s → 180s (3 min)
                 self._watchdog_failures += 1
                 logger.error(f"WATCHDOG: {since_last:.0f}s since last cycle (failure #{self._watchdog_failures})")
                 self.notifier.send(f"WATCHDOG: cycle bloque {since_last:.0f}s")
@@ -1059,8 +1072,8 @@ class FTMO_SIMPLE:
             if self.cycle_count % 4 == 0:
                 # ❤️ Heartbeat toutes les 60s — permet de détecter les cycles figés
                 pos_count = len(self._pos_cache.get()) if hasattr(self, "_pos_cache") else 0
-                eq = account.equity if "account" in dir() else 0
-                bal = account.balance if "account" in dir() else 0
+                eq = account.equity if account is not None else 0
+                bal = account.balance if account is not None else 0
                 pnl_val = (eq - bal) if eq and bal else 0
                 logger.info(
                     f"[HEARTBEAT] Cycle {self.cycle_count} | {pos_count} pos | "
@@ -1071,7 +1084,9 @@ class FTMO_SIMPLE:
                 # Memory monitoring — alerte si > 1.5 GB
                 if HAS_PSUTIL:
                     try:
-                        proc = psutil.Process()
+                        import psutil as _psutil
+
+                        proc = _psutil.Process()
                         mem_mb = proc.memory_info().rss / 1_048_576
                         if mem_mb > 1500:
                             logger.warning(f"[MEM] Mémoire critique: {mem_mb:.0f} MB > 1500 MB")
@@ -1125,7 +1140,7 @@ class FTMO_SIMPLE:
                         "win_rate": sum(1 for t in self.ftmo._trade_history if t.get("profit", 0) > 0)
                         / max(len(self.ftmo._trade_history), 1),
                         "profit_factor": self._calc_pf(self.ftmo._trade_history),
-                        "current_dd": dd_pct / 100 if "dd_pct" in dir() else 0,
+                        "current_dd": dd_pct / 100 if "dd_pct" in dir() and dd_pct is not None else 0,
                         "max_dd": 0,
                         "daily_pnl": self.ftmo.daily_pnl_by_date.get(datetime.now(timezone.utc).date(), 0),
                         "daily_loss_limit": self.ftmo.initial_balance * 0.02,
@@ -1169,7 +1184,8 @@ class FTMO_SIMPLE:
                 logger.debug(f"[MEM] GC collecte: {collected} objets libérés (cycle {self.cycle_count})")
 
             elapsed = time.time() - cycle_start
-            sleep_time = max(5, cfg.CYCLE_SECONDS - elapsed)
+            _min_sleep = int(os.environ.get("ROBOT_MIN_CYCLE_SLEEP", "5"))
+            sleep_time = max(_min_sleep, cfg.CYCLE_SECONDS - elapsed)
             time.sleep(sleep_time)
 
     def _vigilance_scan(self):
@@ -1236,7 +1252,7 @@ class FTMO_SIMPLE:
         # P1: Déléguer le filtrage multi-couches au SignalPipeline
         candidates = []
         degraded_symbols = self._state.get("degraded_symbols", {})
-        for symbol in cfg.SYMBOLS:
+        for symbol in ACTIVE_SYMBOLS & set(cfg.SYMBOLS):
             try:
                 result = self.pipeline.process(
                     symbol=symbol,
@@ -1326,12 +1342,7 @@ class FTMO_SIMPLE:
                 _FINAL_CAP = {
                     "XAUUSD": 1.50,
                     "BTCUSD": 1.25,
-                    "US500.cash": 1.30,
-                    "EURUSD": 2.00,
-                    "USDJPY": 1.50,
-                    "GBPUSD": 1.50,
-                    "AUDUSD": 1.25,
-                    "USDCAD": 1.25,
+                    "US30.cash": 1.30,
                 }
                 cap = _FINAL_CAP.get(symbol, 1.0)
                 if signal["risk_mult"] > cap:
@@ -1550,7 +1561,7 @@ class FTMO_SIMPLE:
 
         # PHASE 2.1: Check par symbole → degraded (lot minimum) si WR < 35% sur 20 trades
         degraded_symbols = self._state.get("degraded_symbols", {})
-        for symbol in cfg.SYMBOLS:
+        for symbol in ACTIVE_SYMBOLS & set(cfg.SYMBOLS):
             sym_trades = [t for t in recent_trades if t.get("symbol") == symbol]
             if len(sym_trades) >= 20:
                 sym_wr = sum(1 for t in sym_trades if t["profit"] > 0) / len(sym_trades)
@@ -1588,7 +1599,7 @@ class FTMO_SIMPLE:
         if not self._win_rate_checked and recent_wr < 0.55:
             logger.warning(f"  [WR CHECK] Recent WR={recent_wr:.1%} < 55% — ajustement seuils")
             self._win_rate_checked = True
-            for symbol in cfg.SYMBOLS:
+            for symbol in ACTIVE_SYMBOLS & set(cfg.SYMBOLS):
                 p = dict(self.adaptive.learner.get_params(symbol))
                 p["thresh"] = max(1.5, p.get("thresh", 2.5) - 0.3)
                 p["risk_mult"] = min(1.0, p.get("risk_mult", 1.0) * 0.8)
@@ -1603,7 +1614,7 @@ class FTMO_SIMPLE:
             if recent_wr >= 0.60:
                 logger.info(f"  [WR CHECK] Recent WR={recent_wr:.1%} >= 60% — restauration seuils")
                 self._win_rate_checked = False
-                for symbol in cfg.SYMBOLS:
+                for symbol in ACTIVE_SYMBOLS & set(cfg.SYMBOLS):
                     self.adaptive.learner._update_params(symbol)
         if not self._win_rate_checked and recent_wr >= 0.55:
             logger.info(f"  [WR CHECK] Recent WR={recent_wr:.1%} >= 55% — OK")
@@ -1668,7 +1679,7 @@ class FTMO_SIMPLE:
         MIN_PERIOD = 12  # pas en dessous de 12 (trop de bruit)
         MAX_PERIOD = 28  # pas au-dessus de 28 (trop lent)
 
-        for symbol in cfg.SYMBOLS:
+        for symbol in ACTIVE_SYMBOLS & set(cfg.SYMBOLS):
             # Ignorer les symboles complètement désactivés
             sym_cfg = cfg.SYMBOL_LIMITS.get(symbol, {})
             if not sym_cfg.get("allow_buys", True) and not sym_cfg.get("allow_shorts", True):

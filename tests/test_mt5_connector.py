@@ -1,4 +1,5 @@
 """Tests for mt5_connector.py — with MT5 mock (via conftest)"""
+
 import os
 import sys
 
@@ -17,23 +18,19 @@ def make_connector():
 def test_connect_success():
     c = make_connector()
     mt5.initialize.return_value = True
-    mt5.login.return_value = True
     mt5.account_info.return_value = MagicMock(balance=10000.0, equity=10000.0)
     assert c.connect()
     assert c.connected
+    # Vérifie que les credentials sont passés dans initialize()
+    call_kwargs = mt5.initialize.call_args[1]
+    assert call_kwargs["login"] == 12345
+    assert call_kwargs["password"] == "pass"
+    assert call_kwargs["server"] == "server"
 
 
 def test_connect_init_failure():
     c = make_connector()
     mt5.initialize.return_value = False
-    assert not c.connect()
-    assert not c.connected
-
-
-def test_connect_login_failure():
-    c = make_connector()
-    mt5.initialize.return_value = True
-    mt5.login.return_value = False
     assert not c.connect()
     assert not c.connected
 

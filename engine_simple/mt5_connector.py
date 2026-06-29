@@ -1,10 +1,17 @@
 import logging
+import os
 
 import MetaTrader5 as mt5
 
 import config_simple as cfg
 
 logger = logging.getLogger("mt5")
+
+# Chemin du terminal MT5 depuis .env (prioritaire) ou auto-détection
+_MT5_TERMINAL_PATH = os.environ.get("MT5_TERMINAL_PATH", "")
+if _MT5_TERMINAL_PATH and not os.path.exists(_MT5_TERMINAL_PATH):
+    logger.warning(f"MT5_TERMINAL_PATH invalide: {_MT5_TERMINAL_PATH} — fallback auto-detect")
+    _MT5_TERMINAL_PATH = ""
 
 
 class MT5Connector:
@@ -21,12 +28,39 @@ class MT5Connector:
         self.connected = False
 
     def connect(self):
-        if not mt5.initialize(timeout=10000, portable=True):
-            logger.error("MT5 initialization failed (timeout 10s)")
+        # 🔧 FIX IPC TIMEOUT #2: Tuer tout processus terminal64.exe zombie avant initialize().
+        # Quand le robot crash, le terminal MT5 reste parfois en cours (écran de login bloqué).
+        # mt5.initialize() ne peut PAS se connecter à ce terminal zombie → IPC timeout (-10005).
+        # On force taskkill pour garantir un état propre avant de lancer un nouveau terminal.
+        import subprocess as _sp
+        import time as _time
+
+        try:
+            logger.warning("[CONNECT] Killing any zombie terminal64.exe before init...")
+            _sp.run(["taskkill", "/F", "/IM", "terminal64.exe"], capture_output=True, timeout=10)
+            _time.sleep(1)  # laisser le temps à l'OS de libérer les ressources
+        except Exception as _e:
+            logger.warning(f"[CONNECT] taskkill terminal64.exe ignoré (pas de zombie): {_e}")
+
+        # 🔧 FIX IPC TIMEOUT: Passer les credentials DANS initialize() pour que le terminal
+        # FTMO se connecte immédiatement au serveur au lieu de rester sur l'écran de login.
+        # Quand initialize() est appelé sans login/password/server, le terminal FTMO démarre
+        # mais reste bloqué sur l'écran de connexion → IPC timeout (-10005) après 60s.
+        init_kwargs = {
+            "login": self.login,
+            "password": self.password,
+            "server": self.server,
+            "timeout": 60000,  # 60s timeout pour FTMO terminal (démarrage lent)
+        }
+        if _MT5_TERMINAL_PATH:
+            init_kwargs["path"] = _MT5_TERMINAL_PATH
+            logger.info(f"Using terminal path: {_MT5_TERMINAL_PATH}")
+        logger.info(f"Connecting to MT5: server={self.server}, login={self.login}")
+        if not mt5.initialize(**init_kwargs):
+            err = mt5.last_error()
+            logger.error(f"MT5 initialization failed: {err}")
             return False
-        if not mt5.login(self.login, password=self.password, server=self.server):
-            logger.error("MT5 login failed")
-            return False
+        logger.info("MT5 initialize + login OK (credentials passed in initialize)")
         # Activer Market Watch pour tous les symboles du robot
         try:
             import config_simple as cfg

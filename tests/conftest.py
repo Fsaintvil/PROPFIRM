@@ -1,4 +1,5 @@
 """Pytest configuration — mock heavy deps before any imports"""
+
 import sys
 import time
 import types
@@ -9,30 +10,43 @@ from unittest.mock import MagicMock
 class MockModule(types.ModuleType):
     pass
 
+
 # Build torch.nn as a module first
 torch_nn = MockModule("torch.nn")
+
+
 class MockModuleBase:
     """A proper base class mock that can be subclassed and instantiated."""
+
     def __init__(self, *args, **kwargs):
         self._mock = MagicMock()
+
     def train(self, mode=True):
         self.training = mode
         return self._mock
+
     def eval(self):
         self.training = False
         return self._mock
+
     def parameters(self):
         return []
+
     def named_parameters(self):
         return []
+
     def state_dict(self):
         return {}
+
     def load_state_dict(self, sd, strict=True):
         pass
+
     def __call__(self, *args, **kwargs):
         return MagicMock()
+
     def __getattr__(self, name):
         return MagicMock()
+
 
 torch_nn.Module = MockModuleBase
 torch_nn.LSTM = MagicMock
@@ -59,9 +73,9 @@ torch_mod.no_grad = MagicMock()
 torch_nn.__package__ = "torch.nn"
 torch_nn.__path__ = []
 torch_mod.__path__ = []
-sys.modules['torch'] = torch_mod
-sys.modules['torch.nn'] = torch_nn
-sys.modules['torch.optim'] = torch_optim
+sys.modules["torch"] = torch_mod
+sys.modules["torch.nn"] = torch_nn
+sys.modules["torch.optim"] = torch_optim
 
 # ── Additional torch mocks for dl_ensemble ──
 torch_nn.LayerNorm = MagicMock
@@ -71,20 +85,20 @@ torch_nn_f = MockModule("torch.nn.functional")
 torch_nn_f.softmax = MagicMock(return_value=MagicMock())
 torch_nn_f.__package__ = "torch.nn.functional"
 torch_nn_f.__path__ = []
-sys.modules['torch.nn.functional'] = torch_nn_f
+sys.modules["torch.nn.functional"] = torch_nn_f
 
 torch_nn_utils = MockModule("torch.nn.utils")
 torch_nn_utils.clip_grad_norm_ = MagicMock()
 torch_nn_utils.__package__ = "torch.nn.utils"
 torch_nn_utils.__path__ = []
-sys.modules['torch.nn.utils'] = torch_nn_utils
+sys.modules["torch.nn.utils"] = torch_nn_utils
 
 torch_utils_data = MockModule("torch.utils.data")
 torch_utils_data.TensorDataset = MagicMock
 torch_utils_data.DataLoader = MagicMock
 torch_utils_data.__package__ = "torch.utils.data"
 torch_utils_data.__path__ = []
-sys.modules['torch.utils.data'] = torch_utils_data
+sys.modules["torch.utils.data"] = torch_utils_data
 
 torch_mod.FloatTensor = MagicMock(return_value=MagicMock())
 
@@ -119,5 +133,6 @@ mt5_mod.get_symbols = MagicMock(return_value=[])
 mt5_mod.terminal_info = MagicMock(return_value=MagicMock(connected=True))
 mt5_mod.positions_get = MagicMock(return_value=[])
 mt5_mod.orders_get = MagicMock(return_value=[])
+mt5_mod.last_error = MagicMock(return_value=(0, ""))
 mt5_mod.history_deals_get = MagicMock(return_value=[])
-sys.modules['MetaTrader5'] = mt5_mod
+sys.modules["MetaTrader5"] = mt5_mod

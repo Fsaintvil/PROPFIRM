@@ -308,8 +308,8 @@ class TestATRTrailing:
         ftmo._check_step_trailing(pos)
         assert mt5.update_sl.called
         new_sl = mt5.update_sl.call_args[0][1]
-        # EURUSD RANGING level 2 (profit 4.0 ATR > 3.0 thresh): trail = 0.15
-        expected_sl = round(1.1200 - 0.15 * 0.005, 5)
+        # EURUSD RANGING fallback (TRAILING_BY_REGIME level 3, profit 4.0 ATR > 3.0 thresh): trail = 0.20
+        expected_sl = round(1.1200 - 0.20 * 0.005, 5)
         assert abs(new_sl - expected_sl) < 0.0001
 
     @patch("engine_simple.trailer.random.uniform", return_value=0.0)
@@ -356,8 +356,8 @@ class TestATRTrailing:
         ftmo._check_step_trailing(pos)
         assert mt5.update_sl.called
         new_sl = mt5.update_sl.call_args[0][1]
-        # EURUSD HIGH_VOL level 0 (profit 1.6 ATR > 0.80 thresh): trail = 0.70
-        expected_sl = round(1.1080 - 0.70 * 0.005, 5)
+        # EURUSD HIGH_VOL fallback (TRAILING_BY_REGIME level 0, profit 1.6 ATR > 1.00 thresh): trail = 1.00
+        expected_sl = round(1.1080 - 1.00 * 0.005, 5)
         assert abs(new_sl - expected_sl) < 0.0001
 
 
