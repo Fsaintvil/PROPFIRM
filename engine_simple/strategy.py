@@ -197,22 +197,12 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 5,
         "news_minutes_after": 5,
     },
-    "GBPUSD": {
-        "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
-        "pullback_band_trending": 0.5,
-        "pullback_band_ranging": 0.3,
-        "preferred_hours": list(range(24)),
-        "news_minutes_before": 5,
-        "news_minutes_after": 5,
-    },
+    # GBPUSD — DÉSACTIVÉ 29 Juin 2026 (0/5 wins live, PF 0.00, WR 0%)
+    # Réactiver si WR > 50% sur 20 trades après correctifs rate limiter
+    # "GBPUSD": {
+    #     "momentum_period": 20,
+    #     ...
+    # },
     "USDJPY": {
         "momentum_period": 20,
         "sl_atr_trending": 2.0,

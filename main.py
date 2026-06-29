@@ -103,7 +103,7 @@ SYMBOL_CONFIDENCE_GATES: dict[str, float] = {
     "US500.cash": 0.65,
     "XAGUSD": 0.65,
     "EURUSD": 0.65,
-    "GBPUSD": 0.65,
+    # "GBPUSD": 0.65,  # DÉSACTIVÉ 29 Juin (0/5 wins live)
     "USDJPY": 0.65,
     "USDCAD": 0.65,
     "AUDUSD": 0.65,

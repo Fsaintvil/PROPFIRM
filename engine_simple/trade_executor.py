@@ -21,7 +21,7 @@ MIN_SYMBOL_INTERVAL_S = 5  # 5s (↓ 30→5 le 26 Juin: laisser passer tous les 
 
 # Intervalle minimum entre deux trades HIGH CONFIDENCE (>90%) sur le même symbole
 # 300s = 5 min — le tradeur veut un rythme soutenu mais pas du scalping
-HIGH_CONFIDENCE_INTERVAL_S = 300  # 5 min
+HIGH_CONFIDENCE_INTERVAL_S = 120  # 2 min (↓ 300→120 le 29 Juin: débloquer les signaux haute confiance)
 
 
 class PerSymbolRateLimiter:
@@ -87,7 +87,7 @@ class GlobalRateLimiter:
     on envoie trop d'ordres en rafale (ex: 7 symboles dans le même cycle 15s).
     """
 
-    def __init__(self, min_interval_s: int = 10):
+    def __init__(self, min_interval_s: int = 3):  # ↓ 10→3 le 29 Juin: débloquer trades sur différents symboles
         self.min_interval_s = min_interval_s
         self._last_order_time: float = 0.0
 
@@ -208,10 +208,10 @@ class TradeExecutor:
         )  # Mode agressif: 6 trades/min/symbole (était 2)
         # Rate limiter HIGH CONFIDENCE : 1 trade/5min/symbole, aucune limite de positions
         self.high_conf_rate_limiter = PerSymbolRateLimiter(
-            max_per_minute=1, window_seconds=300, min_interval_s=HIGH_CONFIDENCE_INTERVAL_S
+            max_per_minute=1, window_seconds=HIGH_CONFIDENCE_INTERVAL_S, min_interval_s=HIGH_CONFIDENCE_INTERVAL_S
         )
-        # Rate limiter global : max 1 ordre toutes les 10s (évite retcode 10018)
-        self.global_rate_limiter = GlobalRateLimiter(min_interval_s=10)
+        # Rate limiter global : max 1 ordre toutes les 3s (↓ 10→3 le 29 Juin: débloquer trades multi-symboles)
+        self.global_rate_limiter = GlobalRateLimiter(min_interval_s=3)
         # 🐛 FIX 19 Juin: Market-closed cooldown — évite flood WARNING XAUUSD
         # Quand MT5 retourne retcode=10018 (Market closed), on bloque le symbole
         # pendant MARKET_CLOSED_COOLDOWN_S secondes avant de réessayer.

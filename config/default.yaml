@@ -36,23 +36,27 @@ trading:
     - US30.cash   # H1 — WR 74.8%, PF 1.19, DD 8.5% (backtest 12+ ans avec coûts)
     # ── REACTIVATED SYMBOLS (high confidence ≥90% uniquement) ─────────
     - EURUSD      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
-    - GBPUSD      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
+    # - GBPUSD    # DÉSACTIVÉ 29 Juin 2026 (0/5 wins live, PF 0.00)
     - USDJPY      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
     - USDCAD      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
     - AUDUSD      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
     - NZDUSD      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
     - USDCHF      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
-                    # US500.cash désactivé 25 Juin (PF 0.39 toxique)
+    # ── TARGET_80 SYMBOLS (gate 0.75 uniforme) ───────────
+    - ETHUSD      # H1 — AJOUTÉ 29 Juin — WR 73.2% après coûts
+    - US100.cash  # H1 — AJOUTÉ 29 Juin — WR 74.0% après coûts
+    - US500.cash  # H1 — RÉACTIVÉ 29 Juin — WR 73.6% après coûts
+    - XAGUSD      # H1 — AJOUTÉ 29 Juin — WR 73.6% après coûts (DD 18.1% ⚠️)
 
-  # Limites globales — 10 symboles (actualisé 29 Juin 2026, high confidence gate)
-  max_positions: 20             # 6 symboles x ~4 positions max, limité corrélation
-  max_positions_per_symbol: 4   # jusqu'à 4 par symbole (aligné pipeline conf>85%)
-  max_trades_per_day: 30        # 6 symboles x ~5 trades/jour
-  max_signals_per_cycle: 12     # marge pour signaux simultanés (6 symboles)
-  max_orders_per_minute: 10     # 1 trade/min/symbole + marge
+  # Limites globales — 13 symboles (actualisé 29 Juin 2026, confidence gate 0.65)
+  max_positions: 26             # 13 symboles x ~2 positions/symbole en moyenne
+  max_positions_per_symbol: 4   # jusqu'à 4 par symbole (aligné pipeline conf>70%)
+  max_trades_per_day: 40        # 14 symboles x ~3 trades/jour
+  max_signals_per_cycle: 14     # marge pour signaux simultanés (14 symboles)
+  max_orders_per_minute: 14     # 1 trade/min/symbole
   lot_size: 0.06                # ↑ 0.05→0.06 (+10%)
   min_trade_interval_sec: 120   # 2 min minimum entre trades par symbole (↓ 300→120 pour + de trades)
-  batch_interval_sec: 1         # 1s = signaux chaque cycle (15s), pas de restriction batch
+  batch_interval_sec: 5         # 5s (↑ 1→5 le 29 Juin: moins de contention CPU, signaux stables sur H1/H4)
   trading_start_hour: 0
   trading_end_hour: 24          # 24/7 — sans arret
   danger_hours: [7, 17]         # 07:00=fermeture Asie (25% WR, -$318) / 17:00=fermeture Europe (21.7% WR, -$218) — Supreme Council 28 Juin
