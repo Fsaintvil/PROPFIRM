@@ -66,7 +66,9 @@ MAX_POSITIONS_TOTAL = 20  # 6 symboles × ~4 positions max (corrélation réduit
 MAX_POSITIONS_PER_SYMBOL = 4  # max 4 positions par symbole (aligné pipeline conf>85%)
 MAX_POSITIONS_PER_DIRECTION = 8  # max 8 positions dans la même direction
 MAX_TRADES_PER_GROUP = 5  # max 5 positions TOTAL dans un groupe corrélé (↑ 3→5 pour + de trades)
-MAX_TRADES_PER_DIRECTION_IN_GROUP = 3  # max 3 positions dans la même direction dans un groupe (↑ 2→3 pour + de trades)
+MAX_TRADES_PER_DIRECTION_IN_GROUP = (
+    5  # max 5 positions dans la même direction dans un groupe (↑ 3→5 pour débloquer USDJPY)
+)
 
 
 class PortfolioController:

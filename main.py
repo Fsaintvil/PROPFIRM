@@ -89,25 +89,26 @@ TARGET_80_SYMBOLS: set[str] = {"ETHUSD", "US100.cash", "US500.cash", "XAGUSD"}
 REACTIVATED_SYMBOLS: set[str] = ACTIVE_SYMBOLS - CORE_SYMBOLS - TARGET_80_SYMBOLS
 
 # ── Seuils de confiance uniformes (29 Juin 2026) ──
-# Décision: tous les symboles tradent si MOM donne ≥75% de confiance.
-# 0.75 = seuil minimum pour considérer qu'un signal a 3 chances sur 4 de gagner.
-# Applicable aux 14 symboles sans distinction de catégorie.
+# Optimizer recommande 0.65 : la confiance moyenne des signaux pipeline
+# est de 0.66-0.84 selon les symboles. Le gate 0.75 bloquait 100% de
+# XAGUSD et US30.cash, et 83% de USDCAD.
+# Avec 0.65 : XAGUSD passe ~70%, USDCAD ~95%, USDJPY 100%.
 SYMBOL_CONFIDENCE_GATES: dict[str, float] = {
-    # ── Tous les 14 symboles : gate 0.75 uniforme ──
-    "XAUUSD": 0.75,
-    "BTCUSD": 0.75,
-    "US30.cash": 0.75,
-    "ETHUSD": 0.75,
-    "US100.cash": 0.75,
-    "US500.cash": 0.75,
-    "XAGUSD": 0.75,
-    "EURUSD": 0.75,
-    "GBPUSD": 0.75,
-    "USDJPY": 0.75,
-    "USDCAD": 0.75,
-    "AUDUSD": 0.75,
-    "NZDUSD": 0.75,
-    "USDCHF": 0.75,
+    # ── Tous les 14 symboles : gate 0.65 uniforme ──
+    "XAUUSD": 0.65,
+    "BTCUSD": 0.65,
+    "US30.cash": 0.65,
+    "ETHUSD": 0.65,
+    "US100.cash": 0.65,
+    "US500.cash": 0.65,
+    "XAGUSD": 0.65,
+    "EURUSD": 0.65,
+    "GBPUSD": 0.65,
+    "USDJPY": 0.65,
+    "USDCAD": 0.65,
+    "AUDUSD": 0.65,
+    "NZDUSD": 0.65,
+    "USDCHF": 0.65,
 }
 
 _mutex_handle = None

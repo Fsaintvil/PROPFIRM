@@ -91,9 +91,11 @@ SYMBOL_CONFIG = {
         # Seuils ATR (validés backtest 12+ ans, assouplis mode modéré)
         "threshold_trending": 2.0,  # Mode modéré: -0.5 vs 2.5
         "threshold_ranging": 1.5,  # Mode modéré: -0.5 vs 2.0
-        # Filtres ADX (standard AGENTS.md)
-        "adx_slope_threshold": -8.0,  # standard XAUUSD H4 (AGENTS.md)
-        "adx_slope_threshold_strong": -8.0,  # XAUUSD H4 pas de relaxation
+        # Filtres ADX (assoupli 29 Juin 2026 : -8→-15 pour débloquer XAUUSD)
+        # L'analyse Optimizer montrait que XAUUSD avait slope moyen -12.1,
+        # rejetant ~90% des signaux avec l'ancien seuil -8.0.
+        "adx_slope_threshold": -15.0,  # ↑ -8.0→-15.0 (29 Juin : débloquer XAUUSD)
+        "adx_slope_threshold_strong": -15.0,  # aligné sur le threshold standard
         # Pullback bandes (H4 → pullbacks plus larges)
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
@@ -323,8 +325,10 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 3.0,
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        # Filtres ADX (assoupli 29 Juin 2026 : -5→-10 pour débloquer US100.cash)
+        # L'analyse Optimizer montrait US100.cash 100% bloqué par ADX slope
+        "adx_slope_threshold": -10.0,  # ↑ -5.0→-10.0 (29 Juin : débloquer US100.cash)
+        "adx_slope_threshold_strong": -12.0,  # ↑ -8.0→-12.0
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
