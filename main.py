@@ -81,36 +81,33 @@ if _env_syms:
 if not ACTIVE_SYMBOLS:
     ACTIVE_SYMBOLS = {"XAUUSD", "BTCUSD", "US30.cash"}
 
-# ── Catégories de symboles (29 Juin 2026 — Confidence Gates par symbole) ──
-# CORE : trading normal, pas de gate de confiance
-# TARGET_80 : gate de confiance individuelle (vise 80% WR)
-# REACTIVATED : gate 0.90 (forex majeurs, WR 57-61% après coûts)
+# ── Catégories de symboles (29 Juin 2026 — Confidence Gate 0.75 uniforme) ──
+# Tous les 14 symboles tradent si MOM donne ≥75% de chance de gain.
+# Le seuil unique 0.75 permet au maximum de signaux de passer.
 CORE_SYMBOLS: set[str] = {"XAUUSD", "BTCUSD", "US30.cash"}
 TARGET_80_SYMBOLS: set[str] = {"ETHUSD", "US100.cash", "US500.cash", "XAGUSD"}
 REACTIVATED_SYMBOLS: set[str] = ACTIVE_SYMBOLS - CORE_SYMBOLS - TARGET_80_SYMBOLS
 
-# ── Seuils de confiance par symbole (29 Juin 2026) ──
-# Basés sur backtest 12+ ans avec coûts réels (spread + commission ECN).
-# Le gate filtre les signaux faibles pour viser ~80% WR sur trades exécutés.
-# Source: backtest_universe_report.json (WR après coûts)
+# ── Seuils de confiance uniformes (29 Juin 2026) ──
+# Décision: tous les symboles tradent si MOM donne ≥75% de confiance.
+# 0.75 = seuil minimum pour considérer qu'un signal a 3 chances sur 4 de gagner.
+# Applicable aux 14 symboles sans distinction de catégorie.
 SYMBOL_CONFIDENCE_GATES: dict[str, float] = {
-    # ── CORE (pas de gate) : trading normal ──
-    # XAUUSD H4: WR 72.7% après coûts → pas de gate (trading normal)
-    # BTCUSD H1: WR 75.6% après coûts → pas de gate
-    # US30.cash H1: WR 74.8% après coûts → pas de gate
-    # ── TARGET_80 WR (gate 0.80) : vise 80% WR ──
-    "ETHUSD": 0.80,  # WR 73.2% après coûts → gate 0.80
-    "US100.cash": 0.80,  # WR 74.0% après coûts → gate 0.80
-    "US500.cash": 0.80,  # WR 73.6% après coûts → gate 0.80
-    "XAGUSD": 0.80,  # WR 73.6% après coûts → gate 0.80 (DD 18.1% ⚠️)
-    # ── REACTIVATED (gate 0.90) : forex majeurs, très stricts ──
-    "EURUSD": 0.90,  # WR 57.1% après coûts (−11.7% vs brut)
-    "GBPUSD": 0.90,  # WR 59.8% après coûts (−8.7%)
-    "USDJPY": 0.90,  # WR 60.8% après coûts (−8.5%)
-    "USDCAD": 0.90,  # WR 57.7% après coûts (−10.8%)
-    "AUDUSD": 0.90,  # WR 58.2% après coûts (−10.0%)
-    "NZDUSD": 0.90,  # WR 58.4% après coûts (−9.2%)
-    "USDCHF": 0.90,  # WR 59.0% après coûts (−10.5%)
+    # ── Tous les 14 symboles : gate 0.75 uniforme ──
+    "XAUUSD": 0.75,
+    "BTCUSD": 0.75,
+    "US30.cash": 0.75,
+    "ETHUSD": 0.75,
+    "US100.cash": 0.75,
+    "US500.cash": 0.75,
+    "XAGUSD": 0.75,
+    "EURUSD": 0.75,
+    "GBPUSD": 0.75,
+    "USDJPY": 0.75,
+    "USDCAD": 0.75,
+    "AUDUSD": 0.75,
+    "NZDUSD": 0.75,
+    "USDCHF": 0.75,
 }
 
 _mutex_handle = None
