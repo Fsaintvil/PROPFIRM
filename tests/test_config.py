@@ -27,11 +27,12 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # 6 actifs (25 Juin 2026) — ETHUSD désactivé (WR 36.8%), AUDUSD+US500.cash toxiques retirés
-    assert len(cfg.trading.symbols) == 6
+    # 10 symboles (29 Juin 2026) — 3 CORE + 7 REACTIVATED (high confidence ≥90%)
+    assert len(cfg.trading.symbols) == 10
     assert "XAUUSD" in cfg.trading.symbols
     assert "BTCUSD" in cfg.trading.symbols
-    assert "US30.cash" in cfg.trading.symbols  # ajouté 28 Juin 2026 — remplace EURUSD
+    assert "US30.cash" in cfg.trading.symbols
+    assert "EURUSD" in cfg.trading.symbols  # réactivé 29 Juin (high confidence gate)
     assert "USDJPY" in cfg.trading.symbols  # réactivé 24 Juin
     assert "GBPUSD" in cfg.trading.symbols  # réactivé 24 Juin
     assert "USDCAD" in cfg.trading.symbols  # réactivé 24 Juin

@@ -80,6 +80,13 @@ if _env_syms:
     ACTIVE_SYMBOLS = {s.strip() for s in _env_syms.split(",") if s.strip()}
 if not ACTIVE_SYMBOLS:
     ACTIVE_SYMBOLS = {"XAUUSD", "BTCUSD", "US30.cash"}
+
+# ── Symboles CORE (trading normal) vs REACTIVATED (confiance ≥90% requise) ──
+CORE_SYMBOLS: set[str] = {"XAUUSD", "BTCUSD", "US30.cash"}
+REACTIVATED_SYMBOLS: set[str] = ACTIVE_SYMBOLS - CORE_SYMBOLS
+# Seuil de confiance pour les symboles réactivés (nécessite high_confidence)
+REACTIVATED_CONFIDENCE_THRESHOLD = 0.90
+
 _mutex_handle = None
 
 
@@ -420,6 +427,9 @@ class FTMO_SIMPLE:
                 TRADING_END_HOUR=cfg.TRADING_END_HOUR,
                 DANGER_HOURS=cfg.DANGER_HOURS,
                 SYMBOL_LIMITS=cfg.SYMBOL_LIMITS,
+                # 🔥 High Confidence Gate pour symboles réactivés (29 Juin 2026)
+                REACTIVATED_SYMBOLS=ACTIVE_SYMBOLS - CORE_SYMBOLS,
+                REACTIVATED_CONFIDENCE_THRESHOLD=REACTIVATED_CONFIDENCE_THRESHOLD,
                 # Clés ajoutées — audit Juin 2026 (étaient manquantes, utilisaient
                 # les valeurs par défaut hardcodées dans ftmo_protector)
                 DAILY_PROFIT_LIMIT_PCT=cfg.DAILY_PROFIT_LIMIT_PCT,

@@ -331,6 +331,20 @@ class FTMOProtector:
         if sig_score < min_score:
             return False, f"Signal score too low: {sig_score:.2f} < {min_score}"
 
+        # 🔥 HIGH CONFIDENCE GATE pour symboles réactivés
+        # Les symboles REACTIVATED (non-CORE) ne trade QUE si confidence ≥ 0.90
+        # Cela permet de trader toutes les paires primaires sans risquer le challenge
+        # sur des signaux faibles.
+        _reactivated = self.config.get("REACTIVATED_SYMBOLS", set())
+        if symbol in _reactivated:
+            _conf_threshold = self.config.get("REACTIVATED_CONFIDENCE_THRESHOLD", 0.90)
+            sig_confidence = signal.get("confidence", 0.0)
+            if sig_confidence < _conf_threshold:
+                return False, (
+                    f"Reactivated {symbol}: conf={sig_confidence:.2f} < {_conf_threshold} "
+                    f"(CORE symbols only, high confidence gate)"
+                )
+
         # FIX #3: SL OBLIGATOIRE — calcul auto si ATR disponible, sinon blocage
         sl = signal.get("sl")
         tp = signal.get("tp")

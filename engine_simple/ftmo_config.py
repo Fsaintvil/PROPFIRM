@@ -48,8 +48,9 @@ TRAILING_BY_SYMBOL = {
     # US500.cash — DÉSACTIVÉ 25 Juin 2026 (PF 0.39 toxique)
     # ═══════════════════════════════════════════════════════════════════════
     # ═══════════════════════════════════════════════════════════════════════
-    # Symboles désactivés — voir TRAILING_BY_REGIME pour fallback
-    # EURUSD/USDJPY/GBPUSD/AUDUSD/USDCAD → inactifs, utilisent fallback
+    # Symboles REACTIVÉS 29 Juin 2026 — High Confidence Only (≥90%)
+    # EURUSD, GBPUSD, USDJPY, USDCAD, AUDUSD, NZDUSD, USDCHF
+    # → utilisent TRAILING_BY_REGIME comme fallback (standard trailing)
     # ═══════════════════════════════════════════════════════════════════════
 }
 

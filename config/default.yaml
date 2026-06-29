@@ -30,17 +30,21 @@ robot:
 # ── Trading ──────────────────────────────────────────────────────────────
 trading:
   symbols:
+    # ── CORE SYMBOLS (trading normal, tous niveaux de confiance) ───────
     - XAUUSD      # H4 — WR 68.6%, PF 1.16, DD 6.9% (backtest 12+ ans)
     - BTCUSD      # H1 — WR 69.8%, PF 1.19, DD 5.6% (backtest 12+ ans)
     - US30.cash   # H1 — WR 74.8%, PF 1.19, DD 8.5% (backtest 12+ ans avec coûts)
-    - USDJPY      # H1 — RÉACTIVÉ 24 Juin — WR 82.1% backtest
-    - GBPUSD      # H1 — RÉACTIVÉ 24 Juin — WR 80.7% backtest
-    - USDCAD      # H1 — RÉACTIVÉ 24 Juin — WR 80.7% backtest
-                    # EURUSD désactivé 28 Juin 2026 (PF 0.75 après coûts, 6.7% WR live)
-                    # AUDUSD désactivé 25 Juin (PF 0.40 toxique)
+    # ── REACTIVATED SYMBOLS (high confidence ≥90% uniquement) ─────────
+    - EURUSD      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
+    - GBPUSD      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
+    - USDJPY      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
+    - USDCAD      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
+    - AUDUSD      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
+    - NZDUSD      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
+    - USDCHF      # H1 — RÉACTIVÉ 29 Juin — confiance ≥90% requise
                     # US500.cash désactivé 25 Juin (PF 0.39 toxique)
 
-  # Limites globales — 6 symboles (calibré 25 Juin 2026)
+  # Limites globales — 10 symboles (actualisé 29 Juin 2026, high confidence gate)
   max_positions: 20             # 6 symboles x ~4 positions max, limité corrélation
   max_positions_per_symbol: 4   # jusqu'à 4 par symbole (aligné pipeline conf>85%)
   max_trades_per_day: 30        # 6 symboles x ~5 trades/jour
