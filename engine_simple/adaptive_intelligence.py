@@ -616,7 +616,7 @@ class AdaptiveEngine:
                 adapted["confidence"] = min(0.95, adapted.get("confidence", 0.5) + 0.10)
 
         # Structure alignment bonus/penalty
-        if alignment_score >= 2:
+        if alignment_score >= 2 and signal.get("action") == "BUY":
             adapted["score"] = min(0.99, adapted.get("score", 0.5) + 0.10)
             adapted["confidence"] = min(0.95, adapted.get("confidence", 0.5) + 0.08)
             logger.info(f"  [STRUCTURE] {symbol}: alignment={alignment_score} → +0.10 score")

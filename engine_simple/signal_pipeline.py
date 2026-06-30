@@ -168,11 +168,6 @@ class SignalPipeline:
         if not self._phase5_regime_rule(signal):
             return None
 
-        # Phase 5b: BTCUSD RANGING SELL filter (0% WR sur 6 trades documenté)
-        if symbol in ("BTCUSD",) and signal.get("action") == "SELL" and signal.get("_regime") == "RANGING":
-            logger.debug(f"  [BTCUSD RANGING] {symbol}: SELL en ranging bloqué (0% WR sur 6 trades)")
-            return None
-
         # Phase 6: Strategy selector
         if not self._phase6_strategy_selector(symbol, signal):
             return None
@@ -195,26 +190,12 @@ class SignalPipeline:
         # Phase 12: Adaptive Params
         self._phase12_adaptive_params(symbol, signal)
 
-        # Dynamic position limits based on confidence
-        # Seuils équilibrés (Juin 2026): conf > 0.85 → 6, > 0.70 → 4, sinon → 2
-        # HIGH_CONF_CONFIDENCE = seuil par symbole depuis SYMBOL_CONFIDENCE_GATES
-        # (0.90 pour forex reactivés, 0.80 pour target_80, pas de gate pour CORE)
-        # Les gates sont lues depuis ftmo.config (passées par main.py)
+        # Dynamic position limits based on confidence (simplifié 1er Juillet 2026)
         sig_conf = signal.get("confidence", 0.0)
-        HIGH_CONF_CONFIDENCE = 0.90  # fallback par défaut
-        try:
-            _gate_cfg = (self.ftmo.config if hasattr(self, "ftmo") and hasattr(self.ftmo, "config") else {}).get(
-                "SYMBOL_CONFIDENCE_GATES", {}
-            )
-            if isinstance(_gate_cfg, dict):
-                _gate_val = _gate_cfg.get(symbol, 0.90)
-                if isinstance(_gate_val, (int, float)) and _gate_val > 0:
-                    HIGH_CONF_CONFIDENCE = float(_gate_val)
-        except Exception:
-            pass  # fallback à 0.90
         sig_action = signal.get("action")
+        HIGH_CONF_CONFIDENCE = 0.85  # seuil unique haute confiance
 
-        if sig_conf >= HIGH_CONF_CONFIDENCE - 0.0001:
+        if sig_conf >= HIGH_CONF_CONFIDENCE:
             # 🔥 HIGH CONFIDENCE : positions supplémentaires autorisées
             # mais corrélation et limites totales protégées par portfolio_controller
             signal["high_confidence"] = True
@@ -404,7 +385,7 @@ class SignalPipeline:
         sym_cfg = self.symbol_limits.get(symbol, {})
         signal_score = signal.get("score", 0.6)
 
-        ADX_BYPASS_MIN = 12  # Juin 2026: réduit 15→12 pour EURUSD (ADX typique 12-14 en range)
+        ADX_BYPASS_MIN = 10  # Juil 2026: réduit 12→10 pour US100/US500/NZDUSD (ADX 10-11, scores ≥0.80)
         if signal_score >= 0.80 and signal_adx >= ADX_BYPASS_MIN:
             logger.debug(f"  [ADX] {symbol}: bypass (score={signal_score:.2f} >= 0.80, ADX={signal_adx:.1f})")
             return True
@@ -443,11 +424,21 @@ class SignalPipeline:
     # ── Phase 5: Direction = Régime Rule ──────────────────────────────────
 
     def _phase5_regime_rule(self, signal: dict) -> bool:
-        """Évite les trades à contre-tendance (18 Juin 2026)."""
+        """Évite les trades à contre-tendance (18 Juin 2026).
+        Override pour signaux très forts (score≥0.90) avec risque réduit de 50%."""
         regime = signal.get("_regime", "RANGING")
-        action = signal.get("action", "BUY")
+        action = signal.get("action")
+        symbol = signal.get("symbol", "?")
+        score = signal.get("score", 0)
         if (action == "BUY" and regime == "TREND_DOWN") or (action == "SELL" and regime == "TREND_UP"):
-            logger.debug(f"  [RÈGLE DIR] {signal.get('symbol')}: {action} en {regime} → contre-tendance, skip")
+            # 🔥 OVERRIDE pour signaux TRÈS FORTS (score ≥ 0.90)
+            if score >= 0.90:
+                logger.info(
+                    f"  [RÈGLE DIR] OVERRIDE: {action} {symbol} en {regime} (score={score:.2f}≥0.90) — risque -50%"
+                )
+                signal["risk_mult"] = signal.get("risk_mult", 1.0) * 0.50
+                return True
+            logger.debug(f"  [RÈGLE DIR] {symbol}: {action} en {regime} → contre-tendance, skip")
             return False
         return True
 
@@ -455,7 +446,7 @@ class SignalPipeline:
 
     def _phase6_strategy_selector(self, symbol: str, signal: dict) -> bool:
         regime = signal.get("_regime", "RANGING")
-        action = signal.get("action", "BUY")
+        action = signal.get("action")
         signal_adx = signal.get("adx", 0)
         signal_score = signal.get("score", 0.6)
 
@@ -499,8 +490,8 @@ class SignalPipeline:
             # ── RVOL ──
             rvol = relative_volume(volumes, period=50)
             if rvol < 0.5:
-                signal["score"] = max(0.3, signal["score"] * 0.90)
-                signal["rvol_adj"] = 0.90
+                signal["score"] = max(0.3, signal["score"] * 0.92)
+                signal["rvol_adj"] = 0.92
                 signal["rvol_note"] = "FAIBLE"
             elif rvol > 2.0:
                 signal["score"] = min(0.95, signal["score"] * 1.10)
@@ -515,20 +506,20 @@ class SignalPipeline:
             sym_cfg = self.symbol_limits.get(symbol, {})
             cmf_threshold = sym_cfg.get("cmf_threshold", 0.10)
             cmf = chaikin_money_flow(closes, highs, lows, volumes, period=20)
-            sig_action = signal.get("action", "BUY")
+            sig_action = signal.get("action")
             if cmf > cmf_threshold:
                 if sig_action == "BUY":
                     signal["score"] = min(0.95, signal["score"] * 1.08)
                 else:
-                    signal["score"] = max(0.3, signal["score"] * 0.85)
-                signal["cmf_adj"] = 1.08 if sig_action == "BUY" else 0.85
+                    signal["score"] = max(0.3, signal["score"] * 0.92)
+                signal["cmf_adj"] = 1.08 if sig_action == "BUY" else 0.92
                 signal["cmf_note"] = "accumulation"
             elif cmf < -cmf_threshold:
                 if sig_action == "SELL":
                     signal["score"] = min(0.95, signal["score"] * 1.08)
                 else:
-                    signal["score"] = max(0.3, signal["score"] * 0.85)
-                signal["cmf_adj"] = 1.08 if sig_action == "SELL" else 0.85
+                    signal["score"] = max(0.3, signal["score"] * 0.92)
+                signal["cmf_adj"] = 1.08 if sig_action == "SELL" else 0.92
                 signal["cmf_note"] = "distribution"
             else:
                 signal["cmf_adj"] = 1.0
@@ -565,7 +556,7 @@ class SignalPipeline:
             sym_cfg = self.symbol_limits.get(symbol, {})
             penalty_high = sym_cfg.get("obv_div_penalty_high", 0.70)
             penalty_low = sym_cfg.get("obv_div_penalty_low", 0.85)
-            sig_action = signal.get("action", "BUY")
+            sig_action = signal.get("action")
 
             if div_type != "none" and div_strength > 0.1:
                 direction_ok = (div_type == "bullish" and sig_action == "BUY") or (
@@ -639,7 +630,7 @@ class SignalPipeline:
                 recent_higher = self.mt5.get_rates(symbol, tf_higher, count=100)
                 if recent_higher is not None and len(recent_higher) >= 50:
                     df = self._to_dataframe(recent_higher)
-                    mtf_confirmed, mtf_factor = self.mtf_confirm.confirm(None, df, signal.get("action", "BUY"))
+                    mtf_confirmed, mtf_factor = self.mtf_confirm.confirm(None, df, signal.get("action"))
                     if mtf_factor != 1.0:
                         old_score = signal["score"]
                         signal["score"] = max(0.3, min(0.95, signal["score"] * mtf_factor))

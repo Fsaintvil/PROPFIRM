@@ -331,21 +331,6 @@ class FTMOProtector:
         if sig_score < min_score:
             return False, f"Signal score too low: {sig_score:.2f} < {min_score}"
 
-        # 🔥 SYMBOL_CONFIDENCE_GATES — gate de confiance par symbole (29 Juin 2026)
-        # Chaque symbole a son propre seuil minimum de confiance :
-        #   CORE (XAUUSD, BTCUSD, US30.cash) : pas de gate (trading normal)
-        #   TARGET_80 (ETHUSD, US100.cash, US500.cash, XAGUSD) : gate 0.80
-        #   REACTIVATED (forex majeurs) : gate 0.90
-        # Le signal doit avoir confidence >= gate pour être tradé.
-        # Le flag high_confidence (calculé par signal_pipeline.py) est utilisé
-        # pour le bypass des limites de positions (pas pour le gate lui-même).
-        _gates = self.config.get("SYMBOL_CONFIDENCE_GATES", {})
-        conf_gate = _gates.get(symbol, 0.0)
-        if conf_gate > 0:
-            sig_confidence = signal.get("confidence", 0.0)
-            if sig_confidence < conf_gate - 0.0001:  # floating point guard
-                return False, (f"Confidence gate {symbol}: conf={sig_confidence:.2f} < gate={conf_gate:.2f}")
-
         # FIX #3: SL OBLIGATOIRE — calcul auto si ATR disponible, sinon blocage
         sl = signal.get("sl")
         tp = signal.get("tp")
@@ -376,8 +361,16 @@ class FTMOProtector:
             if sl is None or tp is None or sl == 0 or tp == 0:
                 return False, f"SL/TP manquant — transaction BLOQUÉE (SL={sl}, TP={tp})"
 
+        # 🔒 GARDE-FOU SUPPLÉMENTAIRE 30 Juin 2026
+        # Vérifie que SL est différent du prix d'entrée (SL=entry = pas de protection)
+        entry_price = signal.get("entry_price", 0)
+        if entry_price and sl and abs(float(sl) - float(entry_price)) / max(abs(float(entry_price)), 1) < 0.0001:
+            return False, f"SL identique au prix d'entrée ({sl} ≈ {entry_price}) — PAS DE PROTECTION, BLOQUÉ"
+
         # Ajuster SL si order block non mitigé proche
         obs = signal.get("_structure_obs", [])
+        current_atr = signal.get("atr", 0)
+        max_sl_atr = 3.0  # Cap: jamais plus de 3×ATR de distance SL (préserve RR)
         if obs and sl and entry:
             for ob in obs:
                 if not ob.get("is_mitigated"):
@@ -389,6 +382,13 @@ class FTMOProtector:
                         if sl < ob_high and sl > ob_low * 0.99:
                             # SL est dans la zone de l'OB → ajuster en dessous
                             new_sl = ob_low - (ob_high - ob_low) * 0.1
+                            # 🔒 Cap: ne pas dépasser max_sl_atr×ATR (préserve RR)
+                            if current_atr > 0 and (entry - new_sl) > current_atr * max_sl_atr:
+                                min_sl = entry - current_atr * max_sl_atr
+                                logger.debug(
+                                    f"  [SL OB] {symbol}: SL OB {new_sl:.5f} > {max_sl_atr}×ATR → cap à {min_sl:.5f}"
+                                )
+                                new_sl = min_sl
                             if new_sl > 0:
                                 logger.debug(
                                     f"  [SL OB] {symbol}: SL ajusté {sl:.5f} → {new_sl:.5f} (sous OB haussier)"
@@ -399,6 +399,13 @@ class FTMOProtector:
                     elif action == "SELL" and ob_type == "bearish" and ob_high > 0:
                         if sl > ob_low and sl < ob_high * 1.01:
                             new_sl = ob_high + (ob_high - ob_low) * 0.1
+                            # 🔒 Cap: ne pas dépasser max_sl_atr×ATR
+                            if current_atr > 0 and (new_sl - entry) > current_atr * max_sl_atr:
+                                max_sl = entry + current_atr * max_sl_atr
+                                logger.debug(
+                                    f"  [SL OB] {symbol}: SL OB {new_sl:.5f} > {max_sl_atr}×ATR → cap à {max_sl:.5f}"
+                                )
+                                new_sl = max_sl
                             if new_sl > 0:
                                 logger.debug(
                                     f"  [SL OB] {symbol}: SL ajusté {sl:.5f} → {new_sl:.5f} (dessus OB baissier)"
@@ -455,10 +462,11 @@ class FTMOProtector:
         sym_cb_override = sym_cfg_cb.get("circuit_breaker_dd_pct_override")
         if sym_cb_override is not None:
             cb_threshold = sym_cb_override
-        # Niveau 1: DD > 6% → shorts interdits (avertissement)
+        # Niveau 1: DD > 6% → risk reduction 50% (toutes directions)
         dd_warn = 0.06
-        if dd_peak > dd_warn and dd_peak <= cb_threshold and signal and signal.get("action") == "SELL":
-            return False, f"DD warning {dd_peak:.1%} > {dd_warn:.0%}: shorts disabled"
+        if dd_peak > dd_warn and dd_peak <= cb_threshold:
+            if signal:
+                signal["risk_mult"] = signal.get("risk_mult", 1.0) * 0.5
         # Niveau 2: DD > seuil cb → TOUS les trades bloqués
         if dd_peak > cb_threshold:
             return False, f"Circuit breaker: DD {dd_peak:.1%} > {cb_threshold:.0%}, all trades blocked"
@@ -783,6 +791,47 @@ class FTMOProtector:
         logger.debug(f"  [SYM-PERF] {symbol}: {wins}/{len(recent)} WR={wr:.0%} → risk_mult={mult:.2f}")
         return mult
 
+    def _get_wr_based_max_lot(self, symbol: str) -> float:
+        """Calcule le max_lot progressif basé sur le WR du symbole.
+
+        Système de lot progressif (1er Juillet 2026 — activation 27 symboles) :
+          WR < 55%  → lot 0.01 (démarrage)
+          WR ≥ 55%  → lot 0.03
+          WR ≥ 65%  → lot 0.05
+          WR ≥ 75%  → lot 0.07
+          WR ≥ 85%  → lot 0.10
+
+        Fenêtre : 20 derniers trades du symbole (minimum 10 pour activer).
+
+        Args:
+            symbol: Nom du symbole
+
+        Returns:
+            float: max_lot basé sur le WR (entre 0.01 et 0.10)
+        """
+        sym_trades = self._symbol_trade_history.get(symbol, [])
+        if len(sym_trades) < 10:
+            logger.debug(f"  [WR-LOT] {symbol}: {len(sym_trades)} trades < 10 → lot=0.01 (pas assez de données)")
+            return 0.01
+
+        recent = sym_trades[-20:] if len(sym_trades) >= 20 else sym_trades
+        wins = sum(1 for t in recent if t.get("profit", 0) > 0)
+        wr = wins / len(recent)
+
+        if wr >= 0.85:
+            max_lot = 0.10
+        elif wr >= 0.75:
+            max_lot = 0.07
+        elif wr >= 0.65:
+            max_lot = 0.05
+        elif wr >= 0.55:
+            max_lot = 0.03
+        else:
+            max_lot = 0.01
+
+        logger.debug(f"  [WR-LOT] {symbol}: {wins}/{len(recent)} WR={wr:.0%} → max_lot={max_lot:.2f}")
+        return max_lot
+
     def calculate_lot(self, symbol, entry, sl, quality=1.0, direction=0, signal_risk_mult=None):
         account = self.mt5.get_account_info()
         if account is None:
@@ -840,9 +889,10 @@ class FTMOProtector:
             logger.debug(f"  [ZONE 2] daily loss {daily_loss_amt / self.initial_balance:.2%} >= {zone2:.1%}, risk 75%")
 
         sym_cfg = self.symbol_limits.get(symbol, {})
-        max_lot = sym_cfg.get("max_lot", 0.55)
         min_lot = sym_cfg.get("min_lot", 0.01)
-        lot_size = self.config.get("LOT_SIZE", 0.1)
+        # WR-based max_lot progressif (remplace le max_lot statique de la config)
+        max_lot = self._get_wr_based_max_lot(symbol)
+        lot_size = self.config.get("LOT_SIZE", 0.01)
 
         order_type = self.mt5.ORDER_TYPE_BUY if direction == 0 else self.mt5.ORDER_TYPE_SELL
         sl_profit = self.mt5.calc_profit(order_type, symbol, 0.1, entry, sl)
@@ -869,21 +919,6 @@ class FTMOProtector:
 
         # Clamp between min_lot and max_lot from symbol config
         lot = max(min_lot, min(lot, max_lot))
-
-        # 🔒 SECOND CLAMP : re-vérifier avec la config module-level (fraîche)
-        try:
-            import config_simple as _cfg
-
-            if hasattr(_cfg, "SYMBOL_LIMITS"):
-                _fresh = _cfg.SYMBOL_LIMITS.get(symbol, {})
-                _max = _fresh.get("max_lot", max_lot)
-                if _max < max_lot:
-                    # La config fraîche a un max_lot plus bas → l'utiliser
-                    max_lot = _max
-                    lot = min(lot, max_lot)
-                    logger.info(f"  [LOT CLAMP] {symbol}: second clamp {_max} (hot-reload override)")
-        except (ImportError, AttributeError):
-            pass
 
         if lot > max_lot:
             logger.warning(f"  [LOT CLAMP] {symbol}: lot {lot:.3f} > max_lot {max_lot}, clamp force")

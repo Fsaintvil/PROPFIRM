@@ -489,9 +489,9 @@ class TestPhase2ADXFilter:
         assert result is True  # bypass car score>=0.80 ET adx>=15
 
     def test_bypass_refused_when_adx_too_low(self, pipeline):
-        signal = {"score": 0.85, "adx": 10}
+        signal = {"score": 0.85, "adx": 9}
         result = pipeline._phase2_adx_filter("XAUUSD", signal, 1, {})
-        assert result is False  # score>=0.80 MAIS adx<15
+        assert result is False  # score>=0.80 MAIS adx<10 (ADX_BYPASS_MIN=10)
 
     def test_rejects_low_adx_in_ranging(self, pipeline):
         signal = {"score": 0.60, "adx": 10, "_regime": "RANGING"}
@@ -721,5 +721,5 @@ class TestDynamicPositionLimits:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.85 > 0.70 (mais pas >0.85) → max_per_symbol=4 (Équilibré)
-        assert result.signal["max_per_symbol"] == 4
+        # conf=0.85 >= 0.85 (HIGH_CONF_CONFIDENCE) → max_per_symbol=6 (1er Juillet 2026)
+        assert result.signal["max_per_symbol"] == 6

@@ -564,6 +564,8 @@ class TestCalculateLot:
         p.mt5.calc_profit.return_value = -200
         p.mt5.ORDER_TYPE_BUY = 0
         p.symbol_limits = {"EURUSD": {"risk_mult": 0.5, "max_lot": 0.5}}
+        # Seed trade history pour activer le WR-progressif (10+ trades, WR>=75% → max_lot=0.07)
+        p._symbol_trade_history["EURUSD"] = [{"profit": 50}] * 10
         lot = p.calculate_lot("EURUSD", 1.1, 1.095)
         assert lot > 0.01
 
@@ -586,12 +588,16 @@ class TestCalculateLot:
         p = self._make_protector()
         p.initial_balance = 200000
         p.daily_stats["pnl"] = -2500  # 1.25% > 1%
+        # Seed trade history pour WR-progressif (10+ trades, WR>=65% → max_lot=0.05)
+        p._symbol_trade_history["EURUSD"] = [{"profit": 50}] * 10
         lot = p.calculate_lot("EURUSD", 1.1, 1.095)
         assert lot > 0.01
 
     def test_daily_profit_reduced(self):
         p = self._make_protector()
         p._daily_profit_reduced = True
+        # Seed trade history pour WR-progressif (10+ trades, WR>=65% → max_lot=0.05)
+        p._symbol_trade_history["EURUSD"] = [{"profit": 50}] * 10
         lot = p.calculate_lot("EURUSD", 1.1, 1.095)
         assert lot > 0.01
 

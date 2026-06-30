@@ -63,13 +63,13 @@ class TestFTMOCycle:
     def test_simple_signal_goes_through(self):
         mt5 = make_mock_mt5()
         ftmo = make_ftmo(mt5)
-        ftmo._atr_cache = {"USDCHF": (0.005, time.time())}
+        ftmo._atr_cache = {"EURUSD": (0.005, time.time())}
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "USDCHF",
+                    "EURUSD",
                     signal={
                         "action": "BUY",
                         "score": 0.70,
@@ -92,7 +92,7 @@ class TestFTMOCycle:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "USDCHF",
+                    "EURUSD",
                     signal={
                         "action": "BUY",
                         "score": 0.70,
@@ -111,7 +111,7 @@ class TestFTMOCycle:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "USDCHF",
+                    "EURUSD",
                     signal={
                         "action": "BUY",
                         "score": 0.70,
@@ -119,8 +119,8 @@ class TestFTMOCycle:
                         "tp": 0.7900,
                     },
                     positions=[
-                        MagicMock(magic=cfg.ROBOT_MAGIC, symbol="USDCHF", type=0, ticket=1),
-                        MagicMock(magic=cfg.ROBOT_MAGIC, symbol="USDCHF", type=0, ticket=2),
+                        MagicMock(magic=cfg.ROBOT_MAGIC, symbol="EURUSD", type=0, ticket=1),
+                        MagicMock(magic=cfg.ROBOT_MAGIC, symbol="EURUSD", type=0, ticket=2),
                     ],
                 )
                 assert ok, f"Expected OK (correlation check passes for positions list), got: {reason}"
@@ -158,7 +158,7 @@ class TestFTMOCycle:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "USDCHF",
+                    "EURUSD",
                     signal={
                         "action": "BUY",
                         "score": 0.70,
@@ -183,7 +183,7 @@ class TestFTMOCycle:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "USDCHF",
+                    "EURUSD",
                     signal={
                         "action": "BUY",
                         "score": 0.70,

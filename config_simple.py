@@ -114,23 +114,45 @@ except Exception as e:
     _fb_log("MT5_PASSWORD", "(masqué)")
     MT5_SERVER = ""
     _fb_log("MT5_SERVER", "(vide)")
-    # ⚠️ 28 Juin 2026: 3 symboles actifs uniquement
-    # XAUUSD, BTCUSD, US30.cash sont les SEULS activement tradés.
-    # Tout symbole ajouté ici DOIT être aussi dans .env:SYMBOLS et YAML.
+    # ⚠️ 1er Juillet 2026: 27 symboles actifs
     SYMBOLS = [
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY",
+        "USDCAD",
+        "AUDUSD",
+        "NZDUSD",
+        "USDCHF",
+        "EURJPY",
+        "GBPJPY",
+        "EURGBP",
+        "AUDJPY",
         "XAUUSD",
+        "XAGUSD",
+        "USOIL.cash",
+        "UKOIL.cash",
+        "NATGAS.cash",
         "BTCUSD",
+        "ETHUSD",
+        "SOLUSD",
+        "LNKUSD",
+        "BNBUSD",
+        "US500.cash",
         "US30.cash",
+        "US100.cash",
+        "JP225.cash",
+        "GER40.cash",
+        "UK100.cash",
     ]
     _fb_log("SYMBOLS", SYMBOLS)
     ROBOT_MAGIC = 999001
     _fb_log("ROBOT_MAGIC", 999001)
-    MAX_POSITIONS = 20
-    _fb_log("MAX_POSITIONS", 20)
-    MAX_POSITIONS_PER_SYMBOL = 4
-    _fb_log("MAX_POSITIONS_PER_SYMBOL", 4)
-    MAX_TRADES_PER_DAY = 30
-    _fb_log("MAX_TRADES_PER_DAY", 30)
+    MAX_POSITIONS = 64
+    _fb_log("MAX_POSITIONS", 64)
+    MAX_POSITIONS_PER_SYMBOL = 6
+    _fb_log("MAX_POSITIONS_PER_SYMBOL", 6)
+    MAX_TRADES_PER_DAY = 100
+    _fb_log("MAX_TRADES_PER_DAY", 100)
     LOT_SIZE = 0.06
     _fb_log("LOT_SIZE", 0.06)
     MIN_TRADE_INTERVAL_SEC = 300
@@ -193,58 +215,8 @@ except Exception as e:
     _fb_log("CYCLE_SECONDS", 15)
     HISTORY_LOOKBACK_DAYS = 7
     _fb_log("HISTORY_LOOKBACK_DAYS", 7)
-    SYMBOL_LIMITS = {
-        # XAUUSD H4 (fallback — synchronisé avec default.yaml 25 Juin 2026)
-        "XAUUSD": dict(
-            max_lot=0.06,
-            risk_mult=1.10,
-            max_spread_points=60,
-            adx_thresh=22,
-            allow_buys=True,
-            allow_shorts=True,
-            momentum_period=18,
-            sl_atr_trending=1.8,
-            tp_atr_trending=5.0,
-            sl_atr_ranging=1.5,
-            tp_atr_ranging=3.5,
-        ),
-        # BTCUSD H1 (fallback — synchronisé 25 Juin 2026)
-        "BTCUSD": dict(
-            max_lot=0.06,
-            risk_mult=0.30,
-            max_spread_points=150,
-            adx_thresh=20,
-            allow_buys=True,
-            allow_shorts=True,
-            momentum_period=22,
-            sl_atr_trending=3.0,
-            tp_atr_trending=7.0,
-            sl_atr_ranging=2.5,
-            tp_atr_ranging=5.0,
-        ),
-        # US30.cash H1 (fallback — ajouté 28 Juin 2026)
-        "US30.cash": dict(
-            max_lot=0.03,
-            risk_mult=0.50,
-            max_spread_points=60,
-            adx_thresh=22,
-            allow_buys=True,
-            allow_shorts=True,
-            momentum_period=20,
-            sl_atr_trending=1.5,
-            tp_atr_trending=4.5,
-            sl_atr_ranging=1.2,
-            tp_atr_ranging=3.0,
-        ),
-        # ⚠️ Symboles inactifs retirés du fallback 28 Juin 2026:
-        # US500.cash, EURUSD, USDJPY, GBPUSD, AUDUSD, USDCAD
-        # La config YAML reste la source de vérité si réactivation.
-    }
-    SYMBOL_TIMEFRAMES = {
-        "XAUUSD": "H4",
-        "BTCUSD": "H1",
-        "US30.cash": "H1",
-    }
+    SYMBOL_LIMITS = {}
+    SYMBOL_TIMEFRAMES = {}
     ML_EXPERIMENT_TRACKING = False
     ML_TRACKING_URI = ""
     CONCEPT_DRIFT = dict(

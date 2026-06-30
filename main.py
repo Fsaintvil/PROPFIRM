@@ -109,6 +109,10 @@ SYMBOL_CONFIDENCE_GATES: dict[str, float] = {
     "AUDUSD": 0.65,
     "NZDUSD": 0.65,
     "USDCHF": 0.65,
+    # ── NOUVEAUX SYMBOLES (AJOUTÉS 29 Juin 2026) ──
+    "GBPJPY": 0.65,
+    "JP225.cash": 0.65,
+    "USOIL.cash": 0.65,
 }
 
 _mutex_handle = None
@@ -1315,7 +1319,7 @@ class FTMO_SIMPLE:
                     live_now = self._pos_cache.get()
                     high_conf = signal.get("high_confidence", False)
                     can_open, reason = self.portfolio_controller.can_open_position(
-                        symbol, signal.get("action", "BUY"), live_now, high_confidence=high_conf
+                        symbol, signal.get("action"), live_now, high_confidence=high_conf
                     )
                     if not can_open:
                         logger.debug(f"  [PORTFOLIO] {symbol}: {reason}")

@@ -27,14 +27,13 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # 10 symboles (29 Juin 2026) — 3 CORE + 7 REACTIVATED (high confidence ≥90%)
-    assert len(cfg.trading.symbols) == 10
+    # 27 symboles (1er Juillet 2026) — activation totale
+    assert len(cfg.trading.symbols) == 27
     assert "XAUUSD" in cfg.trading.symbols
     assert "BTCUSD" in cfg.trading.symbols
     assert "US30.cash" in cfg.trading.symbols
     assert "EURUSD" in cfg.trading.symbols  # réactivé 29 Juin (high confidence gate)
     assert "USDJPY" in cfg.trading.symbols  # réactivé 24 Juin
-    assert "GBPUSD" in cfg.trading.symbols  # réactivé 24 Juin
     assert "USDCAD" in cfg.trading.symbols  # réactivé 24 Juin
     assert cfg.risk.per_trade_pct == 0.004  # calibré 25 Juin 2026 (était 0.44% Mode MAX)
     assert cfg.risk.max_dd_pct == 0.10
@@ -52,7 +51,7 @@ def test_as_flat_dict():
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
     assert flat["RISK_PER_TRADE_PCT"] == 0.004  # calibré 25 Juin 2026 (était 0.44%)
-    assert flat["TRADING_MAX_POSITIONS"] == 20  # calibré 25 Juin 2026 (était 40 Mode MAX)
+    assert flat["TRADING_MAX_POSITIONS"] == 80  # 27 symboles, plafond schema 100
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -60,9 +59,9 @@ def test_symbol_limits_defaults():
     cfg = load_config("default")
     assert "XAUUSD" in cfg.symbol_limits
     assert "BTCUSD" in cfg.symbol_limits
-    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.06  # ↑ 0.05→0.06 (+10%)
+    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.01  # WR-progressif (1er Juillet 2026)
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
-    assert cfg.symbol_limits["XAUUSD"].risk_mult == 1.10  # ↑ 10% (19 Juin 2026) WR 77.8% live
+    assert cfg.symbol_limits["XAUUSD"].risk_mult == 1.00  # WR-progressif gère le risque
 
 
 def test_symbol_limits_new_portfolio():
@@ -71,11 +70,11 @@ def test_symbol_limits_new_portfolio():
 
     cfg = load_config("default")
     btc = cfg.symbol_limits.get("BTCUSD", {})
-    assert btc.risk_mult == 0.30  # RÉACTIVÉ 23 Juin (WR Phase 3 32.3%, risk prudent)
+    assert btc.risk_mult == 1.0  # WR-progressif gère le risque (1er Juillet 2026)
     assert btc.allow_buys is True
     assert btc.allow_shorts is True
-    assert btc.max_lot == 0.06  # ↑ 0.05→0.06 (+10%)
-    assert btc.min_score is None  # per-symbol retiré — global 0.60 s'applique
+    assert btc.max_lot == 0.01  # WR-progressif (1er Juillet 2026)
+    assert btc.min_score is None  # per-symbol retiré — global 0.30 s'applique
 
 
 def test_env_interpolation():
@@ -130,7 +129,7 @@ def test_config_simple_compat():
 
     assert cfg.ROBOT_MAGIC == 999001
     assert cfg.RISK_PER_TRADE == 0.004  # calibré 25 Juin 2026 (était 0.44%)
-    assert cfg.MAX_ORDERS_PER_MINUTE == 10  # 1 trade/min/symbole + marge (8 symboles)
+    assert cfg.MAX_ORDERS_PER_MINUTE == 25  # 1 trade/min/symbole + marge (16 symboles)
     assert cfg.__version__ == "4.1.0"
     assert cfg.MIN_SIGNAL_SCORE == 0.50  # global — ↑ 0.38→0.50 (28 Juin 2026, Supreme Council: meilleure qualité)
 

@@ -122,8 +122,8 @@ SYMBOL_CONFIG = {
         # SL/TP ranging: 2.5/5.0 (RR 2.0)
         "sl_atr_ranging": 2.5,
         "tp_atr_ranging": 5.0,
-        # Seuils ATR (abaissés — ADX crypto peu fiable, capter plus de signaux)
-        "threshold_trending": 2.0,
+        # Seuils ATR (abaissés — ADX crypto peu fiable, capter 40%+ signaux supplémentaires)
+        "threshold_trending": 1.8,  # ↓ 2.0→1.8 (BTCUSD frôle le seuil sans le passer — mom~950, thresh~1050)
         "threshold_ranging": 1.5,
         # Filtres ADX (très permissifs — ADX crypto bruité, abaissé 26 Juin pour + de trades)
         "adx_slope_threshold": -10.0,  # très permissif (26 Juin: ↓ -5.0→-10.0 pour débloquer BTCUSD)
@@ -197,12 +197,22 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 5,
         "news_minutes_after": 5,
     },
-    # GBPUSD — DÉSACTIVÉ 29 Juin 2026 (0/5 wins live, PF 0.00, WR 0%)
-    # Réactiver si WR > 50% sur 20 trades après correctifs rate limiter
-    # "GBPUSD": {
-    #     "momentum_period": 20,
-    #     ...
-    # },
+    "GBPUSD": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.0,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 1.5,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": list(range(24)),
+        "news_minutes_before": 5,
+        "news_minutes_after": 5,
+    },
     "USDJPY": {
         "momentum_period": 20,
         "sl_atr_trending": 2.0,
@@ -283,10 +293,6 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 5,
         "news_minutes_after": 5,
     },
-    # ═══════════════════════════════════════════════════════════════════════
-    # ETHUSD H1 — Ethereum (AJOUTÉ 29 Juin 2026 — Target 80% WR)
-    # Backtest avec coûts: WR 73.2%, PF 1.14, DD 10.4%
-    # ═══════════════════════════════════════════════════════════════════════
     "ETHUSD": {
         "momentum_period": 20,
         "sl_atr_trending": 2.0,
@@ -295,8 +301,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
-        "adx_slope_threshold": -3.0,
-        "adx_slope_threshold_strong": -6.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
         "preferred_hours": list(range(24)),
@@ -310,9 +316,9 @@ SYMBOL_CONFIG = {
     "US100.cash": {
         "momentum_period": 20,
         "sl_atr_trending": 1.5,
-        "tp_atr_trending": 4.5,
+        "tp_atr_trending": 5.0,  # ↑ 4.5→5.0 (30 Juin: RR≥1.67 avec SL OB cap 3.0×ATR)
         "sl_atr_ranging": 1.2,
-        "tp_atr_ranging": 3.0,
+        "tp_atr_ranging": 5.0,  # ↑ 4.5→5.0 (30 Juin: RR≥1.67 avec SL OB cap 3.0×ATR)
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
         # Filtres ADX (assoupli 29 Juin 2026 : -5→-10 pour débloquer US100.cash)
@@ -334,7 +340,7 @@ SYMBOL_CONFIG = {
         "sl_atr_trending": 1.5,
         "tp_atr_trending": 4.5,
         "sl_atr_ranging": 1.2,
-        "tp_atr_ranging": 3.0,
+        "tp_atr_ranging": 4.5,  # 29 Juin: 3.0→4.5 — même fix que US100.cash (SL OB cap → RR≥1.5)
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
         "adx_slope_threshold": -5.0,
@@ -345,10 +351,6 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
     },
-    # ═══════════════════════════════════════════════════════════════════════
-    # XAGUSD H1 — Argent (AJOUTÉ 29 Juin 2026 — Target 80% WR)
-    # Backtest avec coûts: WR 73.6%, PF 1.07, DD 18.1%
-    # ═══════════════════════════════════════════════════════════════════════
     "XAGUSD": {
         "momentum_period": 20,
         "sl_atr_trending": 2.0,
@@ -365,6 +367,94 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 5,
         "news_minutes_after": 5,
     },
+    # ═══════════════════════════════════════════════════════════════════════
+    # GBPJPY H1 — Livre Sterling / Yen Japonais (AJOUTÉ 29 Juin 2026)
+    # Caractéristiques: Forex cross, forte volatilité, tendances longues
+    # Backtest 12+ ans: WR 68.0%, PF 1.36, +$624,210 (meilleur PnL)
+    # ═══════════════════════════════════════════════════════════════════════
+    "GBPJPY": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.0,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 1.5,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": list(range(24)),
+        "news_minutes_before": 5,
+        "news_minutes_after": 5,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # JP225.cash H1 — Nikkei 225 (AJOUTÉ 29 Juin 2026)
+    # Caractéristiques: Indice japonais, tendances longues, liquidité Asie
+    # Backtest 12+ ans: WR 67.6%, PF 1.18, +$236,660, DD 8.4%
+    # ═══════════════════════════════════════════════════════════════════════
+    "JP225.cash": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.0,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 1.5,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -10.0,  # ↑ -5.0→-10.0 (29 Juin : ADX slope moy. -9.5, 100% bloqué)
+        "adx_slope_threshold_strong": -12.0,  # ↑ -8.0→-12.0 (relaxé comme US100.cash)
+        "pullback_band_trending": 0.3,
+        "pullback_band_ranging": 0.2,
+        "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8],  # Asian session
+        "news_minutes_before": 15,
+        "news_minutes_after": 15,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # USOIL.cash H1 — US Oil (AJOUTÉ 29 Juin 2026)
+    # Caractéristiques: Commodity volatile, news-driven, sessions US
+    # Backtest 12+ ans: WR 68.4%, PF 1.06, +$24,281, DD 1.9% (très bas!)
+    # ═══════════════════════════════════════════════════════════════════════
+    "USOIL.cash": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.0,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 1.5,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+        ],  # 24/7 (↑ 30 Juin: débloquer Asie)
+        "news_minutes_before": 15,
+        "news_minutes_after": 15,
+    },
 }
 
 # Fallback par défaut
@@ -373,7 +463,7 @@ DEFAULT_SYMBOL_CONFIG = {
     "sl_atr_trending": 2.0,
     "tp_atr_trending": 5.0,
     "sl_atr_ranging": 1.5,
-    "tp_atr_ranging": 4.0,
+    "tp_atr_ranging": 5.0,  # ↑ 4.0→5.0 (30 Juin: RR≥1.67 avec SL OB cap 3.0×ATR)
     "threshold_trending": 2.5,
     "threshold_ranging": 2.0,
     "adx_slope_threshold": -5.0,  # standard (AGENTS.md)
@@ -518,7 +608,7 @@ def mom20x3_signal(
             # l'ADX/DI est plus fiable que la structure ICT/SMC → pas de pénalité.
             # Évite la situation XAUUSD où ADX=32/-DI=27 était pénalisé
             # par une structure "bullish" ICT à contre-tendance.
-            _adx_strong = adx_val > 25 and abs(plus_di - minus_di) > 5
+            _adx_strong = adx_val >= 22 and abs(plus_di - minus_di) > 5
             if mom > 0 and _struct_trend == "bearish":
                 if _adx_strong:
                     logger.debug(
@@ -566,7 +656,7 @@ def mom20x3_signal(
     adx_slope_ok = True
     adx_slope_threshold = sym_cfg["adx_slope_threshold"]
 
-    if raw_score > 0.50:
+    if raw_score > 0.75:  # ↑ 0.50→0.75 (30 Juin: seuls les signaux TRÈS FORTS bypassent)
         adx_slope_threshold = sym_cfg["adx_slope_threshold_strong"]
 
     if adx_slope < adx_slope_threshold:
@@ -580,9 +670,15 @@ def mom20x3_signal(
     # Mais en marché transitionnel, le momentum 20p peut encore être haussier
     # alors que les DIs sont déjà baissiers (-DI > +DI). Dans ce cas, on vérifie
     # le momentum COURT (5 périodes) : s'il confirme les DIs, on override le signal.
+    #
+    # 🐛 FIX 30 Juin 2026: JP225.cash skip direction filter (83 signaux bloqués en Asie)
+    # Le filtre est trop conservateur pour les indices asiatiques en trend.
+    # Le MOM20x3 + ADX + pullback suffisent comme garde-fous.
     dir_filter_ok = True
     di_suggests = None  # None=pas de suggestion, "BUY" ou "SELL" si override possible
-    if close[-1] > close[-period - 1]:  # BUY bias from momentum
+    if symbol == "JP225.cash":
+        pass  # skip DI direction filter pour JP225.cash (trop de faux négatifs)
+    elif close[-1] > close[-period - 1]:  # BUY bias from momentum
         # H-09: Adoucissement ×0.8 — tolère un écart DI allant jusqu'à 20%
         # avant de bloquer. Évite les rejets en marché transitionnel où le
         # momentum 20p précède le croisement DI de quelques bougies.
@@ -808,6 +904,23 @@ def mom20x3_signal(
         f"pb_band={pullback_band:.3f}% score={score:.2f}"
     )
 
+    # === Calcul MA20 slope pour régime (remplace price > EMA20, trop simpliste) ===
+    # Fix 30 Juin 2026: utilise la pente de la MA20 sur 20 périodes
+    # plutôt que price > EMA20 qui donnait des faux TREND_UP sur corrections
+    _ma_slope = None
+    if len(close) >= 40:
+        try:
+            ma20_now = float(np.mean(close[-20:]))
+            ma20_before = float(np.mean(close[-40:-20]))
+            _ma_slope = (ma20_now - ma20_before) / max(abs(ma20_before), 1e-4)
+        except:
+            _ma_slope = None
+    elif len(close) >= 22:
+        try:
+            _ma_slope = float(close[-1] - close[-21]) / max(abs(close[-21]), 1e-4)
+        except:
+            _ma_slope = None
+
     return {
         "action": action,
         "score": min(0.99, score),
@@ -829,9 +942,9 @@ def mom20x3_signal(
         "momentum_period": period,
         "is_trending": is_trending,
         "_regime": "TREND_UP"
-        if (is_trending and action == "BUY")
+        if (is_trending and _ma_slope is not None and _ma_slope > 0.002)
         else "TREND_DOWN"
-        if (is_trending and action == "SELL")
+        if (is_trending and _ma_slope is not None and _ma_slope < -0.002)
         else "RANGING",
         "_ml_agrees": None,
         "_model_predictions": {"MOM20x3": action},

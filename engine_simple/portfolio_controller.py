@@ -55,19 +55,21 @@ class PortfolioState:
 # Empêche les pertes simultanées sur symboles corrélés (Pearson > 0.70 H1).
 # ============================================================================
 POSITION_GROUPS: dict[str, list[str]] = {
-    "FOREX_MAJORS": ["EURUSD", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "USDJPY"],
+    "FOREX_MAJORS": ["EURUSD", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "USDJPY", "GBPJPY"],
     "CRYPTO": ["BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"],
     "INDICES": ["US500.cash", "US30.cash", "US100.cash", "JP225.cash"],
     "COMMODITIES": ["XAUUSD", "XAGUSD", "USOIL.cash", "UKOIL.cash", "NATGAS.cash"],
 }
 
-# Limites d'exposition avec corrélation active (calibré 25 Juin 2026)
-MAX_POSITIONS_TOTAL = 20  # 6 symboles × ~4 positions max (corrélation réduit capacité)
-MAX_POSITIONS_PER_SYMBOL = 4  # max 4 positions par symbole (aligné pipeline conf>85%)
-MAX_POSITIONS_PER_DIRECTION = 8  # max 8 positions dans la même direction
-MAX_TRADES_PER_GROUP = 5  # max 5 positions TOTAL dans un groupe corrélé (↑ 3→5 pour + de trades)
+# Limites d'exposition avec corrélation active (actualisé 29 Juin 2026)
+MAX_POSITIONS_TOTAL = 64  # 16 symboles × 4 positions/symbole (↑ 52→64, synchro default.yaml)
+MAX_POSITIONS_PER_SYMBOL = 6  # max 6 par symbole (↑ 4→6, synchro default.yaml)
+MAX_POSITIONS_PER_DIRECTION = 16  # max 16 positions dans la même direction (↑ 8→16)
+MAX_TRADES_PER_GROUP = (
+    16  # max 16 positions TOTAL dans un groupe corrélé (↑ 12→16, 30 Juin: débloquer GBPJPY dans FOREX_MAJORS)
+)
 MAX_TRADES_PER_DIRECTION_IN_GROUP = (
-    5  # max 5 positions dans la même direction dans un groupe (↑ 3→5 pour débloquer USDJPY)
+    8  # max 8 positions dans la même direction dans un groupe (↑ 6→8, 29 Juin: 4 symboles INDICES)
 )
 
 

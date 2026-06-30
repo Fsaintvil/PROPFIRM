@@ -47,8 +47,8 @@ class TradingConfig(BaseModel):
     max_positions: int = Field(default=4, ge=1, le=100)  # Mode MAX: 80
     max_positions_per_symbol: int = Field(default=2, ge=1, le=15)  # Mode MAX: 10
     max_trades_per_day: int = Field(default=80, ge=1, le=500)
-    max_signals_per_cycle: int = Field(default=10, ge=1, le=20)
-    max_orders_per_minute: int = Field(default=6, ge=1, le=20)
+    max_signals_per_cycle: int = Field(default=10, ge=1, le=25)
+    max_orders_per_minute: int = Field(default=6, ge=1, le=25)
     lot_size: float = Field(default=0.05, ge=0.01, le=10)
     min_trade_interval_sec: int = Field(default=300, ge=5, le=3600)
     batch_interval_sec: int = Field(
