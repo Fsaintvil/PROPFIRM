@@ -80,7 +80,7 @@ trading:
 
 # ── Signal ───────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.60               # Restauré 1er Juillet 2026 — 0.30 était trop permissif (WR 45%)
+  min_score: 0.70               # ↑ 0.60→0.70 1er Juillet 2026 — conf minimum FTMO-safe
   daily_profit_limit_pct: 0.008  # 0.8% profit/jour max (FTMO consistency)
 
 # ── Risque FTMO ─────────────────────────────────────────────────────────

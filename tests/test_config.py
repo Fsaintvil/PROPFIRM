@@ -131,7 +131,7 @@ def test_config_simple_compat():
     assert cfg.RISK_PER_TRADE == 0.004  # calibré 25 Juin 2026 (était 0.44%)
     assert cfg.MAX_ORDERS_PER_MINUTE == 25  # 1 trade/min/symbole + marge (16 symboles)
     assert cfg.__version__ == "4.1.0"
-    assert cfg.MIN_SIGNAL_SCORE == 0.60  # global — restauré 1er Juillet 2026
+    assert cfg.MIN_SIGNAL_SCORE == 0.70  # global — ↑ 1er Juillet 2026 (0.60→0.70)
 
 
 def test_config_reload():

@@ -49,17 +49,17 @@ THRESHOLD_MAX = 2.5  # Plafond absolu (clamping sécurité)
 THRESHOLD_MIN = 1.5  # Plancher absolu (clamping sécurité)
 
 # ============================================================================
-# PARAMÈTRES SPÉCIFIQUES PAR ACTIF — 3 Symboles Actifs
+# PARAMÈTRES SPÉCIFIQUES PAR ACTIF — 27 Symboles Actifs (1er Juillet 2026)
 # ============================================================================
-# ⚠️ 28 Juin 2026: Nettoyage des symboles inactifs.
-# Seuls XAUUSD, BTCUSD, US30.cash sont activement tradés.
-# Les symboles désactivés (EURUSD, USDJPY, GBPUSD, etc.) utilisent
-# DEFAULT_SYMBOL_CONFIG et sont référencés dans config/default.yaml.
+# Chaque symbole a sa propre configuration calibrée individuellement :
+#   - momentum_period, SL/TP par régime, seuils ATR trending/ranging
+#   - Filtre ADX slope (scare), pullback bands
+#   - Sessions préférées, protection news
 #
 # Sources:
 #   - Backtest 12+ ans (158,964 trades)
-#   - Données live FTMO (47 trades analysés)
-#   - Caractéristiques de marché (ATR, spread, sessions)
+#   - Données live FTMO (analyse WR/PnL par symbole)
+#   - Caractéristiques de marché (ATR, spread, sessions, volatilité)
 #   - Règles FTMO (DD 10%, daily loss 2%)
 # ============================================================================
 
@@ -449,6 +449,209 @@ SYMBOL_CONFIG = {
             22,
             23,
         ],  # 24/7 (↑ 30 Juin: débloquer Asie)
+        "news_minutes_before": 15,
+        "news_minutes_after": 15,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # EURJPY H1 — Euro / Yen Japonais (AJOUTÉ 1er Juillet 2026)
+    # Forex cross, volatilité moyenne, sessions Asie + Londres
+    # Backtest 12+ ans: WR 67.5%, +$394,139 PnL
+    # ═══════════════════════════════════════════════════════════════════════
+    "EURJPY": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.0,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 1.5,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": list(range(24)),
+        "news_minutes_before": 5,
+        "news_minutes_after": 5,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # EURGBP H1 — Euro / Livre Sterling (AJOUTÉ 1er Juillet 2026)
+    # Forex cross, FAIBLE volatilité, comportement de range, sessions Londres
+    # Backtest 12+ ans: WR 67.0%, range trading dominant
+    # ═══════════════════════════════════════════════════════════════════════
+    "EURGBP": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.0,
+        "tp_atr_trending": 4.0,  # TP plus court (basse volatilité)
+        "sl_atr_ranging": 1.5,
+        "tp_atr_ranging": 3.0,  # TP court en range (RR 2.0)
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -4.0,  # plus permissif (basse volatilité)
+        "adx_slope_threshold_strong": -7.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres seulement
+        "news_minutes_before": 5,
+        "news_minutes_after": 5,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # AUDJPY H1 — Dollar Australien / Yen Japonais (AJOUTÉ 1er Juillet 2026)
+    # Forex cross, carry trade, sessions Asie
+    # Backtest 12+ ans: WR 67.0%
+    # ═══════════════════════════════════════════════════════════════════════
+    "AUDJPY": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.0,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 1.5,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],  # Asie + Londres
+        "news_minutes_before": 5,
+        "news_minutes_after": 5,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # SOLUSD H1 — Solana (AJOUTÉ 1er Juillet 2026)
+    # Crypto haute performance, forte volatilité, 24/7
+    # ═══════════════════════════════════════════════════════════════════════
+    "SOLUSD": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 2.0,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.0,  # crypto: seuils abaissés
+        "threshold_ranging": 1.5,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.8,  # bandes larges (volatilité)
+        "pullback_band_ranging": 0.5,
+        "preferred_hours": list(range(24)),  # 24/7
+        "news_minutes_before": 0,
+        "news_minutes_after": 0,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # LNKUSD H1 — Chainlink (AJOUTÉ 1er Juillet 2026)
+    # Crypto oracle, volatilité élevée, 24/7
+    # ═══════════════════════════════════════════════════════════════════════
+    "LNKUSD": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 2.0,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.0,
+        "threshold_ranging": 1.5,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.8,
+        "pullback_band_ranging": 0.5,
+        "preferred_hours": list(range(24)),
+        "news_minutes_before": 0,
+        "news_minutes_after": 0,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # BNBUSD H1 — Binance Coin (AJOUTÉ 1er Juillet 2026)
+    # Crypto exchange token, volatilité modérée, 24/7
+    # ═══════════════════════════════════════════════════════════════════════
+    "BNBUSD": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 2.0,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.0,
+        "threshold_ranging": 1.5,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.8,
+        "pullback_band_ranging": 0.5,
+        "preferred_hours": list(range(24)),
+        "news_minutes_before": 0,
+        "news_minutes_after": 0,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # GER40.cash H1 — DAX 40 Allemand (AJOUTÉ 1er Juillet 2026)
+    # Indice européen, blue chips, sessions Londres
+    # ═══════════════════════════════════════════════════════════════════════
+    "GER40.cash": {
+        "momentum_period": 20,
+        "sl_atr_trending": 1.5,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 1.2,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.3,
+        "pullback_band_ranging": 0.2,
+        "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres
+        "news_minutes_before": 15,
+        "news_minutes_after": 15,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # UK100.cash H1 — FTSE 100 Britannique (AJOUTÉ 1er Juillet 2026)
+    # Indice défensif, valeurs stables, sessions Londres
+    # ═══════════════════════════════════════════════════════════════════════
+    "UK100.cash": {
+        "momentum_period": 20,
+        "sl_atr_trending": 1.5,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 1.2,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.3,
+        "pullback_band_ranging": 0.2,
+        "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+        "news_minutes_before": 15,
+        "news_minutes_after": 15,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # UKOIL.cash H1 — Brent Oil (AJOUTÉ 1er Juillet 2026)
+    # Commodité pétrolière, news-driven, sessions Londres + NY
+    # ═══════════════════════════════════════════════════════════════════════
+    "UKOIL.cash": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.0,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 1.5,
+        "tp_atr_ranging": 4.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+        "news_minutes_before": 15,
+        "news_minutes_after": 15,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # NATGAS.cash H1 — Natural Gas (AJOUTÉ 1er Juillet 2026)
+    # Commodité, volatilité EXTRÊME, news-driven, sessions NY
+    # ═══════════════════════════════════════════════════════════════════════
+    "NATGAS.cash": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.0,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 1.5,
+        "tp_atr_ranging": 3.5,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],  # NY session
         "news_minutes_before": 15,
         "news_minutes_after": 15,
     },

@@ -99,7 +99,7 @@ class TradingConfig(BaseModel):
 
 
 class SignalConfig(BaseModel):
-    min_score: float = Field(default=0.60, ge=0.0, le=1.0)  # Restauré 1er Juillet 2026 (0.30→0.60)
+    min_score: float = Field(default=0.70, ge=0.0, le=1.0)  # ↑ 1er Juillet 2026 (0.60→0.70)
     daily_profit_limit_pct: float = Field(default=0.008, ge=0.0, le=0.05)
 
 
