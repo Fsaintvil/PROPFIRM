@@ -1,5 +1,5 @@
 # ============================================================================
-# CONFIGURATION PRODUCTION — FTMO 200K Challenge (24 Juin 2026)
+# CONFIGURATION PAR DÉFAUT — FTMO 200K Challenge (1er Juillet 2026)
 #
 # ⚠️ ATTENTION — DUAL SOURCE OF TRUTH ⚠️
 # Ce fichier est la DOCUMENTATION des paramètres de signal.
@@ -30,42 +30,43 @@ robot:
 # ── Trading ──────────────────────────────────────────────────────────────
 trading:
   symbols:
-    # ── FOREX MAJORS ─────────────────────────────────────────────────────
+    # ── FOREX MAJORS ────────────────────────────────────────────────────
     - EURUSD
     - GBPUSD
-    - USDJPY
+    - USDCHF
     - USDCAD
     - AUDUSD
     - NZDUSD
-    - USDCHF
-    # ── FOREX CROSSES ────────────────────────────────────────────────────
+    - USDJPY
+    # ── FOREX CROSSES ───────────────────────────────────────────────────
     - EURJPY
     - GBPJPY
     - EURGBP
     - AUDJPY
-    # ── COMMODITIES ──────────────────────────────────────────────────────
-    - XAUUSD
-    - XAGUSD
-    - USOIL.cash
-    - UKOIL.cash
-    - NATGAS.cash
-    # ── CRYPTO ───────────────────────────────────────────────────────────
+    # ── CRYPTO ──────────────────────────────────────────────────────────
     - BTCUSD
     - ETHUSD
     - SOLUSD
     - LNKUSD
     - BNBUSD
-    # ── INDICES ──────────────────────────────────────────────────────────
+    # ── INDICES ─────────────────────────────────────────────────────────
     - US500.cash
     - US30.cash
     - US100.cash
     - JP225.cash
+    # ── EUROPE INDICES ──────────────────────────────────────────────────
     - GER40.cash
     - UK100.cash
+    # ── COMMODITIES ─────────────────────────────────────────────────────
+    - XAUUSD
+    - XAGUSD
+    - USOIL.cash
+    - UKOIL.cash
+    - NATGAS.cash
 
-  # Limites globales — 27 symboles (1er Juillet 2026)
-  max_positions: 80             # 27 symboles × ~3 positions/symbole (plafond schema 100)
-  max_positions_per_symbol: 4   # 4 positions max par symbole
+  # Limites globales — 27 symboles (synchronisé 1er Juillet 2026)
+  max_positions: 40             # filet de sécurité (portfolio_controller = 40)
+  max_positions_per_symbol: 6   # max 6/symbole (pipeline: 3 BUY + 3 SELL en HIGH CONF)
   max_trades_per_day: 200       # 27 symboles × ~7 trades/jour
   max_signals_per_cycle: 25     # marge pour signaux simultanés (plafond schema 25)
   max_orders_per_minute: 25     # ~1 trade/min/symbole (plafond schema 25)
@@ -79,7 +80,7 @@ trading:
 
 # ── Signal ───────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.30               # ↓ 0.50→0.30 1er Juillet 2026 — activation 27 symboles, le WR progressif gère la qualité
+  min_score: 0.60               # Restauré 1er Juillet 2026 — 0.30 était trop permissif (WR 45%)
   daily_profit_limit_pct: 0.008  # 0.8% profit/jour max (FTMO consistency)
 
 # ── Risque FTMO ─────────────────────────────────────────────────────────
@@ -985,16 +986,30 @@ auto_stop:
 # ── Corrélation — Groupes de symboles corrélés ────────────────────────────
 # RÈGLE: max 3 trades TOTAL par groupe, max 2 dans la même DIRECTION.
 # Empêche les pertes simultanées sur symboles à corrélation élevée.
-# Justification: 8 symboles actifs dont 5 FOREX_MAJORS corrélés USD.
-#   Événement macro (NFP, FOMC, CPI) → toutes les paires USD impactées.
-#   Corrélation Pearson H1 12+ ans: EURUSD/GBPUSD=0.70, EURUSD/USDCHF=0.65, etc.
+# 27 symboles répartis en 6 groupes (1er Juillet 2026).
+# Corrélation Pearson H1 12+ ans: EURUSD/GBPUSD=0.70, EURUSD/USDCHF=0.65, etc.
 # Réactivé 25 Juin 2026 — Risk & Compliance Officer
 # ============================================================================
 correlation:
-  enabled: false                  # DÉSACTIVÉ 1er Juillet 2026 — 27 symboles, trading libre
+  enabled: true                   # RÉACTIVÉ 1er Juillet 2026 — protection pertes corrélées
   max_trades_per_group: 3
   max_trades_per_direction_in_group: 2
-  groups: {}
+  groups:
+    FOREX_MAJORS:
+      symbols: ["EURUSD", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "USDJPY"]
+      description: "7 paires forex majeures corrélées USD"
+    FOREX_CROSSES:
+      symbols: ["EURJPY", "GBPJPY", "EURGBP", "AUDJPY"]
+      description: "4 paires forex crosses"
+    CRYPTO:
+      symbols: ["BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"]
+      description: "5 cryptos (volatilité corrélée)"
+    INDICES:
+      symbols: ["US500.cash", "US30.cash", "US100.cash", "JP225.cash", "GER40.cash", "UK100.cash"]
+      description: "6 indices actions"
+    COMMODITIES:
+      symbols: ["XAUUSD", "XAGUSD", "USOIL.cash", "UKOIL.cash", "NATGAS.cash"]
+      description: "5 matières premières"
 
 # ── ML Pipeline ──────────────────────────────────────────────────────────
 ml:

@@ -185,9 +185,28 @@ class TestPerSymbolParameters:
             "USDJPY": 100.0,  # Forex JPY (1 pip = 0.01 yen)
             "AUDUSD": 10000.0,  # Forex non-JPY
             "USDCAD": 10000.0,  # Forex non-JPY
+            "NZDUSD": 10000.0,  # Forex non-JPY
+            "USDCHF": 10000.0,  # Forex non-JPY
+            "EURJPY": 100.0,  # Forex JPY
+            "GBPJPY": 100.0,  # Forex JPY
+            "EURGBP": 10000.0,  # Forex non-JPY
+            "AUDJPY": 100.0,  # Forex JPY
             "XAUUSD": 1.0,  # Gold (prix en unités)
+            "XAGUSD": 1.0,  # Silver (prix en unités)
             "BTCUSD": 1.0,  # Crypto (prix en unités)
+            "ETHUSD": 1.0,  # Crypto
+            "SOLUSD": 1.0,  # Crypto
+            "LNKUSD": 1.0,  # Crypto
+            "BNBUSD": 1.0,  # Crypto
             "US500.cash": 1.0,  # Index (prix en unités)
+            "US30.cash": 1.0,  # Index
+            "US100.cash": 1.0,  # Index
+            "JP225.cash": 1.0,  # Index
+            "GER40.cash": 1.0,  # Index
+            "UK100.cash": 1.0,  # Index
+            "USOIL.cash": 1.0,  # Commodity
+            "UKOIL.cash": 1.0,  # Commodity
+            "NATGAS.cash": 1.0,  # Commodity
         }
         for sym, p in PROFILES.items():
             exp = expected.get(sym)

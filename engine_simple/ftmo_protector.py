@@ -274,7 +274,7 @@ class FTMOProtector:
         if atr_val and atr_val > 0:
             if spread / atr_val > 0.10:
                 atr_ok = False
-        if not spread_pts_ok and not atr_ok:
+        if not spread_pts_ok or not atr_ok:
             return False, (
                 f"Spread too high: {spread:.5f} (limit={max_sp * info.point:.5f}, ATR ratio={spread / atr_val:.1%})"
                 if atr_val
@@ -298,7 +298,7 @@ class FTMOProtector:
 
     def _check_daily_limits(self):
         """Max trades/jour (fermés + ouverts)."""
-        max_trades = self.config.get("MAX_TRADES_PER_DAY", 5)
+        max_trades = self.config.get("MAX_TRADES_PER_DAY", 200)
         if self.daily_stats["trades"] >= max_trades:
             return False, f"Daily trade limit (closed: {self.daily_stats['trades']}/{max_trades})"
         if self._opened_today >= max_trades:
@@ -390,6 +390,11 @@ class FTMOProtector:
                                 )
                                 new_sl = min_sl
                             if new_sl > 0:
+                                # 🔒 GARDE: SL BUY ne doit JAMAIS être au-dessus de l'entrée
+                                min_sl_dist = current_atr * 0.3 if current_atr > 0 else 0.0005
+                                if new_sl > entry - min_sl_dist:
+                                    new_sl = entry - min_sl_dist
+                                    logger.debug(f"  [SL OB] {symbol}: SL BUY reculé à {new_sl:.5f} (garde entrée)")
                                 logger.debug(
                                     f"  [SL OB] {symbol}: SL ajusté {sl:.5f} → {new_sl:.5f} (sous OB haussier)"
                                 )
@@ -399,6 +404,11 @@ class FTMOProtector:
                     elif action == "SELL" and ob_type == "bearish" and ob_high > 0:
                         if sl > ob_low and sl < ob_high * 1.01:
                             new_sl = ob_high + (ob_high - ob_low) * 0.1
+                            # 🔒 GARDE: SL SELL ne doit JAMAIS être en dessous de l'entrée
+                            min_sl_dist = current_atr * 0.3 if current_atr > 0 else 0.0005
+                            if new_sl < entry + min_sl_dist:
+                                new_sl = entry + min_sl_dist
+                                logger.debug(f"  [SL OB] {symbol}: SL SELL relevé à {new_sl:.5f} (garde entrée)")
                             # 🔒 Cap: ne pas dépasser max_sl_atr×ATR
                             if current_atr > 0 and (new_sl - entry) > current_atr * max_sl_atr:
                                 max_sl = entry + current_atr * max_sl_atr
@@ -437,7 +447,7 @@ class FTMOProtector:
         # Daily profit limit → risk reduction mode
         daily_equity_change = current_equity - self.daily_start_equity
         daily_pnl_pct = daily_equity_change / max(self.initial_balance, 1)
-        profit_limit = self.config.get("DAILY_PROFIT_LIMIT_PCT", 0.003)
+        profit_limit = self.config.get("DAILY_PROFIT_LIMIT_PCT", 0.008)
         if daily_pnl_pct >= profit_limit:
             self._daily_profit_reduced = True
             logger.info(
@@ -482,7 +492,7 @@ class FTMOProtector:
             return False, f"Zone 3: daily DD {daily_loss:.1%} >= {zone3:.1%}, stop"
 
         # Auto-pause après N pertes consécutives
-        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 6)
+        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 5)
         if self.consecutive_losses >= auto_pause:
             if self.global_cooldown_until is None:
                 auto_pause_cooldown = self.config.get("COOLDOWN_MINUTES", 15)
@@ -500,9 +510,13 @@ class FTMOProtector:
             if now < self.global_cooldown_until:
                 remaining = int((self.global_cooldown_until - now).total_seconds() // 60)
                 return False, f"Global cooldown: {remaining}min (after {self.consecutive_losses} consecutive losses)"
-            # Cooldown expiré → reset comme _check_global_cooldown()
-            logger.info(f"Global cooldown expired — reseting consecutive_losses from {self.consecutive_losses} to 0")
-            self.consecutive_losses = 0
+            # Cooldown expiré → réduction progressive (évite cycle infini
+            # quand des pertes surviennent PENDANT le cooldown, ex: positions legacy)
+            new_count = max(0, self.consecutive_losses - auto_pause)
+            logger.info(
+                f"Global cooldown expired — reducing consecutive_losses from {self.consecutive_losses} to {new_count}"
+            )
+            self.consecutive_losses = new_count
             self.global_cooldown_until = None
 
         # Per-symbol cooldown
@@ -580,6 +594,8 @@ class FTMOProtector:
             pref_hours = self.symbol_limits.get(symbol, {}).get("preferred_hours")
             if pref_hours is not None and len(pref_hours) > 0 and utc_hour not in pref_hours:
                 return False, f"{symbol}: not in preferred hours {pref_hours}h UTC"
+            elif pref_hours is not None and len(pref_hours) == 0:
+                return False, f"{symbol}: preferred_hours empty — trading bloqué"
 
         # Per-symbol weekend block (XAUUSD = 24/5, BTC/ETH = 24/7)
         weekend_ok = self.symbol_limits.get(symbol, {}).get("weekend_trading", True)
@@ -653,14 +669,14 @@ class FTMOProtector:
         if account:
             dd = (self.peak_equity - account.equity) / max(self.peak_equity, 1)
             if dd > 0.07:
-                mult *= 0.80  # DD > 7% → -20%
+                mult *= 0.50  # DD > 7% → -50% (fix P4: était 0.80, trop permissif)
             elif dd > 0.05:
                 mult *= 0.75  # DD > 5% → -25%
             elif dd > 0.03:
                 mult *= 0.90  # DD > 3% → -10%
 
         # 3. Pertes consécutives (utilise AUTO_PAUSE_LOSSES de la config)
-        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 6)
+        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 5)
         if self.consecutive_losses >= auto_pause:
             mult *= 0.50  # Pause imminente → risque réduit de moitié
         elif self.consecutive_losses >= max(3, auto_pause - 2):
@@ -899,7 +915,8 @@ class FTMOProtector:
         if sl_profit is not None and sl_profit < 0:
             risk_per_01 = abs(sl_profit)
             if risk_per_01 < 1.0:
-                lot = lot_size  # fallback silencieux (marché fermé ou SL trop serré)
+                logger.warning(f"  [RISK] {symbol}: risk_per_01=${risk_per_01:.2f} < $1.0 → fallback lot={lot_size}")
+                lot = lot_size  # fallback (marché fermé ou SL trop serré)
             else:
                 lot = (risk_amount / risk_per_01) * 0.1
         else:
@@ -917,12 +934,12 @@ class FTMOProtector:
             logger.warning(f"[LOT SAFETY] {symbol}: lot={lot:.3f} > 3×max_lot={max_lot} → force lot={lot_size}")
             lot = lot_size
 
-        # Clamp between min_lot and max_lot from symbol config
-        lot = max(min_lot, min(lot, max_lot))
-
+        # Log warning avant clamp si le lot dépasse max_lot
         if lot > max_lot:
             logger.warning(f"  [LOT CLAMP] {symbol}: lot {lot:.3f} > max_lot {max_lot}, clamp force")
-            lot = max_lot
+
+        # Clamp between min_lot and max_lot from symbol config
+        lot = max(min_lot, min(lot, max_lot))
         return round(lot, 2)
 
     REGIME_FROM_COMMENT = {

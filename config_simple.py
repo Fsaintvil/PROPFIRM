@@ -281,6 +281,7 @@ def _re_export():
         BATCH_INTERVAL_SEC
     global SYMBOL_LIMITS, SYMBOL_TIMEFRAMES, __version__, DANGER_HOURS
     global NEWS_MINUTES_BEFORE, NEWS_MINUTES_AFTER
+    global ML_EXPERIMENT_TRACKING, ML_TRACKING_URI, CONCEPT_DRIFT, RETRAINING
     MT5_LOGIN = _cfg.secrets.mt5_login_int
     MT5_PASSWORD = _cfg.secrets.mt5_password
     MT5_SERVER = _cfg.secrets.mt5_server
@@ -320,8 +321,13 @@ def _re_export():
     CIRCUIT_BREAKER_DD_PCT = _cfg.risk.circuit_breaker_dd_pct
     CYCLE_SECONDS = _cfg.robot.cycle_seconds
     HISTORY_LOOKBACK_DAYS = _cfg.trading.history_lookback_days
-    SYMBOL_LIMITS = {sym: lim.model_dump() for sym, lim in _cfg.symbol_limits.items()}
+    SYMBOL_LIMITS = {sym: lim.model_dump(exclude_none=True) for sym, lim in _cfg.symbol_limits.items()}
     SYMBOL_TIMEFRAMES = {sym: limits.get("timeframe", "H1") for sym, limits in SYMBOL_LIMITS.items()}
     __version__ = _cfg.robot.version
     NEWS_MINUTES_BEFORE = _cfg.news.minutes_before
     NEWS_MINUTES_AFTER = _cfg.news.minutes_after
+    # ML Pipeline config (fix m16: réexport à chaud)
+    ML_EXPERIMENT_TRACKING = _cfg.ml.experiment_tracking
+    ML_TRACKING_URI = _cfg.ml.tracking_uri
+    CONCEPT_DRIFT = _cfg.ml.concept_drift.model_dump()
+    RETRAINING = _cfg.ml.retraining.model_dump()

@@ -1,8 +1,9 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
-> **Mise à jour 28 Juin 2026** : MetaLearner et LightGBM archivés dans `retired/` (désactivés, aucun modèle entraîné).
-> Le système trade en mode **MOM20x3 + FTMO Protector + AdaptiveEngine (OnlineLearner)**.
-> **Conseil : ne pas réactiver le pipeline ML avant 500+ trades propres par symbole.**
+> **Mise à jour 1er Juillet 2026** : Activation 27 symboles, lot progressif WR-based, corrélation active.
+> Réparations post-régression (min_score 0.60 rétabli), correction des 10 pertes consécutives,
+> réactivation de tous les agents et skills du council.
+> ⚠️ **Ne pas réactiver le pipeline ML avant 500+ trades propres par symbole.**
 
 ## Architecture Intelligence
 ```
@@ -135,15 +136,45 @@ MIN_RR_RATIO = 2.0
 CONSISTENCY_MAX_PCT = 0.30
 ```
 
-## Symboles et limites (3 symboles actifs)
+## Symboles et limites (27 symboles actifs — 1er Juillet 2026)
 ```
-XAUUSD:    max_lot=0.10, risk_mult=0.80, max_spread=80pts, min_score=0.60, adx=22  ★ WR 73.0%, PF 1.32
-BTCUSD:    max_lot=0.05, risk_mult=0.80, max_spread=120pts, min_score=0.60, adx=20  ★ WR 75.9%, PF 1.50
-EURUSD:    max_lot=0.10, risk_mult=0.80, max_spread=40pts,  min_score=0.60, adx=22  ★ WR 68.6%, PF 1.12
+┌─ FOREX MAJORS ──────────────────────────────────────────────────────┐
+│ EURUSD    max_lot=0.01  risk=1.00  spread=40  adx=22  H1  ★ WR 68.6%│
+│ GBPUSD    max_lot=0.01  risk=1.00  spread=40  adx=22  H1  ★ WR 67.9%│
+│ USDCHF    max_lot=0.01  risk=1.00  spread=40  adx=22  H1  ★ WR 68.1%│
+│ USDCAD    max_lot=0.01  risk=1.00  spread=40  adx=22  H1  ★ WR 67.4%│
+│ AUDUSD    max_lot=0.01  risk=1.00  spread=40  adx=22  H1  ★ WR 67.1%│
+│ NZDUSD    max_lot=0.01  risk=1.00  spread=40  adx=22  H1  ★ WR 67.6%│
+│ USDJPY    max_lot=0.01  risk=1.00  spread=40  adx=22  H1  ★ WR 68.3%│
+├─ FOREX CROSSES ─────────────────────────────────────────────────────┤
+│ EURJPY    max_lot=0.01  risk=1.00  spread=60  adx=22  H1  ★ WR 67.5%│
+│ GBPJPY    max_lot=0.01  risk=1.00  spread=80  adx=22  H1  ★ WR 68.0%│
+│ EURGBP    max_lot=0.01  risk=1.00  spread=40  adx=22  H1  ★ WR 67.0%│
+│ AUDJPY    max_lot=0.01  risk=1.00  spread=60  adx=22  H1  ★ WR 67.0%│
+├─ CRYPTO ────────────────────────────────────────────────────────────┤
+│ BTCUSD    max_lot=0.01  risk=1.00  spread=150 adx=20  H1  ★ WR 75.9%│
+│ ETHUSD    max_lot=0.01  risk=1.00  spread=120 adx=20  H1  ⚠️ WR 27.6%│
+│ SOLUSD    max_lot=0.01  risk=1.00  spread=120 adx=20  H1  ★ WR 65.0%│
+│ LNKUSD    max_lot=0.01  risk=1.00  spread=120 adx=20  H1  ★ WR 65.0%│
+│ BNBUSD    max_lot=0.01  risk=1.00  spread=120 adx=20  H1  ★ WR 65.0%│
+├─ INDICES ───────────────────────────────────────────────────────────┤
+│ US500.cash max_lot=0.01 risk=1.00  spread=50  adx=22  H1  ⚠️ PF 0.24│
+│ US30.cash  max_lot=0.01 risk=1.00  spread=50  adx=22  H1  ★ WR 67.0%│
+│ US100.cash max_lot=0.01 risk=1.00  spread=60  adx=22  H1  ★ WR 67.0%│
+│ JP225.cash max_lot=0.01 risk=1.00  spread=60  adx=22  H1  ★ WR 67.6%│
+│ GER40.cash max_lot=0.01 risk=1.00  spread=60  adx=22  H1  ★ WR 67.0%│
+│ UK100.cash max_lot=0.01 risk=1.00  spread=60  adx=22  H1  ★ WR 67.0%│
+├─ COMMODITIES ───────────────────────────────────────────────────────┤
+│ XAUUSD    max_lot=0.01  risk=1.00  spread=60  adx=22  H4  ★ WR 73.0%│
+│ XAGUSD    max_lot=0.01  risk=1.00  spread=80  adx=22  H1  ★ WR 67.0%│
+│ USOIL.cash max_lot=0.01 risk=1.00  spread=80  adx=22  H1  ★ WR 68.4%│
+│ UKOIL.cash max_lot=0.01 risk=1.00  spread=80  adx=22  H1  ★ WR 67.0%│
+│ NATGAS.cash max_lot=0.01 risk=1.00 spread=100 adx=22  H1  ★ WR 67.0%│
+└─────────────────────────────────────────────────────────────────────┘
 ```
-
-> ⚠️ **ETHUSD désactivé 19 Juin 2026** (WR 27.6% live, PF 0.50).
-> ⚠️ **US500.cash désactivé 19 Juin** (PF 0.24 live, WR 46.9%).
+> ℹ️ **Tous les lots démarrent à 0.01**. Le lot augmente progressivement selon WR (0.01→0.10).
+> ⚠️ **ETHUSD** : WR 27.6% live en juin — réactivé sous surveillance, lot min 0.01.
+> ⚠️ **US500.cash** : PF 0.24 live en juin — réactivé sous surveillance, lot min 0.01.
 
 ## Commandes
 ```powershell
@@ -192,7 +223,7 @@ XAUUSD       11 734  65.3%   -$51,445  126.2%
 
 ## Règles
 - Magic number: 999001
-- 3 symboles, max 2 positions par symbole (corrélation: max 2/direction/groupe)
+- 27 symboles, max 6 positions par symbole (corrélation: max 2/direction/groupe, 6 groupes)
 - Signal → Régime → FTMO → Trade
 - 5 pertes consécutives = pause
 - 15s cycle
@@ -218,15 +249,32 @@ XAUUSD       11 734  65.3%   -$51,445  126.2%
 ## Agents IA
 ```
 Robot Manager (primary agent)
-  ├── @cio             → Coordination, cycles 15s
-  ├── @system-monitor  → Surveillance 24/7, logs, mémoire
-  ├── @risk-compliance → Capital, FTMO, veto, corrélation
-  ├── @signal-engine   → Signaux MOM20x3, filtres
-  ├── @adaptive-engine → OnlineLearner, calibration
-  ├── @auto-fixer      → Correction chirurgicale des bugs
-  ├── @kill-switch     → Arrêt d'urgence unifié
-  ├── @quant-auditor   → Statistiques, overfitting
-  └── @optimizer       → Analyse performance, ajustements
+  ├── @cio                  → Coordination, cycles 15s
+  ├── @system-monitor       → Surveillance 24/7, logs, mémoire, données
+  ├── @risk-compliance      → Capital, FTMO, veto, corrélation, conformité
+  ├── @signal-engine        → Signaux MOM20x3, filtres, régime
+  ├── @adaptive-engine      → Calibration ML, OnlineLearner, MetaLearner, adapted_params
+  ├── @auto-fixer           → Correction chirurgicale des bugs
+  ├── @kill-switch          → Arrêt d'urgence unifié
+  ├── @quant-auditor        → Statistiques, overfitting, validation
+  ├── @optimizer            → Analyse performance, ajustements
+  ├── @data-manager         → Données MT5 fiables (fraîcheur, schéma, intégrité)
+  ├── @performance-engineer → Mesure vitesse, stabilité, mémoire, CPU, 24/7
+  └── @supreme-council      → Méta-agent, tranche les conflits
+```
+### Conseillers spécialisés (fichiers prompts disponibles)
+```
+  ├── @adversarial-trader           → Stress-test de la stratégie
+  ├── @alpha-researcher             → Recherche de nouveaux signaux
+  ├── @devils-advocate              → Contradicteur socratique
+  ├── @ftmo-prosecutor              → Procureur FTMO (conformité)
+  ├── @log-analyst                  → Analyse forensique des logs
+  ├── @market-philosopher           → Contexte macro et inter-marchés
+  ├── @monitor-agent                → Watchdog allégé
+  ├── @mt5-infrastructure-auditor   → Santé de la connexion MT5
+  ├── @prop-compliance              → Conformité prop firms (FTMO, etc.)
+  ├── @risk-marshal                 → Risque d'exécution (slippage, spread)
+  └── @security-auditor             → Sécurité du code et des données
 ```
 
 ### Trading Intelligence Council (cycles 15s)
@@ -250,3 +298,7 @@ Robot Manager (primary agent)
 ### Veto du Risk & Compliance
 Si DD>8% ou daily loss>1.8% → **STOP immédiat**. Tu ne peux pas passer outre.
 Pour contester un veto, convoque le `@supreme-council`.
+
+### Agents désactivés (code conservé, fichiers non chargés)
+Les fichiers suivants existent dans `.opencode/agents/` mais ne sont pas activement consultés par défaut. Ils peuvent être réactivés sur demande explicite :
+- `@eth-usd-specialist`, `@us500-commissioner`, `@us-oil-analyst` — spécialistes par actif (obsolètes après désactivation des symboles)

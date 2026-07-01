@@ -43,16 +43,46 @@ class RobotConfig(BaseModel):
 
 
 class TradingConfig(BaseModel):
-    symbols: list[str] = Field(default_factory=lambda: ["XAUUSD", "BTCUSD", "US500.cash"])
-    max_positions: int = Field(default=4, ge=1, le=100)  # Mode MAX: 80
-    max_positions_per_symbol: int = Field(default=2, ge=1, le=15)  # Mode MAX: 10
-    max_trades_per_day: int = Field(default=80, ge=1, le=500)
-    max_signals_per_cycle: int = Field(default=10, ge=1, le=25)
-    max_orders_per_minute: int = Field(default=6, ge=1, le=25)
-    lot_size: float = Field(default=0.05, ge=0.01, le=10)
-    min_trade_interval_sec: int = Field(default=300, ge=5, le=3600)
+    symbols: list[str] = Field(
+        default_factory=lambda: [
+            "EURUSD",
+            "GBPUSD",
+            "USDJPY",
+            "USDCAD",
+            "AUDUSD",
+            "NZDUSD",
+            "USDCHF",
+            "EURJPY",
+            "GBPJPY",
+            "EURGBP",
+            "AUDJPY",
+            "XAUUSD",
+            "XAGUSD",
+            "USOIL.cash",
+            "UKOIL.cash",
+            "NATGAS.cash",
+            "BTCUSD",
+            "ETHUSD",
+            "SOLUSD",
+            "LNKUSD",
+            "BNBUSD",
+            "US500.cash",
+            "US30.cash",
+            "US100.cash",
+            "JP225.cash",
+            "GER40.cash",
+            "UK100.cash",
+        ]
+    )
+    max_positions: int = Field(default=40, ge=1, le=100)  # 27 symboles
+    max_positions_per_symbol: int = Field(default=6, ge=1, le=15)  # 3 BUY + 3 SELL en HIGH CONF
+    max_trades_per_day: int = Field(default=200, ge=1, le=500)
+    max_signals_per_cycle: int = Field(default=25, ge=1, le=25)
+    max_orders_per_minute: int = Field(default=25, ge=1, le=25)
+    lot_size: float = Field(default=0.01, ge=0.01, le=10)
+    min_trade_interval_sec: int = Field(default=120, ge=5, le=3600)
     batch_interval_sec: int = Field(
-        default=1, ge=1, le=3600, description="Intervalle entre batches de signaux (secondes)"
+        default=5, ge=1, le=3600, description="Intervalle entre batches de signaux (secondes)"
     )
     trading_start_hour: int = Field(default=0, ge=0, le=23)
     trading_end_hour: int = Field(default=24, ge=1, le=24)
@@ -69,7 +99,7 @@ class TradingConfig(BaseModel):
 
 
 class SignalConfig(BaseModel):
-    min_score: float = Field(default=0.60, ge=0.0, le=1.0)
+    min_score: float = Field(default=0.60, ge=0.0, le=1.0)  # Restauré 1er Juillet 2026 (0.30→0.60)
     daily_profit_limit_pct: float = Field(default=0.008, ge=0.0, le=0.05)
 
 
@@ -82,14 +112,14 @@ class RiskConfig(BaseModel):
     max_dd_pct: float = Field(default=0.10, ge=0.02, le=0.15)
     profit_target_pct: float = Field(default=0.10, ge=0.02, le=0.20)
     consistency_max_pct: float = Field(default=0.30, ge=0.1, le=0.5)
-    min_rr_ratio: float = Field(default=2.0, ge=1.0, le=10.0)
+    min_rr_ratio: float = Field(default=1.5, ge=1.0, le=10.0)  # ↓ 2.0→1.5 (26 Juin)
     atr_multiplier: float = Field(default=1.5, ge=0.5, le=5.0)
-    cooldown_minutes: int = Field(default=5, ge=1, le=240)
+    cooldown_minutes: int = Field(default=15, ge=1, le=240)  # ↑ 5→15 (FTMO-safe)
     min_trading_days: int = Field(default=10, ge=1, le=60)
     max_trading_days: int = Field(default=0, ge=0)
     max_risk_amount: float = Field(default=800.0, ge=0.0)
     max_spread_points: int = Field(default=120, ge=10, le=300)
-    auto_pause_losses: int = Field(default=10, ge=1, le=20)
+    auto_pause_losses: int = Field(default=5, ge=1, le=20)  # ↓ 10→5 (FTMO-safe)
     recalibration_frequency: int = Field(default=50, ge=10, le=500)
     max_correlated_exposure: float = Field(
         default=1.5,
@@ -206,7 +236,7 @@ class CorrelationConfig(BaseModel):
     Cette section du YAML est documentaire et validée par Pydantic.
     """
 
-    enabled: bool = True
+    enabled: bool = True  # fix M13: réactivé 1er Juillet 2026
     max_trades_per_group: int = Field(default=3, ge=1, le=10)
     max_trades_per_direction_in_group: int = Field(default=2, ge=1, le=5)
     groups: dict[str, CorrelationGroup] = Field(default_factory=dict)

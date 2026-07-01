@@ -199,16 +199,16 @@ class SignalPipeline:
             # 🔥 HIGH CONFIDENCE : positions supplémentaires autorisées
             # mais corrélation et limites totales protégées par portfolio_controller
             signal["high_confidence"] = True
-            max_per_symbol = 6  # max 6 positions/symbole (même en haute confiance)
+            max_per_symbol = 3  # max 3 positions/symbole en haute confiance
             signal["max_per_symbol"] = max_per_symbol
             logger.debug(f"  [HIGH CONF] {symbol} {sig_action} conf={sig_conf:.2f} — cap={max_per_symbol}/symbole")
         else:
             if sig_conf > 0.85:
-                max_per_symbol = 6
+                max_per_symbol = 3
             elif sig_conf > 0.70:
-                max_per_symbol = 4
-            else:
                 max_per_symbol = 2
+            else:
+                max_per_symbol = 1
             hard_limit = config_limits.get(symbol, 4)
             max_per_symbol = min(max_per_symbol, hard_limit)
             signal["max_per_symbol"] = max_per_symbol

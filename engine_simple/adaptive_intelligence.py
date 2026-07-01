@@ -287,7 +287,6 @@ class OnlineLearner:
             "RAN",
             "BUY",
             "SELL",
-            "IMPORT",
         }
         h_valid = [t for t in h if t.get("regime", "") in valid_regimes]
 
@@ -379,8 +378,6 @@ class AdaptiveEngine:
         try:
             # SÉCURITÉ: joblib.load = pickle RCE (C-01). Migré vers JSON sécurisé.
             # Vérification que le fichier n'est pas modifié avant chargement.
-            if not os.path.exists(path):
-                return
             stat = os.stat(path)
             if stat.st_size > 10 * 1024 * 1024:  # >10MB = suspect
                 logger.error(f"  [CAL] Fichier calibration trop volumineux ({stat.st_size} bytes) — refusé")
@@ -601,7 +598,8 @@ class AdaptiveEngine:
             self._dl_grey_zone = False  # reset
 
         # DL ignored en regime RANGING → risk/2 (MOM20x3 seul en ranging est bruyant)
-        if dl_result is None and regime == "RANGING":
+        # Fix P5: ne s'applique QUE si DL est activé (self.dl is not None)
+        if self.dl is not None and dl_result is None and regime == "RANGING":
             adapted["risk_mult"] *= 0.5
             logger.info(f"  [DL-IGNORE RANGING] {symbol}: risk/2 (MOM20x3 seul en ranging, DL score<{DL_MIN_SCORE})")
 

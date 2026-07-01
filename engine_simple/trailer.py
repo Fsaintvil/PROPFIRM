@@ -225,7 +225,7 @@ class Trailer:
             return
 
         last_try = self._time_stop_cooldown.get(ticket, 0)
-        if time.time() - last_try < 3600:
+        if time.time() - last_try < 300:  # 5min (fix M8: était 3600s = 1h)
             return
         self._time_stop_cooldown[ticket] = time.time()
 
@@ -377,7 +377,7 @@ class Trailer:
     def _reconstruct_peak(self, position):
         """Trouve le vrai peak depuis l'ouverture du trade (H1, 48 bars = ~2 jours)."""
         try:
-            rates = self.mt5.get_rates(position.symbol, "H1", count=48)
+            rates = self.mt5.get_rates(position.symbol, "H1", count=120)  # ~5 jours (fix M9: 48→120)
             if rates is not None and len(rates) > 5:
                 pos_open_ts = None
                 try:

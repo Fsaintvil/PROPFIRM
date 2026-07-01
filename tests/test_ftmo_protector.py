@@ -523,18 +523,19 @@ class TestCalculateLot:
         # Sell risk is 50% of buy risk
         assert lot_sell <= lot_buy + 0.01
 
-    def test_friday_reduction(self):
+    def test_24_7_no_day_reduction(self):
+        """24/7 trading: aucun jour de la semaine ne réduit le risque (fix m11)."""
         p = self._make_protector()
-        with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
-            mock_dt.utcnow.return_value = datetime(2026, 6, 5, 11, 0)  # Friday
-            mock_dt.utcnow.weekday.return_value = 4
-            lot_mon = p.calculate_lot("EURUSD", 1.1, 1.095)
-        # On Friday, risk multiplied by 0.75
-        with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
-            mock_dt.utcnow.return_value = datetime(2026, 6, 2, 11, 0)  # Tuesday
-            mock_dt.utcnow.weekday.return_value = 2
-            lot_tue = p.calculate_lot("EURUSD", 1.1, 1.095)
-        assert lot_mon <= lot_tue + 0.001
+        lots_by_day = {}
+        for weekday in range(7):
+            with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
+                mock_dt.utcnow.return_value = datetime(2026, 6, 1 + weekday, 11, 0)
+                mock_dt.utcnow.weekday.return_value = weekday
+                lots_by_day[weekday] = p.calculate_lot("EURUSD", 1.1, 1.095)
+        # Tous les jours doivent avoir le même lot (pas de réduction weekend/friday)
+        ref_lot = lots_by_day[0]
+        for day, lot in lots_by_day.items():
+            assert lot == ref_lot, f"Jour {day}: lot {lot} != reference {ref_lot}"
 
     def test_dd_peak_reduction(self):
         p = self._make_protector()
@@ -550,7 +551,7 @@ class TestCalculateLot:
         assert lot_no_dd <= lot_with_dd + 0.001
 
     def test_max_risk_cap(self):
-        p = make_protector(make_config(RISK_PER_TRADE=0.1))
+        p = make_protector(make_config(RISK_PER_TRADE=0.02))
         p.mt5.get_account_info.return_value = MagicMock(equity=200000)
         p.mt5.calc_profit.return_value = -200
         p.mt5.ORDER_TYPE_BUY = 0

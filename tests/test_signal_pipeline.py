@@ -416,8 +416,8 @@ class TestPipelineProcess:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.95 > 0.90 → high confidence → max_per_symbol=6
-        assert result.signal["max_per_symbol"] == 6
+        # conf=0.95 >= 0.85 (HIGH_CONF_CONFIDENCE) → max_per_symbol=3
+        assert result.signal["max_per_symbol"] == 3
 
     def test_process_handles_exception_gracefully(self, pipeline, mock_risk_manager):
         """Une exception dans pre_trade doit remonter (non catchée)."""
@@ -447,7 +447,20 @@ class TestPhase1MOM20x3:
         assert result is None
 
     def test_enriches_signal_with_metadata(self, pipeline, mock_mt5, mock_adaptive):
-        mock_mt5.get_rates.return_value = [(i, 1.1, 1.11, 1.09, 1.1, 1000, 10, 1000) for i in range(100)]
+        # Prix avec choc haussier brutal pour générer un signal MOM20x3
+        # Flat à 1.1 pendant 60 bars, puis +15% en 10 bars, puis uptrend lent
+        bars = []
+        for i in range(70):
+            bars.append((i, 1.099, 1.101, 1.099, 1.10, 1000, 10, 1000))
+        for i in range(70, 80):
+            price = 1.10 + (i - 69) * 0.02  # monte rapidement 1.10→1.28
+            bars.append((i, price - 0.001, price + 0.002, price - 0.003, price, 1000, 10, 1000))
+        for i in range(80, 100):
+            price = 1.28 + (i - 79) * 0.001  # continue lentement 1.28→1.30
+            bars.append((i, price - 0.001, price + 0.002, price - 0.002, price, 1000, 10, 1000))
+        # Override side_effect (return_value ne suffit pas, side_effect prioritaire)
+        mock_mt5.get_rates.side_effect = None
+        mock_mt5.get_rates.return_value = bars
         signal = pipeline._phase1_mom20x3("XAUUSD")
         assert signal is not None
         assert signal["symbol"] == "XAUUSD"
@@ -457,7 +470,7 @@ class TestPhase1MOM20x3:
         assert "higher_tf_conf" in signal
 
     @patch("engine_simple.strategy.MOM20x3")
-    def test_enriches_signal_with_metadata(self, mock_mom, pipeline, mock_mt5, mock_adaptive):
+    def test_enriches_signal_with_metadata_mocked_mom(self, mock_mom, pipeline, mock_mt5, mock_adaptive):
         mock_mom.return_value = _make_mock_mom20x3()
         signal = pipeline._phase1_mom20x3("XAUUSD")
         assert signal is not None
@@ -601,8 +614,8 @@ class TestDynamicPositionLimits:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.95 > 0.90 → high confidence → max_per_symbol=6
-        assert result.signal["max_per_symbol"] == 6
+        # conf=0.95 >= 0.85 (HIGH_CONF_CONFIDENCE) → max_per_symbol=3
+        assert result.signal["max_per_symbol"] == 3
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_limit_respects_hard_cap(self, mock_mom, pipeline):
@@ -631,8 +644,8 @@ class TestDynamicPositionLimits:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.95 > 0.90 → high confidence → cap=6 (hard limit ignoré)
-        assert result.signal["max_per_symbol"] == 6
+        # conf=0.95 >= 0.85 (HIGH_CONF_CONFIDENCE) → cap=3 (hard limit ignoré)
+        assert result.signal["max_per_symbol"] == 3
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_low_confidence_gets_one_position(self, mock_mom, pipeline):
@@ -661,12 +674,12 @@ class TestDynamicPositionLimits:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.50 < 0.70 → max_per_symbol=2 (Équilibré)
-        assert result.signal["max_per_symbol"] == 2
+        # conf=0.50 ≤ 0.70 → max_per_symbol=1
+        assert result.signal["max_per_symbol"] == 1
 
     @patch("engine_simple.strategy.MOM20x3")
-    def test_moderate_confidence_gets_three_positions(self, mock_mom, pipeline):
-        """0.70 < conf < 0.85 → max_per_symbol = 3"""
+    def test_moderate_confidence_gets_two_positions(self, mock_mom, pipeline):
+        """0.70 < conf < 0.85 → max_per_symbol = 2"""
         mock_mom.return_value = _make_mock_mom20x3(
             {
                 "action": "SELL",
@@ -691,12 +704,12 @@ class TestDynamicPositionLimits:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.75 > 0.70, < 0.85 → max_per_symbol=4 (Équilibré)
-        assert result.signal["max_per_symbol"] == 4
+        # conf=0.75 > 0.70, < 0.85 → max_per_symbol=2
+        assert result.signal["max_per_symbol"] == 2
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_good_confidence_gets_three_positions(self, mock_mom, pipeline):
-        """0.80 < conf < 0.90 → max_per_symbol = 3"""
+        """conf >= 0.85 (HIGH_CONF_CONFIDENCE) → max_per_symbol = 3"""
         mock_mom.return_value = _make_mock_mom20x3(
             {
                 "action": "BUY",
@@ -721,5 +734,5 @@ class TestDynamicPositionLimits:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.85 >= 0.85 (HIGH_CONF_CONFIDENCE) → max_per_symbol=6 (1er Juillet 2026)
-        assert result.signal["max_per_symbol"] == 6
+        # conf=0.85 >= 0.85 (HIGH_CONF_CONFIDENCE) → max_per_symbol=3 (1er Juillet 2026)
+        assert result.signal["max_per_symbol"] == 3

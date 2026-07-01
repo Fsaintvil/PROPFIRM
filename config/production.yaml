@@ -1,61 +1,31 @@
 # ============================================================================
-# PRODUCTION OVERRIDES — 6 Actifs Actifs (25 Juin 2026)
+# PRODUCTION OVERRIDES — Synchronisé 1er Juillet 2026
 # ============================================================================
-# Corrélation RÉACTIVÉE — max 3 trades/groupe, max 2/direction.
-# Paramètres FTMO-safe (RISK_PER_TRADE=0.44%, min_rr_ratio=2.0, auto_pause=8).
-# AUDUSD, US500.cash désactivés (PF < 0.8 toxiques).
-# Fusionné avec default.yaml (deep merge).
+# Overrides minimaux pour la production.
+# Les limites sont gérées par default.yaml + portfolio_controller + signal_pipeline.
 # ============================================================================
 
-# ── Corrélation — Override production ───────────────────────────────────
+# ── Corrélation — Réactivée (protection pertes corrélées) ──
 correlation:
   enabled: true
-  max_trades_per_group: 3
-  max_trades_per_direction_in_group: 2
 
-# ── Trading — Calibré (25 Juin 2026) ────────────────────────────────────
+# ── Trading — Synchronisé default.yaml (1er Juillet 2026) ─────────────
 trading:
-  max_positions: 20             # 6 symboles × ~4 positions max, limité par corrélation
-  max_positions_per_symbol: 4   # max 4 par symbole (aligné pipeline conf>85%)
-  max_trades_per_day: 30        # 6 symboles × ~5 trades/jour
+  max_positions: 40             # filet de sécurité (portfolio_controller = 40)
+  max_positions_per_symbol: 6   # pipeline: 3 BUY + 3 SELL en HIGH CONF
+  max_trades_per_day: 200       # 27 symboles × ~7 trades/jour
 
 # ── Signal ─────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.50               # ↑ 0.38→0.50 28 Juin 2026 — Supreme Council
+  min_score: 0.60               # Restauré 1er Juillet 2026
 
-# ── Symbol Limits — Calibration FTMO-safe ────────────────────────────
-symbol_limits:
-  XAUUSD:
-    max_lot: 0.06               # calibré backtest
-    risk_mult: 1.10             # WR 67.7%, PF 2.04 → star
-
-  BTCUSD:
-    max_lot: 0.06               # calibré backtest
-    risk_mult: 0.30             # WR 32.3% Phase 3 → risque fortement réduit (était 0.60)
-
-  US30.cash:
-    max_lot: 0.03
-    risk_mult: 0.50             # Supreme Council 28 Juin — surveillance renforcée 7 jours
-
-  USDJPY:
-    max_lot: 0.10
-    risk_mult: 1.00
-
-  GBPUSD:
-    max_lot: 0.10
-    risk_mult: 1.00
-
-  USDCAD:
-    max_lot: 0.10
-    risk_mult: 1.00
-
-# ── Risk — FTMO-safe (calibré 25 Juin 2026) ──────────────────────────
+# ── Risk — FTMO-safe ────────────────────────────────────────────────
 risk:
-  per_trade_pct: 0.004          # 0.40% par trade (restauré calibré, était 0.44%)
+  per_trade_pct: 0.004          # 0.40% par trade
   max_daily_loss_pct: 0.02      # FTMO: 2% daily loss
   max_dd_pct: 0.10              # FTMO: 10% max drawdown
-  min_rr_ratio: 1.5             # ↓ 2.0→1.5 26 Juin — plus de trades (RR moyen des signaux est ~1.9)
+  min_rr_ratio: 1.5             # RR minimum
   cooldown_minutes: 15          # 15 min de refroidissement
-  auto_pause_losses: 5          # 5 pertes avant pause (restauré calibré, était 8)
-  max_risk_amount: 800.0        # $800 max risque par trade (était $880)
+  auto_pause_losses: 5          # 5 pertes avant pause
+  max_risk_amount: 800.0        # $800 max risque par trade
   circuit_breaker_dd_pct: 0.08

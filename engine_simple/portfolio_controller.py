@@ -55,22 +55,22 @@ class PortfolioState:
 # Empêche les pertes simultanées sur symboles corrélés (Pearson > 0.70 H1).
 # ============================================================================
 POSITION_GROUPS: dict[str, list[str]] = {
-    "FOREX_MAJORS": ["EURUSD", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "USDJPY", "GBPJPY"],
+    "FOREX_MAJORS": ["EURUSD", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "USDJPY"],
+    "FOREX_CROSSES": ["EURJPY", "GBPJPY", "EURGBP", "AUDJPY"],
     "CRYPTO": ["BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"],
     "INDICES": ["US500.cash", "US30.cash", "US100.cash", "JP225.cash"],
+    "EUROPE_INDICES": ["GER40.cash", "UK100.cash"],
     "COMMODITIES": ["XAUUSD", "XAGUSD", "USOIL.cash", "UKOIL.cash", "NATGAS.cash"],
 }
 
-# Limites d'exposition avec corrélation active (actualisé 29 Juin 2026)
-MAX_POSITIONS_TOTAL = 64  # 16 symboles × 4 positions/symbole (↑ 52→64, synchro default.yaml)
-MAX_POSITIONS_PER_SYMBOL = 6  # max 6 par symbole (↑ 4→6, synchro default.yaml)
-MAX_POSITIONS_PER_DIRECTION = 16  # max 16 positions dans la même direction (↑ 8→16)
-MAX_TRADES_PER_GROUP = (
-    16  # max 16 positions TOTAL dans un groupe corrélé (↑ 12→16, 30 Juin: débloquer GBPJPY dans FOREX_MAJORS)
-)
-MAX_TRADES_PER_DIRECTION_IN_GROUP = (
-    8  # max 8 positions dans la même direction dans un groupe (↑ 6→8, 29 Juin: 4 symboles INDICES)
-)
+# Limites d'exposition (fix 1er Juillet 2026 — corrélation stricte 3/2)
+# Les limites sont des filets de sécurité : le pipeline filtre d'abord (3/2/1 par symbole-direction)
+# Portfolio controller = backup pour les cas où le pipeline ne s'applique pas
+MAX_POSITIONS_TOTAL = 40  # 27 symboles × ~1.5 positions/symbole (filet de sécurité)
+MAX_POSITIONS_PER_SYMBOL = 6  # max 6 par symbole (pipeline: 3 BUY + 3 SELL en HIGH CONF)
+MAX_POSITIONS_PER_DIRECTION = 20  # max 20 positions dans la même direction
+MAX_TRADES_PER_GROUP = 3  # max 3 positions TOTAL dans un groupe corrélé
+MAX_TRADES_PER_DIRECTION_IN_GROUP = 2  # max 2 positions dans la même direction dans un groupe
 
 
 class PortfolioController:

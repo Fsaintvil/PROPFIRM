@@ -9,7 +9,7 @@ def ema(data, period):
     """Exponential Moving Average"""
     d = np.asarray(data, dtype=float)
     result = np.full_like(d, np.nan)
-    if len(d) < period * 2:
+    if len(d) < period:
         return result
     alpha = 2.0 / (period + 1)
     result[period - 1] = np.mean(d[:period])

@@ -128,19 +128,69 @@ FIRST_LOCK_ATR = (
     0.5  # premier lock du trailing (fallback si symbole non trouvé) — Juin 2026: baissé de 1.0 pour accélérer fermeture
 )
 
-# Per-symbol risk_mult cap — uniquement 3 symboles actifs
+# Per-symbol risk_mult cap — 27 symboles (fix M12: étendu 1er Juillet 2026)
 RISK_MULT_CAP = {
-    "XAUUSD": 1.25,
-    "BTCUSD": 1.00,
-    "US30.cash": 1.00,  # risk_mult YAML=0.50, cap=1.0 = pas de plafond
+    "XAUUSD": 1.50,
+    "BTCUSD": 1.25,
+    "US30.cash": 1.30,
+    "ETHUSD": 1.15,
+    "US100.cash": 1.20,
+    "US500.cash": 1.15,
+    "XAGUSD": 1.10,
+    "EURUSD": 1.15,
+    "GBPUSD": 1.15,
+    "USDJPY": 1.15,
+    "USDCAD": 1.15,
+    "AUDUSD": 1.15,
+    "NZDUSD": 1.15,
+    "USDCHF": 1.15,
+    "EURJPY": 1.10,
+    "GBPJPY": 1.10,
+    "EURGBP": 1.10,
+    "AUDJPY": 1.10,
+    "USOIL.cash": 1.10,
+    "UKOIL.cash": 1.10,
+    "NATGAS.cash": 1.05,
+    "SOLUSD": 1.10,
+    "LNKUSD": 1.10,
+    "BNBUSD": 1.10,
+    "JP225.cash": 1.15,
+    "GER40.cash": 1.15,
+    "UK100.cash": 1.15,
 }
 
-# Per-symbol max positions — uniquement 3 symboles actifs
-# Les symboles inactifs utilisent le fallback dans ftmo_protector.py
+# Per-symbol max positions — 27 symboles (fix M12: valeur globale depuis YAML)
 MAX_POS_PER_SYMBOL = {
-    "XAUUSD": 4,
-    "BTCUSD": 4,
-    "US30.cash": 4,  # limité par max_positions_per_symbol=4
+    sym: 6
+    for sym in [
+        "XAUUSD",
+        "BTCUSD",
+        "US30.cash",
+        "ETHUSD",
+        "US100.cash",
+        "US500.cash",
+        "XAGUSD",
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY",
+        "USDCAD",
+        "AUDUSD",
+        "NZDUSD",
+        "USDCHF",
+        "EURJPY",
+        "GBPJPY",
+        "EURGBP",
+        "AUDJPY",
+        "USOIL.cash",
+        "UKOIL.cash",
+        "NATGAS.cash",
+        "SOLUSD",
+        "LNKUSD",
+        "BNBUSD",
+        "JP225.cash",
+        "GER40.cash",
+        "UK100.cash",
+    ]
 }
 
 # ============================================================================

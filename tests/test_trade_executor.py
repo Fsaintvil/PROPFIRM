@@ -268,8 +268,8 @@ class TestTradeExecutor:
 
         assert result is not None
         lot_arg = ex.mt5.order_send.call_args[0][0]
-        # XAUUSD max_lot=0.06 (FTMO-safe), ftmo retourne 0.15 → clamp à 0.06
-        assert lot_arg["volume"] == 0.06
+        # XAUUSD max_lot=0.01 (WR-progressif 1er Juillet), ftmo retourne 0.15 → clamp à 0.01
+        assert lot_arg["volume"] == 0.01
         assert lot_arg["comment"] == "ADAPT_TRE"
 
     def test_execute_validation_fails(self):
@@ -316,8 +316,8 @@ class TestTradeExecutor:
         ex = self.make_executor()
         ex.ftmo.calculate_lot.return_value = 0.15
         lot = ex._calc_lot("XAUUSD", 1.1000, 1.0900)
-        # XAUUSD max_lot=0.06 (FTMO-safe), ftmo retourne 0.15 → clamp à 0.06
-        assert lot == 0.06
+        # XAUUSD max_lot=0.01 (WR-progressif 1er Juillet), ftmo retourne 0.15 → clamp à 0.01
+        assert lot == 0.01
 
     def test_calc_lot_fallback_min(self):
         ex = self.make_executor()

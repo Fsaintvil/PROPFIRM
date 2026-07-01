@@ -42,7 +42,8 @@ class RegimeDetector:
     """Détecte le régime en fonction de ADX, pente MA20, et volatilité relative.
     _prev_regime est stocké par symbole (dict) pour éviter la cross-contamination."""
 
-    _prev_regime: dict[str, str] = {}
+    def __init__(self):
+        self._prev_regime: dict[str, str] = {}
 
     def _get_adx_thresholds(self, symbol: str) -> tuple[float, float]:
         """Retourne (enter_threshold, exit_threshold) pour un symbole donné.

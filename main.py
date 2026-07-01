@@ -81,39 +81,12 @@ if _env_syms:
 if not ACTIVE_SYMBOLS:
     ACTIVE_SYMBOLS = {"XAUUSD", "BTCUSD", "US30.cash"}
 
-# ── Catégories de symboles (29 Juin 2026 — Confidence Gate 0.75 uniforme) ──
-# Tous les 14 symboles tradent si MOM donne ≥75% de chance de gain.
-# Le seuil unique 0.75 permet au maximum de signaux de passer.
-CORE_SYMBOLS: set[str] = {"XAUUSD", "BTCUSD", "US30.cash"}
-TARGET_80_SYMBOLS: set[str] = {"ETHUSD", "US100.cash", "US500.cash", "XAGUSD"}
-REACTIVATED_SYMBOLS: set[str] = ACTIVE_SYMBOLS - CORE_SYMBOLS - TARGET_80_SYMBOLS
-
-# ── Seuils de confiance uniformes (29 Juin 2026) ──
-# Optimizer recommande 0.65 : la confiance moyenne des signaux pipeline
-# est de 0.66-0.84 selon les symboles. Le gate 0.75 bloquait 100% de
-# XAGUSD et US30.cash, et 83% de USDCAD.
-# Avec 0.65 : XAGUSD passe ~70%, USDCAD ~95%, USDJPY 100%.
-SYMBOL_CONFIDENCE_GATES: dict[str, float] = {
-    # ── Tous les 14 symboles : gate 0.65 uniforme ──
-    "XAUUSD": 0.65,
-    "BTCUSD": 0.65,
-    "US30.cash": 0.65,
-    "ETHUSD": 0.65,
-    "US100.cash": 0.65,
-    "US500.cash": 0.65,
-    "XAGUSD": 0.65,
-    "EURUSD": 0.65,
-    # "GBPUSD": 0.65,  # DÉSACTIVÉ 29 Juin (0/5 wins live)
-    "USDJPY": 0.65,
-    "USDCAD": 0.65,
-    "AUDUSD": 0.65,
-    "NZDUSD": 0.65,
-    "USDCHF": 0.65,
-    # ── NOUVEAUX SYMBOLES (AJOUTÉS 29 Juin 2026) ──
-    "GBPJPY": 0.65,
-    "JP225.cash": 0.65,
-    "USOIL.cash": 0.65,
-}
+# ── Catégories de symboles — SUPPRIMÉ 1er Juillet 2026 ──
+# Les SYMBOL_CONFIDENCE_GATES et catégories CORE/TARGET_80/REACTIVATED
+# ont été supprimés. Le filtrage est géré par :
+#   - min_score=0.30 (config)
+#   - Lot progressif WR-based (_get_wr_based_max_lot)
+#   - Limites 3/2/1 par symbole-direction (signal_pipeline)
 
 _mutex_handle = None
 
@@ -455,11 +428,6 @@ class FTMO_SIMPLE:
                 TRADING_END_HOUR=cfg.TRADING_END_HOUR,
                 DANGER_HOURS=cfg.DANGER_HOURS,
                 SYMBOL_LIMITS=cfg.SYMBOL_LIMITS,
-                # 🔥 Confidence Gates par symbole (29 Juin 2026)
-                CORE_SYMBOLS=CORE_SYMBOLS,
-                TARGET_80_SYMBOLS=TARGET_80_SYMBOLS,
-                REACTIVATED_SYMBOLS=REACTIVATED_SYMBOLS,
-                SYMBOL_CONFIDENCE_GATES=SYMBOL_CONFIDENCE_GATES,
                 # Clés ajoutées — audit Juin 2026 (étaient manquantes, utilisaient
                 # les valeurs par défaut hardcodées dans ftmo_protector)
                 DAILY_PROFIT_LIMIT_PCT=cfg.DAILY_PROFIT_LIMIT_PCT,
@@ -1378,7 +1346,7 @@ class FTMO_SIMPLE:
                 kelly_risk = self.risk_manager.calculate_position_risk(symbol_perf, rr)
                 kelly_factor = max(0.3, min(1.5, kelly_risk / cfg.RISK_PER_TRADE))  # borné [0.3, 1.5]
                 signal["risk_mult"] = signal.get("risk_mult", 1.0) * kelly_factor
-                # 🔒 FIX M2: Cap final du risk_mult par symbole (après toutes les multiplications)
+                # 🔒 FIX M11: Cap final du risk_mult par symbole (27 symboles — 1er Juillet 2026)
                 _FINAL_CAP = {
                     "XAUUSD": 1.50,
                     "BTCUSD": 1.25,
@@ -1387,6 +1355,26 @@ class FTMO_SIMPLE:
                     "US100.cash": 1.20,
                     "US500.cash": 1.15,
                     "XAGUSD": 1.10,
+                    "EURUSD": 1.15,
+                    "GBPUSD": 1.15,
+                    "USDJPY": 1.15,
+                    "USDCAD": 1.15,
+                    "AUDUSD": 1.15,
+                    "NZDUSD": 1.15,
+                    "USDCHF": 1.15,
+                    "EURJPY": 1.10,
+                    "GBPJPY": 1.10,
+                    "EURGBP": 1.10,
+                    "AUDJPY": 1.10,
+                    "USOIL.cash": 1.10,
+                    "UKOIL.cash": 1.10,
+                    "NATGAS.cash": 1.05,
+                    "SOLUSD": 1.10,
+                    "LNKUSD": 1.10,
+                    "BNBUSD": 1.10,
+                    "JP225.cash": 1.15,
+                    "GER40.cash": 1.15,
+                    "UK100.cash": 1.15,
                 }
                 cap = _FINAL_CAP.get(symbol, 1.0)
                 if signal["risk_mult"] > cap:
@@ -1710,11 +1698,11 @@ class FTMO_SIMPLE:
         if trades_since_last < 100:
             return  # Cooldown anti-oscillation
 
-        from engine_simple.strategy import _SYMBOL_MOMENTUM_PERIODS, SYMBOL_CONFIG
+        from engine_simple.strategy import get_momentum_period, set_momentum_period, SYMBOL_CONFIG
 
-        # FIX m1: Sauvegarder les périodes initiales au premier appel (reset possible)
+        # FIX P8: Sauvegarder les périodes initiales depuis SYMBOL_CONFIG
         if not hasattr(self, "_initial_mom_periods"):
-            self._initial_mom_periods = dict(_SYMBOL_MOMENTUM_PERIODS)
+            self._initial_mom_periods = {sym: cfg.get("momentum_period", 20) for sym, cfg in SYMBOL_CONFIG.items()}
 
         recent_trades = self.ftmo._trade_history[-100:]
         adjustments = {}
@@ -1755,7 +1743,7 @@ class FTMO_SIMPLE:
                         logger.debug(f"[PHASE 3] {symbol}: PF={sym_pf:.1f} > 5.0 (contaminé) → gel période")
                     continue
 
-            current_period = _SYMBOL_MOMENTUM_PERIODS.get(symbol, 20)
+            current_period = get_momentum_period(symbol) or SYMBOL_CONFIG.get(symbol, {}).get("momentum_period", 20)
             new_period = current_period
 
             # Hystérésis : tracker la zone précédente par symbole
@@ -1819,7 +1807,7 @@ class FTMO_SIMPLE:
                     new_period = initial
                     logger.info(f"[PHASE 3] {symbol}: période reset à {initial} (dérive > 4 unités)")
                 if new_period != current_period:
-                    _SYMBOL_MOMENTUM_PERIODS[symbol] = new_period
+                    set_momentum_period(symbol, new_period)
                     logger.info(
                         f"[PHASE 3] {symbol}: période {current_period}→{new_period} "
                         f"(WR={sym_wr:.1%}, raison: {adjustments[symbol][2]})"

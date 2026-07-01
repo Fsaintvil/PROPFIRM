@@ -32,12 +32,12 @@ from types import MappingProxyType
 
 import numpy as np
 
-from engine_simple.indicators import adx, atr, ema
+from engine_simple.indicators import adx, adx_arrays, atr, ema
 from engine_simple.ftmo_config import PULLBACK_FILTER_SCORE_THRESHOLD
 
 try:
     from engine_simple.market_structure import analyze_market_structure
-except ImportError:
+except Exception:
     analyze_market_structure = None
 
 logger = logging.getLogger("strategy")
@@ -91,11 +91,9 @@ SYMBOL_CONFIG = {
         # Seuils ATR (validés backtest 12+ ans, assouplis mode modéré)
         "threshold_trending": 2.0,  # Mode modéré: -0.5 vs 2.5
         "threshold_ranging": 1.5,  # Mode modéré: -0.5 vs 2.0
-        # Filtres ADX (assoupli 29 Juin 2026 : -8→-15 pour débloquer XAUUSD)
-        # L'analyse Optimizer montrait que XAUUSD avait slope moyen -12.1,
-        # rejetant ~90% des signaux avec l'ancien seuil -8.0.
-        "adx_slope_threshold": -15.0,  # ↑ -8.0→-15.0 (29 Juin : débloquer XAUUSD)
-        "adx_slope_threshold_strong": -15.0,  # aligné sur le threshold standard
+        # Filtres ADX (restauré valeur originale Juin 2026 — plus performant)
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         # Pullback bandes (H4 → pullbacks plus larges)
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
@@ -125,9 +123,9 @@ SYMBOL_CONFIG = {
         # Seuils ATR (abaissés — ADX crypto peu fiable, capter 40%+ signaux supplémentaires)
         "threshold_trending": 1.8,  # ↓ 2.0→1.8 (BTCUSD frôle le seuil sans le passer — mom~950, thresh~1050)
         "threshold_ranging": 1.5,
-        # Filtres ADX (très permissifs — ADX crypto bruité, abaissé 26 Juin pour + de trades)
-        "adx_slope_threshold": -10.0,  # très permissif (26 Juin: ↓ -5.0→-10.0 pour débloquer BTCUSD)
-        "adx_slope_threshold_strong": -15.0,  # relaxation pour signaux forts (26 Juin: ↓ -8.0→-15.0)
+        # Filtres ADX (restauré valeur originale Juin 2026 — plus performant)
+        "adx_slope_threshold": -3.0,
+        "adx_slope_threshold_strong": -6.0,
         # Pullback bandes larges (BTC fait des pullbacks violents)
         "pullback_band_trending": 0.8,
         "pullback_band_ranging": 0.5,
@@ -164,8 +162,8 @@ SYMBOL_CONFIG = {
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
         # Filtres ADX standard (indices US)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -6.0,
+        "adx_slope_threshold_strong": -10.0,
         # Pullback bandes serrées (indices font peu de pullbacks profonds)
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
@@ -321,10 +319,9 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 5.0,  # ↑ 4.5→5.0 (30 Juin: RR≥1.67 avec SL OB cap 3.0×ATR)
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
-        # Filtres ADX (assoupli 29 Juin 2026 : -5→-10 pour débloquer US100.cash)
-        # L'analyse Optimizer montrait US100.cash 100% bloqué par ADX slope
-        "adx_slope_threshold": -10.0,  # ↑ -5.0→-10.0 (29 Juin : débloquer US100.cash)
-        "adx_slope_threshold_strong": -12.0,  # ↑ -8.0→-12.0
+        # Filtres ADX standard
+        "adx_slope_threshold": -6.0,
+        "adx_slope_threshold_strong": -10.0,
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
@@ -401,8 +398,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
-        "adx_slope_threshold": -10.0,  # ↑ -5.0→-10.0 (29 Juin : ADX slope moy. -9.5, 100% bloqué)
-        "adx_slope_threshold_strong": -12.0,  # ↑ -8.0→-12.0 (relaxé comme US100.cash)
+        "adx_slope_threshold": -6.0,
+        "adx_slope_threshold_strong": -10.0,
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
         "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8],  # Asian session
@@ -466,8 +463,8 @@ DEFAULT_SYMBOL_CONFIG = {
     "tp_atr_ranging": 5.0,  # ↑ 4.0→5.0 (30 Juin: RR≥1.67 avec SL OB cap 3.0×ATR)
     "threshold_trending": 2.5,
     "threshold_ranging": 2.0,
-    "adx_slope_threshold": -5.0,  # standard (AGENTS.md)
-    "adx_slope_threshold_strong": -8.0,  # relaxation pour signaux forts (AGENTS.md)
+    "adx_slope_threshold": -6.0,  # original performant
+    "adx_slope_threshold_strong": -10.0,  # original performant
     "pullback_band_trending": 0.5,
     "pullback_band_ranging": 0.3,
     # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
@@ -483,6 +480,19 @@ SYMBOL_MOMENTUM_PERIODS = MappingProxyType(_SYMBOL_MOMENTUM_PERIODS)
 
 # Périodes par défaut
 DEFAULT_SYMBOL_MOMENTUM_PERIOD = 20
+
+# === Fix P8: Setters/getters pour momentum periods (remplace l'accès direct au dict mutable) ===
+_MOMENTUM_OVERRIDES: dict[str, int] = {}  # overrides à chaud (OnlineLearner)
+
+
+def set_momentum_period(symbol: str, period: int):
+    """Définit une période momentum personnalisée pour un symbole (OnlineLearner)."""
+    _MOMENTUM_OVERRIDES[symbol] = period
+
+
+def get_momentum_period(symbol: str) -> int | None:
+    """Retourne la période override pour un symbole, ou None."""
+    return _MOMENTUM_OVERRIDES.get(symbol)
 
 
 def _get_symbol_config(symbol: str | None) -> dict:
@@ -503,6 +513,7 @@ def mom20x3_signal(
     close: np.ndarray,
     high: np.ndarray,
     low: np.ndarray,
+    open_: np.ndarray | None = None,
     period: int = 20,
     atr_period: int = 14,
     adx_period: int = 14,
@@ -517,6 +528,7 @@ def mom20x3_signal(
         close: np.array de prix de clôture (au moins period + 1 éléments)
         high: np.array de prix hauts
         low: np.array de prix bas
+        open_: np.array de prix d'ouverture (optionnel, fallback close × 0.999)
         period: période du momentum (défaut 20)
         atr_period: période ATR (défaut 14)
         adx_period: période ADX (défaut 14)
@@ -555,14 +567,15 @@ def mom20x3_signal(
     # === ADX complet avec +DI/-DI ===
     adx_val, plus_di, minus_di = adx(high, low, close, adx_period)
 
-    # === ADX slope : vérifier si ADX est en hausse (vrai Wilder's smoothing) ===
-    # On calcule ADX sur la première moitié de la fenêtre pour comparer
-    # comme dans backtest_production.py (validé 67% WR)
+    # === ADX slope : vérifier si ADX est en hausse (fix P3: adx_arrays pour série temporelle complète) ===
     adx_slope = 0.0
     half = min(14, len(close) // 3)
-    if len(close) > adx_period * 2 + half:
-        adx_prev, _, _ = adx(high[:-half], low[:-half], close[:-half], adx_period)
-        adx_slope = adx_val - adx_prev
+    adx_arr, _, _ = adx_arrays(high, low, close, adx_period)
+    valid = ~np.isnan(adx_arr)
+    if np.sum(valid) > half:
+        adx_last = float(adx_arr[valid][-1])
+        adx_prev = float(adx_arr[valid][-half - 1])
+        adx_slope = adx_last - adx_prev
 
     # === Seuil adaptatif selon ADX (calculé avant les filtres) ===
     # Support OnlineLearner: custom_thresh_* surcharge les hardcodés
@@ -656,7 +669,7 @@ def mom20x3_signal(
     adx_slope_ok = True
     adx_slope_threshold = sym_cfg["adx_slope_threshold"]
 
-    if raw_score > 0.75:  # ↑ 0.50→0.75 (30 Juin: seuls les signaux TRÈS FORTS bypassent)
+    if raw_score > 0.70:  # restauré valeur originale
         adx_slope_threshold = sym_cfg["adx_slope_threshold_strong"]
 
     if adx_slope < adx_slope_threshold:
@@ -784,9 +797,6 @@ def mom20x3_signal(
     # US500.cash: 0.4×ATR trending, 0.25×ATR ranging (indices = plus serré)
     ema_period = 20
     ema20_arr = ema(close, ema_period)
-    pullback_active = False
-    pullback_dist = 0.0
-    pullback_band = 0.0
     if len(ema20_arr) > 0 and not np.isnan(ema20_arr[-1]):
         ema20_val = float(ema20_arr[-1])
         if ema20_val > 0:
@@ -805,7 +815,7 @@ def mom20x3_signal(
     if not pullback_active and pullback_band > 0:
         if score < PULLBACK_FILTER_SCORE_THRESHOLD:
             logger.info(
-                f"  [PULLBACK] {action} {symbol}: score={score:.2f} < 0.65 + pas de pullback "
+                f"  [PULLBACK] {action} {symbol}: score={score:.2f} < {PULLBACK_FILTER_SCORE_THRESHOLD} + pas de pullback "
                 f"(dist={pullback_dist:.2f}% > band={pullback_band:.2f}%) → skip"
             )
             return None
@@ -857,9 +867,10 @@ def mom20x3_signal(
         try:
             import pandas as pd
 
+            _open_arr = open_[-30:] if open_ is not None else close[-30:] * 0.999
             recent_df = pd.DataFrame(
                 {
-                    "open": close[-30:] * 0.999,  # approximation open ≈ close × 0.999
+                    "open": _open_arr,  # fix m4: utilise open_ réel si disponible
                     "close": close[-30:],
                     "high": high[-30:],
                     "low": low[-30:],
@@ -945,7 +956,13 @@ def mom20x3_signal(
         if (is_trending and _ma_slope is not None and _ma_slope > 0.002)
         else "TREND_DOWN"
         if (is_trending and _ma_slope is not None and _ma_slope < -0.002)
-        else "RANGING",
+        else (
+            "TREND_UP"
+            if is_trending and action == "BUY"
+            else "TREND_DOWN"
+            if is_trending and action == "SELL"
+            else "RANGING"
+        ),
         "_ml_agrees": None,
         "_model_predictions": {"MOM20x3": action},
         "_dl_score": None,
@@ -979,10 +996,12 @@ class MOM20x3:
             self._close = None
             self._high = None
             self._low = None
+            self._open = None
             return
         self._close = np.array([r[4] for r in self.rates], dtype=float)
         self._high = np.array([r[2] for r in self.rates], dtype=float)
         self._low = np.array([r[3] for r in self.rates], dtype=float)
+        self._open = np.array([r[1] for r in self.rates], dtype=float)
 
     def analyze(
         self, custom_thresh_trending: float | None = None, custom_thresh_ranging: float | None = None
@@ -993,6 +1012,7 @@ class MOM20x3:
             self._close,
             self._high,
             self._low,
+            open_=self._open,
             period=self.period,
             symbol=self.symbol,
             custom_thresh_trending=custom_thresh_trending,

@@ -28,13 +28,13 @@ def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
     # 27 symboles (1er Juillet 2026) — activation totale
-    assert len(cfg.trading.symbols) == 27
+    assert len(cfg.trading.symbols) == 27  # 27 symboles (1er Juillet 2026 — activation totale)
     assert "XAUUSD" in cfg.trading.symbols
     assert "BTCUSD" in cfg.trading.symbols
-    assert "US30.cash" in cfg.trading.symbols
     assert "EURUSD" in cfg.trading.symbols  # réactivé 29 Juin (high confidence gate)
     assert "USDJPY" in cfg.trading.symbols  # réactivé 24 Juin
-    assert "USDCAD" in cfg.trading.symbols  # réactivé 24 Juin
+    assert "NZDUSD" in cfg.trading.symbols  # WR 60% live
+    assert "BTCUSD" in cfg.trading.symbols  # WR 52.7% live
     assert cfg.risk.per_trade_pct == 0.004  # calibré 25 Juin 2026 (était 0.44% Mode MAX)
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 1.5  # ↓ 2.0→1.5 (26 Juin 2026, plus de trades)
@@ -51,7 +51,7 @@ def test_as_flat_dict():
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
     assert flat["RISK_PER_TRADE_PCT"] == 0.004  # calibré 25 Juin 2026 (était 0.44%)
-    assert flat["TRADING_MAX_POSITIONS"] == 80  # 27 symboles, plafond schema 100
+    assert flat["TRADING_MAX_POSITIONS"] == 40  # 27 symboles, filet de sécurité
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -131,7 +131,7 @@ def test_config_simple_compat():
     assert cfg.RISK_PER_TRADE == 0.004  # calibré 25 Juin 2026 (était 0.44%)
     assert cfg.MAX_ORDERS_PER_MINUTE == 25  # 1 trade/min/symbole + marge (16 symboles)
     assert cfg.__version__ == "4.1.0"
-    assert cfg.MIN_SIGNAL_SCORE == 0.50  # global — ↑ 0.38→0.50 (28 Juin 2026, Supreme Council: meilleure qualité)
+    assert cfg.MIN_SIGNAL_SCORE == 0.60  # global — restauré 1er Juillet 2026
 
 
 def test_config_reload():

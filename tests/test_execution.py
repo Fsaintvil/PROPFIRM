@@ -99,8 +99,8 @@ class TestTradeExecutor:
         req = args[0]
         assert req["symbol"] == "XAUUSD"
         assert req["type"] == 0
-        # XAUUSD max_lot=0.10, ftmo retourne 0.05 → pas de clamp
-        assert req["volume"] == 0.05
+        # XAUUSD max_lot=0.01 (WR-progressif 1er Juillet), ftmo retourne 0.05 → clamp à 0.01
+        assert req["volume"] == 0.01
 
     def test_execute_rr_too_low(self):
         mt5 = make_mock_mt5()
