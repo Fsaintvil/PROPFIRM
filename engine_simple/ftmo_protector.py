@@ -322,14 +322,41 @@ class FTMOProtector:
         # (CORR_GROUPS avec FOREX_MAJORS 7 sym, CRYPTO, COMMODITIES, INDICES)
         # Ce bloc était incomplet (crypto seulement) → délégué à portfolio_controller
 
-        # Signal quality gate (per-symbol override)
-        min_score = self.config.get("MIN_SIGNAL_SCORE", 0.55)
-        sym_min_score = sym_cfg.get("min_score")
-        if sym_min_score is not None:
-            min_score = sym_min_score
+        # Signal quality gate — via SymbolParamManager (unifié)
+        # cfg_score = min_score statique (strategy.py SYMBOL_CONFIG)
+        # dyn_score = min_score dynamique (WR < 55% → 0.80 minimum)
+        # effective_min_score = max(cfg_score, dyn_score)
+        from engine_simple.symbol_params import get_symbol_params, update_dyn_score
+
+        sym_params = get_symbol_params(symbol)
+        cfg_score = sym_params.get("cfg_score", 0.70)
+
+        # Calcul du dynamic min_score basé sur WR réel (50 derniers trades)
+        # Si WR < 55% sur ≥5 trades, dyn_score = max(cfg_score, 0.80)
+        sym_trades = self._symbol_trade_history.get(symbol, [])
+        dyn_score = None
+        if len(sym_trades) >= 5:
+            wins = sum(1 for t in sym_trades if t.get("profit", 0) > 0)
+            wr = wins / len(sym_trades)
+            if wr < 0.55:
+                dyn_score = max(cfg_score, 0.80)
+                if dyn_score != cfg_score:
+                    logger.info(
+                        f"  [DYNAMIC SCORE] {symbol}: WR={wr:.0f}% ({wins}/{len(sym_trades)}) "
+                        f"→ min_score {cfg_score:.2f} → {dyn_score:.2f}"
+                    )
+
+        # Stocke le dyn_score dans le SymbolParamManager
+        if dyn_score is not None:
+            update_dyn_score(symbol, dyn_score)
+
+        effective_min_score = max(cfg_score, dyn_score or 0)
         sig_score = signal.get("score", 0)
-        if sig_score < min_score:
-            return False, f"Signal score too low: {sig_score:.2f} < {min_score}"
+        if sig_score < effective_min_score:
+            return (
+                False,
+                f"Signal score too low: {sig_score:.2f} < {effective_min_score} (cfg={cfg_score}, dyn={dyn_score or 'N/A'})",
+            )
 
         # FIX #3: SL OBLIGATOIRE — calcul auto si ATR disponible, sinon blocage
         sl = signal.get("sl")
@@ -371,6 +398,12 @@ class FTMOProtector:
         obs = signal.get("_structure_obs", [])
         current_atr = signal.get("atr", 0)
         max_sl_atr = 3.0  # Cap: jamais plus de 3×ATR de distance SL (préserve RR)
+        # 🔒 GARDE: entry/action peuvent ne pas être définis si SL/TP étaient déjà dans le signal
+        # (voir bloc FIX #3 ligne 340 — entry et action ne sont assignés que dans ce bloc)
+        if "entry" not in dir() or entry is None:
+            entry = signal.get("entry_price", 0)
+        if "action" not in dir() or action is None:
+            action = signal.get("action", "")
         if obs and sl and entry:
             for ob in obs:
                 if not ob.get("is_mitigated"):
@@ -422,6 +455,19 @@ class FTMOProtector:
                                 )
                                 sl = new_sl
                                 signal["sl"] = sl
+
+        # 🔒 MIN RR PER-SYMBOL (Juillet 2026 — Full Customisation)
+        # Vérifie que le RR du signal respecte le min_rr du symbole
+        # Utilise entry_price (toujours défini ligne 369) plutôt que entry (conditionnel)
+        rr_min_sym = sym_params.get("min_rr", 1.5)
+        rr_entry = entry_price or signal.get("entry_price", 0)
+        if sl and tp and rr_entry and sl != rr_entry:
+            rr_actual = abs(float(tp) - float(rr_entry)) / abs(float(sl) - float(rr_entry))
+            if rr_actual < rr_min_sym - 0.01:  # petite tolérance arrondi
+                return False, (
+                    f"RR {rr_actual:.2f} < min_rr {rr_min_sym} pour {symbol} "
+                    f"(SL={sl:.5f}, TP={tp:.5f}, entry={rr_entry:.5f})"
+                )
 
         # Price staleness
         if not self.check_price_staleness(symbol):
@@ -491,28 +537,28 @@ class FTMOProtector:
         if daily_loss >= zone3 and self.daily_stats["losses"] > 0:
             return False, f"Zone 3: daily DD {daily_loss:.1%} >= {zone3:.1%}, stop"
 
-        # Auto-pause après N pertes consécutives
-        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 5)
-        if self.consecutive_losses >= auto_pause:
+        # Per-symbol auto-pause après N pertes consécutives
+        from engine_simple.strategy import get_symbol_full_config as _get_sym_full_cfg
+
+        sym_full_cfg = _get_sym_full_cfg(symbol)
+        sym_auto_pause = sym_full_cfg.get("auto_pause_losses", self.config.get("AUTO_PAUSE_LOSSES", 5))
+        sym_cooldown_minutes = sym_full_cfg.get("cooldown_minutes", self.config.get("COOLDOWN_MINUTES", 15))
+        if self.consecutive_losses >= sym_auto_pause:
             if self.global_cooldown_until is None:
-                auto_pause_cooldown = self.config.get("COOLDOWN_MINUTES", 15)
-                self.global_cooldown_until = datetime.utcnow() + timedelta(minutes=auto_pause_cooldown)
+                self.global_cooldown_until = datetime.utcnow() + timedelta(minutes=sym_cooldown_minutes)
                 logger.warning(
-                    f"AUTO PAUSE: {self.consecutive_losses} consecutive losses >= {auto_pause}, "
-                    f"global cooldown {auto_pause_cooldown}min jusqu'à {self.global_cooldown_until}"
+                    f"AUTO PAUSE ({symbol}): {self.consecutive_losses} consecutive losses >= {sym_auto_pause}, "
+                    f"cooldown {sym_cooldown_minutes}min jusqu'à {self.global_cooldown_until}"
                 )
                 return (
                     False,
-                    f"Global cooldown: {auto_pause_cooldown}min (after {self.consecutive_losses} consecutive losses)",
+                    f"Global cooldown: {sym_cooldown_minutes}min (after {self.consecutive_losses} consecutive losses)",
                 )
-            # Cooldown déjà actif — vérifier expiration
             now = datetime.utcnow()
             if now < self.global_cooldown_until:
                 remaining = int((self.global_cooldown_until - now).total_seconds() // 60)
                 return False, f"Global cooldown: {remaining}min (after {self.consecutive_losses} consecutive losses)"
-            # Cooldown expiré → réduction progressive (évite cycle infini
-            # quand des pertes surviennent PENDANT le cooldown, ex: positions legacy)
-            new_count = max(0, self.consecutive_losses - auto_pause)
+            new_count = max(0, self.consecutive_losses - sym_auto_pause)
             logger.info(
                 f"Global cooldown expired — reducing consecutive_losses from {self.consecutive_losses} to {new_count}"
             )
@@ -699,15 +745,16 @@ class FTMOProtector:
         return max(0.30, min(1.0, mult))
 
     def _adx_market_risk_mult(self) -> float:
-        """🔒 ADX Market Filter : si >50% des symboles actifs ont ADX < 22,
+        """🔒 ADX Market Filter : si >50% des symboles actifs ont ADX < seuil,
         le marché est majoritairement rangeant → risque réduit de 50%.
-        Le MOM20x3 whipsaw en ranging, c'est la protection la plus importante.
+        Le seuil ADX vient de cfg.REGIME_ADX_TREND_ENTER (default.yaml).
         Cache 15 min pour éviter les appels API excessifs."""
         now = time.time()
         if now - self._adx_cache_ts < self._adx_cache_ttl:
             return self._adx_cache_mult
 
         symbols = cfg.SYMBOLS
+        adx_threshold = cfg.REGIME_ADX_TREND_ENTER  # configurable depuis default.yaml
         low_adx_count = 0
         total_checked = 0
 
@@ -742,11 +789,11 @@ class FTMOProtector:
                 dx = 100.0 * abs(di_plus - di_minus) / (di_plus + di_minus) if (di_plus + di_minus) > 0 else 0
                 adx_val = dx  # simplified ADX
 
-                if adx_val < 22:
+                if adx_val < adx_threshold:
                     low_adx_count += 1
-                    logger.debug(f"  [ADX FILTER] {sym}: ADX={adx_val:.1f} < 22 → LOW")
+                    logger.debug(f"  [ADX FILTER] {sym}: ADX={adx_val:.1f} < {adx_threshold} → LOW")
                 else:
-                    logger.debug(f"  [ADX FILTER] {sym}: ADX={adx_val:.1f} >= 22 → OK")
+                    logger.debug(f"  [ADX FILTER] {sym}: ADX={adx_val:.1f} >= {adx_threshold} → OK")
             except Exception as e:
                 logger.debug(f"  [ADX FILTER] {sym}: erreur {e}")
                 continue
@@ -758,12 +805,14 @@ class FTMOProtector:
         if ratio >= 0.50:
             self._adx_cache_mult = 0.50
             logger.warning(
-                f"  [ADX FILTER] {low_adx_count}/{total_checked} symboles ADX<22 "
+                f"  [ADX FILTER] {low_adx_count}/{total_checked} symboles ADX<{adx_threshold} "
                 f"({ratio:.0%}) → RISK × 0.50 (marché RANGING)"
             )
         else:
             self._adx_cache_mult = 1.0
-            logger.info(f"  [ADX FILTER] {low_adx_count}/{total_checked} symboles ADX<22 ({ratio:.0%}) → risque normal")
+            logger.info(
+                f"  [ADX FILTER] {low_adx_count}/{total_checked} symboles ADX<{adx_threshold} ({ratio:.0%}) → risque normal"
+            )
 
         self._adx_cache_ts = now
         return self._adx_cache_mult

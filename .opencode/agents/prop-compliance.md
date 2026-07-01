@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Prop Compliance — vérifie la conformité aux règles des prop firms (FTMO, etc.)
 mode: subagent
 permission:

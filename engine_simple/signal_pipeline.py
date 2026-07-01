@@ -349,15 +349,22 @@ class SignalPipeline:
         if h4_conf < 1.0 and signal.get("score", 0.6) > 0.5:
             signal["score"] = max(0.5, signal["score"] * 0.90)
 
-        # Per-symbol risk_mult (base × OL risk_mult)
-        # 🟢 Réactivé 25 Juin 2026: calibration_state.json séparé et fonctionnel.
-        # OL risk_mult s'adapte au WR :
-        #   WR<70% → ×0.75, WR 78-82% → ×1.05, WR>82% → ×1.15
-        #   expectancy<0 → ×0.5 (protection)
-        symbol_config = self.symbol_limits.get(symbol, {})
-        base_risk_mult = symbol_config.get("risk_mult", 1.0)
-        # ol_risk_mult est capturé dans le bloc OL ci-dessus (fallback=0.75 si exception)
-        signal["risk_mult"] = base_risk_mult * ol_risk_mult
+        # Per-symbol risk_mult — via SymbolParamManager (unifié)
+        #   strategy.py SYMBOL_CONFIG = source de vérité (soft blocks prioritaires)
+        #   OnlineLearner adapte selon WR (si pas de soft block)
+        #   cfg_score, dyn_score, WR_all, PnL, PF disponibles dans params
+        from engine_simple.symbol_params import get_symbol_param, update_dyn_score
+
+        static_risk_mult = get_symbol_param(symbol, "risk_mult", 1.0)
+        effective_risk_mult = static_risk_mult * ol_risk_mult
+        # Si la config statique est plus basse (soft block), elle gagne
+        if static_risk_mult < effective_risk_mult:
+            logger.info(
+                f"  [SOFT BLOCK] {symbol}: risk_mult {effective_risk_mult:.3f} → {static_risk_mult:.3f} "
+                f"(stratégie prioritaire)"
+            )
+            effective_risk_mult = static_risk_mult
+        signal["risk_mult"] = effective_risk_mult
         signal["entry_price"] = entry if raw["action"] == "BUY" else (tick.bid if tick else 0)
         signal["higher_tf_conf"] = round(h4_conf, 2)
         atr_price = signal.get("atr", 0)
@@ -650,8 +657,16 @@ class SignalPipeline:
             ap = self._adaptive_params[symbol]
             adapted = ap.get_adapted_params()
             if adapted.sample_size >= 20:
+                # NE PAS multiplier par adapted.risk_mult — l'OL gère déjà le risk
+                # via online_history (fenêtre 200 trades). La double pénalité OL×AP
+                # réduisait le risk_mult à ~0.39 même pour des symboles corrects.
+                # On garde adapted.risk_mult = 1.0 ici et on loggue la valeur pour diagnostic.
                 current_rm = signal.get("risk_mult", 1.0)
-                signal["risk_mult"] = current_rm * adapted.risk_mult
+                if adapted.risk_mult < 0.9:
+                    logger.debug(
+                        f"  [ADAPTIVE] {symbol}: risk_mult AP={adapted.risk_mult:.2f} ignoré (OL déjà actif), risk_mult final={current_rm:.2f}"
+                    )
+                # adapted.sl_mult et tp_mult sont ignorés ici car gérés par ftmo_protector/trailer
                 signal["adaptive_params"] = adapted.to_dict()
         except Exception as e:
             logger.debug(f"  [ADAPTIVE] {symbol}: erreur: {e}")

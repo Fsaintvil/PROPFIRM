@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Corrige automatiquement les bugs et problèmes du robot MT5
 mode: subagent
 permission:

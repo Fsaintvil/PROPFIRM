@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Chief Investment Officer — coordonne le council, synthétise les débats, déclenche les cycles de 15s
 mode: subagent
 permission:

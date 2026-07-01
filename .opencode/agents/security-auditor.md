@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Security Auditor — vérifie la sécurité du code, des données, des accès, et des secrets
 mode: subagent
 permission:

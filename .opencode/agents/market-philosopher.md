@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Market Philosopher — fournit le contexte macro, le sentiment de marché, et la vue d'ensemble
 mode: subagent
 permission:

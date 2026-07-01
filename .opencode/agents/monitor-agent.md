@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Monitor Agent — watchdog allégé qui vérifie que le robot respire et que ses métriques sont vertes
 mode: subagent
 permission:

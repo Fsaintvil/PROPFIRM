@@ -265,7 +265,7 @@ class OnlineLearner:
             # Cela arrive si le seed n'a pas encore été chargé ou si _update_params a supprimé
             # les params (trop peu de trades valides). Normal en début de vie du robot.
             logger.debug(f"[OnlineLearner] {symbol}: fallback defaults (no adapted_params)")
-            return {"thresh": base_thresh, "risk_mult": 1.0, "sl_mult": 3.0, "tp_mult": 1.0}
+            return {"thresh": base_thresh, "risk_mult": 1.0, "sl_mult": 2.0, "tp_mult": 5.0}
         return self.adapted_params[symbol]
 
     def _update_params(self, symbol):
@@ -310,7 +310,18 @@ class OnlineLearner:
         )
         thresh = 2.0  # ↓ 2.5→2.0 pour + de trades
         risk_mult = 1.0
-        if wr < 0.70:
+
+        # 🔧 FIX 1er Juillet 2026: NE PAS pénaliser les symboles rentables
+        # Un symbole avec WR>55%, expectancy>0.5 ET >20 trades prouve son edge
+        # → on préserve risk_mult=1.0 (pas de réduction)
+        # Note: ne s'applique QUE si WR < 70% (sinon les branches >78%/+82% donnent déjà un bonus)
+        is_proven_winner = wr > 0.55 and wr < 0.70 and expectancy > 0.5 and len(h_valid) >= 20
+
+        if is_proven_winner:
+            thresh = 2.0
+            risk_mult = 1.0  # ne pas réduire le risque des champions
+            logger.info(f"  → Champion préservé: WR={wr:.1%}, expectancy={expectancy:.2f}, risk_mult=1.0")
+        elif wr < 0.70:
             thresh = 2.0  # ↓ 2.5→2.0 (neutre plus agressif)
             risk_mult = 0.75
         elif wr > 0.82:
@@ -319,13 +330,14 @@ class OnlineLearner:
         elif wr > 0.78:
             thresh = 1.8  # ↓ 2.3→1.8 (modérément agressif)
             risk_mult = 1.05
-        if expectancy < 0 and len(h) > 10:
+
+        if expectancy < 0 and len(h) > 10 and not is_proven_winner:
             risk_mult = 0.5
         self.adapted_params[symbol] = {
             "thresh": thresh,
             "risk_mult": risk_mult,
-            "sl_mult": 3.0,
-            "tp_mult": 1.0,
+            "sl_mult": 2.0,
+            "tp_mult": 5.0,
         }
 
     def get_summary(self, symbol):

@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Supreme Council — méta-agent qui tranche les conflits entre agents du council
 mode: subagent
 permission:

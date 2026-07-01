@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Alpha Researcher — découvre de nouvelles sources d'alpha, indicateurs, et améliorations de stratégie
 mode: subagent
 permission:

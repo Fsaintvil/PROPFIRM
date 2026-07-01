@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Adversarial Trader — stress-test la stratégie en trouvant les conditions de marché où elle échoue
 mode: subagent
 permission:

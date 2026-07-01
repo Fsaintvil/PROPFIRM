@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Analyse les performances et suggère des optimisations pour le robot MT5
 mode: subagent
 permission:

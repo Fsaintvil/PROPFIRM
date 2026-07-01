@@ -1,4 +1,5 @@
 ---
+disable: false
 description: MT5 Infrastructure Auditor — vérifie la santé de l'infrastructure MT5, connexion, latence, rate limits
 mode: subagent
 permission:

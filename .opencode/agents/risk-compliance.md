@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Risk & Compliance — protection du capital (veto, DD, daily loss) + conformité FTMO + scénarios d'échec
 mode: subagent
 permission:

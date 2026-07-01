@@ -91,9 +91,9 @@ class TestSymbolPerformance:
         s = p.summary()
         assert s["trades"] == 2
         assert s["win_rate"] == 0.5
-        assert s["total_profit"] == 70.0
-        assert s["avg_r"] == 0.75
-        assert s["max_consecutive_losses"] == 1
+        assert s["total_pnl"] == 70.0
+        assert s["profit_factor"] == round(100.0 / 30.0, 2)
+        assert s["avg_trade"] == 35.0
 
 
 # ── PositionTracker ─────────────────────────────────────────────────

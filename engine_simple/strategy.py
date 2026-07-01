@@ -82,12 +82,12 @@ SYMBOL_CONFIG = {
     "XAUUSD": {
         # Momentum 18 périodes H4 = 72h (Scénario A: +20% trades)
         "momentum_period": 18,
-        # SL/TP trending: 1.8/5.0 (RR 2.78 — SL plus serré H4)
+        # SL/TP trending: 1.8/6.0 (RR 3.33 — ↑ TP 5.0→6.0 pour meilleur RR)
         "sl_atr_trending": 1.8,
-        "tp_atr_trending": 5.0,
-        # SL/TP ranging: 1.5/3.5 (RR 2.33 — TP plus proche en range)
+        "tp_atr_trending": 6.0,
+        # SL/TP ranging: 1.5/5.0 (RR 3.33 — ↑ TP 3.5→5.0 pour meilleur RR)
         "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 3.5,
+        "tp_atr_ranging": 5.0,
         # Seuils ATR (validés backtest 12+ ans, assouplis mode modéré)
         "threshold_trending": 2.0,  # Mode modéré: -0.5 vs 2.5
         "threshold_ranging": 1.5,  # Mode modéré: -0.5 vs 2.0
@@ -97,12 +97,29 @@ SYMBOL_CONFIG = {
         # Pullback bandes (H4 → pullbacks plus larges)
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
+        # Paramètres étendus per-symbol (1er Juillet 2026)
+        "timeframe": "H4",
+        "max_spread_points": 60,
+        "cmf_threshold": 0.10,
+        "obv_div_penalty_high": 0.70,
+        "obv_div_penalty_low": 0.85,
+        "conf": 0.85,
         # Sessions préférées (London+NY overlap élargi)
         "preferred_hours": list(range(24)),  # 24/7 — pas de blocage horaire
         # News filter
         "news_minutes_before": 10,
         "news_minutes_after": 10,
+        "min_score": 0.7,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 1.0,
+        "risk_per_trade": 0.004,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
+        "lot_base": 0.01,
+        "lot_max": 0.10,
+        "daily_loss_limit_pct": 0.02,
+        "max_dd_pct": 0.10,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # BTCUSD H1 — Bitcoin (Juin 2026)
@@ -129,12 +146,29 @@ SYMBOL_CONFIG = {
         # Pullback bandes larges (BTC fait des pullbacks violents)
         "pullback_band_trending": 0.8,
         "pullback_band_ranging": 0.5,
-        # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
+        # Paramètres étendus per-symbol (1er Juillet 2026)
+        "timeframe": "H1",
+        "max_spread_points": 150,
+        "cmf_threshold": 0.20,
+        "obv_div_penalty_high": 0.85,
+        "obv_div_penalty_low": 0.92,
+        "conf": 0.85,
         # Sessions 24/7 — crypto ne dort jamais
         "preferred_hours": list(range(24)),
         # News filter
         "news_minutes_before": 15,
         "news_minutes_after": 15,
+        "min_score": 0.7,
+        "adx_thresh": 20,
+        "min_rr": 1.8,
+        "risk_mult": 1.0,
+        "risk_per_trade": 0.004,
+        "cooldown_minutes": 20,
+        "auto_pause_losses": 3,
+        "lot_base": 0.01,
+        "lot_max": 0.10,
+        "daily_loss_limit_pct": 0.02,
+        "max_dd_pct": 0.10,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # US500.cash — DÉSACTIVÉ 25 Juin 2026 (PF 0.39 toxique)
@@ -173,6 +207,13 @@ SYMBOL_CONFIG = {
         # News filter (protection news US)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
+        # 🔒 RENFORCÉ 1er Juillet 2026 — WR 28.6% live
+        "min_score": 0.75,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 0.75,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # Symboles REACTIVÉS 29 Juin 2026 — High Confidence Only (≥90%)
@@ -194,6 +235,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
+        "min_score": 0.7,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 1.0,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     "GBPUSD": {
         "momentum_period": 20,
@@ -210,6 +257,15 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
+        # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 0% live (5 trades, -$26)
+        # risk_mult=0.05 = 95% de réduction de risque, micro-lot 0.01
+        # min_score=0.90 = seuls les signaux exceptionnels passent
+        "min_score": 0.90,  # très sélectif
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 0.05,  # micro-risque (5% du risque normal)
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     "USDJPY": {
         "momentum_period": 20,
@@ -226,6 +282,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
+        "min_score": 0.7,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 1.0,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     "USDCAD": {
         "momentum_period": 20,
@@ -242,6 +304,13 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
+        # 🔒 RENFORCÉ 1er Juillet 2026 — WR 45.5% live
+        "min_score": 0.75,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 1.0,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     "AUDUSD": {
         "momentum_period": 20,
@@ -258,6 +327,13 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
+        # 🔒 RENFORCÉ 1er Juillet 2026 — WR 26.1% live
+        "min_score": 0.75,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 0.50,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     "NZDUSD": {
         "momentum_period": 20,
@@ -274,6 +350,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
+        "min_score": 0.7,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 1.0,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     "USDCHF": {
         "momentum_period": 20,
@@ -290,6 +372,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
+        "min_score": 0.7,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 1.0,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     "ETHUSD": {
         "momentum_period": 20,
@@ -303,11 +391,32 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
+        # Paramètres étendus per-symbol (1er Juillet 2026)
+        "timeframe": "H1",
+        "max_spread_points": 120,
+        "cmf_threshold": 0.20,
+        "obv_div_penalty_high": 0.85,
+        "obv_div_penalty_low": 0.92,
+        "conf": 0.90,
         "preferred_hours": list(range(24)),
         "news_minutes_before": 0,
         "news_minutes_after": 0,
+        # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 29.4% live, -$139
+        # risk_mult=0.05 = 95% de réduction de risque, micro-lot 0.01
+        # min_score=0.90 = seuls les signaux exceptionnels passent
+        "min_score": 0.90,  # très sélectif
+        "adx_thresh": 20,
+        "min_rr": 2.0,
+        "risk_mult": 0.05,  # micro-risque (5% du risque normal)
+        "risk_per_trade": 0.001,  # risque réduit (soft block)
+        "cooldown_minutes": 30,
+        "auto_pause_losses": 3,
+        "lot_base": 0.01,
+        "lot_max": 0.02,  # plafonné (soft block)
+        "daily_loss_limit_pct": 0.01,  # 1% max par jour (soft block)
+        "max_dd_pct": 0.05,  # 5% max drawdown (soft block)
     },
-    # ═══════════════════════════════════════════════════════════════════════
+    # ═══════════════════════════════════════════════════════════
     # US100.cash H1 — Nasdaq 100 (AJOUTÉ 29 Juin 2026 — Target 80% WR)
     # Backtest avec coûts: WR 74.0%, PF 1.09, DD 6.4%
     # ═══════════════════════════════════════════════════════════════════════
@@ -327,8 +436,15 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
+        # 🔒 RENFORCÉ 1er Juillet 2026 — WR 30.8% live
+        "min_score": 0.75,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 0.75,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
-    # ═══════════════════════════════════════════════════════════════════════
+    # ═══════════════════════════════════════════════════════════
     # US500.cash H1 — S&P 500 (AJOUTÉ 29 Juin 2026 — Target 80% WR)
     # Backtest avec coûts: WR 73.6%, PF 1.04, DD 10.5%
     # ═══════════════════════════════════════════════════════════════════════
@@ -347,6 +463,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
+        "min_score": 0.7,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 1.0,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     "XAGUSD": {
         "momentum_period": 20,
@@ -363,6 +485,16 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
+        # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 33.3%, -$1,265 (hémorragie)
+        # risk_mult=0.05 = 95% de réduction de risque, micro-lot 0.01
+        # min_score=0.90 = seuls les signaux exceptionnels passent
+        # Si les signaux redeviennent bons, l'OL détectera la guérison
+        "min_score": 0.90,  # très sélectif
+        "adx_thresh": 22,
+        "min_rr": 2.0,
+        "risk_mult": 0.05,  # micro-risque (5% du risque normal)
+        "cooldown_minutes": 30,
+        "auto_pause_losses": 3,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # GBPJPY H1 — Livre Sterling / Yen Japonais (AJOUTÉ 29 Juin 2026)
@@ -384,6 +516,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
+        "min_score": 0.72,
+        "adx_thresh": 22,
+        "min_rr": 1.6,
+        "risk_mult": 1.0,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 4,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # JP225.cash H1 — Nikkei 225 (AJOUTÉ 29 Juin 2026)
@@ -405,6 +543,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8],  # Asian session
         "news_minutes_before": 15,
         "news_minutes_after": 15,
+        "min_score": 0.72,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 0.9,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # USOIL.cash H1 — US Oil (AJOUTÉ 29 Juin 2026)
@@ -451,6 +595,12 @@ SYMBOL_CONFIG = {
         ],  # 24/7 (↑ 30 Juin: débloquer Asie)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
+        "min_score": 0.75,
+        "adx_thresh": 22,
+        "min_rr": 1.6,
+        "risk_mult": 0.9,
+        "cooldown_minutes": 20,
+        "auto_pause_losses": 4,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # EURJPY H1 — Euro / Yen Japonais (AJOUTÉ 1er Juillet 2026)
@@ -472,6 +622,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
+        "min_score": 0.72,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 1.0,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # EURGBP H1 — Euro / Livre Sterling (AJOUTÉ 1er Juillet 2026)
@@ -493,6 +649,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres seulement
         "news_minutes_before": 5,
         "news_minutes_after": 5,
+        "min_score": 0.75,
+        "adx_thresh": 20,
+        "min_rr": 1.5,
+        "risk_mult": 0.8,
+        "cooldown_minutes": 20,
+        "auto_pause_losses": 4,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # AUDJPY H1 — Dollar Australien / Yen Japonais (AJOUTÉ 1er Juillet 2026)
@@ -514,6 +676,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],  # Asie + Londres
         "news_minutes_before": 5,
         "news_minutes_after": 5,
+        "min_score": 0.72,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 1.0,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # SOLUSD H1 — Solana (AJOUTÉ 1er Juillet 2026)
@@ -534,6 +702,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 24/7
         "news_minutes_before": 0,
         "news_minutes_after": 0,
+        "min_score": 0.75,
+        "adx_thresh": 20,
+        "min_rr": 1.8,
+        "risk_mult": 0.8,
+        "cooldown_minutes": 20,
+        "auto_pause_losses": 3,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # LNKUSD H1 — Chainlink (AJOUTÉ 1er Juillet 2026)
@@ -554,6 +728,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 0,
         "news_minutes_after": 0,
+        "min_score": 0.75,
+        "adx_thresh": 20,
+        "min_rr": 1.8,
+        "risk_mult": 0.8,
+        "cooldown_minutes": 20,
+        "auto_pause_losses": 3,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # BNBUSD H1 — Binance Coin (AJOUTÉ 1er Juillet 2026)
@@ -574,6 +754,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 0,
         "news_minutes_after": 0,
+        "min_score": 0.75,
+        "adx_thresh": 20,
+        "min_rr": 1.8,
+        "risk_mult": 0.8,
+        "cooldown_minutes": 20,
+        "auto_pause_losses": 3,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # GER40.cash H1 — DAX 40 Allemand (AJOUTÉ 1er Juillet 2026)
@@ -594,6 +780,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres
         "news_minutes_before": 15,
         "news_minutes_after": 15,
+        "min_score": 0.72,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 1.0,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # UK100.cash H1 — FTSE 100 Britannique (AJOUTÉ 1er Juillet 2026)
@@ -614,6 +806,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
+        "min_score": 0.72,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 0.9,
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # UKOIL.cash H1 — Brent Oil (AJOUTÉ 1er Juillet 2026)
@@ -634,6 +832,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
+        "min_score": 0.75,
+        "adx_thresh": 22,
+        "min_rr": 1.6,
+        "risk_mult": 0.9,
+        "cooldown_minutes": 20,
+        "auto_pause_losses": 4,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # NATGAS.cash H1 — Natural Gas (AJOUTÉ 1er Juillet 2026)
@@ -654,26 +858,59 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],  # NY session
         "news_minutes_before": 15,
         "news_minutes_after": 15,
+        "min_score": 0.8,
+        "adx_thresh": 22,
+        "min_rr": 1.8,
+        "risk_mult": 0.6,
+        "cooldown_minutes": 30,
+        "auto_pause_losses": 3,
     },
 }
 
-# Fallback par défaut
+# Fallback par défaut — utilisé si un symbole n'a pas de config personnalisée
+# Tous les 27 symboles actifs ont leur propre config, donc ce fallback
+# n'est utilisé que pour les symboles non listés (cas d'erreur).
 DEFAULT_SYMBOL_CONFIG = {
+    # ── Trading ────────────────────────────────────────────────────────
     "momentum_period": 20,
     "sl_atr_trending": 2.0,
     "tp_atr_trending": 5.0,
     "sl_atr_ranging": 1.5,
-    "tp_atr_ranging": 5.0,  # ↑ 4.0→5.0 (30 Juin: RR≥1.67 avec SL OB cap 3.0×ATR)
+    "tp_atr_ranging": 5.0,
     "threshold_trending": 2.5,
     "threshold_ranging": 2.0,
-    "adx_slope_threshold": -6.0,  # original performant
-    "adx_slope_threshold_strong": -10.0,  # original performant
+    "adx_slope_threshold": -6.0,
+    "adx_slope_threshold_strong": -10.0,
     "pullback_band_trending": 0.5,
     "pullback_band_ranging": 0.3,
-    # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
+    "timeframe": "H1",
+    # ── Horaires ──────────────────────────────────────────────────────
     "preferred_hours": list(range(24)),
     "news_minutes_before": 5,
     "news_minutes_after": 5,
+    # ── Filtres & Score ───────────────────────────────────────────────
+    "min_score": 0.70,  # score minimum pour entrer (cfg_score)
+    "conf": 0.85,  # seuil HIGH_CONF confidence
+    "adx_thresh": 22,  # ADX minimum pour régime TREND
+    "min_rr": 1.5,  # RR minimum exigé
+    # ── Risque ────────────────────────────────────────────────────────
+    "risk_mult": 1.0,  # multiplicateur risque (1.0 = normal)
+    "risk_per_trade": 0.004,  # risque en % du capital par trade
+    "cooldown_minutes": 15,  # pause après perte
+    "auto_pause_losses": 5,  # pertes consécutives avant pause
+    # ── Lots ──────────────────────────────────────────────────────────
+    "lot_base": 0.01,  # lot minimum de départ
+    "lot_max": 0.10,  # lot maximum après progression WR
+    # ── Spreads & Positions ───────────────────────────────────────────
+    "max_spread_points": 120,  # spread maximum en points
+    "max_positions_per_symbol": 6,  # positions max par symbole
+    # ── Volume Indicators ─────────────────────────────────────────────
+    "cmf_threshold": 0.10,  # seuil Chaikin Money Flow
+    "obv_div_penalty_high": 0.70,  # pénalité OBV divergence forte
+    "obv_div_penalty_low": 0.85,  # pénalité OBV divergence faible
+    # ── Protection ────────────────────────────────────────────────────
+    "daily_loss_limit_pct": 0.02,  # perte journalière max (2%)
+    "max_dd_pct": 0.10,  # drawdown max depuis peak (10%)
 }
 
 # Compatibilité avec l'ancien code (momentum periods)
@@ -703,6 +940,14 @@ def _get_symbol_config(symbol: str | None) -> dict:
     if symbol is None:
         return DEFAULT_SYMBOL_CONFIG
     return SYMBOL_CONFIG.get(symbol, DEFAULT_SYMBOL_CONFIG)
+
+
+def get_symbol_full_config(symbol: str) -> dict:
+    """Retourne la config complète d'un symbole, champs manquants comblés par DEFAULT."""
+    cfg = DEFAULT_SYMBOL_CONFIG.copy()
+    if symbol in SYMBOL_CONFIG:
+        cfg.update(SYMBOL_CONFIG[symbol])
+    return cfg
 
 
 def _get_momentum_period(symbol: str | None) -> int:

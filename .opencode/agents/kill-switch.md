@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Kill Switch — arrêt d'urgence unifié, ferme tout et stoppe le robot
 mode: subagent
 permission:

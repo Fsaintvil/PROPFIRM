@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Quant Auditor — analyse statistique, overfitting, walk-forward, robustesse des backtests
 mode: subagent
 permission:

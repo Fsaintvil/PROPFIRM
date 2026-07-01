@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Risk Marshal — surveille le risque d'exécution : slippage, gaps, fills, time-stop
 mode: subagent
 permission:

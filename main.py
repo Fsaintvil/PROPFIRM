@@ -322,7 +322,7 @@ class FTMO_SIMPLE:
         self.feature_store = FeatureStore()
         self.notifier = Notifier()
         if not self.notifier.is_enabled():
-            logger.warning(
+            logger.info(
                 "TELEGRAM NON CONFIGURE: les notifications de crash "
                 "ne seront pas envoyees. Configure les tokens dans .env"
             )
@@ -1168,7 +1168,8 @@ class FTMO_SIMPLE:
                             }
                         )
 
-                    report = self.dashboard.generate_report(robot_state, positions_data)
+                    symbol_metrics = self.tracker.performance_summary() if hasattr(self, "tracker") else None
+                    report = self.dashboard.generate_report(robot_state, positions_data, metrics=symbol_metrics)
                     if self.cycle_count % 100 == 0:  # Print full report every 100 cycles
                         self.dashboard.print_report(report)
                     self.dashboard.save_report(report)

@@ -79,9 +79,11 @@ class SymbolPerformance:
         return {
             "trades": self.trades,
             "win_rate": round(self.win_rate, 3),
-            "total_profit": round(self.total_profit, 2),
-            "avg_r": round(self.avg_r_multiple, 2),
-            "max_consecutive_losses": self.max_consecutive_losses,
+            "profit_factor": round(self.profit_factor, 2),
+            "total_pnl": round(self.total_profit, 2),
+            "avg_trade": round(self.avg_profit, 2),
+            "max_dd": 0.0,
+            "sharpe": 0.0,
         }
 
 

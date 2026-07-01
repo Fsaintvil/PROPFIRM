@@ -1,4 +1,5 @@
 ---
+disable: false
 description: System Monitor — surveillance 24/7 du robot, logs, métriques, mémoire, données, alertes
 mode: subagent
 permission:

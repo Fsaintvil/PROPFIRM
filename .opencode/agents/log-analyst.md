@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Log Analyst — analyse forensique des logs pour détecter anomalies, patterns d'erreur et causes racines
 mode: subagent
 permission:

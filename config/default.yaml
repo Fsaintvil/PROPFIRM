@@ -65,7 +65,7 @@ trading:
     - NATGAS.cash
 
   # Limites globales — 27 symboles (synchronisé 1er Juillet 2026)
-  max_positions: 40             # filet de sécurité (portfolio_controller = 40)
+  max_positions: 20             # ↓ 40→20 (1er Juillet 2026 — réduire dilution, concentrer qualité)
   max_positions_per_symbol: 6   # max 6/symbole (pipeline: 3 BUY + 3 SELL en HIGH CONF)
   max_trades_per_day: 200       # 27 symboles × ~7 trades/jour
   max_signals_per_cycle: 25     # marge pour signaux simultanés (plafond schema 25)
@@ -75,7 +75,7 @@ trading:
   batch_interval_sec: 5         # 5s
   trading_start_hour: 0
   trading_end_hour: 24          # 24/7 — sans arret
-  danger_hours: [7, 17]         # 07:00=fermeture Asie (25% WR, -$318) / 17:00=fermeture Europe (21.7% WR, -$218) — Supreme Council 28 Juin
+  danger_hours: [1, 4, 7, 17, 21, 23]  # 🌙 AJOUTÉ 1er Juillet 2026: 01h(WR35%), 04h(19%), 07h(22%), 17h(28%), 21h(0%), 23h(12%) — Quant Auditor
   history_lookback_days: 7
 
 # ── Signal ───────────────────────────────────────────────────────────────
@@ -226,7 +226,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 1.00
+    risk_mult: 0.05  # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 0%, -$26
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -536,7 +536,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 1.00
+    risk_mult: 0.05  # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 33.3%, -$1,265
     max_spread_points: 80
     adx_thresh: 22
     allow_buys: true
@@ -660,7 +660,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 1.00
+    risk_mult: 0.05  # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 29.4%, -$139
     max_spread_points: 120
     adx_thresh: 20
     allow_buys: true
@@ -785,7 +785,7 @@ symbol_limits:
     max_lot: 0.01
     min_lot: 0.01
     risk_mult: 1.00
-    max_spread_points: 50
+    max_spread_points: 100      # ↑ 50→100 1er Juillet 2026 (spread réel ~40-80)
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -816,7 +816,7 @@ symbol_limits:
     max_lot: 0.01
     min_lot: 0.01
     risk_mult: 1.00
-    max_spread_points: 50
+    max_spread_points: 200     # ↑ 50→200 1er Juillet 2026 (spread réel ~80-150)
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -847,7 +847,7 @@ symbol_limits:
     max_lot: 0.01
     min_lot: 0.01
     risk_mult: 1.00
-    max_spread_points: 60
+    max_spread_points: 200     # ↑ 60→200 1er Juillet 2026 (spread réel ~80-150)
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -878,7 +878,7 @@ symbol_limits:
     max_lot: 0.01
     min_lot: 0.01
     risk_mult: 1.00
-    max_spread_points: 60
+    max_spread_points: 200     # ↑ 60→200 1er Juillet 2026 (spread réel ~100-200)
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true

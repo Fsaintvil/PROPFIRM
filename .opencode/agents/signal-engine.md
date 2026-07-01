@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Signal Engine — consolide la génération de signaux MOM20x3 + filtres (ICT déprécié)
 mode: subagent
 permission:

@@ -2,7 +2,7 @@
 
 > **Mise à jour 1er Juillet 2026** : Activation 27 symboles, lot progressif WR-based, corrélation active.
 > Réparations post-régression (min_score 0.60 rétabli), correction des 10 pertes consécutives,
-> réactivation de tous les agents et skills du council.
+> **réactivation de TOUS les 22 agents** du council, création des skills **python-pro** et **data-analysis**.
 > ⚠️ **Ne pas réactiver le pipeline ML avant 500+ trades propres par symbole.**
 
 ## Architecture Intelligence
@@ -246,35 +246,46 @@ XAUUSD       11 734  65.3%   -$51,445  126.2%
 - Rolling windows 20/50/100/200
 - Alertes : WR baisse >15%, PF < 1.0, DD approche 10%
 
-## Agents IA
+## Agents IA — Council au complet (22 agents)
+
 ```
 Robot Manager (primary agent)
-  ├── @cio                  → Coordination, cycles 15s
-  ├── @system-monitor       → Surveillance 24/7, logs, mémoire, données
-  ├── @risk-compliance      → Capital, FTMO, veto, corrélation, conformité
-  ├── @signal-engine        → Signaux MOM20x3, filtres, régime
-  ├── @adaptive-engine      → Calibration ML, OnlineLearner, MetaLearner, adapted_params
-  ├── @auto-fixer           → Correction chirurgicale des bugs
-  ├── @kill-switch          → Arrêt d'urgence unifié
-  ├── @quant-auditor        → Statistiques, overfitting, validation
-  ├── @optimizer            → Analyse performance, ajustements
-  ├── @data-manager         → Données MT5 fiables (fraîcheur, schéma, intégrité)
-  ├── @performance-engineer → Mesure vitesse, stabilité, mémoire, CPU, 24/7
-  └── @supreme-council      → Méta-agent, tranche les conflits
-```
-### Conseillers spécialisés (fichiers prompts disponibles)
-```
-  ├── @adversarial-trader           → Stress-test de la stratégie
-  ├── @alpha-researcher             → Recherche de nouveaux signaux
-  ├── @devils-advocate              → Contradicteur socratique
-  ├── @ftmo-prosecutor              → Procureur FTMO (conformité)
-  ├── @log-analyst                  → Analyse forensique des logs
-  ├── @market-philosopher           → Contexte macro et inter-marchés
-  ├── @monitor-agent                → Watchdog allégé
-  ├── @mt5-infrastructure-auditor   → Santé de la connexion MT5
-  ├── @prop-compliance              → Conformité prop firms (FTMO, etc.)
-  ├── @risk-marshal                 → Risque d'exécution (slippage, spread)
-  └── @security-auditor             → Sécurité du code et des données
+│
+├── 🔵 CORE COUNCIL (décision & coordination)
+│   ├── @cio                  → Coordination, cycles 15s
+│   ├── @supreme-council      → Méta-agent, tranche les conflits
+│   ├── @risk-compliance      → Capital, FTMO, veto, corrélation, conformité
+│   └── @kill-switch          → Arrêt d'urgence unifié
+│
+├── 🟢 SURVEILLANCE & INFRA
+│   ├── @system-monitor       → Surveillance 24/7, logs, mémoire, données
+│   ├── @monitor-agent        → Watchdog allégé du robot
+│   ├── @performance-engineer → Mesure vitesse, stabilité, mémoire, CPU
+│   ├── @mt5-infrastructure-auditor → Santé connexion MT5
+│   └── @data-manager         → Données MT5 fiables (fraîcheur, schéma, intégrité)
+│
+├── 🟡 SIGNAL & STRATÉGIE
+│   ├── @signal-engine        → Signaux MOM20x3, filtres, régime
+│   ├── @adaptive-engine      → Calibration ML, OnlineLearner
+│   ├── @alpha-researcher     → Recherche de nouveaux signaux
+│   └── @adversarial-trader   → Stress-test de la stratégie
+│
+├── 🟠 ANALYSE & OPTIMISATION
+│   ├── @quant-auditor        → Statistiques, overfitting, validation
+│   ├── @optimizer            → Analyse performance, ajustements
+│   ├── @log-analyst          → Analyse forensique des logs
+│   └── @market-philosopher   → Contexte macro et inter-marchés
+│
+├── 🔴 RISQUE & CONFORMITÉ
+│   ├── @ftmo-prosecutor      → Procureur FTMO (conformité)
+│   ├── @prop-compliance      → Conformité prop firms (FTMO, etc.)
+│   ├── @risk-marshal         → Risque d'exécution (slippage, spread)
+│   └── @security-auditor     → Sécurité du code, données, secrets
+│
+└── 🟣 CORRECTION & DÉBAT
+    ├── @auto-fixer           → Correction chirurgicale des bugs
+    ├── @devils-advocate      → Contradicteur socratique
+    └── @eth-usd-specialist   → Spécialiste ETHUSD (si réactivé)
 ```
 
 ### Trading Intelligence Council (cycles 15s)
@@ -299,6 +310,19 @@ Robot Manager (primary agent)
 Si DD>8% ou daily loss>1.8% → **STOP immédiat**. Tu ne peux pas passer outre.
 Pour contester un veto, convoque le `@supreme-council`.
 
-### Agents désactivés (code conservé, fichiers non chargés)
-Les fichiers suivants existent dans `.opencode/agents/` mais ne sont pas activement consultés par défaut. Ils peuvent être réactivés sur demande explicite :
-- `@eth-usd-specialist`, `@us500-commissioner`, `@us-oil-analyst` — spécialistes par actif (obsolètes après désactivation des symboles)
+### Skills disponibles (8)
+| Skill | Domaine | Quand l'utiliser |
+|-------|---------|-----------------|
+| **python-pro** | Développement Python, debugging, profiling, tests | Bug complexe, refactoring, optimisation code |
+| **data-analysis** | Analyse financière pandas/numpy, backtest, métriques | Analyse trades logs, calcul Sharpe/drawdown |
+| **mom20x3-strategy** | Signaux MOM20x3, seuils ATR, filtres | Problème de signal, ajustement seuils |
+| **ftmo-protector** | Règles FTMO, trailing, DD, daily loss | Trade refusé, règle FTMO, trailing bloqué |
+| **backtest-validation** | Stats, p-value, walk-forward, overfitting | Valider un edge, analyse statistique |
+| **mt5-operations** | Connexion MT5, erreurs API, retry | MT5 déconnecté, ordre rejeté, infra |
+| **monitoring-health** | Watchdog, métriques, alertes, logs | Bilan santé, analyse logs, redémarrage |
+| **market-regime** | ADX/ATR/MA, 5 régimes, trailing par régime | Régime mal détecté, trailing inadapté |
+
+### Agents désactivés (code conservé, non chargés)
+Les fichiers suivants existent dans `.opencode/agents/` mais ne sont plus référencés :
+- `@eth-usd-specialist` — spécialiste ETHUSD (devenu superviseur dans le council)
+- `@us500-commissioner`, `@us-oil-analyst` — spécialistes par actif (supprimés en faveur du council généraliste)

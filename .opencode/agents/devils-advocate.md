@@ -1,4 +1,5 @@
 ---
+disable: false
 description: Devil's Advocate — conteste chaque décision, hypothèse et conclusion des autres agents
 mode: subagent
 permission:

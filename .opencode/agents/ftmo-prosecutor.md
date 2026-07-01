@@ -1,4 +1,5 @@
 ---
+disable: false
 description: FTMO Prosecutor — scrute chaque trade pour détecter les violations des règles FTMO
 mode: subagent
 permission:

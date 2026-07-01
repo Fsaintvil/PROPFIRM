@@ -486,8 +486,9 @@ class TestPhase1MOM20x3:
         mock_adaptive.learner.get_params.return_value = {"thresh": 2.5, "risk_mult": 0.75}
         signal = pipeline._phase1_mom20x3("BTCUSD")
         assert signal is not None
-        # BTCUSD base=0.65 × OL=0.75 = 0.49
-        assert abs(signal["risk_mult"] - 0.49) < 0.01
+        # BTCUSD base=1.0 (strategy.py) × OL=0.75 = 0.75
+        # (strategy.py SYMBOL_CONFIG est la source de vérité)
+        assert abs(signal["risk_mult"] - 0.75) < 0.01
 
 
 # ── Phase 2: ADX Filter ──────────────────────────────────────────────────
