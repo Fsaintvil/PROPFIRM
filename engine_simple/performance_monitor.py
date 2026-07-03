@@ -397,11 +397,26 @@ class PerformanceMonitor:
             self._save()
 
     def _dedup_alert(self, metric: str) -> bool:
-        """Déduplication: n'ajoute une alerte que si la dernière identique date de > 1h."""
+        """Déduplication: n'ajoute une alerte que si aucune identique n'existe déjà dans l'historique
+        pour la même date. Le cache mémoire évite de rescanner le JSON à chaque cycle."""
         now = datetime.utcnow().timestamp()
         last = self._last_alert_time.get(metric, 0)
-        if now - last < 3600:  # 1h de cooldown
+        if now - last < 86400:  # 24h de cooldown — une alerte par jour maximum
             return False
+        # Vérification dans l'historique persisté : si une alerte avec la même métrique
+        # et la même date existe déjà, ne pas dupliquer
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        metric_base = metric.rsplit("_", 1)[0]  # retire le suffixe date
+        for existing in self.history.get("alerts", []):
+            if existing.get("date") == today:
+                existing_metric = existing.get("metric", "")
+                existing_symbol = existing.get("symbol", "")
+                # Extraire la métrique de l'alerte existante
+                if existing_metric == metric_base or existing_metric == metric:
+                    # Si alertes de symbole, comparer aussi le symbole
+                    # 🐛 FIX 3 Juillet: "SYMBOL" (maj) pas "symbol" — le dedup ne marchait jamais
+                    if "SYMBOL" in metric.upper() or not existing_symbol:
+                        return False
         self._last_alert_time[metric] = now
         return True
 
