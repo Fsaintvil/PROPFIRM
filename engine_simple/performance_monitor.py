@@ -211,6 +211,18 @@ class PerformanceMonitor:
     def _save(self):
         """Sauvegarde l'historique (thread-safe via _lock)."""
         with self._lock:
+            # 🔧 Dédoublonnage systématique des alertes avant sauvegarde
+            alerts = self.history.get("alerts", [])
+            seen = set()
+            deduped = []
+            for a in alerts:
+                key = (a.get("date"), a.get("metric"), a.get("symbol", ""))
+                if key not in seen:
+                    seen.add(key)
+                    deduped.append(a)
+            if len(deduped) != len(alerts):
+                logger.info(f"[PERF] Dédoublonnage: {len(alerts)} → {len(deduped)} alertes")
+            self.history["alerts"] = deduped[-30:]  # garde max 30 alertes récentes
             try:
                 RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
                 tmp = HISTORY_FILE.with_suffix(".tmp")  # écriture atomique
@@ -396,28 +408,57 @@ class PerformanceMonitor:
 
             self._save()
 
-    def _dedup_alert(self, metric: str) -> bool:
-        """Déduplication: n'ajoute une alerte que si aucune identique n'existe déjà dans l'historique
-        pour la même date. Le cache mémoire évite de rescanner le JSON à chaque cycle."""
+    def _dedup_alert(self, metric_key: str) -> bool:
+        """Déduplication: une alerte par jour maximum par (type, symbole).
+
+        metric_key format: "TYPE_SYMBOL_YYYY-MM-DD" (ex: "SYMBOL_LOSING_AUDUSD_2026-07-03")
+        ou "TYPE_YYYY-MM-DD" pour les alertes globales.
+        Le cache mémoire évite de rescanner le JSON à chaque cycle."""
         now = datetime.utcnow().timestamp()
-        last = self._last_alert_time.get(metric, 0)
+        last = self._last_alert_time.get(metric_key, 0)
         if now - last < 86400:  # 24h de cooldown — une alerte par jour maximum
             return False
-        # Vérification dans l'historique persisté : si une alerte avec la même métrique
-        # et la même date existe déjà, ne pas dupliquer
+
         today = datetime.utcnow().strftime("%Y-%m-%d")
-        metric_base = metric.rsplit("_", 1)[0]  # retire le suffixe date
+
+        # Extraire le type d'alerte (avant le premier symbole underscore)
+        # metric_key = "SYMBOL_LOSING_AUDUSD_2026-07-03" → type="SYMBOL_LOSING"
+        parts = metric_key.split("_")
+        # Le type est composé des mots avant le symbole (ex: SYMBOL + LOSING)
+        # On cherche le pattern: TYPE_DATE ou TYPE_SYMBOL_DATE
+        if metric_key.endswith(f"_{today}"):
+            base = metric_key[: -len(f"_{today}")]  # retire le suffixe date
+            # base = "SYMBOL_LOSING_AUDUSD" ou "CHALLENGE_BEHIND"
+            # Le type d'alerte stocké est le préfixe avant le symbole
+            # On extrait le type en retirant le symbole si présent
+            # Pour les alertes sans symbole: type = base
+            # Pour les alertes avec symbole: type = base sans le dernier segment
+            pass
+
         for existing in self.history.get("alerts", []):
-            if existing.get("date") == today:
-                existing_metric = existing.get("metric", "")
-                existing_symbol = existing.get("symbol", "")
-                # Extraire la métrique de l'alerte existante
-                if existing_metric == metric_base or existing_metric == metric:
-                    # Si alertes de symbole, comparer aussi le symbole
-                    # 🐛 FIX 3 Juillet: "SYMBOL" (maj) pas "symbol" — le dedup ne marchait jamais
-                    if "SYMBOL" in metric.upper() or not existing_symbol:
-                        return False
-        self._last_alert_time[metric] = now
+            if existing.get("date") != today:
+                continue
+
+            existing_type = existing.get("metric", "")
+            existing_symbol = existing.get("symbol", "")
+
+            # Vérifier si le type correspond : le metric_key commence par le type stocké
+            # ex: "SYMBOL_LOSING_AUDUSD_2026-07-03" commence par "SYMBOL_LOSING" ✅
+            if metric_key.startswith(existing_type):
+                # Si l'alerte a un symbole, vérifier qu'il correspond aussi
+                if existing_symbol:
+                    # Extraire le symbole du metric_key: "SYMBOL_LOSING_AUDUSD_..."
+                    # Le symbole est entre le type et la date
+                    sym_start = len(existing_type) + 1  # +1 pour l'underscore
+                    date_part = f"_{today}"
+                    if metric_key[sym_start:].endswith(date_part):
+                        key_symbol = metric_key[sym_start : -len(date_part)]
+                        if key_symbol == existing_symbol:
+                            return False  # Même type + même symbole + même date → skip
+                else:
+                    return False  # Même type global + même date → skip
+
+        self._last_alert_time[metric_key] = now
         return True
 
     def check_alerts(self):
@@ -525,10 +566,18 @@ class PerformanceMonitor:
                 }
             )
 
-        # Stocker les alertes
+        # Stocker les alertes — REMPLACE (pas append) pour éviter les doublons
+        # 🐛 FIX 3 Juillet: on retire les anciennes alertes du même jour avant d'ajouter les nouvelles
         active = [a for a in alerts if a.get("date") == today]
         if active:
-            self.history["alerts"] = self.history["alerts"][-50:] + active
+            new_keys = {(a.get("metric", ""), a.get("symbol", "")) for a in active}
+            # Garder les alertes des jours précédents + les nouvelles du jour (sans doublons)
+            kept = [
+                a
+                for a in self.history["alerts"]
+                if a.get("date") != today or (a.get("metric", ""), a.get("symbol", "")) not in new_keys
+            ]
+            self.history["alerts"] = kept[-50:] + active
             self._save()
 
         return alerts
