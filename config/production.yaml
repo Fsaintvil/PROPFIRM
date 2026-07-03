@@ -1,31 +1,28 @@
 # ============================================================================
-# PRODUCTION OVERRIDES — Synchronisé 1er Juillet 2026
+# PRODUCTION OVERRIDES — Synchronisé 2 Juillet 2026 (FIX #5)
 # ============================================================================
 # Overrides minimaux pour la production.
 # Les limites sont gérées par default.yaml + portfolio_controller + signal_pipeline.
+# Toutes les valeurs sont synchronisées avec default.yaml (ultra-conservateur).
 # ============================================================================
 
 # ── Corrélation — Réactivée (protection pertes corrélées) ──
 correlation:
   enabled: true
 
-# ── Trading — Synchronisé default.yaml (1er Juillet 2026) ─────────────
+# ── Trading — Synchronisé default.yaml (2 Juillet 2026) FIX #7 ─────
 trading:
-  max_positions: 40             # filet de sécurité (portfolio_controller = 40)
-  max_positions_per_symbol: 6   # pipeline: 3 BUY + 3 SELL en HIGH CONF
-  max_trades_per_day: 200       # 27 symboles × ~7 trades/jour
+  max_positions: 18             # 🔧 ×1.5: 12→18 (sync portfolio_controller)
+  max_positions_per_symbol: 6   # 🔧 ×1.5: 4→6
+  max_trades_per_day: 75        # 🔧 ×1.5: 50→75
 
-# ── Signal ─────────────────────────────────────────────────────────────
-signal:
-  min_score: 0.70               # ↑ 0.60→0.70 1er Juillet 2026
-
-# ── Risk — FTMO-safe ────────────────────────────────────────────────
+# ── Risk — FTMO-safe (ultra-conservateur 2 Juillet 2026) ───────────
 risk:
-  per_trade_pct: 0.004          # 0.40% par trade
+  per_trade_pct: 0.008          # 🚀 PHASE 2: 0.80% (était 0.30%) — x2.7 pour accélérer
   max_daily_loss_pct: 0.02      # FTMO: 2% daily loss
   max_dd_pct: 0.10              # FTMO: 10% max drawdown
-  min_rr_ratio: 1.5             # RR minimum
-  cooldown_minutes: 15          # 15 min de refroidissement
-  auto_pause_losses: 5          # 5 pertes avant pause
-  max_risk_amount: 800.0        # $800 max risque par trade
-  circuit_breaker_dd_pct: 0.08
+  min_rr_ratio: 1.8             # 🚀 PHASE 2: ↓ 2.5→1.8 — plus de signaux, Sharpe encore >1.5
+  cooldown_minutes: 15          # 🚀 PHASE 2: ↓ 30→15 min — récupération plus rapide
+  auto_pause_losses: 5          # 🚀 PHASE 2: ↑ 3→5 pertes — plus de tolérance
+  max_risk_amount: 2000.0       # 🚀 PHASE 2: $2,000 max (était $400) — suit risk_per_trade
+  circuit_breaker_dd_pct: 0.08  # 🚀 PHASE 2: ↑ 6%→8% — laisse plus d'air au drawdown FTMO

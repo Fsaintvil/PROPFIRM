@@ -118,7 +118,7 @@ class RiskConfig(BaseModel):
     min_trading_days: int = Field(default=10, ge=1, le=60)
     max_trading_days: int = Field(default=0, ge=0)
     max_risk_amount: float = Field(default=800.0, ge=0.0)
-    max_spread_points: int = Field(default=120, ge=10, le=300)
+    max_spread_points: int = Field(default=120, ge=10, le=2000)  # 🐛 FIX #16: 300→2000 (JP225 spread=1000pts)
     auto_pause_losses: int = Field(default=5, ge=1, le=20)  # ↓ 10→5 (FTMO-safe)
     recalibration_frequency: int = Field(default=50, ge=10, le=500)
     max_correlated_exposure: float = Field(
@@ -137,10 +137,10 @@ class RiskConfig(BaseModel):
 class SymbolLimit(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    max_lot: float = Field(default=0.10, ge=0.01, le=10)
-    min_lot: float = Field(default=0.01, ge=0.01, le=10)
+    max_lot: float = Field(default=0.50, ge=0.01, le=10)
+    min_lot: float = Field(default=0.05, ge=0.01, le=10)
     risk_mult: float = Field(default=1.0, ge=0.0, le=3.0)
-    max_spread_points: int = Field(default=50, ge=10, le=500)
+    max_spread_points: int = Field(default=50, ge=10, le=2000)  # 🐛 FIX #16: 500→2000 (JP225)
     allow_buys: bool = True
     allow_shorts: bool = True
     min_score: float | None = Field(default=None, ge=0.0, le=1.0)
@@ -183,7 +183,7 @@ class SymbolLimit(BaseModel):
 
 class SecretsConfig(BaseModel):
     mt5_login: str = ""
-    mt5_password: str = ""
+    mt5_password: str = Field(default="", repr=False)  # 🔒 FIX #6: masqué dans les logs
     mt5_server: str = ""
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""

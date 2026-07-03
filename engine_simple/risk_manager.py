@@ -7,6 +7,7 @@ Composants :
   - StressTester : scénarios de stress (3-sigma, gap moves)
   - CircuitBreaker : arrêt automatique si pertes trop rapides
 """
+
 import logging
 import time
 from collections import deque
@@ -31,42 +32,50 @@ class PreTradeChecklist:
 
         # Pré-vérification SANS signal : skip DANGER_HOURS (vérifié plus tard avec le signal)
         can_trade, reason = self.ftmo.can_trade(symbol, check_danger_hours=False)
-        checks.append({
-            "rule": "can_trade",
-            "pass": can_trade,
-            "reason": reason,
-            "severity": "critical",
-        })
+        checks.append(
+            {
+                "rule": "can_trade",
+                "pass": can_trade,
+                "reason": reason,
+                "severity": "critical",
+            }
+        )
         if not can_trade:
             all_pass = False
 
         if self.ftmo.challenge_status in ("FAILED_DD", "FAILED_CONSISTENCY", "PASSED"):
-            checks.append({
-                "rule": "challenge_status",
-                "pass": False,
-                "reason": f"Challenge status: {self.ftmo.challenge_status}",
-                "severity": "critical",
-            })
+            checks.append(
+                {
+                    "rule": "challenge_status",
+                    "pass": False,
+                    "reason": f"Challenge status: {self.ftmo.challenge_status}",
+                    "severity": "critical",
+                }
+            )
             all_pass = False
 
         dd_pct = self.ftmo.current_dd_pct()
         if dd_pct >= self.ftmo.max_dd_pct * 0.8:
-            checks.append({
-                "rule": "dd_warning",
-                "pass": False,
-                "reason": f"DD {dd_pct:.1f}% proche de max {self.ftmo.max_dd_pct:.1f}%",
-                "severity": "warning",
-            })
+            checks.append(
+                {
+                    "rule": "dd_warning",
+                    "pass": False,
+                    "reason": f"DD {dd_pct:.1f}% proche de max {self.ftmo.max_dd_pct:.0%}",
+                    "severity": "warning",
+                }
+            )
 
         if signal:
             rr = signal.get("rr", 0)
             if rr < cfg.MIN_RR_RATIO:
-                checks.append({
-                    "rule": "min_rr",
-                    "pass": False,
-                    "reason": f"RR {rr:.1f} < {cfg.MIN_RR_RATIO}",
-                    "severity": "critical",
-                })
+                checks.append(
+                    {
+                        "rule": "min_rr",
+                        "pass": False,
+                        "reason": f"RR {rr:.1f} < {cfg.MIN_RR_RATIO}",
+                        "severity": "critical",
+                    }
+                )
                 all_pass = False
 
         if self.audit:
@@ -143,7 +152,7 @@ class VaREstimator:
             return position_value * 0.03
         sorted_ret = sorted(self._returns)
         idx = int(len(sorted_ret) * (1 - self.confidence))
-        tail = [abs(r) for r in sorted_ret[:max(idx, 1)]]
+        tail = [abs(r) for r in sorted_ret[: max(idx, 1)]]
         return np.mean(tail) * position_value
 
 
@@ -215,13 +224,13 @@ class CircuitBreaker:
         loss_pct = (reference_equity - current_equity) / max(reference_equity, 1)
         if loss_pct >= self.max_loss_pct:
             logger.warning(
-                f"[CIRCUIT BREAKER] Perte {loss_pct:.1%} > {self.max_loss_pct:.1%} en {self.window_minutes}min")
+                f"[CIRCUIT BREAKER] Perte {loss_pct:.1%} > {self.max_loss_pct:.1%} en {self.window_minutes}min"
+            )
             self._trip(loss_pct, "loss_threshold")
             return True
 
         if consecutive_losses >= self.max_consecutive:
-            logger.warning(
-                f"[CIRCUIT BREAKER] {consecutive_losses} pertes consecutives >= {self.max_consecutive}")
+            logger.warning(f"[CIRCUIT BREAKER] {consecutive_losses} pertes consecutives >= {self.max_consecutive}")
             self._trip(consecutive_losses, "consecutive_losses")
             return True
 
@@ -230,8 +239,9 @@ class CircuitBreaker:
     def _trip(self, value, reason):
         self._tripped = True
         self._trip_time = time.time()
-        logger.critical(f"[CIRCUIT BREAKER] TRIP: {reason}={value} — trading suspendu "
-                       f"{self._cooldown_seconds // 60}min")
+        logger.critical(
+            f"[CIRCUIT BREAKER] TRIP: {reason}={value} — trading suspendu {self._cooldown_seconds // 60}min"
+        )
 
     @property
     def is_tripped(self):

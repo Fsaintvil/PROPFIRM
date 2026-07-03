@@ -1,5 +1,4 @@
 import logging
-import random
 import re
 import time
 from datetime import datetime, timedelta
@@ -62,6 +61,7 @@ class FTMOProtector:
         self.challenge_status = self.challenge.challenge_status
         self._daily_loss_violated = self.challenge._daily_loss_violated
         self._daily_trades_per_symbol = self.challenge._daily_trades_per_symbol
+        self._symbol_daily_pnl = self.challenge._symbol_daily_pnl
         self._opened_today = self.challenge._opened_today
         self._daily_profit_reduced = self.challenge._daily_profit_reduced
         self._symbol_trade_history = self.challenge._symbol_trade_history
@@ -199,6 +199,7 @@ class FTMOProtector:
             lambda: self._check_symbol_health(symbol, signal),
             lambda: self._check_spread(symbol),
             lambda: self._check_global_cooldown(),
+            lambda: self._check_symbol_daily_loss(symbol),  # 🔧 FIX_SUPREME_COUNCIL
             lambda: self._check_daily_limits(),
             lambda: self._check_signal_valid(symbol, signal, positions),
             lambda: self._check_risk_state(symbol, signal),
@@ -215,8 +216,21 @@ class FTMOProtector:
     # ── Sub-checks (extraites de can_trade pour lisibilité) ─────────
 
     def _check_auto_stop(self):
-        """🔒 AUTO-STOP : pause auto-ranging basée sur ADX moyen des symboles."""
+        """🔒 AUTO-STOP : pause auto-ranging basée sur ADX moyen des symboles.
+
+        🐛 FIX #9 (3 Juillet): Si RATIO_STOP >= 1.0, AUTO_STOP est désactivé
+        par l'utilisateur (ne veut plus de pause). On court-circuite directement
+        pour éviter d'appeler decision() à chaque cycle (code mort).
+        """
         try:
+            from engine_simple.auto_stop import RATIO_STOP
+
+            # Désactivé par l'utilisateur (FIX #6, 2 Juillet)
+            if RATIO_STOP >= 1.0:
+                self._auto_stop_paused = False
+                self._auto_stop_until = None
+                return True, None
+
             from engine_simple.auto_stop import decision
 
             # 🐛 FIX 26 Juin 2026: passer self.mt5 au lieu de laisser auto_stop
@@ -272,7 +286,12 @@ class FTMOProtector:
         atr_val = self.trailer._get_atr(symbol)
         atr_ok = True
         if atr_val and atr_val > 0:
-            if spread / atr_val > 0.10:
+            # 🐛 FIX #16 (3 Juillet): Seuil ATR configurable par symbole
+            # EURGBP: ATR très bas → spread 0.5pip = 12.9% ATR → dépassait le 10% fixe
+            max_atr_ratio = sym_cfg.get(
+                "max_spread_atr_ratio", 0.15
+            )  # 🔧 Global default 15% (was 10% — trop strict pour crosses)
+            if spread / atr_val > max_atr_ratio:
                 atr_ok = False
         if not spread_pts_ok or not atr_ok:
             return False, (
@@ -305,6 +324,30 @@ class FTMOProtector:
             return False, f"Daily trade limit (opened: {self._opened_today}/{max_trades})"
         return True, None
 
+    # 🔧 FIX_SUPREME_COUNCIL 2 Juillet 2026: Per-Symbol Daily Loss Limit
+    def _check_symbol_daily_loss(self, symbol):
+        """Bloque un symbole si sa perte quotidienne dépasse le seuil (0.5% du capital par défaut).
+        Les autres symboles ne sont pas affectés.
+
+        🐛 FIX #8 (3 Juillet): Seuil en % du capital au lieu de $200 dur.
+        """
+        daily_pnl = self._symbol_daily_pnl.get(symbol, 0)
+        symbol_loss_pct = self.config.get("SYMBOL_DAILY_LOSS_PCT", 0.005)
+        symbol_loss_limit = self.initial_balance * symbol_loss_pct
+        symbol_warn_pct = self.config.get("SYMBOL_DAILY_WARN_PCT", 0.0025)
+        symbol_warn_limit = self.initial_balance * symbol_warn_pct
+        if daily_pnl < -symbol_loss_limit:
+            return False, (
+                f"{symbol}: Perte quotidienne ${daily_pnl:.0f} < -${symbol_loss_limit:.0f} "
+                f"({symbol_loss_pct:.1%}) → bloque pour aujourd'hui"
+            )
+        if daily_pnl < -symbol_warn_limit:
+            logger.warning(
+                f"  [SYMBOL DAILY LOSS] {symbol}: ${daily_pnl:.0f} aujourd'hui "
+                f"(alerte à -${symbol_warn_limit:.0f}, limite à -${symbol_loss_limit:.0f})"
+            )
+        return True, None
+
     def _check_signal_valid(self, symbol, signal, positions):
         """Direction restrictions, corrélation, score minimum, SL/TP obligatoire."""
         if signal is None:
@@ -329,17 +372,21 @@ class FTMOProtector:
         from engine_simple.symbol_params import get_symbol_params, update_dyn_score
 
         sym_params = get_symbol_params(symbol)
-        cfg_score = sym_params.get("cfg_score", 0.70)
+        cfg_score = sym_params.get("cfg_score", 0.60)
 
         # Calcul du dynamic min_score basé sur WR réel (50 derniers trades)
-        # Si WR < 55% sur ≥5 trades, dyn_score = max(cfg_score, 0.80)
+        # 🐛 FIX #11 (3 Juillet): Abaissé dyn_score de 0.80→0.60 pour correspondre
+        # au nouveau min_score. Le WR global est à 44% — dyn_score=0.80 tuait tout.
+        # Aussi augmenté le nombre de trades minimum de 5→15 pour éviter les faux
+        # positifs sur petits échantillons.
+        # Si WR < 50% sur ≥15 trades, dyn_score = max(cfg_score, 0.60)
         sym_trades = self._symbol_trade_history.get(symbol, [])
         dyn_score = None
-        if len(sym_trades) >= 5:
+        if len(sym_trades) >= 15:
             wins = sum(1 for t in sym_trades if t.get("profit", 0) > 0)
             wr = wins / len(sym_trades)
-            if wr < 0.55:
-                dyn_score = max(cfg_score, 0.80)
+            if wr < 0.50:
+                dyn_score = max(cfg_score, 0.60)
                 if dyn_score != cfg_score:
                     logger.info(
                         f"  [DYNAMIC SCORE] {symbol}: WR={wr:.0f}% ({wins}/{len(sym_trades)}) "
@@ -352,10 +399,22 @@ class FTMOProtector:
 
         effective_min_score = max(cfg_score, dyn_score or 0)
         sig_score = signal.get("score", 0)
-        if sig_score < effective_min_score:
+
+        # MeanReversion adjustment: les signaux MR ont un score bas (0.60) par conception
+        # car ils sont basés sur RSI (extrêmes), pas sur l'intensité MOM20x3.
+        # Au lieu de bypasser, on abaisse le seuil pour MR tout en gardant les autres validations.
+        if signal.get("_strategy") == "MR":
+            effective_min_score = min(effective_min_score, 0.55)
+
+        # 🐛 FIX #12 (3 Juillet): Tolérance floating point 0.001
+        # Les scores passent par des multiplications successives dans le pipeline
+        # (h4_conf ×0.90, OBV ×0.95, VP ×0.90, MTF ×0.82...), ce qui crée des
+        # erreurs d'arrondi: 0.5999999999 < 0.6 = True → signaux valides rejetés.
+        # La tolérance de 0.001 évite ce faux rejet sans compromettre la sélectivité.
+        if sig_score < effective_min_score - 0.001:
             return (
                 False,
-                f"Signal score too low: {sig_score:.2f} < {effective_min_score} (cfg={cfg_score}, dyn={dyn_score or 'N/A'})",
+                f"Signal score too low: {sig_score:.4f} < {effective_min_score} (cfg={cfg_score}, dyn={dyn_score or 'N/A'})",
             )
 
         # FIX #3: SL OBLIGATOIRE — calcul auto si ATR disponible, sinon blocage
@@ -398,12 +457,18 @@ class FTMOProtector:
         obs = signal.get("_structure_obs", [])
         current_atr = signal.get("atr", 0)
         max_sl_atr = 3.0  # Cap: jamais plus de 3×ATR de distance SL (préserve RR)
-        # 🔒 GARDE: entry/action peuvent ne pas être définis si SL/TP étaient déjà dans le signal
-        # (voir bloc FIX #3 ligne 340 — entry et action ne sont assignés que dans ce bloc)
-        if "entry" not in dir() or entry is None:
-            entry = signal.get("entry_price", 0)
-        if "action" not in dir() or action is None:
-            action = signal.get("action", "")
+        # 🔒 GARDE: entry/action peuvent ne pas être définis si une exception est survenue
+        # avant leur assignation dans le try/except ci-dessus. On utilise UnboundLocalError
+        # (Python lance ceci pour une variable définie dans un try mais pas exécutée) +
+        # NameError (variable jamais définie dans le scope).
+        try:
+            _ = entry
+        except (NameError, UnboundLocalError):
+            entry = signal.get("entry_price", 0) if signal else 0
+        try:
+            _ = action
+        except (NameError, UnboundLocalError):
+            action = signal.get("action", "") if signal else ""
         if obs and sl and entry:
             for ob in obs:
                 if not ob.get("is_mitigated"):
@@ -518,8 +583,9 @@ class FTMOProtector:
         sym_cb_override = sym_cfg_cb.get("circuit_breaker_dd_pct_override")
         if sym_cb_override is not None:
             cb_threshold = sym_cb_override
-        # Niveau 1: DD > 6% → risk reduction 50% (toutes directions)
-        dd_warn = 0.06
+        # Niveau 1: DD > seuil_warn → risk reduction 50% (toutes directions)
+        # seuil = 75% du circuit_breaker threshold (ex: cb=8% → warn=6%)
+        dd_warn = cb_threshold * 0.75
         if dd_peak > dd_warn and dd_peak <= cb_threshold:
             if signal:
                 signal["risk_mult"] = signal.get("risk_mult", 1.0) * 0.5
@@ -618,16 +684,12 @@ class FTMOProtector:
 
         utc_hour = datetime.utcnow().hour
 
-        # Danger hours (bypass si signal fort: score ≥ 0.80, ADX ≥ 15)
+        # 🔧 FIX #5: DANGER_HOURS — PLUS AUCUN BYPASS
+        # Le bypass par score≥0.80+ADX≥15 est supprimé.
+        # Les heures dangereuses (WR historique 0-35%) bloquent TOUS les trades.
         danger_hours = self.config.get("DANGER_HOURS", [])
         if utc_hour in danger_hours and check_danger_hours:
-            if signal is not None and signal.get("score", 0) >= 0.80 and signal.get("adx", 0) >= 15:
-                logger.debug(
-                    f"  [DANGER] {symbol}: bypass DANGER_HOUR ({utc_hour}h UTC) "
-                    f"pour signal fort (score={signal.get('score', 0):.2f}, ADX={signal.get('adx', 0):.1f})"
-                )
-            else:
-                return False, f"Danger hour: {utc_hour}h UTC (0% WR historique sur ce créneau)"
+            return False, f"Danger hour: {utc_hour}h UTC (0% WR historique sur ce créneau — bypass supprimé)"
 
         # Session block
         start_hour = self.config.get("TRADING_START_HOUR", 0)
@@ -859,12 +921,12 @@ class FTMOProtector:
     def _get_wr_based_max_lot(self, symbol: str) -> float:
         """Calcule le max_lot progressif basé sur le WR du symbole.
 
-        Système de lot progressif (1er Juillet 2026 — activation 27 symboles) :
-          WR < 55%  → lot 0.01 (démarrage)
-          WR ≥ 55%  → lot 0.03
-          WR ≥ 65%  → lot 0.05
-          WR ≥ 75%  → lot 0.07
-          WR ≥ 85%  → lot 0.10
+        Système de lot progressif (×5 Juillet 2026) :
+          WR < 55%  → lot 0.05 (démarrage ×5)
+          WR ≥ 55%  → lot 0.15
+          WR ≥ 65%  → lot 0.25
+          WR ≥ 75%  → lot 0.35
+          WR ≥ 85%  → lot 0.50
 
         Fenêtre : 20 derniers trades du symbole (minimum 10 pour activer).
 
@@ -872,27 +934,27 @@ class FTMOProtector:
             symbol: Nom du symbole
 
         Returns:
-            float: max_lot basé sur le WR (entre 0.01 et 0.10)
+            float: max_lot basé sur le WR (entre 0.05 et 0.50)
         """
         sym_trades = self._symbol_trade_history.get(symbol, [])
         if len(sym_trades) < 10:
-            logger.debug(f"  [WR-LOT] {symbol}: {len(sym_trades)} trades < 10 → lot=0.01 (pas assez de données)")
-            return 0.01
+            logger.debug(f"  [WR-LOT] {symbol}: {len(sym_trades)} trades < 10 → lot=0.05 (pas assez de données)")
+            return 0.05
 
         recent = sym_trades[-20:] if len(sym_trades) >= 20 else sym_trades
         wins = sum(1 for t in recent if t.get("profit", 0) > 0)
         wr = wins / len(recent)
 
         if wr >= 0.85:
-            max_lot = 0.10
+            max_lot = 0.50
         elif wr >= 0.75:
-            max_lot = 0.07
+            max_lot = 0.35
         elif wr >= 0.65:
-            max_lot = 0.05
+            max_lot = 0.25
         elif wr >= 0.55:
-            max_lot = 0.03
+            max_lot = 0.15
         else:
-            max_lot = 0.01
+            max_lot = 0.05
 
         logger.debug(f"  [WR-LOT] {symbol}: {wins}/{len(recent)} WR={wr:.0%} → max_lot={max_lot:.2f}")
         return max_lot
@@ -900,7 +962,7 @@ class FTMOProtector:
     def calculate_lot(self, symbol, entry, sl, quality=1.0, direction=0, signal_risk_mult=None):
         account = self.mt5.get_account_info()
         if account is None:
-            return 0.01
+            return 0.05
         current_equity = account.equity
 
         # Base risk from RISK_PER_TRADE, ajusté par direction
@@ -954,10 +1016,10 @@ class FTMOProtector:
             logger.debug(f"  [ZONE 2] daily loss {daily_loss_amt / self.initial_balance:.2%} >= {zone2:.1%}, risk 75%")
 
         sym_cfg = self.symbol_limits.get(symbol, {})
-        min_lot = sym_cfg.get("min_lot", 0.01)
+        min_lot = sym_cfg.get("min_lot", 0.05)
         # WR-based max_lot progressif (remplace le max_lot statique de la config)
         max_lot = self._get_wr_based_max_lot(symbol)
-        lot_size = self.config.get("LOT_SIZE", 0.01)
+        lot_size = self.config.get("LOT_SIZE", 0.05)
 
         order_type = self.mt5.ORDER_TYPE_BUY if direction == 0 else self.mt5.ORDER_TYPE_SELL
         sl_profit = self.mt5.calc_profit(order_type, symbol, 0.1, entry, sl)

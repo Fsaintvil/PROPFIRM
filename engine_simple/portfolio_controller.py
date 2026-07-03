@@ -63,14 +63,15 @@ POSITION_GROUPS: dict[str, list[str]] = {
     "COMMODITIES": ["XAUUSD", "XAGUSD", "USOIL.cash", "UKOIL.cash", "NATGAS.cash"],
 }
 
-# Limites d'exposition (fix 1er Juillet 2026 — corrélation stricte 3/2)
-# Les limites sont des filets de sécurité : le pipeline filtre d'abord (3/2/1 par symbole-direction)
-# Portfolio controller = backup pour les cas où le pipeline ne s'applique pas
-MAX_POSITIONS_TOTAL = 40  # 27 symboles × ~1.5 positions/symbole (filet de sécurité)
-MAX_POSITIONS_PER_SYMBOL = 6  # max 6 par symbole (pipeline: 3 BUY + 3 SELL en HIGH CONF)
-MAX_POSITIONS_PER_DIRECTION = 20  # max 20 positions dans la même direction
-MAX_TRADES_PER_GROUP = 3  # max 3 positions TOTAL dans un groupe corrélé
-MAX_TRADES_PER_DIRECTION_IN_GROUP = 2  # max 2 positions dans la même direction dans un groupe
+# Limites d'exposition 🔧 FIX #7 (2 Juillet 2026) — capacité augmentée
+# Ces constantes doivent correspondre à config/default.yaml + config/production.yaml.
+# Le pipeline filtre d'abord (par confiance), portfolio_controller = backup sécurité.
+# ⚠️ NE PAS modifier sans synchroniser default.yaml et production.yaml.
+MAX_POSITIONS_TOTAL = 18  # 🔧 ×1.5 (3 Juillet): 12→18 (11 symboles actifs)
+MAX_POSITIONS_PER_SYMBOL = 6  # 🔧 ×1.5: 4→6 (plus de marge par symbole)
+MAX_POSITIONS_PER_DIRECTION = 9  # 🔧 ×1.5: 6→9
+MAX_TRADES_PER_GROUP = 4  # 🔧 ×1.5: 3→4 (arrondi inférieur)
+MAX_TRADES_PER_DIRECTION_IN_GROUP = 3  # 🔧 ×1.5: 2→3
 
 
 class PortfolioController:

@@ -2,11 +2,13 @@
 # CONFIGURATION PAR DÉFAUT — FTMO 200K Challenge (1er Juillet 2026)
 #
 # ⚠️ ATTENTION — DUAL SOURCE OF TRUTH ⚠️
-# Ce fichier est la DOCUMENTATION des paramètres de signal.
-# La VRAIE source est strategy.py:SYMBOL_CONFIG qui contient les paramètres
-# techniques (momentum_period, thresholds SL/TP, ADX slope, cmf_threshold).
-# Un changement ici n'affecte PAS les signaux réels.
-# Pour modifier un paramètre de signal, changer strategy.py.
+# Ce fichier combine 2 types de paramètres :
+#   1) PARAMÈTRES DE SIGNAL (momentum_period, thresholds SL/TP, ADX slope, cmf_threshold)
+#      → La VRAIE source est strategy.py:SYMBOL_CONFIG. Un changement ici n'affecte PAS les signaux.
+#      → Pour modifier un paramètre de signal, changer strategy.py.
+#   2) PARAMÈTRES DE RISQUE/LOT/CONFIG (max_lot, min_lot, risk_mult, max_spread_points, etc.)
+#      → CEUX-CI SONT LUIS depuis ce YAML par config_simple.py.
+#      → Un changement ici AFFECTE le comportement du robot.
 #
 # 8 actifs : XAUUSD (H4), BTCUSD (H1), EURUSD (H1),
 #            USDJPY (H1), GBPUSD (H1), USDCAD (H1)
@@ -30,47 +32,39 @@ robot:
 # ── Trading ──────────────────────────────────────────────────────────────
 trading:
   symbols:
+    # ── 17 symboles — Intersection .env × YAML (3 Juillet 2026) ────────
+    # Seuls les symboles présents dans LES DEUX fichiers sont tradés.
+    # .env = ACTIVE_SYMBOLS (11), YAML = config complète (17).
     # ── FOREX MAJORS ────────────────────────────────────────────────────
     - EURUSD
-    - GBPUSD
-    - USDCHF
-    - USDCAD
-    - AUDUSD
-    - NZDUSD
     - USDJPY
+    - NZDUSD
+    - USDCAD
     # ── FOREX CROSSES ───────────────────────────────────────────────────
     - EURJPY
     - GBPJPY
-    - EURGBP
-    - AUDJPY
+    - EURGBP       # 🐛 FIX #15: Ajouté — présent dans .env, manquant dans YAML
+    - AUDJPY       # 🐛 FIX #15: Ajouté — présent dans .env, manquant dans YAML
     # ── CRYPTO ──────────────────────────────────────────────────────────
     - BTCUSD
-    - ETHUSD
     - SOLUSD
-    - LNKUSD
-    - BNBUSD
     # ── INDICES ─────────────────────────────────────────────────────────
-    - US500.cash
-    - US30.cash
-    - US100.cash
-    - JP225.cash
-    # ── EUROPE INDICES ──────────────────────────────────────────────────
     - GER40.cash
     - UK100.cash
+    - US30.cash    # 🐛 FIX #15: Ajouté — présent dans .env, manquant dans YAML
+    - US100.cash   # 🐛 FIX #15: Ajouté — présent dans .env, manquant dans YAML
+    - JP225.cash   # 🐛 FIX #15: Ajouté — présent dans .env, manquant dans YAML
     # ── COMMODITIES ─────────────────────────────────────────────────────
     - XAUUSD
-    - XAGUSD
     - USOIL.cash
-    - UKOIL.cash
-    - NATGAS.cash
 
-  # Limites globales — 27 symboles (synchronisé 1er Juillet 2026)
-  max_positions: 20             # ↓ 40→20 (1er Juillet 2026 — réduire dilution, concentrer qualité)
-  max_positions_per_symbol: 6   # max 6/symbole (pipeline: 3 BUY + 3 SELL en HIGH CONF)
-  max_trades_per_day: 200       # 27 symboles × ~7 trades/jour
-  max_signals_per_cycle: 25     # marge pour signaux simultanés (plafond schema 25)
-  max_orders_per_minute: 25     # ~1 trade/min/symbole (plafond schema 25)
-  lot_size: 0.01                # lot de démarrage (WR progressif)
+  # 🔧 FIX #15: 11 symboles actifs (intersection .env × YAML)
+  max_positions: 18             # 🔧 ×1.5: 12→18 (portfolio_controller.py)
+  max_positions_per_symbol: 6   # 🔧 ×1.5: 4→6
+  max_trades_per_day: 30        # ↑ 25→30 (marge)
+  max_signals_per_cycle: 8      # ↓ 15→8 (11 symboles)
+  max_orders_per_minute: 6      # ↓ 12→6 (proportionnel)
+  lot_size: 0.05                # lot de démarrage (×5 Juillet 2026)
   min_trade_interval_sec: 120   # 2 min minimum entre trades par symbole
   batch_interval_sec: 5         # 5s
   trading_start_hour: 0
@@ -80,7 +74,7 @@ trading:
 
 # ── Signal ───────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.70               # ↑ 0.60→0.70 1er Juillet 2026 — conf minimum FTMO-safe
+  min_score: 0.60               # 🔧 FIX #5: Retour à 0.60 (était 0.80) — recommandé par Optimizer + Quant Auditor
   daily_profit_limit_pct: 0.008  # 0.8% profit/jour max (FTMO consistency)
 
 # ── Risque FTMO ─────────────────────────────────────────────────────────
@@ -93,45 +87,45 @@ risk:
   min_trading_days: 10           # 10 jours minimum FTMO
   max_trading_days: 0            # pas de limite max
 
-  # --- Risque par trade ---
-  per_trade_pct: 0.004           # 0.40% par trade (restauré calibré, était 0.44%)
+  # --- Risque par trade (ultra-conservateur 2 Juillet 2026) ---
+  per_trade_pct: 0.008           # 🚀 PHASE 2: 0.80% par trade (était 0.20%) — x4 pour accélérer challenge
   short_mult: 1.0                # même risque long/short
-  max_risk_amount: 800.0         # $800 max risque par trade (restauré calibré, était $880)
+  max_risk_amount: 2000.0        # 🚀 PHASE 2: $2,000 max (était $400) — suit le risk_per_trade
 
-  # --- Qualité ---
-  min_rr_ratio: 1.5              # ↓ 2.0→1.5 26 Juin — plus de trades (RR moyen des signaux est ~1.9)
+  # --- Qualité (ultra-conservateur 2 Juillet 2026) ---
+  min_rr_ratio: 1.8              # 🔧 FIX #5: ↑ 1.5→1.8 — meilleure qualité de trades
   atr_multiplier: 1.5            # multiplicateur ATR pour SL
 
-  # --- Cooldown ---
-  cooldown_minutes: 15          # 15min de refroidissement après perte
-  auto_pause_losses: 5           # 5 pertes avant pause automatique (restauré calibré, était 8-6)
+  # --- Cooldown (ultra-conservateur 2 Juillet 2026) ---
+  cooldown_minutes: 30          # 🔧 FIX #5: 30min après perte (était 15)
+  auto_pause_losses: 3           # 🔧 FIX #5: 3 pertes → pause (était 5)
 
   # --- Volatilité ---
   max_spread_points: 120         # spread max global (overridden par symbole)
 
-  # --- Circuit breaker ---
-  circuit_breaker_dd_pct: 0.08   # 8% DD → arrêt d'urgence
+  # --- Circuit breaker (ultra-conservateur 2 Juillet 2026) ---
+  circuit_breaker_dd_pct: 0.06   # 🔧 FIX #5: 6% DD → arrêt d'urgence (était 8%)
 
   # --- Recalibration ---
   recalibration_frequency: 50    # recalib ML tous les 50 trades
 
 # ── Symbol Limits — 27 symboles actifs (1er Juillet 2026)
-# Tous les symboles démarrent à max_lot=0.01.
+# Tous les symboles démarrent à max_lot=0.05 (×5 Juillet 2026).
 # Le lot augmente progressivement selon le WR (voir _get_wr_based_max_lot dans ftmo_protector.py)
-#   WR < 55% → lot 0.01
-#   WR ≥ 55% → lot 0.03
-#   WR ≥ 65% → lot 0.05
-#   WR ≥ 75% → lot 0.07
-#   WR ≥ 85% → lot 0.10
+#   WR < 55% → lot 0.05
+#   WR ≥ 55% → lot 0.15
+#   WR ≥ 65% → lot 0.25
+#   WR ≥ 75% → lot 0.35
+#   WR ≥ 85% → lot 0.50
 symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   # XAUUSD H4 — Or (calibré H4, tendances longues)
   # ═══════════════════════════════════════════════════════════════════════════
   XAUUSD:
     timeframe: "H4"
-    max_lot: 0.01
-    min_lot: 0.01
-    risk_mult: 1.00
+    max_lot: 0.20                # 🚀 PHASE 2: ↑ 0.05→0.20 — WR 62.1%, +$488, meilleur symbole
+    min_lot: 0.05
+    risk_mult: 1.50             # 🔧 OPTIMIZER: ↑ 1.00→1.50 — WR 73.9% justifie un risque accru
     max_spread_points: 60
     adx_thresh: 22
     allow_buys: true
@@ -160,9 +154,9 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   BTCUSD:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
-    risk_mult: 1.00
+    max_lot: 0.05
+    min_lot: 0.05
+    risk_mult: 0.20             # 🔧 OPTIMIZER: ↓ 1.00→0.20 — WR 49.5%, PF 0.87, PnL négatif (-$91)
     max_spread_points: 150
     adx_thresh: 20
     allow_buys: true
@@ -190,12 +184,13 @@ symbol_limits:
 
   # ═══════════════════════════════════════════════════════════════════════════
   # EURUSD H1 — Euro/Dollar (forex majeur, spreads serrés)
+  # 🔴 PAUSE 3 Juillet 2026 — 30% trades fantômes entry=exit, OL contaminé par seed
   # ═══════════════════════════════════════════════════════════════════════════
   EURUSD:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
-    risk_mult: 1.00
+    max_lot: 0.05
+    min_lot: 0.05
+    risk_mult: 0.0   # 🔴 PAUSE 3 Juillet 2026 — WR 46.4%, 30% ghost trades
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -224,8 +219,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   GBPUSD:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 0.05  # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 0%, -$26
     max_spread_points: 40
     adx_thresh: 22
@@ -255,8 +250,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   USDJPY:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.15               # 🚀 PHASE 2: ↑ 0.05→0.15 — WR 74.4%, +$89
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 40
     adx_thresh: 22
@@ -286,8 +281,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   USDCAD:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 40
     adx_thresh: 22
@@ -314,13 +309,15 @@ symbol_limits:
 
   # ═══════════════════════════════════════════════════════════════════════════
   # AUDUSD H1 — Dollar Australien/Dollar US (forex majeur)
+  # 🔴 HARD BLOCK 2 Juillet 2026 — WR 0%, -$50 (aucun trade gagnant)
   # ═══════════════════════════════════════════════════════════════════════════
   AUDUSD:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
-    risk_mult: 1.00
+    max_lot: 0.05
+    min_lot: 0.05
+    risk_mult: 0.0   # 🔴 HARD BLOCK 2 Juillet 2026 — WR 0%, -$50
     max_spread_points: 40
+    max_spread_atr_ratio: 0.15  # 🐛 FIX #16: ATR très bas → 15% au lieu de 10%
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -348,8 +345,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   NZDUSD:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 40
     adx_thresh: 22
@@ -376,12 +373,13 @@ symbol_limits:
 
   # ═══════════════════════════════════════════════════════════════════════════
   # USDCHF H1 — Dollar US/Franc Suisse (forex majeur)
+  # 🔴 HARD BLOCK 3 Juillet 2026 — WR 20%, PF 0.01, -$36
   # ═══════════════════════════════════════════════════════════════════════════
   USDCHF:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
-    risk_mult: 1.00
+    max_lot: 0.05
+    min_lot: 0.05
+    risk_mult: 0.0   # 🔴 HARD BLOCK 3 Juillet 2026 — WR 20%, PF 0.01
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -410,8 +408,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   EURJPY:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 60
     adx_thresh: 22
@@ -441,8 +439,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   GBPJPY:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 80
     adx_thresh: 22
@@ -472,10 +470,11 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   EURGBP:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 40
+    max_spread_atr_ratio: 0.15  # 🐛 FIX #16: ATR très bas → 12.3% au lieu de 10%
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -503,8 +502,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   AUDJPY:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 60
     adx_thresh: 22
@@ -534,13 +533,13 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   XAGUSD:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
-    risk_mult: 0.05  # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 33.3%, -$1,265
+    max_lot: 0.05
+    min_lot: 0.05
+    risk_mult: 0.0   # 🔴 HARD BLOCK 2 Juillet 2026 — WR 33.3%, -$1,264 (avg -$60/trade)
     max_spread_points: 80
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -565,10 +564,11 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   USOIL.cash:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 80
+    max_spread_atr_ratio: 0.22  # USOIL spread volatile → 20% ATR
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -596,8 +596,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   UKOIL.cash:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 80
     adx_thresh: 22
@@ -627,8 +627,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   NATGAS.cash:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 100
     adx_thresh: 22
@@ -658,13 +658,13 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   ETHUSD:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
-    risk_mult: 0.05  # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 29.4%, -$139
+    max_lot: 0.05
+    min_lot: 0.05
+    risk_mult: 0.0   # 🔴 HARD BLOCK 2 Juillet 2026 — WR 29.4%, -$139 (avg -$4/trade)
     max_spread_points: 120
     adx_thresh: 20
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -689,8 +689,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   SOLUSD:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 120
     adx_thresh: 20
@@ -720,8 +720,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   LNKUSD:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 120
     adx_thresh: 20
@@ -751,8 +751,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   BNBUSD:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 120
     adx_thresh: 20
@@ -778,13 +778,14 @@ symbol_limits:
     news_minutes_after: 0
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # US500.cash H1 — S&P 500
+  # US500.cash H1 — S&P 500 (bruit pur, avg win $0.45 < spread $0.73)
+  # 🔴 HARD BLOCK 3 Juillet 2026 — WR 46.5%, PF 0.53, -$8 (avg PnL -$0.18/trade)
   # ═══════════════════════════════════════════════════════════════════════════
   US500.cash:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
-    risk_mult: 1.00
+    max_lot: 0.05
+    min_lot: 0.05
+    risk_mult: 0.0   # 🔴 HARD BLOCK 3 Juillet 2026 — WR 46.5%, PF 0.53
     max_spread_points: 100      # ↑ 50→100 1er Juillet 2026 (spread réel ~40-80)
     adx_thresh: 22
     allow_buys: true
@@ -813,8 +814,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   US30.cash:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 200     # ↑ 50→200 1er Juillet 2026 (spread réel ~80-150)
     adx_thresh: 22
@@ -844,8 +845,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   US100.cash:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 200     # ↑ 60→200 1er Juillet 2026 (spread réel ~80-150)
     adx_thresh: 22
@@ -875,10 +876,10 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   JP225.cash:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
-    max_spread_points: 200     # ↑ 60→200 1er Juillet 2026 (spread réel ~100-200)
+    max_spread_points: 1200    # 🐛 FIX #16: 200→1200 (spread réel ~1000 points)
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -906,8 +907,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   GER40.cash:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 60
     adx_thresh: 22
@@ -937,8 +938,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   UK100.cash:
     timeframe: "H1"
-    max_lot: 0.01
-    min_lot: 0.01
+    max_lot: 0.05
+    min_lot: 0.05
     risk_mult: 1.00
     max_spread_points: 60
     adx_thresh: 22
