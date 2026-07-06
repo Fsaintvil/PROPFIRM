@@ -231,9 +231,12 @@ class TestPositionTracker:
         with patch.object(tracker.feature_store, "save") as mock_save:
             tracker.add_meta(200, {"symbol": "EURUSD", "entry": 1.1000})
 
-        assert 200 in tracker._position_meta
-        assert "opened_at" in tracker._position_meta[200]
-        assert tracker._position_meta[200]["symbol"] == "EURUSD"
+        # Nouveau comportement : si ticket n'existe pas dans _position_meta,
+        # les données sont stockées dans _meta_extra en attente de track_new()
+        assert 200 not in tracker._position_meta
+        assert 200 in tracker._meta_extra
+        assert tracker._meta_extra[200]["symbol"] == "EURUSD"
+        assert tracker._meta_extra[200]["entry"] == 1.1000
         mock_save.assert_called_once()
 
     def test_performance_summary(self):

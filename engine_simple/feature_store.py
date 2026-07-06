@@ -1,14 +1,17 @@
 """Persist position features across restarts using SQLite."""
 
+from __future__ import annotations
+
 import contextlib
 import json
 import os
 import sqlite3
 from pathlib import Path
+from typing import Any
 
 
 class FeatureStore:
-    def __init__(self, path=None):
+    def __init__(self, path: str | None = None) -> None:
         if path is None:
             path = str(Path(__file__).resolve().parent.parent / "runtime" / "position_features.db")
         parent = os.path.dirname(path)
@@ -27,12 +30,12 @@ class FeatureStore:
         """)
         self.conn.commit()
 
-    def save(self, ticket, meta_dict):
+    def save(self, ticket: int, meta_dict: dict[str, Any]) -> None:
         data = json.dumps(meta_dict, default=str)
         self.conn.execute("INSERT OR REPLACE INTO features VALUES (?, ?)", (int(ticket), data))
         self.conn.commit()
 
-    def load(self, ticket):
+    def load(self, ticket: int) -> dict[str, Any]:
         row = self.conn.execute("SELECT data FROM features WHERE ticket=?", (int(ticket),)).fetchone()
         if row:
             try:
@@ -41,13 +44,13 @@ class FeatureStore:
                 return {}
         return {}
 
-    def delete(self, ticket):
+    def delete(self, ticket: int) -> None:
         self.conn.execute("DELETE FROM features WHERE ticket=?", (int(ticket),))
         self.conn.commit()
 
-    def close(self):
+    def close(self) -> None:
         self.conn.close()
 
-    def __del__(self):
+    def __del__(self) -> None:
         with contextlib.suppress(RuntimeError, sqlite3.Error, AttributeError):
             self.conn.close()

@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import sys
+import threading
 import time
 import warnings
 from datetime import datetime, timezone
@@ -10,7 +11,6 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import numpy as np
-import pandas as _pd
 
 import config_simple as cfg
 from engine_simple.ftmo_config import MAX_POS_PER_SYMBOL
@@ -44,16 +44,16 @@ from engine_simple.indicators import rsi as ind_rsi
 from engine_simple.performance_monitor import update_challenge, get_monitor
 
 # ── Phase 7-16 Modules ──
-from engine_simple.strategy_selector import StrategySelector, get_strategy_params
+from engine_simple.strategy_selector import StrategySelector
 from engine_simple.news_filter import NewsFilter, is_news_blocked
 from engine_simple.volume_profile import VolumeProfile, analyze as vp_analyze
 
 # order_flow retiré — phases supprimées 25 Juin 2026
 from engine_simple.mtf_confirm import MultiTimeframeConfirmer, confirm as mtf_confirm
-from engine_simple.adaptive_params import AdaptiveParameters, get_adapted_params
+from engine_simple.adaptive_params import AdaptiveParameters
 
 # walk_forward_opt archivé dans retired/engine_simple/ (code mort, jamais intégré au flux trading)
-from engine_simple.dashboard import Dashboard, generate_report as dash_report
+from engine_simple.dashboard import Dashboard
 
 # ── Nouveaux modules Juin 2026 ──
 # vwap_analyzer + market_profile retirés — phases supprimées 25 Juin 2026
@@ -71,8 +71,8 @@ PID_FILE = os.environ.get("ROBOT_PID_FILE", "runtime/robot.pid")
 # Named mutex Windows — plus fiable que le fichier PID (auto-libéré par l'OS)
 _MUTEX_NAME = os.environ.get("ROBOT_MUTEX_NAME", "Global\\MT5_FTMO_MOM20x3")
 
-# ── Symboles activement tradés — depuis .env, PAS cfg.SYMBOLS (qui a 6 symboles) ──
-# 🔥 CRITIQUE: cfg.SYMBOLS contient 6 symboles (YAML).
+# ── Symboles activement tradés — depuis .env, PAS cfg.SYMBOLS (qui a 27 symboles) ──
+# 🔥 CRITIQUE: cfg.SYMBOLS contient 27 symboles (YAML).
 # Seuls ceux dans .env:SYMBOLS doivent être tradés.
 _env_syms = os.environ.get("SYMBOLS", "").strip()
 ACTIVE_SYMBOLS: set[str] = set()
@@ -331,6 +331,10 @@ class FTMO_SIMPLE:
             sys.exit(1)
         self._state["connected"] = True
         logger.info("Connexion MT5 etablie (Broker mode)")
+        # 🔧 FIX #3: Synchroniser l'horloge locale avec le serveur MT5
+        # Les timestamps négatifs (-52min, -67min) dans le dashboard viennent
+        # d'un décalage entre l'horloge système et l'horloge du serveur MT5.
+        self._sync_mt5_clock()
 
         # Persist initial_balance une fois pour toutes (critique FTMO)
         if "challenge_initial_balance" not in self._state:
@@ -358,12 +362,6 @@ class FTMO_SIMPLE:
 
         # PHASE 2.2: MetaLearner intégré dans AdaptiveEngine
         # (instance self.adaptive.meta créée dans AdaptiveEngine.__init__)
-
-        # PHASE 3: MarketMemory — retiré (code mort, déplacé dans retired/)
-        self.market_memory = None
-
-        # PHASE 5: SessionFilter — retiré (code mort, déplacé dans retired/)
-        self.session_filter = None
 
         # PHASE 6: PortfolioController — Gestion exposition multi-symboles
         self.portfolio_controller = None
@@ -586,6 +584,15 @@ class FTMO_SIMPLE:
             )
         if self._state.get("daily_stats"):
             self.ftmo.daily_stats = self._state["daily_stats"]
+        # 🔧 FIX #1: Restaurer _opened_today depuis l'état persistant
+        # Évite le bypass de MAX_TRADES_PER_DAY au redémarrage.
+        # Le compteur est partagé entre FTMOProtector et ChallengeTracker via alias.
+        _ot = self._state.get("opened_today")
+        if _ot is not None and isinstance(_ot, (int, float)):
+            self.ftmo._opened_today = max(0, int(_ot))
+            self.ftmo.challenge._opened_today = max(0, int(_ot))
+            if int(_ot) > 0:
+                logger.info(f"[STATE] _opened_today restauré: {int(_ot)}")
         _dse = self._state.get("daily_start_equity")
         if _dse is not None and _dse > 0:
             self.ftmo.daily_start_equity = _dse
@@ -651,8 +658,6 @@ class FTMO_SIMPLE:
             mt5=self.mt5,
             ftmo=self.ftmo,
             adaptive=self.adaptive,
-            market_memory=self.market_memory,
-            session_filter=self.session_filter,
             news_filter=self.news_filter,
             strategy_selector=self.strategy_selector,
             volume_profile=self.volume_profile,
@@ -662,12 +667,12 @@ class FTMO_SIMPLE:
             symbol_limits=cfg.SYMBOL_LIMITS,
             symbol_timeframes=cfg.SYMBOL_TIMEFRAMES,
         )
-        logger.info("[SIGNAL_PIPELINE] Chargé — 12 phases de filtrage (P1)")
+        logger.info("[SIGNAL_PIPELINE] Chargé — phases de filtrage")
 
         # Modules refactorisés (strategy/regime) — monitoring parallèle
         self._regime_detector = RegimeDetector()
         self.pos_manager = PositionManager(
-            mt5=self.mt5,
+            mt5=self.mt5,  # type: ignore[arg-type]  # Broker wraps MT5Connector
             ftmo=self.ftmo,
             adaptive=self.adaptive,
             signal_gen=self.signals,
@@ -692,6 +697,81 @@ class FTMO_SIMPLE:
         # Log throttling: track cycle count of last log per category
         self._log_throttle = {"ol_thresh": 0, "degraded": {}, "limit": {}}
 
+        # ── External watchdog thread (Fix 6 Juillet 2026) ──────────────
+        # Le watchdog DANS la boucle de cycle (ligne 986) ne peut PAS détecter
+        # les freezes MT5 car si get_rates() bloque, le code n'atteint jamais
+        # la vérification. Ce thread externe tourne TOUT LE TEMPS (daemon)
+        # et détecte les cycles bloqués en vérifiant _last_cycle_time.
+        self._watchdog_thread = None
+        self._watchdog_stall_count = 0
+
+    def _start_external_watchdog(self) -> None:
+        """Démarre un thread watchdog externe qui vérifie _last_cycle_time.
+
+        🔧 FIX 6 Juillet 2026: Le watchdog DANS la boucle (ligne 986) ne peut
+        pas détecter les appels MT5 bloqués. Ce thread tourne en parallèle et
+        surveille le timestamp du dernier cycle terminé.
+
+        Seuil: 300s (5 min) sans cycle → tente reconnect MT5
+        Seuil critique: 600s (10 min) sans cycle → force restart process
+        """
+        if self._watchdog_thread is not None and self._watchdog_thread.is_alive():
+            return  # déjà démarré
+
+        def _watchdog_loop():
+            wd_logger = logging.getLogger("watchdog.ext")
+            wd_logger.info("[WATCHDOG EXT] Thread démarré (check toutes les 30s)")
+            check_interval = 30
+            stall_threshold = int(os.environ.get("ROBOT_WATCHDOG_SECONDS", "180"))
+            # On utilise un seuil plus large pour le thread externe (5 min)
+            # car le seuil du cycle (180s) est déjà vérifié dans la boucle.
+            ext_threshold = max(stall_threshold * 2, 300)  # au moins 5 min
+            crash_threshold = ext_threshold * 2  # 10 min → force restart
+
+            while self.running:
+                time.sleep(check_interval)
+                if not self.running:
+                    break
+
+                elapsed = time.time() - self._last_cycle_time
+
+                # ⚠️ Si aucun signe de vie depuis plus que le seuil externe
+                if elapsed > ext_threshold:
+                    self._watchdog_stall_count += 1
+                    wd_logger.error(
+                        f"[WATCHDOG EXT] {elapsed:.0f}s depuis dernier cycle "
+                        f"(stall #{self._watchdog_stall_count}, seuil={ext_threshold}s)"
+                    )
+
+                    # Tentative 1: déconnecter MT5 (peut débloquer l'appel bloqué)
+                    try:
+                        wd_logger.info("[WATCHDOG EXT] Tentative déconnexion MT5...")
+                        self.mt5.disconnect()
+                    except Exception as e:
+                        wd_logger.warning(f"[WATCHDOG EXT] Erreur disconnect: {e}")
+
+                    # ⛔ Si le blocage persiste après 3 checks (∼90s de plus)
+                    if self._watchdog_stall_count >= 3:
+                        wd_logger.critical(f"[WATCHDOG EXT] Stall persist {elapsed:.0f}s — force restart process")
+                        self._watchdog_stall_count = 0
+
+                        # Spawn new process, then exit
+                        import subprocess as _sp
+
+                        _sp.Popen([sys.executable, "main.py"], cwd=os.path.dirname(os.path.abspath(__file__)))
+                        time.sleep(5)
+                        _release_lock()
+                        os._exit(1)  # Force exit même si thread MT5 bloqué
+                else:
+                    # Reset stall counter si le cycle reprend
+                    if self._watchdog_stall_count > 0:
+                        wd_logger.info(f"[WATCHDOG EXT] Cycle repris après {elapsed:.0f}s — reset stall counter")
+                        self._watchdog_stall_count = 0
+
+        self._watchdog_thread = threading.Thread(target=_watchdog_loop, daemon=True)
+        self._watchdog_thread.start()
+        logger.info("[WATCHDOG EXT] Thread watchdog externe démarré")
+
     def _health_status(self):
         try:
             info = self.mt5.get_account_info() if hasattr(self, "mt5") else None
@@ -715,25 +795,91 @@ class FTMO_SIMPLE:
             raise RuntimeError("Cannot get account info - MT5 disconnected")
         return info.balance
 
+    def _sync_mt5_clock(self):
+        """🔧 FIX #8: Synchronise l'horloge locale avec le serveur MT5.
+
+        Les timestamps négatifs (-52min, -67min) dans le dashboard viennent
+        d'un décalage entre l'horloge système et l'horloge du serveur MT5.
+        Cette méthode détecte et logue le décalage sans modifier l'horloge système.
+        Utilise le dernier tick EURUSD comme référence (get_server_time n'existe pas).
+        """
+        import time as _time
+
+        try:
+            # Utiliser le dernier tick d'un symbole connu (EURUSD)
+            tick = self.mt5.get_tick("EURUSD")
+            dt = None
+            if tick is not None:
+                tick_time = getattr(tick, "time", None)
+                if tick_time is not None:
+                    dt = datetime.fromtimestamp(float(tick_time))
+            if dt is not None:
+                local_now = datetime.utcnow()
+                diff = (local_now - dt).total_seconds()
+                if abs(diff) > 5:
+                    logger.warning(
+                        f"[CLOCK SYNC] Horloge système décalée de {diff:.0f}s "
+                        f"(locale={local_now}, MT5={dt}) — timestamps peuvent être négatifs"
+                    )
+                    # Stocker le décalage pour corriger les calculs de durée
+                    self._mt5_clock_offset = diff
+                else:
+                    logger.info(f"[CLOCK SYNC] Horloge synchronisée (diff={diff:.0f}s)")
+                    self._mt5_clock_offset = 0.0
+            else:
+                logger.warning("[CLOCK SYNC] Impossible d'obtenir le temps serveur MT5 (tick EURUSD indisponible)")
+                self._mt5_clock_offset = 0.0
+        except Exception as e:
+            logger.warning(f"[CLOCK SYNC] Échec synchronisation: {e}")
+            self._mt5_clock_offset = 0.0
+
     def _health_check(self):
-        """Vérifie la connexion MT5. Ne stoppe JAMAIS le robot — skip le cycle si MT5 down."""
+        """Vérifie la connexion MT5 avec tolérance aux glitchs passagers.
+        Ne démarre le timer MT5 down qu'après 3 échecs consécutifs."""
+        # Compteur d'échecs consécutifs
+        if not hasattr(self, "_hc_failures"):
+            self._hc_failures = 0
+
         if self.mt5.health_check():
+            self._hc_failures = 0  # Reset compteur
             if not self._state.get("connected"):
                 self._state["connected"] = True
                 self._mt5_down_since = None  # Reset du timer MT5 down
                 self._watchdog_failures = 0  # Reset watchdog après reconnection
                 logger.info("[BROKER] Connexion retablie")
             return True
-        # MT5 temporairement indisponible — on loggue et on continue
+
+        # Échec — incrémenter le compteur
+        self._hc_failures += 1
+
+        # Tolérance: ne PAS déclencher le timer MT5 down avant 3 échecs consécutifs
+        if self._hc_failures < 3:
+            logger.debug(f"[BROKER] Health check échec #{self._hc_failures}/3 — glitch possible, on réessaie")
+            return True  # On donne le bénéfice du doute
+
+        # 3+ échecs consécutifs — MT5 vraiment down
         self._state["connected"] = False
         self._mt5_down_since = getattr(self, "_mt5_down_since", None)
         if self._mt5_down_since is None:
             self._mt5_down_since = time.time()
             logger.warning(
-                f"[BROKER] MT5 indisponible, skipping cycles (down depuis {time.time() - self._mt5_down_since:.0f}s)"
+                f"[BROKER] MT5 indisponible (3 echecs consecutifs), skipping cycles "
+                f"(down depuis {time.time() - self._mt5_down_since:.0f}s)"
             )
+            # Tentative de reconnexion rapide dès le 3ème échec
+            logger.info("[BROKER] Tentative de reconnexion rapide MT5...")
+            try:
+                if self.mt5.reconnect():
+                    self._hc_failures = 0
+                    self._mt5_down_since = None
+                    self._state["connected"] = True
+                    logger.info("[BROKER] Reconnexion rapide réussie")
+                    return True
+            except Exception as e:
+                logger.warning(f"[BROKER] Reconnexion rapide échouée: {e}")
+
         # MT5 Terminal restart watchdog: si down > 300s, tenter restart du terminal
-        mt5_down_for = time.time() - self._mt5_down_since
+        mt5_down_for = time.time() - getattr(self, "_mt5_down_since", time.time())
         if mt5_down_for > 300 and hasattr(self, "_last_mt5_restart_attempt"):
             since_last_restart = time.time() - self._last_mt5_restart_attempt
             if since_last_restart > 600 and self._mt5_restart_count < 3:
@@ -747,7 +893,7 @@ class FTMO_SIMPLE:
                     import subprocess
 
                     # Tuer le processus MT5 terminal
-                    subprocess.run("taskkill /F /IM terminal64.exe 2>nul", shell=True, timeout=10)
+                    subprocess.run(["taskkill", "/F", "/IM", "terminal64.exe"], timeout=10)
                     time.sleep(3)
                     # Relancer MT5 via le raccourci
                     mt5_path = os.environ.get("MT5_TERMINAL_PATH", "")
@@ -805,6 +951,9 @@ class FTMO_SIMPLE:
                 else None,
                 # M17: Persist _symbol_consecutive_losses (survie aux redémarrages)
                 symbol_consecutive_losses=dict(self.ftmo._symbol_consecutive_losses) if hasattr(self, "ftmo") else {},
+                # 🔧 FIX #1: Persist _opened_today (survie aux redémarrages)
+                # Évite le bypass de MAX_TRADES_PER_DAY au restart (compteur repartait à 0)
+                opened_today=self.ftmo._opened_today if hasattr(self, "ftmo") else 0,
             )
             _atomic_write_json(STATE_FILE, state)
         except Exception as e:
@@ -820,6 +969,14 @@ class FTMO_SIMPLE:
                 data.setdefault("restart_timestamps", [])
                 data.setdefault("daily_stats", None)
                 data.setdefault("daily_start_equity", None)
+                # 🔧 FIX 6 Juillet 2026: daily_stats["day"] est string après JSON,
+                # doit être date pour _check_daily_limits et _reset_daily
+                ds = data.get("daily_stats")
+                if ds and isinstance(ds.get("day"), str):
+                    try:
+                        ds["day"] = datetime.strptime(ds["day"], "%Y-%m-%d").date()
+                    except (ValueError, TypeError):
+                        ds["day"] = datetime.utcnow().date()
                 return data
         except Exception as e:
             logger.warning(f"State load failed: {e}")
@@ -872,9 +1029,32 @@ class FTMO_SIMPLE:
         logger.info("[PHASE 1.4] Cycle timeout 120s activé — détection granulaire")
         self.tracker.init_tickets()
         self.tracker.import_history()
+        # 🔧 FIX 6 Juillet 2026: Réconcilier _opened_today avec les positions ouvertes aujourd'hui
+        # Évite le bypass de MAX_TRADES_PER_DAY après redémarrage :
+        # les positions déjà ouvertes ne comptaient pas dans _opened_today,
+        # permettant d'ouvrir 75 NOUVEAUX trades en plus des existants.
+        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+        today_positions = 0
+        for p in self._pos_cache.get():
+            if p.magic == cfg.ROBOT_MAGIC and getattr(p, "time", 0) >= today_start:
+                today_positions += 1
+        if today_positions > 0 and hasattr(self, "ftmo"):
+            old = self.ftmo._opened_today
+            self.ftmo._opened_today = max(self.ftmo._opened_today, today_positions)
+            self.ftmo.challenge._opened_today = max(self.ftmo.challenge._opened_today, today_positions)
+            if self.ftmo._opened_today != old:
+                logger.info(
+                    f"[DAILY LIMIT] {today_positions} positions ouvertes aujourd'hui — "
+                    f"_opened_today: {old} → {self.ftmo._opened_today}"
+                )
         # Reset watchdog timer après import_history (sinon le premier cycle
         # peut détecter un faux "cycle bloqué" si l'import prend du temps)
         self._last_cycle_time = time.time()
+
+        # 🔧 FIX 6 Juillet 2026: Démarrer le thread watchdog EXTERNE
+        # Ce thread tourne toutes les 30s et détecte les appels MT5 bloqués
+        # que le watchdog interne (dans la boucle) ne peut pas voir.
+        self._start_external_watchdog()
 
         while self.running:
             self.cycle_count += 1
@@ -910,7 +1090,7 @@ class FTMO_SIMPLE:
                         import subprocess as _sp
 
                         _sp.Popen([sys.executable, "main.py"], cwd=os.path.dirname(os.path.abspath(__file__)))
-                        time.sleep(1.5)  # Laisser le temps au nouveau processus d'acquérir le mutex
+                        time.sleep(5)  # 🔧 FIX_SUPREME_COUNCIL: 5s (était 1.5s) pour éviter race condition
                         _release_lock()
                         sys.exit(1)
                     self._save_state()
@@ -918,7 +1098,7 @@ class FTMO_SIMPLE:
                     import subprocess as _sp
 
                     _sp.Popen([sys.executable, "main.py"], cwd=os.path.dirname(os.path.abspath(__file__)))
-                    time.sleep(1.5)  # Laisser le temps au nouveau processus d'acquérir le mutex
+                    time.sleep(5)  # 🔧 FIX_SUPREME_COUNCIL: 5s (était 1.5s) pour éviter race condition
                     _release_lock()
                 if not self.mt5.reconnect():
                     logger.error("Watchdog: echec reconnexion MT5")
@@ -982,6 +1162,7 @@ class FTMO_SIMPLE:
                 logger.warning(f"get_account_info failed: {e}")
             logger.debug(f"  [TIMING] get_account_info: {time.time() - op_t:.2f}s")
 
+            dd_pct = 0  # initialisé avant le bloc pour éviter NameError si account=None
             if account:
                 floating = account.equity - account.balance
                 dd = max(0, self.ftmo.initial_balance - account.equity)
@@ -1033,6 +1214,16 @@ class FTMO_SIMPLE:
                             logger.debug(f"[PERF] Rapport quotidien échoué: {e}")
                 except Exception as e:
                     logger.warning(f"daily reset failed: {e}")
+
+            # Nettoyage auto des logs auxiliaires toutes les ~240 cycles (1h à 15s/cycle)
+            if not hasattr(self, "_last_log_cleanup_cycle"):
+                self._last_log_cleanup_cycle = 0
+            if self.cycle_count - self._last_log_cleanup_cycle >= 240:
+                self._last_log_cleanup_cycle = self.cycle_count
+                try:
+                    self._cleanup_old_logs(max_age_days=14)
+                except Exception as e:
+                    logger.warning(f"[LOG_CLEANUP] Échec: {e}")
 
             try:
                 self._manage_positions()
@@ -1148,7 +1339,7 @@ class FTMO_SIMPLE:
                         "win_rate": sum(1 for t in self.ftmo._trade_history if t.get("profit", 0) > 0)
                         / max(len(self.ftmo._trade_history), 1),
                         "profit_factor": self._calc_pf(self.ftmo._trade_history),
-                        "current_dd": dd_pct / 100 if "dd_pct" in dir() and dd_pct is not None else 0,
+                        "current_dd": dd_pct / 100 if dd_pct is not None else 0,
                         "max_dd": 0,
                         "daily_pnl": self.ftmo.daily_pnl_by_date.get(datetime.now(timezone.utc).date(), 0),
                         "daily_loss_limit": self.ftmo.initial_balance * 0.02,
@@ -1159,7 +1350,7 @@ class FTMO_SIMPLE:
                             {
                                 "symbol": pos.symbol,
                                 "ticket": pos.ticket,
-                                "type": 0 if pos.type == "BUY" else 1,
+                                "type": 0 if pos.type == 0 else 1,  # MT5: 0=BUY, 1=SELL
                                 "price_open": pos.price_open,
                                 "price_current": pos.price_current,
                                 "volume": pos.volume,
@@ -1288,7 +1479,7 @@ class FTMO_SIMPLE:
                     live_now = self._pos_cache.get()
                     high_conf = signal.get("high_confidence", False)
                     can_open, reason = self.portfolio_controller.can_open_position(
-                        symbol, signal.get("action"), live_now, high_confidence=high_conf
+                        symbol, signal["action"], live_now, high_confidence=high_conf
                     )
                     if not can_open:
                         logger.debug(f"  [PORTFOLIO] {symbol}: {reason}")
@@ -1612,7 +1803,7 @@ class FTMO_SIMPLE:
 
                 if sym_wr < 0.35:
                     # Mode dégradé au lieu de disable complet : le symbole continue à trader
-                    # mais avec lot minimum (0.01) pour éviter de rater un retournement
+                    # mais avec lot minimum (0.05 ×5) pour éviter de rater un retournement
                     if symbol not in degraded_symbols:
                         degraded_symbols[symbol] = self.cycle_count
                         self._state["degraded_symbols"] = degraded_symbols
@@ -1633,12 +1824,16 @@ class FTMO_SIMPLE:
             logger.warning(f"  [WR CHECK] Recent WR={recent_wr:.1%} < 55% — ajustement seuils")
             self._win_rate_checked = True
             for symbol in ACTIVE_SYMBOLS & set(cfg.SYMBOLS):
+                # 🏆 XAUUSD/EURUSD exemptés : WR individuel 73.9%/59.5% justifie un traitement spécial
+                if symbol in ("XAUUSD", "EURUSD"):
+                    logger.info(f"  [WR CHECK] {symbol} exempté (WR individuel élevé)")
+                    continue
                 p = dict(self.adaptive.learner.get_params(symbol))
                 p["thresh"] = max(1.5, p.get("thresh", 2.5) - 0.3)
                 p["risk_mult"] = min(1.0, p.get("risk_mult", 1.0) * 0.8)
                 # Persist the adjusted params
                 self.adaptive.learner.adapted_params[symbol] = p
-            logger.info("  [WR CHECK] Seuils abaisses: thresh-0.3, risk_mult*0.8")
+            logger.info("  [WR CHECK] Seuils abaisses: thresh-0.3, risk_mult*0.8 (sauf XAUUSD/EURUSD)")
         elif self._win_rate_checked and total > 200:
             recent = (
                 self.ftmo._trade_history[-100:] if len(self.ftmo._trade_history) >= 100 else self.ftmo._trade_history
@@ -1830,6 +2025,57 @@ class FTMO_SIMPLE:
             self._save_state()
 
     # ── Phase 14c: LightGBM retraining — SUPPRIMÉ (module désactivé) ────────
+
+    # ── Phase 14d: Nettoyage automatique des logs auxiliaires ───────────────
+    def _cleanup_old_logs(self, max_age_days=14):
+        """Supprime les fichiers de log auxiliaires plus vieux que max_age_days.
+        Le fichier principal simple_robot.log est géré par RotatingFileHandler.
+        """
+        import shutil
+        import time as _time
+
+        now = _time.time()
+        max_age_sec = max_age_days * 86400
+        log_dir = Path("logs")
+        if not log_dir.exists():
+            return
+
+        # Fichiers protégés (gérés par RotatingFileHandler)
+        protected = {
+            "simple_robot.log",
+            "simple_robot.log.1",
+            "simple_robot.log.2",
+            "simple_robot.log.3",
+            "simple_robot.log.4",
+            "simple_robot.log.5",
+            "simple_robot.log.6",
+            "simple_robot.log.7",
+            "simple_robot.log.old",
+        }
+
+        removed = 0
+        for f in log_dir.iterdir():
+            if not f.is_file():
+                continue
+            if f.name in protected:
+                continue
+            # Ne toucher qu'aux fichiers .log
+            if not f.name.endswith(".log"):
+                continue
+            try:
+                mtime = f.stat().st_mtime
+                age = now - mtime
+                if age > max_age_sec:
+                    f.unlink(missing_ok=True)
+                    removed += 1
+                    logger.debug(f"[LOG_CLEANUP] Supprimé: {f.name} (âge: {age / 86400:.1f}j)")
+            except (OSError, PermissionError):
+                pass
+
+        if removed:
+            logger.info(f"[LOG_CLEANUP] {removed} fichier(s) de log supprimé(s) (>={max_age_days} jours)")
+        else:
+            logger.debug(f"[LOG_CLEANUP] Aucun fichier à nettoyer (âge max: {max_age_days}j)")
 
 
 def main():

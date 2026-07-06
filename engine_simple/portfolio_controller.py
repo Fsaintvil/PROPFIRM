@@ -17,7 +17,7 @@ Usage:
 
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
+
 
 import numpy as np
 
@@ -67,11 +67,13 @@ POSITION_GROUPS: dict[str, list[str]] = {
 # Ces constantes doivent correspondre à config/default.yaml + config/production.yaml.
 # Le pipeline filtre d'abord (par confiance), portfolio_controller = backup sécurité.
 # ⚠️ NE PAS modifier sans synchroniser default.yaml et production.yaml.
-MAX_POSITIONS_TOTAL = 18  # 🔧 ×1.5 (3 Juillet): 12→18 (11 symboles actifs)
-MAX_POSITIONS_PER_SYMBOL = 6  # 🔧 ×1.5: 4→6 (plus de marge par symbole)
-MAX_POSITIONS_PER_DIRECTION = 9  # 🔧 ×1.5: 6→9
+from config_simple import MAX_POSITIONS as MAX_POSITIONS_TOTAL
+from config_simple import MAX_POSITIONS_PER_SYMBOL
+
+MAX_POSITIONS_PER_DIRECTION = MAX_POSITIONS_TOTAL // 2  # Dynamique depuis config_simple
 MAX_TRADES_PER_GROUP = 4  # 🔧 ×1.5: 3→4 (arrondi inférieur)
 MAX_TRADES_PER_DIRECTION_IN_GROUP = 3  # 🔧 ×1.5: 2→3
+MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION = 1  # 🔧 FIX 6 Juillet 2026: max 1 position par direction par symbole
 
 
 class PortfolioController:
@@ -136,6 +138,15 @@ class PortfolioController:
             sym_max = MAX_POSITIONS_PER_SYMBOL * 2  # 8 au lieu de 4 pour high conf
             if len(sym_positions) >= sym_max:
                 return False, f"Max positions {symbol} atteint ({len(sym_positions)}/{sym_max})"
+            # ✅ 🔧 FIX 6 Juillet 2026: max 1 position par direction par symbole (relaxé à 2 en high confidence)
+            # 🐛 FIX 6 Juillet 2026: hc_max_per_dir utilisait MAX_POSITIONS_PER_SYMBOL*2=8 au lieu de MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION*2=2
+            sym_dir_positions = [p for p in sym_positions if self._get_dir(p) == direction]
+            hc_max_per_dir = MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION * 2  # relaxé à 2 en high confidence
+            if len(sym_dir_positions) >= hc_max_per_dir:
+                return (
+                    False,
+                    f"{symbol} {direction}: déjà {len(sym_dir_positions)} position(s) (max {hc_max_per_dir})",
+                )
             # ✅ Limite max positions par direction (doublée)
             dir_positions = [p for p in positions if self._get_dir(p) == direction]
             dir_max = MAX_POSITIONS_PER_DIRECTION * 2  # 16 au lieu de 8
@@ -166,6 +177,16 @@ class PortfolioController:
         sym_positions = [p for p in positions if p.symbol == symbol]
         if len(sym_positions) >= MAX_POSITIONS_PER_SYMBOL:
             return False, f"Max positions {symbol} atteint ({MAX_POSITIONS_PER_SYMBOL})"
+
+        # 2b. 🔧 FIX 6 Juillet 2026: max 1 position par direction par symbole
+        # Empêche le stacking de positions dans la même direction sur le même symbole
+        # (ex: 3 SELL XAUUSD simultanés = -$528)
+        sym_dir_positions = [p for p in sym_positions if self._get_dir(p) == direction]
+        if len(sym_dir_positions) >= MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION:
+            return (
+                False,
+                f"{symbol} {direction}: déjà {len(sym_dir_positions)} position(s) (max {MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION})",
+            )
 
         # 3. Max positions par direction
         dir_positions = [p for p in positions if self._get_dir(p) == direction]

@@ -6,12 +6,15 @@ Extrait de main.py avec améliorations :
   - Métriques exportables pour reporting
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import time
 from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import config_simple as cfg
 from engine_simple.feature_store import FeatureStore
@@ -25,11 +28,11 @@ logger = logging.getLogger("robot.tracker")
 # Symboles dont les trades historiques ne sont PAS importés dans l'OnlineLearner.
 # Utilisé quand un symbole change de configuration (ex: allow_shorts true→false)
 # et que les anciens trades (sous config différente) contamineraient l'apprentissage.
-_SYMBOLS_SKIP_OL_IMPORT: set = {}  # EURUSD retiré (22 Juin, Supreme Council) : obsolète depuis v4.2.0
+_SYMBOLS_SKIP_OL_IMPORT: set = set()  # EURUSD retiré (22 Juin, Supreme Council) : obsolète depuis v4.2.0
 
 
 class SymbolPerformance:
-    def __init__(self):
+    def __init__(self) -> None:
         self.trades = 0
         self.wins = 0
         self.losses = 0
@@ -42,7 +45,7 @@ class SymbolPerformance:
         self.max_consecutive_wins = 0
         self.max_consecutive_losses = 0
 
-    def record(self, profit, r_multiple):
+    def record(self, profit: float, r_multiple: float) -> None:
         self.trades += 1
         self.total_profit += profit
         self.total_r_multiple += r_multiple
@@ -60,22 +63,22 @@ class SymbolPerformance:
             self.max_consecutive_losses = max(self.max_consecutive_losses, self.consecutive_losses)
 
     @property
-    def win_rate(self):
+    def win_rate(self) -> float:
         return self.wins / max(self.trades, 1)
 
     @property
-    def avg_profit(self):
+    def avg_profit(self) -> float:
         return self.total_profit / max(self.trades, 1)
 
     @property
-    def avg_r_multiple(self):
+    def avg_r_multiple(self) -> float:
         return self.total_r_multiple / max(self.trades, 1)
 
     @property
-    def profit_factor(self):
+    def profit_factor(self) -> float:
         return self.gross_profit / max(self.gross_loss, 1)
 
-    def summary(self):
+    def summary(self) -> dict[str, Any]:
         return {
             "trades": self.trades,
             "win_rate": round(self.win_rate, 3),
@@ -87,7 +90,7 @@ class SymbolPerformance:
         }
 
 
-def _log_real_trade(closing, meta: dict) -> None:
+def _log_real_trade(closing: Any, meta: dict[str, Any]) -> None:
     """Sauvegarde un trade fermé avec ses features dans runtime/lgb_real_trades.jsonl.
 
     Format JSONL : chaque ligne est un trade complet avec features + outcome.
@@ -146,7 +149,9 @@ def _log_real_trade(closing, meta: dict) -> None:
 
 
 class PositionTracker:
-    def __init__(self, ftmo, journal, adaptive, positions_cache, mt5=None, audit=None):
+    def __init__(
+        self, ftmo: Any, journal: Any, adaptive: Any, positions_cache: Any, mt5: Any = None, audit: Any = None
+    ) -> None:
         self.ftmo = ftmo
         self.journal = journal
         self.adaptive = adaptive
@@ -159,20 +164,21 @@ class PositionTracker:
         self._max_recorded = 2000
         self._trim_target = 1500
         self._position_meta = {}
+        self._meta_extra = {}  # Stockage temporaire pour ATR/sl_atr/tp_atr avant que track_new() crée le meta
         self.feature_store = FeatureStore()
         self.performance = {}
         self._start_time = int(time.time())  # timestamp démarrage du robot
 
-    def _perf(self, symbol):
+    def _perf(self, symbol: str) -> SymbolPerformance:
         if symbol not in self.performance:
             self.performance[symbol] = SymbolPerformance()
         return self.performance[symbol]
 
-    def init_tickets(self):
+    def init_tickets(self) -> None:
         our = [p for p in self.positions_cache.get() if p.magic == cfg.ROBOT_MAGIC]
         self._previous_tickets = {p.ticket for p in our}
 
-    def _load_recorded_positions(self):
+    def _load_recorded_positions(self) -> None:
         """Charge les position_ids persistés depuis le fichier disque.
         Évite de réimporter les mêmes trades historiques après un redémarrage."""
         try:
@@ -192,7 +198,7 @@ class PositionTracker:
             self._recorded_position_ids = OrderedDict()
             self._recorded_deals = OrderedDict()
 
-    def _save_recorded_positions(self):
+    def _save_recorded_positions(self) -> None:
         """Persiste les position_ids sur disque pour éviter les réimports au prochain démarrage."""
         try:
             RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
@@ -207,7 +213,7 @@ class PositionTracker:
         except OSError as e:
             logger.warning(f"[TRACKER] Sauvegarde recorded_positions échouée: {e}")
 
-    def import_history(self):
+    def import_history(self) -> None:
         """Importe l'historique MT5 des trades fermés (au démarrage).
         Charge d'abord les position_ids persistés pour éviter les doublons."""
         self._load_recorded_positions()
@@ -288,7 +294,7 @@ class PositionTracker:
                     logger.warning(f"  [TRACKER] import_history calibration: {e}")
                     pass
 
-    def track_new(self):
+    def track_new(self) -> None:
         our = [p for p in self.positions_cache.get() if p.magic == cfg.ROBOT_MAGIC]
         for p in our:
             # P3: Filtrer par whitelist — ignorer les symboles inactifs
@@ -324,16 +330,34 @@ class PositionTracker:
                     for k in ("_features", "predictions", "feature_adj", "feature_reasons"):
                         if k in saved:
                             meta[k] = saved[k]
+                    # Restaurer _meta_extra (sl_atr, tp_atr, atr) sauvegardé par add_meta
+                    meta_extra = saved.get("_meta_extra", {})
+                    if meta_extra:
+                        meta.update(meta_extra)
+                        logger.debug(
+                            f"  [TRACK] {p.symbol} #{p.ticket}: restauré _meta_extra: {set(meta_extra.keys())}"
+                        )
                     # Compatibilité ascendante : dl_features → _features
                     if "dl_features" in saved and "_features" not in meta:
                         meta["_features"] = saved["dl_features"]
-                    logger.debug(
-                        f"  [TRACK] {p.symbol} #{p.ticket} restored saved meta: {set(saved.keys()) & {'_features', 'predictions', 'feature_adj', 'feature_reasons'}}"
-                    )
+                    restored_keys = set(saved.keys()) & {
+                        "_features",
+                        "predictions",
+                        "feature_adj",
+                        "feature_reasons",
+                        "_meta_extra",
+                    }
+                    if restored_keys:
+                        logger.debug(f"  [TRACK] {p.symbol} #{p.ticket} restored saved meta: {restored_keys}")
                 self._position_meta[p.ticket] = meta
+                # Fusionner les champs supplémentaires (sl_atr, tp_atr, atr) stockés par add_meta avant track_new
+                extra = self._meta_extra.pop(p.ticket, {})
+                if extra:
+                    self._position_meta[p.ticket].update(extra)
+                    logger.debug(f"  [TRACK] {p.symbol} #{p.ticket}: fusionné extra meta: {set(extra.keys())}")
                 logger.debug(f"  [TRACK] {p.symbol} #{p.ticket} regime={regime}")
 
-    def check_closed(self):
+    def check_closed(self) -> None:
         current = {p.ticket for p in self.positions_cache.get() if p.magic == cfg.ROBOT_MAGIC}
         closed = self._previous_tickets - current
         if closed:
@@ -460,6 +484,10 @@ class PositionTracker:
                         time_open=str(datetime.fromtimestamp(meta.get("opened_at", closing.time))),
                         time_close=str(datetime.utcnow()),
                         reason="closed",
+                        # 🐛 FIX 4 Juillet 2026: ATR multiples pour analyse post-trade
+                        sl_atr=meta.get("sl_atr", ""),
+                        tp_atr=meta.get("tp_atr", ""),
+                        atr=meta.get("atr", 0.0),
                     )
                 )
             except Exception as e:
@@ -497,18 +525,27 @@ class PositionTracker:
                 self.adaptive.record_meta_result(closing.symbol, regime, pred_outcomes)
         self._previous_tickets = current
 
-    def add_meta(self, ticket, data):
-        data["opened_at"] = time.time()
-        self._position_meta[ticket] = data
-        self.feature_store.save(ticket, data)
+    def add_meta(self, ticket: int, data: dict[str, Any]) -> None:
+        if ticket in self._position_meta:
+            # Fusionner avec le meta existant (track_new déjà exécuté)
+            self._position_meta[ticket].update(data)
+            self._position_meta[ticket]["opened_at"] = time.time()
+            logger.debug(f"  [META] #{ticket}: fusionné {set(data.keys())} dans meta existant")
+        else:
+            # Stocker pour fusion ultérieure quand track_new() créera le meta
+            existing = self._meta_extra.get(ticket, {})
+            existing.update(data)
+            self._meta_extra[ticket] = existing
+            logger.debug(f"  [META] #{ticket}: stocké {set(data.keys())} dans _meta_extra en attente de track_new")
+        self.feature_store.save(ticket, {"_meta_extra": data})
 
-    def get_active_count(self):
+    def get_active_count(self) -> int:
         return len(self._position_meta)
 
-    def performance_summary(self):
+    def performance_summary(self) -> dict[str, Any]:
         return {sym: perf.summary() for sym, perf in self.performance.items()}
 
-    def global_summary(self):
+    def global_summary(self) -> dict[str, Any]:
         total_trades = sum(p.trades for p in self.performance.values())
         total_profit = sum(p.total_profit for p in self.performance.values())
         total_wins = sum(p.wins for p in self.performance.values())

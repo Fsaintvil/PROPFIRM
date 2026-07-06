@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import json
 import logging
 import sqlite3
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -12,7 +15,7 @@ logger = logging.getLogger("rate_cache")
 DB_PATH = Path("runtime/rate_cache.db")
 
 
-def _json_default(obj):
+def _json_default(obj: Any) -> Any:
     if isinstance(obj, np.ndarray):
         return obj.tolist()
     if isinstance(obj, np.integer):
@@ -23,7 +26,7 @@ def _json_default(obj):
 
 
 class RateCache:
-    def __init__(self, db_path=None, default_ttl=15):
+    def __init__(self, db_path: str | Path | None = None, default_ttl: int = 15) -> None:
         self._path = str(db_path or DB_PATH)
         self._default_ttl = default_ttl
         self._lock = threading.Lock()  # Protection thread pour SQLite
@@ -33,14 +36,14 @@ class RateCache:
         self._get_connection.execute("PRAGMA busy_timeout=5000")  # H-03: timeout contention
         self._init_db()
 
-    def _get_conn(self):
+    def _get_conn(self) -> sqlite3.Connection:
         try:
             self._get_connection.execute("SELECT 1")
         except (sqlite3.Error, AttributeError):
             self._get_connection = sqlite3.connect(self._path, timeout=5, check_same_thread=False)
         return self._get_connection
 
-    def _init_db(self):
+    def _init_db(self) -> None:
         try:
             with self._get_conn() as c:
                 c.execute("""
@@ -62,15 +65,15 @@ class RateCache:
         except (sqlite3.Error, OSError) as e:
             logger.warning(f"SQLite init failed: {e}")
 
-    def _serialize(self, obj):
+    def _serialize(self, obj: Any) -> str:
         return json.dumps(obj, default=_json_default)
 
-    def _deserialize(self, raw):
+    def _deserialize(self, raw: str | None) -> Any:
         if raw is None:
             return None
         return json.loads(raw)
 
-    def get_rates(self, symbol, tf, count):
+    def get_rates(self, symbol: str, tf: str, count: int) -> Any:
         key = f"{symbol}_{tf}_{count}"
         try:
             with self._get_conn() as c:
@@ -81,7 +84,7 @@ class RateCache:
             logger.debug(f"Cache get failed: {e}")
         return None
 
-    def set_rates(self, symbol, tf, count, data, ttl=None):
+    def set_rates(self, symbol: str, tf: str, count: int, data: Any, ttl: int | None = None) -> None:
         key = f"{symbol}_{tf}_{count}"
         ttl = self._default_ttl if ttl is None else ttl
         try:
@@ -92,7 +95,7 @@ class RateCache:
         except (sqlite3.Error, TypeError) as e:
             logger.debug(f"Cache set failed: {e}")
 
-    def get_volatility(self, symbol):
+    def get_volatility(self, symbol: str) -> Any:
         try:
             with self._get_conn() as c:
                 row = c.execute("SELECT data, expires_at FROM volatility WHERE symbol=?", (symbol,)).fetchone()
@@ -102,7 +105,7 @@ class RateCache:
             logger.debug(f"Vol cache get failed: {e}")
         return None
 
-    def set_volatility(self, symbol, data, ttl=60):
+    def set_volatility(self, symbol: str, data: Any, ttl: int = 60) -> None:
         try:
             with self._get_conn() as c:
                 c.execute(
@@ -112,7 +115,7 @@ class RateCache:
         except (sqlite3.Error, TypeError) as e:
             logger.debug(f"Vol cache set failed: {e}")
 
-    def purge_expired(self):
+    def purge_expired(self) -> None:
         try:
             with self._get_conn() as c:
                 c.execute("DELETE FROM rates WHERE expires_at < ?", (time.time(),))
@@ -120,7 +123,7 @@ class RateCache:
         except sqlite3.Error as e:
             logger.debug(f"Purge failed: {e}")
 
-    def clear(self):
+    def clear(self) -> None:
         try:
             with self._get_conn() as c:
                 c.execute("DELETE FROM rates")
@@ -128,7 +131,7 @@ class RateCache:
         except sqlite3.Error as e:
             logger.debug(f"Clear failed: {e}")
 
-    def close(self):
+    def close(self) -> None:
         """Ferme la connexion SQLite (appelé par le test fixture et stop())."""
         try:
             self._get_connection.close()

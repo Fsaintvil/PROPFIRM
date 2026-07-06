@@ -5,22 +5,28 @@ Responsabilités:
 - _vigilance_scan : analyse parallèle de tous les symboles (régime, DL, structure)
 """
 
+from __future__ import annotations
+
 import logging
 import time
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 import config_simple as cfg
-import os
 
-# 🔥 Seuls les symboles .env:SYMBOLS + positions ouvertes sont scannés
-_env_syms = os.environ.get("SYMBOLS", "").strip()
-_PM_ACTIVE: set[str] = set()
-if _env_syms:
-    _PM_ACTIVE = {s.strip() for s in _env_syms.split(",") if s.strip()}
-if not _PM_ACTIVE:
-    _PM_ACTIVE = {"XAUUSD", "BTCUSD", "US30.cash"}
+if TYPE_CHECKING:
+    from engine_simple.adaptive_intelligence import AdaptiveEngine
+    from engine_simple.ftmo_protector import FTMOProtector
+    from engine_simple.mt5_connector import MT5Connector
+    from engine_simple.regime import RegimeDetector
+
+# ACTIVE_SYMBOLS centralisé depuis auto_stop.py (source de vérité unique)
+# Évite la duplication avec main.py et auto_stop.py
+from engine_simple.auto_stop import ACTIVE_SYMBOLS as _PM_ACTIVE_SOURCE
+
+_PM_ACTIVE: set[str] = set(_PM_ACTIVE_SOURCE)
 
 logger = logging.getLogger("position.mgr")
 
@@ -31,7 +37,15 @@ class PositionManager:
     Délégation de main.py : appelé cycle par cycle.
     """
 
-    def __init__(self, mt5, ftmo, adaptive, signal_gen, regime_detector, pos_cache):
+    def __init__(
+        self,
+        mt5: MT5Connector,
+        ftmo: FTMOProtector,
+        adaptive: AdaptiveEngine,
+        signal_gen: Any,
+        regime_detector: RegimeDetector,
+        pos_cache: Any,
+    ) -> None:
         self.mt5 = mt5
         self.ftmo = ftmo
         self.adaptive = adaptive
@@ -43,7 +57,7 @@ class PositionManager:
 
     # ── Position management ─────────────────────────────────────────
 
-    def manage_positions(self):
+    def manage_positions(self) -> None:
         """Surveille les positions ouvertes (time-stop, trailing, partial TP)."""
         our = [p for p in self._pos_cache.get() if p.magic == cfg.ROBOT_MAGIC]
         self.ftmo._reconcile_positions(our)
@@ -58,7 +72,7 @@ class PositionManager:
 
     # ── Vigilance scan ──────────────────────────────────────────────
 
-    def vigilance_scan(self):
+    def vigilance_scan(self) -> None:
         """DL/regime pipeline pour TOUS les symboles chaque cycle."""
         positions = {p.symbol: p for p in self._pos_cache.get() if p.magic == cfg.ROBOT_MAGIC}
         for symbol in _PM_ACTIVE & set(cfg.SYMBOLS):
@@ -130,7 +144,7 @@ class PositionManager:
             except Exception as e:
                 logger.warning(f"  [VIGIL] {symbol}: error: {e}")
 
-    def _get_rates_for_vigilance(self, symbol):
+    def _get_rates_for_vigilance(self, symbol: str) -> dict | None:
         """Rates mises en cache pour le scan de vigilance (TTL 60s)."""
         now = time.time()
         cached = self._vigilance_rate_cache.get(symbol)

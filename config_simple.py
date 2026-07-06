@@ -153,8 +153,8 @@ except Exception as e:
     _fb_log("MAX_POSITIONS_PER_SYMBOL", 6)
     MAX_TRADES_PER_DAY = 100
     _fb_log("MAX_TRADES_PER_DAY", 100)
-    LOT_SIZE = 0.06
-    _fb_log("LOT_SIZE", 0.06)
+    LOT_SIZE = 0.30
+    _fb_log("LOT_SIZE", 0.30)
     MIN_TRADE_INTERVAL_SEC = 300
     _fb_log("MIN_TRADE_INTERVAL_SEC", 300)
     BATCH_INTERVAL_SEC = 1
@@ -167,8 +167,8 @@ except Exception as e:
     _fb_log("MAX_ORDERS_PER_MINUTE", 6)
     DAILY_PROFIT_LIMIT_PCT = 0.008
     _fb_log("DAILY_PROFIT_LIMIT_PCT", 0.008)
-    RISK_PER_TRADE = 0.004
-    _fb_log("RISK_PER_TRADE", 0.004)
+    RISK_PER_TRADE = 0.002
+    _fb_log("RISK_PER_TRADE", 0.002)
     RISK_SHORT_MULT = 1.0
     _fb_log("RISK_SHORT_MULT", 1.0)
     MAX_DAILY_LOSS_PCT = 0.02
@@ -183,8 +183,8 @@ except Exception as e:
     _fb_log("PROFIT_TARGET_PCT", 0.10)
     CONSISTENCY_MAX_PCT = 0.30
     _fb_log("CONSISTENCY_MAX_PCT", 0.30)
-    MIN_RR_RATIO = 2.0
-    _fb_log("MIN_RR_RATIO", 2.0)
+    MIN_RR_RATIO = 2.5
+    _fb_log("MIN_RR_RATIO", 2.5)
     ATR_MULTIPLIER = 1.5
     _fb_log("ATR_MULTIPLIER", 1.5)
     COOLDOWN_MINUTES = 15

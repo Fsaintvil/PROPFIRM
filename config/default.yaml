@@ -123,8 +123,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   XAUUSD:
     timeframe: "H4"
-    max_lot: 0.20                # 🚀 PHASE 2: ↑ 0.05→0.20 — WR 62.1%, +$488, meilleur symbole
-    min_lot: 0.05
+    max_lot: 0.10                # 🔧 FIX 6 Juil 2026: 0.20→0.10 — lot excessif doublait le risque
+    min_lot: 0.01
     risk_mult: 1.50             # 🔧 OPTIMIZER: ↑ 1.00→1.50 — WR 73.9% justifie un risque accru
     max_spread_points: 60
     adx_thresh: 22
@@ -283,7 +283,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 1.00
+    risk_mult: 0.0   # 🔴 HARD BLOCK 6 Juillet 2026 — WR 45.5%, PF 0.63 (Quant Auditor)
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -319,8 +319,8 @@ symbol_limits:
     max_spread_points: 40
     max_spread_atr_ratio: 0.15  # 🐛 FIX #16: ATR très bas → 15% au lieu de 10%
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false     # 🔴 HARD BLOCK 6 Juillet 2026
+    allow_shorts: false   # 🔴 HARD BLOCK 6 Juillet 2026
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -347,7 +347,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 1.00
+    risk_mult: 0.75  # 🔧 OPTIMIZER: ↓ 1.00→0.75 — WR 37.5%, 16 trades, PnL +$17
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -441,7 +441,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 1.00
+    risk_mult: 0.75  # 🔧 OPTIMIZER: ↓ 1.00→0.75 — WR 42.9%, 7 trades, PF 2.22
     max_spread_points: 80
     adx_thresh: 22
     allow_buys: true
@@ -788,8 +788,8 @@ symbol_limits:
     risk_mult: 0.0   # 🔴 HARD BLOCK 3 Juillet 2026 — WR 46.5%, PF 0.53
     max_spread_points: 100      # ↑ 50→100 1er Juillet 2026 (spread réel ~40-80)
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false    # 🔴 HARD BLOCK 6 Juillet 2026 — Quant Auditor: désactiver définitivement
+    allow_shorts: false  # 🔴 HARD BLOCK 6 Juillet 2026
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 4.5
@@ -816,7 +816,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 1.00
+    risk_mult: 0.30  # 🔧 OPTIMIZER: ↓ 1.00→0.30 — WR 28.6%, 7 trades, -$13
     max_spread_points: 200     # ↑ 50→200 1er Juillet 2026 (spread réel ~80-150)
     adx_thresh: 22
     allow_buys: true
@@ -847,11 +847,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 1.00
+    risk_mult: 0.0   # 🔴 HARD BLOCK 6 Juillet 2026 — WR 36.4%, PF 0.40 (Quant Auditor)
     max_spread_points: 200     # ↑ 60→200 1er Juillet 2026 (spread réel ~80-150)
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false  # 🔴 HARD BLOCK 6 Juillet 2026
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 5.0

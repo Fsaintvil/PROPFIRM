@@ -1,0 +1,1542 @@
+{
+  "timestamp": "2026-06-26T16:40:26.300492+00:00",
+  "total_proposals": 69,
+  "open_count": 13,
+  "proposals": [
+    {
+      "id": "PROP-20260624-001",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-24T23:04:16.758304+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 71% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=71% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-24T23:04:16.758304+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T04:39:12.722570+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260624-002",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-24T23:04:16.771608+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-24T23:04:16.771608+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T04:39:12.722570+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260624-003",
+      "agent": "OPTIMIZER",
+      "timestamp": "2026-06-24T23:04:16.772608+00:00",
+      "type": "optimization",
+      "title": "WR=49% bas mais PnL positif \u2014 augmenter le ratio RR cible",
+      "description": "WR de 49% avec PnL de +$466 sugg\u00e8re que les trades gagnants compensent largement les perdants. Proposer d'augmenter le ratio RR minimum \u00e0 2.5 et d'\u00e9largir les take-profit de 0.5\u00d7ATR pour capturer plus de mouvement.",
+      "priority": "MEDIUM",
+      "impact": "Peut am\u00e9liorer le PnL de +15-25% et faire passer le WR \u00e0 >55%",
+      "effort": "MOYEN",
+      "rationale": "WR=49% < 50% mais PnL positif = les gros trades gagnants portent le syst\u00e8me. Optimiser le TP peut d\u00e9cupler cet avantage.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-24T23:04:16.772608+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T04:39:12.722570+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-004",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-25T04:39:12.722570+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 70% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=70% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T04:39:12.722570+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T04:44:34.396927+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-005",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-25T04:39:12.726725+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T04:39:12.726725+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T04:44:34.396927+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-006",
+      "agent": "OPTIMIZER",
+      "timestamp": "2026-06-25T04:39:12.726725+00:00",
+      "type": "optimization",
+      "title": "WR=49% bas mais PnL positif \u2014 augmenter le ratio RR cible",
+      "description": "WR de 49% avec PnL de +$630 sugg\u00e8re que les trades gagnants compensent largement les perdants. Proposer d'augmenter le ratio RR minimum \u00e0 2.5 et d'\u00e9largir les take-profit de 0.5\u00d7ATR pour capturer plus de mouvement.",
+      "priority": "MEDIUM",
+      "impact": "Peut am\u00e9liorer le PnL de +15-25% et faire passer le WR \u00e0 >55%",
+      "effort": "MOYEN",
+      "rationale": "WR=49% < 50% mais PnL positif = les gros trades gagnants portent le syst\u00e8me. Optimiser le TP peut d\u00e9cupler cet avantage.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T04:39:12.726725+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T04:44:34.396927+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-007",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-25T04:44:34.396927+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 47% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=47% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T04:44:34.396927+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T04:58:59.777126+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-008",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-25T04:44:34.396927+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T04:44:34.396927+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T04:58:59.777126+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-009",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-25T04:58:59.777126+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 62% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=62% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T04:58:59.777126+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T18:20:41.739082+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-010",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-25T04:58:59.783142+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T04:58:59.783142+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T18:20:41.739082+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-011",
+      "agent": "DATA_MANAGER",
+      "timestamp": "2026-06-25T18:10:10.315407+00:00",
+      "type": "monitoring",
+      "title": "Logs fig\u00e9s depuis 29366s \u2014 v\u00e9rifier le heartbeat du robot",
+      "description": "Les logs n'ont pas \u00e9t\u00e9 mis \u00e0 jour depuis 29366 secondes. Activer un heartbeat forc\u00e9 toutes les 30s et une alerte imm\u00e9diate si >60s sans \u00e9criture.",
+      "priority": "CRITICAL",
+      "impact": "D\u00e9tecte les arr\u00eats du robot en <60s au lieu de minutes",
+      "effort": "FAIBLE",
+      "rationale": "Logs fig\u00e9s depuis 29366s = robot probablement bloqu\u00e9 ou crash\u00e9.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T18:10:10.315407+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T18:20:41.739082+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-012",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-25T18:20:41.739082+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 62% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=62% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T18:20:41.739082+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T18:21:24.565127+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-013",
+      "agent": "SYSTEM_MONITOR",
+      "timestamp": "2026-06-25T18:20:41.739082+00:00",
+      "type": "fix",
+      "title": "PID lock manquant \u2014 v\u00e9rifier l'int\u00e9grit\u00e9 du d\u00e9marrage",
+      "description": "Le fichier robot.pid est absent ou le processus robot est mort. Activer le heartbeat monitoring avec alerte Telegram/email.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite les instances dupliqu\u00e9es et les arr\u00eats non d\u00e9tect\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "PID lock manquant = risque d'instances dupliqu\u00e9es ou de robot arr\u00eat\u00e9 sans alerte.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T18:20:41.739082+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T18:21:24.565127+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-014",
+      "agent": "PERFORMANCE_ENGINEER",
+      "timestamp": "2026-06-25T18:20:41.759985+00:00",
+      "type": "fix",
+      "title": "Robot arr\u00eat\u00e9 \u2014 red\u00e9marrage imm\u00e9diat recommand\u00e9",
+      "description": "Le robot n'est pas en cours d'ex\u00e9cution (PID manquant). Lancer un red\u00e9marrage imm\u00e9diat et activer le monitoring heartbeat toutes les 15s.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit le trading et \u00e9vite les opportunit\u00e9s manqu\u00e9es",
+      "effort": "FAIBLE",
+      "rationale": "Robot down = pas de trading = perte d'opportunit\u00e9s et risque de positions orphelines.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T18:20:41.759985+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T18:21:24.565127+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-015",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-25T18:20:41.759985+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T18:20:41.759985+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T18:21:24.565127+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-016",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-25T18:21:24.565127+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 62% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=62% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T18:21:24.565127+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T19:12:07.859738+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-017",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-25T18:21:24.568808+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T18:21:24.568808+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T19:12:07.859738+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-018",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-25T19:12:07.859738+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 67% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=67% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T19:12:07.859738+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T19:44:08.028025+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-019",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-25T19:12:07.864767+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T19:12:07.864767+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T19:44:08.028025+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-020",
+      "agent": "OPTIMIZER",
+      "timestamp": "2026-06-25T19:12:07.864767+00:00",
+      "type": "parameter_tuning",
+      "title": "Progression -0.5% seulement \u2014 augmenter le risque contr\u00f4l\u00e9",
+      "description": "Seulement -0.5% de progression apr\u00e8s 315 trades. Avec un DD de 0.7% et WR de 55%, proposer d'augmenter RISK_PER_TRADE de 0.004 \u00e0 0.005 (+25%) sur les symboles les plus performants uniquement.",
+      "priority": "MEDIUM",
+      "impact": "Augmente la progression mensuelle de -0% \u00e0 -1%",
+      "effort": "FAIBLE",
+      "rationale": "Progression trop lente pour atteindre le target FTMO dans les d\u00e9lais. Marge de s\u00e9curit\u00e9 suffisante (DD=0.7%).",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T19:12:07.864767+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T19:44:08.028025+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-021",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-25T19:44:08.028025+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 65% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=65% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T19:44:08.028025+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T21:14:20.633995+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-022",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-25T19:44:08.036318+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T19:44:08.036318+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T21:14:20.633995+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-023",
+      "agent": "OPTIMIZER",
+      "timestamp": "2026-06-25T19:44:08.036318+00:00",
+      "type": "parameter_tuning",
+      "title": "Progression 0.5% seulement \u2014 augmenter le risque contr\u00f4l\u00e9",
+      "description": "Seulement 0.5% de progression apr\u00e8s 315 trades. Avec un DD de 0.6% et WR de 55%, proposer d'augmenter RISK_PER_TRADE de 0.004 \u00e0 0.005 (+25%) sur les symboles les plus performants uniquement.",
+      "priority": "MEDIUM",
+      "impact": "Augmente la progression mensuelle de 0% \u00e0 1%",
+      "effort": "FAIBLE",
+      "rationale": "Progression trop lente pour atteindre le target FTMO dans les d\u00e9lais. Marge de s\u00e9curit\u00e9 suffisante (DD=0.6%).",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T19:44:08.036318+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-25T21:14:20.633995+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-024",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-25T21:14:20.666343+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T21:14:20.666343+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T08:04:01.895427+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-025",
+      "agent": "OPTIMIZER",
+      "timestamp": "2026-06-25T21:14:20.666343+00:00",
+      "type": "optimization",
+      "title": "WR=0% bas mais PnL positif \u2014 augmenter le ratio RR cible",
+      "description": "WR de 0% avec PnL de +$272 sugg\u00e8re que les trades gagnants compensent largement les perdants. Proposer d'augmenter le ratio RR minimum \u00e0 2.5 et d'\u00e9largir les take-profit de 0.5\u00d7ATR pour capturer plus de mouvement.",
+      "priority": "MEDIUM",
+      "impact": "Peut am\u00e9liorer le PnL de +15-25% et faire passer le WR \u00e0 >55%",
+      "effort": "MOYEN",
+      "rationale": "WR=0% < 50% mais PnL positif = les gros trades gagnants portent le syst\u00e8me. Optimiser le TP peut d\u00e9cupler cet avantage.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T21:14:20.666343+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T08:04:01.895427+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260625-026",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-25T21:26:18.784860+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 41% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=41% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-25T21:26:18.784860+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T08:04:01.895427+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-027",
+      "agent": "ADAPTIVE_ENGINE",
+      "timestamp": "2026-06-26T03:42:22.112213+00:00",
+      "type": "optimization",
+      "title": "LightGBM d\u00e9sactiv\u00e9 \u2014 r\u00e9activation planifi\u00e9e",
+      "description": "Le pipeline LightGBM est down. Planifier une r\u00e9activation apr\u00e8s 500 trades propres avec re-calibration sur les donn\u00e9es r\u00e9elles. Activer d'abord le mode collecte de features.",
+      "priority": "LOW",
+      "impact": "Am\u00e9lioration potentielle du Win Rate de +3-5%",
+      "effort": "\u00c9LEV\u00c9",
+      "rationale": "LightGBM peut am\u00e9liorer la s\u00e9lection de signaux mais n\u00e9cessite des donn\u00e9es non contamin\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T03:42:22.112213+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T08:04:01.895427+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-028",
+      "agent": "AUTO_FIXER",
+      "timestamp": "2026-06-26T04:14:02.905176+00:00",
+      "type": "fix",
+      "title": "MT5_CONNECT : 15 erreurs \u2014 reconnexion forc\u00e9e recommand\u00e9e",
+      "description": "15 erreurs de connexion MT5 d\u00e9tect\u00e9es. Proposer un red\u00e9marrage de la connexion MT5 avec timeout=60000ms et r\u00e9initialisation du terminal via MT5Terminal.exe.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit la connexion MT5 et \u00e9vite les trades manqu\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "15 \u00e9checs de connexion MT5 = risque de trading \u00e0 l'aveugle ou de positions non surveill\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T04:14:02.905176+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T08:04:01.895427+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-029",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-26T08:04:01.895427+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 100% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=100% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T08:04:01.895427+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T09:23:22.189328+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-030",
+      "agent": "SIGNAL_ENGINE",
+      "timestamp": "2026-06-26T08:04:01.903977+00:00",
+      "type": "fix",
+      "title": "30 erreurs dans les logs \u2014 audit des signaux recommand\u00e9",
+      "description": "30 erreurs d\u00e9tect\u00e9es dans les 100 derni\u00e8res lignes. V\u00e9rifier les rejets d'ordres, les timeouts MT5 et les symboles probl\u00e9matiques. Envisager de r\u00e9duire le nombre de symboles actifs.",
+      "priority": "HIGH",
+      "impact": "R\u00e9duit les erreurs de trading de 30 \u00e0 <3 / 100 lignes",
+      "effort": "MOYEN",
+      "rationale": "30 erreurs/100 lignes indique un probl\u00e8me r\u00e9current dans la boucle de trading.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T08:04:01.903977+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T09:23:22.189328+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-031",
+      "agent": "AUTO_FIXER",
+      "timestamp": "2026-06-26T08:04:01.903977+00:00",
+      "type": "fix",
+      "title": "MT5_CONNECT : 15 erreurs \u2014 reconnexion forc\u00e9e recommand\u00e9e",
+      "description": "15 erreurs de connexion MT5 d\u00e9tect\u00e9es. Proposer un red\u00e9marrage de la connexion MT5 avec timeout=60000ms et r\u00e9initialisation du terminal via MT5Terminal.exe.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit la connexion MT5 et \u00e9vite les trades manqu\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "15 \u00e9checs de connexion MT5 = risque de trading \u00e0 l'aveugle ou de positions non surveill\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T08:04:01.903977+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T09:23:22.189328+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-032",
+      "agent": "ADAPTIVE_ENGINE",
+      "timestamp": "2026-06-26T08:04:01.903977+00:00",
+      "type": "optimization",
+      "title": "LightGBM d\u00e9sactiv\u00e9 \u2014 r\u00e9activation planifi\u00e9e",
+      "description": "Le pipeline LightGBM est down. Planifier une r\u00e9activation apr\u00e8s 500 trades propres avec re-calibration sur les donn\u00e9es r\u00e9elles. Activer d'abord le mode collecte de features.",
+      "priority": "LOW",
+      "impact": "Am\u00e9lioration potentielle du Win Rate de +3-5%",
+      "effort": "\u00c9LEV\u00c9",
+      "rationale": "LightGBM peut am\u00e9liorer la s\u00e9lection de signaux mais n\u00e9cessite des donn\u00e9es non contamin\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T08:04:01.903977+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T09:23:22.189328+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-033",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-26T08:04:01.912611+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T08:04:01.912611+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T09:23:22.189328+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-034",
+      "agent": "OPTIMIZER",
+      "timestamp": "2026-06-26T08:04:01.912611+00:00",
+      "type": "optimization",
+      "title": "WR=39% bas mais PnL positif \u2014 augmenter le ratio RR cible",
+      "description": "WR de 39% avec PnL de +$577 sugg\u00e8re que les trades gagnants compensent largement les perdants. Proposer d'augmenter le ratio RR minimum \u00e0 2.5 et d'\u00e9largir les take-profit de 0.5\u00d7ATR pour capturer plus de mouvement.",
+      "priority": "MEDIUM",
+      "impact": "Peut am\u00e9liorer le PnL de +15-25% et faire passer le WR \u00e0 >55%",
+      "effort": "MOYEN",
+      "rationale": "WR=39% < 50% mais PnL positif = les gros trades gagnants portent le syst\u00e8me. Optimiser le TP peut d\u00e9cupler cet avantage.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T08:04:01.912611+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T09:23:22.189328+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-035",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-26T09:23:22.189328+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 100% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=100% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T09:23:22.189328+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T10:02:07.436694+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-036",
+      "agent": "ADAPTIVE_ENGINE",
+      "timestamp": "2026-06-26T09:23:22.211283+00:00",
+      "type": "optimization",
+      "title": "LightGBM d\u00e9sactiv\u00e9 \u2014 r\u00e9activation planifi\u00e9e",
+      "description": "Le pipeline LightGBM est down. Planifier une r\u00e9activation apr\u00e8s 500 trades propres avec re-calibration sur les donn\u00e9es r\u00e9elles. Activer d'abord le mode collecte de features.",
+      "priority": "LOW",
+      "impact": "Am\u00e9lioration potentielle du Win Rate de +3-5%",
+      "effort": "\u00c9LEV\u00c9",
+      "rationale": "LightGBM peut am\u00e9liorer la s\u00e9lection de signaux mais n\u00e9cessite des donn\u00e9es non contamin\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T09:23:22.211283+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T10:02:07.436694+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-037",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-26T09:23:22.211283+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T09:23:22.211283+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T10:02:07.436694+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-038",
+      "agent": "OPTIMIZER",
+      "timestamp": "2026-06-26T09:23:22.211283+00:00",
+      "type": "optimization",
+      "title": "WR=39% bas mais PnL positif \u2014 augmenter le ratio RR cible",
+      "description": "WR de 39% avec PnL de +$577 sugg\u00e8re que les trades gagnants compensent largement les perdants. Proposer d'augmenter le ratio RR minimum \u00e0 2.5 et d'\u00e9largir les take-profit de 0.5\u00d7ATR pour capturer plus de mouvement.",
+      "priority": "MEDIUM",
+      "impact": "Peut am\u00e9liorer le PnL de +15-25% et faire passer le WR \u00e0 >55%",
+      "effort": "MOYEN",
+      "rationale": "WR=39% < 50% mais PnL positif = les gros trades gagnants portent le syst\u00e8me. Optimiser le TP peut d\u00e9cupler cet avantage.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T09:23:22.211283+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T10:02:07.436694+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-039",
+      "agent": "AUTO_FIXER",
+      "timestamp": "2026-06-26T09:30:26.725931+00:00",
+      "type": "fix",
+      "title": "MT5_CONNECT : 5 erreurs \u2014 reconnexion forc\u00e9e recommand\u00e9e",
+      "description": "5 erreurs de connexion MT5 d\u00e9tect\u00e9es. Proposer un red\u00e9marrage de la connexion MT5 avec timeout=60000ms et r\u00e9initialisation du terminal via MT5Terminal.exe.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit la connexion MT5 et \u00e9vite les trades manqu\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "5 \u00e9checs de connexion MT5 = risque de trading \u00e0 l'aveugle ou de positions non surveill\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T09:30:26.725931+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T10:02:07.436694+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-040",
+      "agent": "AUTO_FIXER",
+      "timestamp": "2026-06-26T09:31:27.288679+00:00",
+      "type": "fix",
+      "title": "MT5_CONNECT : 10 erreurs \u2014 reconnexion forc\u00e9e recommand\u00e9e",
+      "description": "10 erreurs de connexion MT5 d\u00e9tect\u00e9es. Proposer un red\u00e9marrage de la connexion MT5 avec timeout=60000ms et r\u00e9initialisation du terminal via MT5Terminal.exe.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit la connexion MT5 et \u00e9vite les trades manqu\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "10 \u00e9checs de connexion MT5 = risque de trading \u00e0 l'aveugle ou de positions non surveill\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T09:31:27.288679+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T10:02:07.436694+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-041",
+      "agent": "AUTO_FIXER",
+      "timestamp": "2026-06-26T09:32:32.745337+00:00",
+      "type": "fix",
+      "title": "MT5_CONNECT : 13 erreurs \u2014 reconnexion forc\u00e9e recommand\u00e9e",
+      "description": "13 erreurs de connexion MT5 d\u00e9tect\u00e9es. Proposer un red\u00e9marrage de la connexion MT5 avec timeout=60000ms et r\u00e9initialisation du terminal via MT5Terminal.exe.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit la connexion MT5 et \u00e9vite les trades manqu\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "13 \u00e9checs de connexion MT5 = risque de trading \u00e0 l'aveugle ou de positions non surveill\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T09:32:32.745337+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T10:02:07.436694+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-042",
+      "agent": "SIGNAL_ENGINE",
+      "timestamp": "2026-06-26T09:33:38.363980+00:00",
+      "type": "fix",
+      "title": "29 erreurs dans les logs \u2014 audit des signaux recommand\u00e9",
+      "description": "29 erreurs d\u00e9tect\u00e9es dans les 100 derni\u00e8res lignes. V\u00e9rifier les rejets d'ordres, les timeouts MT5 et les symboles probl\u00e9matiques. Envisager de r\u00e9duire le nombre de symboles actifs.",
+      "priority": "HIGH",
+      "impact": "R\u00e9duit les erreurs de trading de 29 \u00e0 <3 / 100 lignes",
+      "effort": "MOYEN",
+      "rationale": "29 erreurs/100 lignes indique un probl\u00e8me r\u00e9current dans la boucle de trading.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T09:33:38.363980+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T10:02:07.436694+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-043",
+      "agent": "AUTO_FIXER",
+      "timestamp": "2026-06-26T09:33:38.363980+00:00",
+      "type": "fix",
+      "title": "MT5_CONNECT : 14 erreurs \u2014 reconnexion forc\u00e9e recommand\u00e9e",
+      "description": "14 erreurs de connexion MT5 d\u00e9tect\u00e9es. Proposer un red\u00e9marrage de la connexion MT5 avec timeout=60000ms et r\u00e9initialisation du terminal via MT5Terminal.exe.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit la connexion MT5 et \u00e9vite les trades manqu\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "14 \u00e9checs de connexion MT5 = risque de trading \u00e0 l'aveugle ou de positions non surveill\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T09:33:38.363980+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T10:02:07.436694+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-044",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-26T10:02:07.436694+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 100% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=100% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T10:02:07.436694+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T14:08:13.754079+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-045",
+      "agent": "ADAPTIVE_ENGINE",
+      "timestamp": "2026-06-26T10:02:07.453439+00:00",
+      "type": "optimization",
+      "title": "LightGBM d\u00e9sactiv\u00e9 \u2014 r\u00e9activation planifi\u00e9e",
+      "description": "Le pipeline LightGBM est down. Planifier une r\u00e9activation apr\u00e8s 500 trades propres avec re-calibration sur les donn\u00e9es r\u00e9elles. Activer d'abord le mode collecte de features.",
+      "priority": "LOW",
+      "impact": "Am\u00e9lioration potentielle du Win Rate de +3-5%",
+      "effort": "\u00c9LEV\u00c9",
+      "rationale": "LightGBM peut am\u00e9liorer la s\u00e9lection de signaux mais n\u00e9cessite des donn\u00e9es non contamin\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T10:02:07.453439+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T14:08:13.754079+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-046",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-26T10:02:07.453439+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T10:02:07.453439+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T14:08:13.754079+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-047",
+      "agent": "OPTIMIZER",
+      "timestamp": "2026-06-26T10:02:07.453439+00:00",
+      "type": "optimization",
+      "title": "WR=46% bas mais PnL positif \u2014 augmenter le ratio RR cible",
+      "description": "WR de 46% avec PnL de +$592 sugg\u00e8re que les trades gagnants compensent largement les perdants. Proposer d'augmenter le ratio RR minimum \u00e0 2.5 et d'\u00e9largir les take-profit de 0.5\u00d7ATR pour capturer plus de mouvement.",
+      "priority": "MEDIUM",
+      "impact": "Peut am\u00e9liorer le PnL de +15-25% et faire passer le WR \u00e0 >55%",
+      "effort": "MOYEN",
+      "rationale": "WR=46% < 50% mais PnL positif = les gros trades gagnants portent le syst\u00e8me. Optimiser le TP peut d\u00e9cupler cet avantage.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T10:02:07.453439+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T14:08:13.754079+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-048",
+      "agent": "AUTO_FIXER",
+      "timestamp": "2026-06-26T11:04:59.621710+00:00",
+      "type": "fix",
+      "title": "MT5_CONNECT : 8 erreurs \u2014 reconnexion forc\u00e9e recommand\u00e9e",
+      "description": "8 erreurs de connexion MT5 d\u00e9tect\u00e9es. Proposer un red\u00e9marrage de la connexion MT5 avec timeout=60000ms et r\u00e9initialisation du terminal via MT5Terminal.exe.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit la connexion MT5 et \u00e9vite les trades manqu\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "8 \u00e9checs de connexion MT5 = risque de trading \u00e0 l'aveugle ou de positions non surveill\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T11:04:59.621710+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T14:08:13.754079+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-049",
+      "agent": "AUTO_FIXER",
+      "timestamp": "2026-06-26T11:06:00.400065+00:00",
+      "type": "fix",
+      "title": "MT5_CONNECT : 13 erreurs \u2014 reconnexion forc\u00e9e recommand\u00e9e",
+      "description": "13 erreurs de connexion MT5 d\u00e9tect\u00e9es. Proposer un red\u00e9marrage de la connexion MT5 avec timeout=60000ms et r\u00e9initialisation du terminal via MT5Terminal.exe.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit la connexion MT5 et \u00e9vite les trades manqu\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "13 \u00e9checs de connexion MT5 = risque de trading \u00e0 l'aveugle ou de positions non surveill\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T11:06:00.400065+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T14:08:13.754079+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-050",
+      "agent": "SIGNAL_ENGINE",
+      "timestamp": "2026-06-26T11:07:46.613231+00:00",
+      "type": "fix",
+      "title": "29 erreurs dans les logs \u2014 audit des signaux recommand\u00e9",
+      "description": "29 erreurs d\u00e9tect\u00e9es dans les 100 derni\u00e8res lignes. V\u00e9rifier les rejets d'ordres, les timeouts MT5 et les symboles probl\u00e9matiques. Envisager de r\u00e9duire le nombre de symboles actifs.",
+      "priority": "HIGH",
+      "impact": "R\u00e9duit les erreurs de trading de 29 \u00e0 <3 / 100 lignes",
+      "effort": "MOYEN",
+      "rationale": "29 erreurs/100 lignes indique un probl\u00e8me r\u00e9current dans la boucle de trading.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T11:07:46.613231+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T14:08:13.754079+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-051",
+      "agent": "AUTO_FIXER",
+      "timestamp": "2026-06-26T11:08:01.868349+00:00",
+      "type": "fix",
+      "title": "MT5_CONNECT : 14 erreurs \u2014 reconnexion forc\u00e9e recommand\u00e9e",
+      "description": "14 erreurs de connexion MT5 d\u00e9tect\u00e9es. Proposer un red\u00e9marrage de la connexion MT5 avec timeout=60000ms et r\u00e9initialisation du terminal via MT5Terminal.exe.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit la connexion MT5 et \u00e9vite les trades manqu\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "14 \u00e9checs de connexion MT5 = risque de trading \u00e0 l'aveugle ou de positions non surveill\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T11:08:01.868349+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T14:08:13.754079+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-052",
+      "agent": "SIGNAL_ENGINE",
+      "timestamp": "2026-06-26T11:12:51.200103+00:00",
+      "type": "fix",
+      "title": "28 erreurs dans les logs \u2014 audit des signaux recommand\u00e9",
+      "description": "28 erreurs d\u00e9tect\u00e9es dans les 100 derni\u00e8res lignes. V\u00e9rifier les rejets d'ordres, les timeouts MT5 et les symboles probl\u00e9matiques. Envisager de r\u00e9duire le nombre de symboles actifs.",
+      "priority": "HIGH",
+      "impact": "R\u00e9duit les erreurs de trading de 28 \u00e0 <3 / 100 lignes",
+      "effort": "MOYEN",
+      "rationale": "28 erreurs/100 lignes indique un probl\u00e8me r\u00e9current dans la boucle de trading.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T11:12:51.200103+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T14:08:13.754079+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-053",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-26T14:08:13.754079+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 100% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=100% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T14:08:13.754079+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T15:16:01.994472+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-054",
+      "agent": "ADAPTIVE_ENGINE",
+      "timestamp": "2026-06-26T14:08:13.779499+00:00",
+      "type": "optimization",
+      "title": "LightGBM d\u00e9sactiv\u00e9 \u2014 r\u00e9activation planifi\u00e9e",
+      "description": "Le pipeline LightGBM est down. Planifier une r\u00e9activation apr\u00e8s 500 trades propres avec re-calibration sur les donn\u00e9es r\u00e9elles. Activer d'abord le mode collecte de features.",
+      "priority": "LOW",
+      "impact": "Am\u00e9lioration potentielle du Win Rate de +3-5%",
+      "effort": "\u00c9LEV\u00c9",
+      "rationale": "LightGBM peut am\u00e9liorer la s\u00e9lection de signaux mais n\u00e9cessite des donn\u00e9es non contamin\u00e9es.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T14:08:13.779499+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T15:16:01.994472+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-055",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-26T14:08:13.779499+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T14:08:13.779499+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T15:16:01.994472+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-056",
+      "agent": "OPTIMIZER",
+      "timestamp": "2026-06-26T14:08:13.779499+00:00",
+      "type": "optimization",
+      "title": "WR=49% bas mais PnL positif \u2014 augmenter le ratio RR cible",
+      "description": "WR de 49% avec PnL de +$604 sugg\u00e8re que les trades gagnants compensent largement les perdants. Proposer d'augmenter le ratio RR minimum \u00e0 2.5 et d'\u00e9largir les take-profit de 0.5\u00d7ATR pour capturer plus de mouvement.",
+      "priority": "MEDIUM",
+      "impact": "Peut am\u00e9liorer le PnL de +15-25% et faire passer le WR \u00e0 >55%",
+      "effort": "MOYEN",
+      "rationale": "WR=49% < 50% mais PnL positif = les gros trades gagnants portent le syst\u00e8me. Optimiser le TP peut d\u00e9cupler cet avantage.",
+      "status": "OBSOLETE",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T14:08:13.779499+00:00"
+        },
+        {
+          "status": "OBSOLETE",
+          "timestamp": "2026-06-26T15:16:01.994472+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-057",
+      "agent": "RISK_COMPLIANCE",
+      "timestamp": "2026-06-26T15:16:01.994472+00:00",
+      "type": "risk_control",
+      "title": "Consistency FTMO viol\u00e9e \u2014 lisser les gains quotidiens",
+      "description": "Un jour repr\u00e9sente 100% du profit total. Proposer de plafonner le gain journalier \u00e0 20% via un trailing plus agressif sur les gros trades gagnants.",
+      "priority": "CRITICAL",
+      "impact": "\u00c9vite le FAIL_CONSISTENCY et sauvegarde le challenge",
+      "effort": "MOYEN",
+      "rationale": "best_day_pct=100% > 30%, risque de violation FTMO imm\u00e9diat.",
+      "status": "OPEN",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T15:16:01.994472+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-058",
+      "agent": "ADAPTIVE_ENGINE",
+      "timestamp": "2026-06-26T15:16:02.006822+00:00",
+      "type": "optimization",
+      "title": "LightGBM d\u00e9sactiv\u00e9 \u2014 r\u00e9activation planifi\u00e9e",
+      "description": "Le pipeline LightGBM est down. Planifier une r\u00e9activation apr\u00e8s 500 trades propres avec re-calibration sur les donn\u00e9es r\u00e9elles. Activer d'abord le mode collecte de features.",
+      "priority": "LOW",
+      "impact": "Am\u00e9lioration potentielle du Win Rate de +3-5%",
+      "effort": "\u00c9LEV\u00c9",
+      "rationale": "LightGBM peut am\u00e9liorer la s\u00e9lection de signaux mais n\u00e9cessite des donn\u00e9es non contamin\u00e9es.",
+      "status": "OPEN",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T15:16:02.006822+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-059",
+      "agent": "QUANT_AUDITOR",
+      "timestamp": "2026-06-26T15:16:02.006822+00:00",
+      "type": "monitoring",
+      "title": "Profit Factor 1.00 sur  \u2014 surveiller la tendance",
+      "description": "PF \u00e0 1.00 sur  trades. Surveiller l'\u00e9volution sur les 50 prochains trades. Si la tendance se d\u00e9grade, r\u00e9duire le risque de 15%.",
+      "priority": "MEDIUM",
+      "impact": "Maintient le PF au-dessus de 1.2",
+      "effort": "FAIBLE",
+      "rationale": "PF=1.00 < 1.2 = syst\u00e8me en zone de fragilit\u00e9 statistique.",
+      "status": "OPEN",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T15:16:02.006822+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-060",
+      "agent": "OPTIMIZER",
+      "timestamp": "2026-06-26T15:16:02.006822+00:00",
+      "type": "optimization",
+      "title": "WR=48% bas mais PnL positif \u2014 augmenter le ratio RR cible",
+      "description": "WR de 48% avec PnL de +$569 sugg\u00e8re que les trades gagnants compensent largement les perdants. Proposer d'augmenter le ratio RR minimum \u00e0 2.5 et d'\u00e9largir les take-profit de 0.5\u00d7ATR pour capturer plus de mouvement.",
+      "priority": "MEDIUM",
+      "impact": "Peut am\u00e9liorer le PnL de +15-25% et faire passer le WR \u00e0 >55%",
+      "effort": "MOYEN",
+      "rationale": "WR=48% < 50% mais PnL positif = les gros trades gagnants portent le syst\u00e8me. Optimiser le TP peut d\u00e9cupler cet avantage.",
+      "status": "OPEN",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T15:16:02.006822+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-061",
+      "agent": "AUTO_FIXER",
+      "timestamp": "2026-06-26T15:33:22.249353+00:00",
+      "type": "fix",
+      "title": "MT5_CONNECT : 5 erreurs \u2014 reconnexion forc\u00e9e recommand\u00e9e",
+      "description": "5 erreurs de connexion MT5 d\u00e9tect\u00e9es. Proposer un red\u00e9marrage de la connexion MT5 avec timeout=60000ms et r\u00e9initialisation du terminal via MT5Terminal.exe.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit la connexion MT5 et \u00e9vite les trades manqu\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "5 \u00e9checs de connexion MT5 = risque de trading \u00e0 l'aveugle ou de positions non surveill\u00e9es.",
+      "status": "OPEN",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T15:33:22.249353+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-062",
+      "agent": "AUTO_FIXER",
+      "timestamp": "2026-06-26T15:34:23.215013+00:00",
+      "type": "fix",
+      "title": "MT5_CONNECT : 11 erreurs \u2014 reconnexion forc\u00e9e recommand\u00e9e",
+      "description": "11 erreurs de connexion MT5 d\u00e9tect\u00e9es. Proposer un red\u00e9marrage de la connexion MT5 avec timeout=60000ms et r\u00e9initialisation du terminal via MT5Terminal.exe.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit la connexion MT5 et \u00e9vite les trades manqu\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "11 \u00e9checs de connexion MT5 = risque de trading \u00e0 l'aveugle ou de positions non surveill\u00e9es.",
+      "status": "OPEN",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T15:34:23.215013+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-063",
+      "agent": "AUTO_FIXER",
+      "timestamp": "2026-06-26T15:35:24.030828+00:00",
+      "type": "fix",
+      "title": "MT5_CONNECT : 13 erreurs \u2014 reconnexion forc\u00e9e recommand\u00e9e",
+      "description": "13 erreurs de connexion MT5 d\u00e9tect\u00e9es. Proposer un red\u00e9marrage de la connexion MT5 avec timeout=60000ms et r\u00e9initialisation du terminal via MT5Terminal.exe.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit la connexion MT5 et \u00e9vite les trades manqu\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "13 \u00e9checs de connexion MT5 = risque de trading \u00e0 l'aveugle ou de positions non surveill\u00e9es.",
+      "status": "OPEN",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T15:35:24.030828+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-064",
+      "agent": "SIGNAL_ENGINE",
+      "timestamp": "2026-06-26T15:36:19.769588+00:00",
+      "type": "fix",
+      "title": "29 erreurs dans les logs \u2014 audit des signaux recommand\u00e9",
+      "description": "29 erreurs d\u00e9tect\u00e9es dans les 100 derni\u00e8res lignes. V\u00e9rifier les rejets d'ordres, les timeouts MT5 et les symboles probl\u00e9matiques. Envisager de r\u00e9duire le nombre de symboles actifs.",
+      "priority": "HIGH",
+      "impact": "R\u00e9duit les erreurs de trading de 29 \u00e0 <3 / 100 lignes",
+      "effort": "MOYEN",
+      "rationale": "29 erreurs/100 lignes indique un probl\u00e8me r\u00e9current dans la boucle de trading.",
+      "status": "OPEN",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T15:36:19.769588+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-065",
+      "agent": "AUTO_FIXER",
+      "timestamp": "2026-06-26T15:36:24.871799+00:00",
+      "type": "fix",
+      "title": "MT5_CONNECT : 14 erreurs \u2014 reconnexion forc\u00e9e recommand\u00e9e",
+      "description": "14 erreurs de connexion MT5 d\u00e9tect\u00e9es. Proposer un red\u00e9marrage de la connexion MT5 avec timeout=60000ms et r\u00e9initialisation du terminal via MT5Terminal.exe.",
+      "priority": "CRITICAL",
+      "impact": "R\u00e9tablit la connexion MT5 et \u00e9vite les trades manqu\u00e9s",
+      "effort": "MOYEN",
+      "rationale": "14 \u00e9checs de connexion MT5 = risque de trading \u00e0 l'aveugle ou de positions non surveill\u00e9es.",
+      "status": "OPEN",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T15:36:24.871799+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-066",
+      "agent": "SIGNAL_ENGINE",
+      "timestamp": "2026-06-26T15:41:23.796324+00:00",
+      "type": "fix",
+      "title": "28 erreurs dans les logs \u2014 audit des signaux recommand\u00e9",
+      "description": "28 erreurs d\u00e9tect\u00e9es dans les 100 derni\u00e8res lignes. V\u00e9rifier les rejets d'ordres, les timeouts MT5 et les symboles probl\u00e9matiques. Envisager de r\u00e9duire le nombre de symboles actifs.",
+      "priority": "HIGH",
+      "impact": "R\u00e9duit les erreurs de trading de 28 \u00e0 <3 / 100 lignes",
+      "effort": "MOYEN",
+      "rationale": "28 erreurs/100 lignes indique un probl\u00e8me r\u00e9current dans la boucle de trading.",
+      "status": "OPEN",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T15:41:23.796324+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-067",
+      "agent": "SIGNAL_ENGINE",
+      "timestamp": "2026-06-26T15:56:36.811704+00:00",
+      "type": "fix",
+      "title": "32 erreurs dans les logs \u2014 audit des signaux recommand\u00e9",
+      "description": "32 erreurs d\u00e9tect\u00e9es dans les 100 derni\u00e8res lignes. V\u00e9rifier les rejets d'ordres, les timeouts MT5 et les symboles probl\u00e9matiques. Envisager de r\u00e9duire le nombre de symboles actifs.",
+      "priority": "HIGH",
+      "impact": "R\u00e9duit les erreurs de trading de 32 \u00e0 <3 / 100 lignes",
+      "effort": "MOYEN",
+      "rationale": "32 erreurs/100 lignes indique un probl\u00e8me r\u00e9current dans la boucle de trading.",
+      "status": "OPEN",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T15:56:36.811704+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-068",
+      "agent": "DATA_MANAGER",
+      "timestamp": "2026-06-26T16:40:16.119445+00:00",
+      "type": "monitoring",
+      "title": "Logs fig\u00e9s depuis 2039s \u2014 v\u00e9rifier le heartbeat du robot",
+      "description": "Les logs n'ont pas \u00e9t\u00e9 mis \u00e0 jour depuis 2039 secondes. Activer un heartbeat forc\u00e9 toutes les 30s et une alerte imm\u00e9diate si >60s sans \u00e9criture.",
+      "priority": "CRITICAL",
+      "impact": "D\u00e9tecte les arr\u00eats du robot en <60s au lieu de minutes",
+      "effort": "FAIBLE",
+      "rationale": "Logs fig\u00e9s depuis 2039s = robot probablement bloqu\u00e9 ou crash\u00e9.",
+      "status": "OPEN",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T16:40:16.119445+00:00"
+        }
+      ]
+    },
+    {
+      "id": "PROP-20260626-069",
+      "agent": "SIGNAL_ENGINE",
+      "timestamp": "2026-06-26T16:40:16.119445+00:00",
+      "type": "fix",
+      "title": "31 erreurs dans les logs \u2014 audit des signaux recommand\u00e9",
+      "description": "31 erreurs d\u00e9tect\u00e9es dans les 100 derni\u00e8res lignes. V\u00e9rifier les rejets d'ordres, les timeouts MT5 et les symboles probl\u00e9matiques. Envisager de r\u00e9duire le nombre de symboles actifs.",
+      "priority": "HIGH",
+      "impact": "R\u00e9duit les erreurs de trading de 31 \u00e0 <3 / 100 lignes",
+      "effort": "MOYEN",
+      "rationale": "31 erreurs/100 lignes indique un probl\u00e8me r\u00e9current dans la boucle de trading.",
+      "status": "OPEN",
+      "status_history": [
+        {
+          "status": "OPEN",
+          "timestamp": "2026-06-26T16:40:16.119445+00:00"
+        }
+      ]
+    }
+  ]
+}

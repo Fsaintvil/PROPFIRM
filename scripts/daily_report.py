@@ -3,6 +3,7 @@ Rapport quotidien — Affiche le bilan complet du robot.
 Usage: python scripts/daily_report.py
        opencode "bilan"
 """
+
 import sys
 from pathlib import Path
 
@@ -15,6 +16,7 @@ pm = PerformanceMonitor()
 
 # Vérifier si le fichier de rapport existe déjà (généré récemment)
 import time
+
 now = time.time()
 use_cached = False
 if REPORT_FILE.exists() and (now - REPORT_FILE.stat().st_mtime) < 60:
@@ -23,7 +25,7 @@ if REPORT_FILE.exists() and (now - REPORT_FILE.stat().st_mtime) < 60:
             report = json.load(f)
         if report.get("generated_at"):
             use_cached = True
-    except:
+    except Exception:
         pass
 
 if not use_cached:

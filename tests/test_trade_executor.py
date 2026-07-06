@@ -123,7 +123,7 @@ class TestExecutionStats:
 
 class TestOrderValidator:
     def test_valid_order(self):
-        err = OrderValidator.validate("EURUSD", "BUY", 0.1, 1.1000, 1.0900, 1.1200, None)
+        err = OrderValidator.validate("EURUSD", "BUY", 0.1, 1.1000, 1.0900, 1.1300, None)
         assert err is None
 
     def test_lot_below_minimum(self):
@@ -149,8 +149,8 @@ class TestOrderValidator:
         assert "invalide" in err.lower() or "refus" in err.lower() or "nul" in err.lower()
 
     def test_rr_below_min(self):
-        # RR = (1.1200-1.1000) / (1.1000-1.0900) = 0.02/0.01 = 2.0 → OK
-        err = OrderValidator.validate("EURUSD", "BUY", 0.1, 1.1000, 1.0900, 1.1200, None)
+        # RR = (1.1260-1.1000) / (1.1000-1.0900) = 0.026/0.01 = 2.6 → OK (>MIN_RR_RATIO=2.5)
+        err = OrderValidator.validate("EURUSD", "BUY", 0.1, 1.1000, 1.0900, 1.1260, None)
         assert err is None
         # RR = (1.1050-1.1000) / (1.1000-1.0900) = 0.005/0.01 = 0.5 → FAIL
         err = OrderValidator.validate("EURUSD", "BUY", 0.1, 1.1000, 1.0900, 1.1050, None)
@@ -158,8 +158,8 @@ class TestOrderValidator:
         assert "rr" in err.lower()
 
     def test_valid_sell_order(self):
-        # SELL: risk = (1.1100-1.1000)*0.1, reward = (1.1000-1.0800)*0.1, RR=2.0
-        err = OrderValidator.validate("EURUSD", "SELL", 0.1, 1.1000, 1.1100, 1.0800, None)
+        # SELL: risk = (1.1100-1.1000)*0.1, reward = (1.1000-1.0750)*0.1, RR=2.5
+        err = OrderValidator.validate("EURUSD", "SELL", 0.1, 1.1000, 1.1100, 1.0750, None)
         assert err is None
 
 
@@ -233,7 +233,7 @@ class TestTradeExecutor:
         }
         tick = MagicMock(ask=1.1005, bid=1.1000)
         ex.mt5.get_tick.return_value = tick
-        ex.ftmo._calc_sl_tp.return_value = (1.0900, 1.1250)
+        ex.ftmo.trailer.calc_sl_tp.return_value = (1.0900, 1.1250)
         ex.ftmo.calculate_lot.return_value = 0.1  # <-- fix: return proper number
         ex.mt5.get_account_info.return_value = MagicMock(balance=200000)
         mock_result = MagicMock()
@@ -244,7 +244,7 @@ class TestTradeExecutor:
             result = ex.execute("EURUSD", signal)
 
         assert result is not None
-        ex.ftmo._calc_sl_tp.assert_called_with("EURUSD", 1.1000, 0, 0.005, 2.0, 5.0)
+        ex.ftmo.trailer.calc_sl_tp.assert_called_with("EURUSD", 1.1000, 0, 0.005, 2.0, 5.0)
 
     def test_execute_calc_lot_from_ftmo(self):
         ex = self.make_executor()
@@ -268,8 +268,8 @@ class TestTradeExecutor:
 
         assert result is not None
         lot_arg = ex.mt5.order_send.call_args[0][0]
-        # XAUUSD max_lot=0.01 (WR-progressif 1er Juillet), ftmo retourne 0.15 → clamp à 0.01
-        assert lot_arg["volume"] == 0.01
+        # ×5 Juillet 2026: ftmo retourne 0.15, plus de clamp YAML bloqueur → volume=0.15
+        assert lot_arg["volume"] == 0.15
         assert lot_arg["comment"] == "ADAPT_TRE"
 
     def test_execute_validation_fails(self):
@@ -316,12 +316,12 @@ class TestTradeExecutor:
         ex = self.make_executor()
         ex.ftmo.calculate_lot.return_value = 0.15
         lot = ex._calc_lot("XAUUSD", 1.1000, 1.0900)
-        # XAUUSD max_lot=0.01 (WR-progressif 1er Juillet), ftmo retourne 0.15 → clamp à 0.01
-        assert lot == 0.01
+        # ×5 Juillet 2026: ftmo retourne 0.15, plus de clamp YAML bloqueur → lot=0.15
+        assert lot == 0.15
 
     def test_calc_lot_fallback_min(self):
         ex = self.make_executor()
         ex.ftmo.calculate_lot.return_value = None  # ftmo returns None
         lot = ex._calc_lot("XAUUSD", 1.1000, 1.0900)
-        # Fallback sécurisé: 0.01 minimum
-        assert lot == 0.01
+        # Fallback sécurisé: 0.05 minimum (×5 Juillet 2026)
+        assert lot == 0.05

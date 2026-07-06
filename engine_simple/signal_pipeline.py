@@ -11,7 +11,6 @@ Flux simplifié:
   process(symbol) → SignalResult | None
     ├── phase1_mom20x3()         ← signal brut MOM20x3
     ├── phase2_adx_filter()      ← ADX threshold + bypass
-    ├── phase3_session_filter()  ← session active ?
     ├── phase4_news_filter()     ← news économique ?
     ├── phase5_regime_rule()     ← direction = régime ?
     ├── phase6_strategy_selector() ← params par régime
@@ -52,8 +51,6 @@ class SignalPipeline:
         mt5,
         ftmo,
         adaptive,
-        market_memory,
-        session_filter,
         news_filter,
         strategy_selector,
         volume_profile,
@@ -66,8 +63,6 @@ class SignalPipeline:
         self.mt5 = mt5
         self.ftmo = ftmo
         self.adaptive = adaptive
-        self.market_memory = market_memory
-        self.session_filter = session_filter
         self.news_filter = news_filter
         self.strategy_selector = strategy_selector
         self.volume_profile = volume_profile
@@ -78,8 +73,8 @@ class SignalPipeline:
         self.symbol_timeframes = symbol_timeframes
         # Cache des AdaptiveParameters par symbole
         self._adaptive_params: dict = {}
-        # Cache get_rates() par (symbole, timeframe) — évite appels MT5 redondants
-        self._rates_cache: dict[tuple[str, str], tuple[float, object]] = {}
+        # Cache get_rates() par (symbole, timeframe, count) — évite appels MT5 redondants
+        self._rates_cache: dict[tuple[str, str, int], tuple[float, object]] = {}
         self.RATES_CACHE_TTL = 10  # secondes
 
     def _get_cached_rates(self, symbol: str, tf: str, count: int = 100):
@@ -140,8 +135,15 @@ class SignalPipeline:
             logger.debug(f"  [PRECHECK] {symbol}: echec {failed}, reasons={reasons}")
             return None
 
-        # Phase 1: MOM20x3 signal
+        # Phase 1a: MOM20x3 signal (primaire — tendances)
         signal = self._phase1_mom20x3(symbol)
+
+        # Phase 1b: MeanReversion fallback (si MOM échoue ET marché en RANGING)
+        if signal is None:
+            signal = self._generate_mr_signal(symbol)
+            if signal is not None:
+                logger.debug(f"  [MR FALLBACK] {symbol}: MOM20x3 échoué, MeanReversion pris")
+
         if signal is None:
             return None
 
@@ -203,9 +205,8 @@ class SignalPipeline:
             signal["max_per_symbol"] = max_per_symbol
             logger.debug(f"  [HIGH CONF] {symbol} {sig_action} conf={sig_conf:.2f} — cap={max_per_symbol}/symbole")
         else:
-            if sig_conf > 0.85:
-                max_per_symbol = 3
-            elif sig_conf > 0.70:
+            # sig_conf < 0.85 (else branch du if >= 0.85)
+            if sig_conf > 0.70:
                 max_per_symbol = 2
             else:
                 max_per_symbol = 1
@@ -287,14 +288,16 @@ class SignalPipeline:
             logger.warning(f"  [SIGNAL_PIPELINE] phase1_mom20x3 OL: {e}")
             pass
 
-        rates_tf = self.mt5.get_rates(symbol, tf, count=10000)
+        rates_tf = self._get_cached_rates(
+            symbol, tf, count=200
+        )  # ⚡ 10000→200: 98% moins de données, suffisant pour MOM20x3
         if rates_tf is None or len(rates_tf) < 50:
             logger.debug(
                 f"  [MOM20x3] {symbol}: rates {tf} insufficient ({0 if rates_tf is None else len(rates_tf)} bars)"
             )
             return None
 
-        mom = MOM20x3(rates_tf, symbol, market_memory=self.market_memory)
+        mom = MOM20x3(rates_tf, symbol)
         raw = mom.analyze(custom_thresh_trending=ol_thresh_trending, custom_thresh_ranging=ol_thresh_ranging)
         if raw is None:
             return None
@@ -303,7 +306,7 @@ class SignalPipeline:
         h4_conf = 1.0
         higher_tf = "D1" if tf == "H4" else "H4"
         try:
-            higher_cached = self.mt5.get_rates(symbol, higher_tf, count=60)
+            higher_cached = self._get_cached_rates(symbol, higher_tf, count=60)
             if higher_cached is not None and len(higher_cached) > 30:
                 hc = np.array([r[4] for r in higher_cached], dtype=float)
                 from engine_simple.indicators import ema
@@ -320,28 +323,14 @@ class SignalPipeline:
             logger.warning(f"  [SIGNAL_PIPELINE] phase1_mom20x3 higher_tf: {e}")
             pass
 
-        # MTF Alignment
-        tick = self.mt5.get_tick(symbol)
-        if self.market_memory is not None and tick:
-            try:
-                mtf = self.market_memory.get_mtf_alignment(symbol, tick.ask if tick else 0)
-                bullish_count = sum(1 for v in mtf.values() if v == "bullish")
-                bearish_count = sum(1 for v in mtf.values() if v == "bearish")
-                if raw["action"] == "BUY" and bearish_count >= 3:
-                    h4_conf *= 0.85
-                elif raw["action"] == "SELL" and bullish_count >= 3:
-                    h4_conf *= 0.85
-                if raw["action"] == "BUY" and bullish_count >= 3:
-                    h4_conf = min(1.0, h4_conf * 1.05)
-                elif raw["action"] == "SELL" and bearish_count >= 3:
-                    h4_conf = min(1.0, h4_conf * 1.05)
-            except Exception as e:
-                logger.warning(f"  [SIGNAL_PIPELINE] phase1_mom20x3 mtf_alignment: {e}")
-                pass
-
         # Enrich signal
+        tick = self.mt5.get_tick(symbol)
         entry = tick.ask if tick else 0
         signal = dict(raw)
+        signal["_raw_mom_score"] = signal.get("score", 0.6)  # 🐛 FIX #7 (3 Juillet): sauve score MOM20x3 brut
+        # avant les ajustements pipeline (OBV, VP, etc.)
+        # pour que les phases aval puissent décider
+        # de ne pas pénaliser un signal fort.
         signal["symbol"] = symbol
         signal["timeframe"] = tf
         signal["details"] = f"MOM20x3_{tf}"
@@ -384,9 +373,110 @@ class SignalPipeline:
 
         return signal
 
+    # ── Mean Reversion (RANGING markets) ──────────────────────────────────
+
+    def _generate_mr_signal(self, symbol: str) -> dict | None:
+        """Génère un signal MeanReversion en marché RANGING (ADX<18).
+
+        Logique :
+        - RSI < 30 → BUY (suracheté, retour vers la moyenne)
+        - RSI > 70 → SELL (survendu, retour vers la moyenne)
+        - TP = 1.5×ATR (petite cible, les ranges ne vont pas loin)
+        - SL = 0.8×ATR (stop serré)
+        - risk_mult = 0.75 (MR moins fiable que MOM20x3 en tendance)
+        """
+        import numpy as np
+        from engine_simple.indicators import rsi as ind_rsi
+
+        tf = self.symbol_timeframes.get(symbol, "H1")
+        rates = self.mt5.get_rates(symbol, tf, count=100)
+        if rates is None or len(rates) < 50:
+            return None
+
+        close = np.array([r[4] for r in rates], dtype=float)
+
+        # Calcul RSI
+        rsi_val = float(ind_rsi(close, period=14)[-1])
+
+        # Calcul ADX pour confirmer RANGING
+        high = np.array([r[2] for r in rates], dtype=float)
+        low = np.array([r[3] for r in rates], dtype=float)
+        from engine_simple.indicators import adx as ind_adx
+
+        adx_arr = ind_adx(high, low, close, period=14)
+        # ❌ BUG CORRIGÉ 2 Juillet 2026: ind_adx retourne (adx, +di, -di) tuple, pas un array
+        # adx_arr[-1] donnait minus_di au lieu de l'ADX réel.
+        # 🔧 FIX #6 (3 Juillet 2026): fallback=25 était LIBÉRAL (laissait passer MR en mode TRENDING).
+        # Maintenant: si ADX indisponible, on skip MR proprement.
+        if adx_arr is not None and len(adx_arr) > 0:
+            adx_val = float(adx_arr[0])
+        else:
+            logger.debug(f"  [MR] {symbol}: ADX indisponible → skip MR")
+            return None
+
+        # Uniquement en RANGING (ADX < 18)
+        if adx_val >= 18:
+            return None
+
+        # Vérifier les extrêmes RSI
+        if rsi_val < 30:
+            action = "BUY"
+            score = 0.60
+            confidence = 0.50
+            logger.debug(f"  [MR] {symbol}: RSI={rsi_val:.1f} < 30 → BUY (oversold, ADX={adx_val:.1f})")
+        elif rsi_val > 70:
+            action = "SELL"
+            score = 0.60
+            confidence = 0.50
+            logger.debug(f"  [MR] {symbol}: RSI={rsi_val:.1f} > 70 → SELL (overbought, ADX={adx_val:.1f})")
+        else:
+            return None
+
+        # Prix d'entrée
+        tick = self.mt5.get_tick(symbol)
+        if tick is None:
+            return None
+        entry_price = tick.ask if action == "BUY" else tick.bid
+
+        # ATR
+        from engine_simple.indicators import atr as ind_atr
+
+        atr_arr = ind_atr(high, low, close, period=14)
+        atr_val = float(atr_arr[-1]) if atr_arr is not None and len(atr_arr) > 0 else 0
+
+        if atr_val <= 0:
+            return None
+
+        signal = {
+            "action": action,
+            "score": score,
+            "confidence": confidence,
+            "atr": atr_val,
+            "sl_atr": 1.0,  # SL = 1.0×ATR
+            "tp_atr": 1.5,  # TP = 1.5×ATR → RR = 1.5
+            "risk_mult": 0.75,  # MR moins fiable que MOM
+            "entry_price": entry_price,
+            "_regime": "RANGING",
+            "_strategy": "MR",
+            "strategy": "MeanReversion",
+            "details": f"MeanReversion_{tf}",
+            "timeframe": tf,
+            "symbol": symbol,
+            "adx": adx_val,
+            "rsi": rsi_val,
+            "quality": min(1.0, 0.50 + (1.0 - abs(rsi_val - 50) / 50) * 0.30),
+            "higher_tf_conf": 1.0,
+            "atr_pct": round(atr_val / entry_price * 100, 4) if entry_price > 0 else 0,
+        }
+        return signal
+
     # ── Phase 2: ADX Threshold Filter ─────────────────────────────────────
 
     def _phase2_adx_filter(self, symbol: str, signal: dict, cycle_count: int, log_throttle: dict) -> bool:
+        # MeanReversion bypass: les signaux MR sont déjà filtrés par RSI
+        if signal.get("_strategy") == "MR":
+            logger.debug(f"  [ADX] {symbol}: bypass MR (RSI={signal.get('rsi', 0):.1f})")
+            return True
         """Vérifie le seuil ADX avec bypass possible pour scores élevés."""
         signal_adx = signal.get("adx", 0)
         sym_cfg = self.symbol_limits.get(symbol, {})
@@ -414,7 +504,8 @@ class SignalPipeline:
     # des horaires fixes qui ne correspondaient pas aux symboles 24/7.
     # Les heures dangereuses (12:00 UTC) sont gérées par DANGER_HOURS dans
     # main.py et ftmo_protector.py.
-    # Le champ self.session_filter est toujours None (main.py:346).
+    # Le paramètre session_filter a été retiré de __init__ (Juillet 2026).
+    # Cette méthode est conservée comme placeholder pour compatibilité pipeline.
 
     def _phase3_session_filter(self, symbol: str, signal: dict) -> bool:
         return True
@@ -452,6 +543,11 @@ class SignalPipeline:
     # ── Phase 6: Strategy Selector ─────────────────────────────────────────
 
     def _phase6_strategy_selector(self, symbol: str, signal: dict) -> bool:
+        # MeanReversion bypass: pas de sélection de stratégie (signal basé RSI)
+        if signal.get("_strategy") == "MR":
+            signal["strat_params"] = {"description": "MeanReversion (bypass Phase 6)"}
+            return True
+
         regime = signal.get("_regime", "RANGING")
         action = signal.get("action")
         signal_adx = signal.get("adx", 0)
@@ -483,6 +579,14 @@ class SignalPipeline:
         Les seuils CMF sont configurables par symbole (default.yaml).
         BTCUSD utilise 0.20 (volume crypto bursty), forex/indices 0.10.
         """
+        # MeanReversion bypass: les filtres volume ne s'appliquent pas au MR (RSI-based)
+        if signal.get("_strategy") == "MR":
+            signal["rvol_adj"] = 1.0
+            signal["cmf_adj"] = 1.0
+            signal["rvol_note"] = "bypass_MR"
+            signal["cmf_note"] = "bypass_MR"
+            return True
+
         try:
             tf = self.symbol_timeframes.get(symbol, "H1")
             rates = self._get_cached_rates(symbol, tf, count=100)
@@ -549,6 +653,13 @@ class SignalPipeline:
         Les pénalités sont configurables par symbole dans default.yaml.
         BTCUSD utilise 0.85/0.92 (volume crypto moins fiable), forex 0.70/0.85.
         """
+        # MeanReversion bypass: les divergences volume ne s'appliquent pas au MR
+        if signal.get("_strategy") == "MR":
+            signal["obv_div"] = "bypass_MR"
+            signal["obv_strength"] = 0.0
+            signal["obv_note"] = "bypass_MR"
+            return
+
         try:
             tf = self.symbol_timeframes.get(symbol, "H1")
             rates = self._get_cached_rates(symbol, tf, count=100)
@@ -576,12 +687,24 @@ class SignalPipeline:
                     signal["obv_strength"] = round(div_strength, 3)
                     signal["obv_note"] = "confirms"
                 else:
-                    # Divergence en conflit → pénalité
-                    penalty = penalty_low if div_strength < 0.5 else penalty_high
-                    signal["score"] = max(0.3, signal["score"] * penalty)
-                    signal["obv_div"] = div_type
-                    signal["obv_strength"] = round(div_strength, 3)
-                    signal["obv_note"] = f"conflict_penalty={penalty:.2f}"
+                    # 🐛 FIX #7 (3 Juillet): Ne pas pénaliser les signaux MOM20x3 très forts
+                    # Le MOM20x3 a 60% WR historique — l'OBV peut être en conflit temporaire
+                    # dans une tendance forte (surtout XAUUSD, BTCUSD).
+                    raw_mom = signal.get("_raw_mom_score", 0)
+                    if raw_mom >= 0.80 and signal.get("_strategy") != "MR":
+                        # Signal MOM20x3 fort → pénalité OBV réduite (max -5% au lieu de -30%)
+                        mild_penalty = max(penalty_low, 0.95)
+                        signal["score"] = max(0.3, signal["score"] * mild_penalty)
+                        signal["obv_div"] = div_type
+                        signal["obv_strength"] = round(div_strength, 3)
+                        signal["obv_note"] = f"conflict_mild={mild_penalty:.2f}_raw_mom={raw_mom:.2f}"
+                    else:
+                        # Divergence en conflit → pénalité normale
+                        penalty = penalty_low if div_strength < 0.5 else penalty_high
+                        signal["score"] = max(0.3, signal["score"] * penalty)
+                        signal["obv_div"] = div_type
+                        signal["obv_strength"] = round(div_strength, 3)
+                        signal["obv_note"] = f"conflict_penalty={penalty:.2f}"
             else:
                 signal["obv_div"] = "none"
                 signal["obv_strength"] = 0.0
@@ -595,6 +718,21 @@ class SignalPipeline:
     # ── Phase 7: Volume Profile ────────────────────────────────────────────
 
     def _phase7_volume_profile(self, symbol: str, signal: dict) -> bool:
+        # MeanReversion bypass: le Volume Profile ne s'applique pas au MR (RSI-based)
+        if signal.get("_strategy") == "MR":
+            signal["vp_boost"] = "bypass_MR"
+            return True
+
+        # 🐛 FIX #12 (3 Juillet): Bypasser VP pour signaux MOM20x3 très forts
+        # Quand raw_mom_score >= 0.85, le momentum est assez fort pour casser
+        # les résistances VAH/VAL. Pénaliser ×0.90 pour résistance de volume
+        # alors que le momentum est à 0.95 est contre-productif.
+        raw_mom = signal.get("_raw_mom_score", 0)
+        if raw_mom >= 0.85:
+            logger.debug(f"  [VP] {symbol}: bypass (raw_mom={raw_mom:.2f} ≥ 0.85)")
+            signal["vp_boost"] = "bypass_strong_momentum"
+            return True
+
         try:
             tf_vp = self.symbol_timeframes.get(symbol, "H1")
             recent_vp = self._get_cached_rates(symbol, tf_vp, count=100)
@@ -629,6 +767,17 @@ class SignalPipeline:
     # ── Phase 9: MTF Confirmation ──────────────────────────────────────────
 
     def _phase9_mtf_confirm(self, symbol: str, signal: dict) -> bool:
+        # MeanReversion bypass: pas de confirmation MTF (RSI est le signal)
+        if signal.get("_strategy") == "MR":
+            return True
+        # 🐛 FIX #12 (3 Juillet): Bypasser MTF pour signaux MOM20x3 très forts
+        # raw_mom >= 0.85 = le momentum est assez fort sur la TF primaire.
+        # La TF supérieure peut être en retard de phase, ce qui créerait un
+        # faux conflit (score ×0.82 inutile).
+        raw_mom = signal.get("_raw_mom_score", 0)
+        if raw_mom >= 0.85:
+            logger.debug(f"  [MTF] {symbol}: bypass (raw_mom={raw_mom:.2f} ≥ 0.85)")
+            return True
         try:
             tf_signal = self.symbol_timeframes.get(symbol, "H1")
             higher_tfs = {"H1": "H4", "H4": "D1", "D1": "W1"}

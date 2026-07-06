@@ -18,13 +18,13 @@ trading:
 
 # ── Risque — Funded ───────────────────────────────────────────────────────
 risk:
-  per_trade_pct: 0.0025         # 0.25% au lieu de 0.40% (risque réduit de 37.5%)
-  max_risk_amount: 500.0        # $500 max au lieu de $800
+  per_trade_pct: 0.001          # 0.10% au lieu de 0.20% (risque réduit de 50% vs challenge)
+  max_risk_amount: 250.0        # $250 max (protège le capital financé)
   max_daily_loss_pct: 0.01      # 1% daily loss (au lieu de 2%)
   max_dd_pct: 0.08              # 8% DD max (au lieu de 10%)
-  circuit_breaker_dd_pct: 0.05  # 5% DD → arrêt d'urgence (au lieu de 8%)
-  cooldown_minutes: 10          # 10 min après perte (au lieu de 5)
-  auto_pause_losses: 8          # 8 pertes consécutives → pause
+  circuit_breaker_dd_pct: 0.05  # 5% DD → arrêt d'urgence (au lieu de 6%)
+  cooldown_minutes: 30          # 30 min après perte (identique challenge)
+  auto_pause_losses: 3          # 3 pertes consécutives → pause (identique challenge)
   profit_target_pct: 0          # Pas de profit target en Funded
   min_trading_days: 0           # Pas de minimum de jours
 
@@ -32,9 +32,9 @@ risk:
 symbol_limits:
   XAUUSD:
     risk_mult: 0.80             # ↓ 1.00→0.80 en Funded
-    max_lot: 0.08               # ↓ 0.10→0.08
+    max_lot: 0.10               # 🔧 FIX 6 Juil 2026: 0.40→0.10 (aligné sur default.yaml)
   BTCUSD:
     risk_mult: 0.50             # ↓ 0.65→0.50 en Funded
-    max_lot: 0.02               # ↓ 0.03→0.02
+    max_lot: 0.10               # ↓ 0.15→0.10 (×5 Juillet 2026)
   EURUSD:
     risk_mult: 0.50             # ↓ 0.75→0.50 en Funded

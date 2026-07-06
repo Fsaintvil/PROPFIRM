@@ -1,24 +1,27 @@
+from __future__ import annotations
+
 import logging
+from typing import Any
 
 import numpy as np
 
 logger = logging.getLogger("market_structure")
 
 
-def swing_points(high, low, left=3, right=3):
+def swing_points(high: np.ndarray, low: np.ndarray, left: int = 3, right: int = 3) -> np.ndarray:
     h = np.asarray(high, dtype=float)
     lo = np.asarray(low, dtype=float)
     n = len(h)
     swings = np.zeros(n, dtype=int)
     for i in range(left, n - right):
-        if all(h[i] > h[i - left:i]) and all(h[i] >= h[i + 1:i + right + 1]):
+        if all(h[i] > h[i - left : i]) and all(h[i] >= h[i + 1 : i + right + 1]):
             swings[i] = 1
-        if all(lo[i] < lo[i - left:i]) and all(lo[i] <= lo[i + 1:i + right + 1]):
+        if all(lo[i] < lo[i - left : i]) and all(lo[i] <= lo[i + 1 : i + right + 1]):
             swings[i] = -1
     return swings
 
 
-def higher_highs(high, swings):
+def higher_highs(high: np.ndarray, swings: np.ndarray) -> tuple[bool, list]:
     h = np.asarray(high, dtype=float)
     highs = [(i, h[i]) for i in range(len(swings)) if swings[i] == 1]
     if len(highs) < 3:
@@ -26,7 +29,7 @@ def higher_highs(high, swings):
     return all(highs[j][1] > highs[j - 1][1] for j in range(1, len(highs))), highs
 
 
-def lower_lows(low, swings):
+def lower_lows(low: np.ndarray, swings: np.ndarray) -> tuple[bool, list]:
     lo = np.asarray(low, dtype=float)
     lows = [(i, lo[i]) for i in range(len(swings)) if swings[i] == -1]
     if len(lows) < 3:
@@ -34,7 +37,7 @@ def lower_lows(low, swings):
     return all(lows[j][1] < lows[j - 1][1] for j in range(1, len(lows))), lows
 
 
-def label_swing_structure(high, low, swings):
+def label_swing_structure(high: np.ndarray, low: np.ndarray, swings: np.ndarray) -> dict[str, Any]:
     h = np.asarray(high, dtype=float)
     lo = np.asarray(low, dtype=float)
     high_idxs = [(i, h[i]) for i in range(len(swings)) if swings[i] == 1]
@@ -76,7 +79,7 @@ def label_swing_structure(high, low, swings):
     return labels
 
 
-def break_of_structure(high, low, swings):
+def break_of_structure(high: np.ndarray, low: np.ndarray, swings: np.ndarray) -> dict[str, Any]:
     h = np.asarray(high, dtype=float)
     lo = np.asarray(low, dtype=float)
     last_swing_high = None
@@ -102,9 +105,12 @@ def break_of_structure(high, low, swings):
             break
 
     result = {
-        "bullish_bos": False, "bearish_bos": False,
-        "last_swing_high": last_swing_high, "last_swing_low": last_swing_low,
-        "prev_swing_high": prev_swing_high, "prev_swing_low": prev_swing_low,
+        "bullish_bos": False,
+        "bearish_bos": False,
+        "last_swing_high": last_swing_high,
+        "last_swing_low": last_swing_low,
+        "prev_swing_high": prev_swing_high,
+        "prev_swing_low": prev_swing_low,
     }
     if last_swing_high and h[-1] > last_swing_high[1]:
         result["bullish_bos"] = True
@@ -113,7 +119,7 @@ def break_of_structure(high, low, swings):
     return result
 
 
-def change_of_character(swings, high, low):
+def change_of_character(swings: np.ndarray, high: np.ndarray, low: np.ndarray) -> dict[str, Any]:
     h = np.asarray(high, dtype=float)
     lo = np.asarray(low, dtype=float)
     highs = [(i, h[i]) for i in range(len(swings)) if swings[i] == 1]
@@ -137,7 +143,9 @@ def change_of_character(swings, high, low):
     return result
 
 
-def find_order_blocks(high, low, close, swings, lookback=50):
+def find_order_blocks(
+    high: np.ndarray, low: np.ndarray, close: np.ndarray, swings: np.ndarray, lookback: int = 50
+) -> list[dict[str, Any]]:
     h = np.asarray(high, dtype=float)
     lo = np.asarray(low, dtype=float)
     c = np.asarray(close, dtype=float)
@@ -157,25 +165,39 @@ def find_order_blocks(high, low, close, swings, lookback=50):
                 ob_high = h[i]
                 ob_low = lo[i]
                 mitigated = c[-1] <= ob_low
-                order_blocks.append({
-                    "type": "bearish", "index": i, "high": ob_high, "low": ob_low,
-                    "is_mitigated": mitigated, "strength": 1 - wick_ratio,
-                    "candle_body": body,
-                })
+                order_blocks.append(
+                    {
+                        "type": "bearish",
+                        "index": i,
+                        "high": ob_high,
+                        "low": ob_low,
+                        "is_mitigated": mitigated,
+                        "strength": 1 - wick_ratio,
+                        "candle_body": body,
+                    }
+                )
         elif swings[i] == -1 and wick_ratio < 0.4:
             ob_high = h[i]
             ob_low = lo[i]
             mitigated = c[-1] >= ob_high
-            order_blocks.append({
-                "type": "bullish", "index": i, "high": ob_high, "low": ob_low,
-                "is_mitigated": mitigated, "strength": 1 - wick_ratio,
-                "candle_body": body,
-            })
+            order_blocks.append(
+                {
+                    "type": "bullish",
+                    "index": i,
+                    "high": ob_high,
+                    "low": ob_low,
+                    "is_mitigated": mitigated,
+                    "strength": 1 - wick_ratio,
+                    "candle_body": body,
+                }
+            )
 
     return order_blocks
 
 
-def find_fvg(high, low, lookback=50, threshold_pct=0.0001):
+def find_fvg(
+    high: np.ndarray, low: np.ndarray, lookback: int = 50, threshold_pct: float = 0.0001
+) -> list[dict[str, Any]]:
     h = np.asarray(high, dtype=float)
     lo = np.asarray(low, dtype=float)
     n = len(h)
@@ -190,13 +212,17 @@ def find_fvg(high, low, lookback=50, threshold_pct=0.0001):
                 filled_hi = h[i + 1]
                 is_mitigated = filled_lo <= fvg_low and filled_hi >= fvg_high
                 half_filled = (filled_lo <= fvg_low < filled_hi) or (filled_lo < fvg_high <= filled_hi)
-                fvgs.append({
-                    "type": "bullish", "index": i,
-                    "high": fvg_high, "low": fvg_low,
-                    "is_mitigated": is_mitigated,
-                    "half_filled": half_filled and not is_mitigated,
-                    "size_pct": (fvg_high - fvg_low) / max(fvg_low, 0.0001),
-                })
+                fvgs.append(
+                    {
+                        "type": "bullish",
+                        "index": i,
+                        "high": fvg_high,
+                        "low": fvg_low,
+                        "is_mitigated": is_mitigated,
+                        "half_filled": half_filled and not is_mitigated,
+                        "size_pct": (fvg_high - fvg_low) / max(fvg_low, 0.0001),
+                    }
+                )
         elif lo[i] > h[i + 2]:
             fvg_low = h[i + 2]
             fvg_high = lo[i]
@@ -205,17 +231,23 @@ def find_fvg(high, low, lookback=50, threshold_pct=0.0001):
                 filled_hi = h[i + 1]
                 is_mitigated = filled_lo <= fvg_low and filled_hi >= fvg_high
                 half_filled = (filled_lo <= fvg_low < filled_hi) or (filled_lo < fvg_high <= filled_hi)
-                fvgs.append({
-                    "type": "bearish", "index": i,
-                    "high": fvg_high, "low": fvg_low,
-                    "is_mitigated": is_mitigated,
-                    "half_filled": half_filled and not is_mitigated,
-                    "size_pct": (fvg_high - fvg_low) / max(fvg_low, 0.0001),
-                })
+                fvgs.append(
+                    {
+                        "type": "bearish",
+                        "index": i,
+                        "high": fvg_high,
+                        "low": fvg_low,
+                        "is_mitigated": is_mitigated,
+                        "half_filled": half_filled and not is_mitigated,
+                        "size_pct": (fvg_high - fvg_low) / max(fvg_low, 0.0001),
+                    }
+                )
     return fvgs
 
 
-def find_liquidity_sweeps(high, low, close, swings, lookback=50):
+def find_liquidity_sweeps(
+    high: np.ndarray, low: np.ndarray, close: np.ndarray, swings: np.ndarray, lookback: int = 50
+) -> list[dict[str, Any]]:
     h = np.asarray(high, dtype=float)
     lo = np.asarray(low, dtype=float)
     c = np.asarray(close, dtype=float)
@@ -228,27 +260,37 @@ def find_liquidity_sweeps(high, low, close, swings, lookback=50):
             swing_h = h[i]
             for j in range(i + 1, min(i + 15, n - 1)):
                 if h[j] > swing_h and c[j] < swing_h:
-                    sweeps.append({
-                        "type": "bearish_sweep", "swing_idx": i, "sweep_idx": j,
-                        "swing_level": swing_h, "close": c[j],
-                        "distance_pct": (h[j] - swing_h) / max(swing_h, 0.0001),
-                    })
+                    sweeps.append(
+                        {
+                            "type": "bearish_sweep",
+                            "swing_idx": i,
+                            "sweep_idx": j,
+                            "swing_level": swing_h,
+                            "close": c[j],
+                            "distance_pct": (h[j] - swing_h) / max(swing_h, 0.0001),
+                        }
+                    )
                     break
     for i in range(start, n):
         if swings[i] == -1 and i < n - 3:
             swing_l = lo[i]
             for j in range(i + 1, min(i + 15, n - 1)):
                 if lo[j] < swing_l and c[j] > swing_l:
-                    sweeps.append({
-                        "type": "bullish_sweep", "swing_idx": i, "sweep_idx": j,
-                        "swing_level": swing_l, "close": c[j],
-                        "distance_pct": (swing_l - lo[j]) / max(swing_l, 0.0001),
-                    })
+                    sweeps.append(
+                        {
+                            "type": "bullish_sweep",
+                            "swing_idx": i,
+                            "sweep_idx": j,
+                            "swing_level": swing_l,
+                            "close": c[j],
+                            "distance_pct": (swing_l - lo[j]) / max(swing_l, 0.0001),
+                        }
+                    )
                     break
     return sweeps
 
 
-def equal_highs_lows(high, low, threshold_pct=0.001):
+def equal_highs_lows(high: np.ndarray, low: np.ndarray, threshold_pct: float = 0.001) -> dict[str, Any]:
     h = np.asarray(high, dtype=float)
     lo = np.asarray(low, dtype=float)
     n = len(h)
@@ -259,24 +301,18 @@ def equal_highs_lows(high, low, threshold_pct=0.001):
     for i in range(max(0, n - 80), n - 3):
         for j in range(i + 1, min(n - 1, i + 20)):
             if abs(h[i] - h[j]) / max(h[i], 0.0001) < threshold_pct:
-                touched = any(
-                    lo[k] <= h[j] <= h[k]
-                    for k in range(j + 1, min(n, j + 5))
-                )
+                touched = any(lo[k] <= h[j] <= h[k] for k in range(j + 1, min(n, j + 5)))
                 eq_highs.append({"index": j, "level": h[j], "first_idx": i, "touched": touched})
                 break
         for j in range(i + 1, min(n - 1, i + 20)):
             if abs(lo[i] - lo[j]) / max(lo[i], 0.0001) < threshold_pct:
-                touched = any(
-                    lo[k] <= lo[j] <= h[k]
-                    for k in range(j + 1, min(n, j + 5))
-                )
+                touched = any(lo[k] <= lo[j] <= h[k] for k in range(j + 1, min(n, j + 5)))
                 eq_lows.append({"index": j, "level": lo[j], "first_idx": i, "touched": touched})
                 break
     return {"highs": eq_highs, "lows": eq_lows, "count": len(eq_highs) + len(eq_lows)}
 
 
-def trendlines(high, low, min_touch=2):
+def trendlines(high: np.ndarray, low: np.ndarray, min_touch: int = 2) -> dict[str, Any]:
     h = np.asarray(high, dtype=float)
     lo = np.asarray(low, dtype=float)
     n = len(h)
@@ -284,33 +320,44 @@ def trendlines(high, low, min_touch=2):
     if n < 20:
         return result
 
-    recent_lows = [(i, lo[i]) for i in range(max(0, n - 20), n)
-                   if i > 0 and i < n - 1 and lo[i] < lo[i - 1] and lo[i] < lo[i + 1]]
+    recent_lows = [
+        (i, lo[i]) for i in range(max(0, n - 20), n) if i > 0 and i < n - 1 and lo[i] < lo[i - 1] and lo[i] < lo[i + 1]
+    ]
     if len(recent_lows) >= min_touch:
         lows_arr = np.array([x[1] for x in recent_lows])
         if len(lows_arr) >= 3:
             x_vals = np.array([x[0] for x in recent_lows])
             slope, intercept = np.polyfit(x_vals, lows_arr, 1)
             if slope > 0:
-                result["ascending"] = {"slope": slope, "intercept": intercept, "touches": len(recent_lows),
-                                       "current_value": slope * n + intercept}
+                result["ascending"] = {
+                    "slope": slope,
+                    "intercept": intercept,
+                    "touches": len(recent_lows),
+                    "current_value": slope * n + intercept,
+                }
 
-    recent_highs = [(i, h[i]) for i in range(max(0, n - 20), n)
-                    if i > 0 and i < n - 1 and h[i] > h[i - 1] and h[i] > h[i + 1]]
+    recent_highs = [
+        (i, h[i]) for i in range(max(0, n - 20), n) if i > 0 and i < n - 1 and h[i] > h[i - 1] and h[i] > h[i + 1]
+    ]
     if len(recent_highs) >= min_touch:
         highs_arr = np.array([x[1] for x in recent_highs])
         if len(highs_arr) >= 3:
             x_vals = np.array([x[0] for x in recent_highs])
             slope, intercept = np.polyfit(x_vals, highs_arr, 1)
             if slope < 0:
-                result["descending"] = {"slope": slope, "intercept": intercept, "touches": len(recent_highs),
-                                        "current_value": slope * n + intercept}
-    result["slope"] = (result["ascending"]["slope"] if result["ascending"] else 0) + \
-                      (result["descending"]["slope"] if result["descending"] else 0)
+                result["descending"] = {
+                    "slope": slope,
+                    "intercept": intercept,
+                    "touches": len(recent_highs),
+                    "current_value": slope * n + intercept,
+                }
+    result["slope"] = (result["ascending"]["slope"] if result["ascending"] else 0) + (
+        result["descending"]["slope"] if result["descending"] else 0
+    )
     return result
 
 
-def find_mss(high, low, swings, lookback=30):
+def find_mss(high: np.ndarray, low: np.ndarray, swings: np.ndarray, lookback: int = 30) -> list[dict[str, Any]]:
     h = np.asarray(high, dtype=float)
     lo = np.asarray(low, dtype=float)
     n = len(h)
@@ -330,10 +377,14 @@ def find_mss(high, low, swings, lookback=30):
                 if corresponding_low:
                     low_before = min(l[1] for l in corresponding_low)
                     if lo[-1] < low_before:
-                        mss_list.append({
-                            "type": "bearish_mss", "idx": highs[j][0],
-                            "break_level": low_before, "swing_high": prev_h,
-                        })
+                        mss_list.append(
+                            {
+                                "type": "bearish_mss",
+                                "idx": highs[j][0],
+                                "break_level": low_before,
+                                "swing_high": prev_h,
+                            }
+                        )
 
     for j in range(1, len(lows)):
         if lows[j][0] < start:
@@ -345,15 +396,21 @@ def find_mss(high, low, swings, lookback=30):
             if corresponding_high:
                 high_before = max(x[1] for x in corresponding_high)
                 if h[-1] > high_before:
-                    mss_list.append({
-                        "type": "bullish_mss", "idx": lows[j][0],
-                        "break_level": high_before, "swing_low": prev_l,
-                    })
+                    mss_list.append(
+                        {
+                            "type": "bullish_mss",
+                            "idx": lows[j][0],
+                            "break_level": high_before,
+                            "swing_low": prev_l,
+                        }
+                    )
 
     return mss_list
 
 
-def analyze_market_structure(high, low, close, lookback=100):
+def analyze_market_structure(
+    high: np.ndarray, low: np.ndarray, close: np.ndarray, lookback: int = 100
+) -> dict[str, Any]:
     if len(close) < 30:
         return {"trend": "unknown", "score": 0}
 

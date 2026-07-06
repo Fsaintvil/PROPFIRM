@@ -156,12 +156,14 @@ class ExecutionStats:
 
 
 class OrderValidator:
-    MIN_LOT = 0.01
+    MIN_LOT = 0.05
     MAX_LOT = 10.0
     MIN_RR = cfg.MIN_RR_RATIO  # de la config (1.95); ±5% jitter SL/TP est incorporé
 
     @staticmethod
-    def validate(symbol: str, action: str, lot: float, price: float, sl: float, tp: float, symbol_info) -> str | None:
+    def validate(
+        symbol: str, action: str, lot: float, price: float, sl: float, tp: float, symbol_info, min_rr: float = None
+    ) -> str | None:
         # REFUS ABSOLU si SL ou TP est None ou 0
         if sl is None or tp is None:
             return "SL ou TP non défini — REFUSÉ"
@@ -187,8 +189,17 @@ class OrderValidator:
         if reward <= 0:
             return f"Récompense nulle (price={price}, tp={tp}) — TP trop proche"
         rr = reward / risk
-        if rr < OrderValidator.MIN_RR:
-            return f"RR {rr:.2f} < {OrderValidator.MIN_RR}"
+        # 🐛 FIX #13 (3 Juillet): Utiliser min_rr du signal (per-symbol) si disponible,
+        # sinon fallback sur la config globale. Les SYMBOL_CONFIG dans strategy.py ont
+        # min_rr individualisé (XAUUSD=1.5, NZDUSD=1.3, BTCUSD=1.8...), mais le
+        # trade_executor utilisait cfg.MIN_RR_RATIO=2.5 pour TOUS les symboles.
+        # Conséquence: NZDUSD (min_rr=1.3, RR réel=1.6) passait ftmo mais était
+        # rejeté à l'exécution car 1.6 < 2.5.
+        effective_min_rr = min_rr if min_rr is not None else OrderValidator.MIN_RR
+        if rr < effective_min_rr - 0.001:
+            return (
+                f"RR {rr:.2f} < {effective_min_rr} (symbole min_rr={min_rr or 'global:' + str(OrderValidator.MIN_RR)})"
+            )
         return None
 
 
@@ -270,13 +281,25 @@ class TradeExecutor:
         sl = self._get_signal_value(signal, "sl")
         tp = self._get_signal_value(signal, "tp")
 
+        # Extraire les valeurs ATR du signal pour le logging post-trade
+        _atr_val = self._get_signal_value(signal, "atr") or 0
+        _sl_atr_val = self._get_signal_value(signal, "sl_atr") or None
+        _tp_atr_val = self._get_signal_value(signal, "tp_atr") or None
+
         if sl is None or tp is None or sl == 0 or tp == 0:
-            atr = self._get_signal_value(signal, "atr")
-            sl_atr = self._get_signal_value(signal, "sl_atr")
-            tp_atr = self._get_signal_value(signal, "tp_atr")
+            atr = _atr_val or self._get_signal_value(signal, "atr")
+            sl_atr = _sl_atr_val or self._get_signal_value(signal, "sl_atr")
+            tp_atr = _tp_atr_val or self._get_signal_value(signal, "tp_atr")
             if None not in (price, atr, sl_atr, tp_atr):
                 direction = 0 if action == "BUY" else 1
-                sl, tp = self.ftmo._calc_sl_tp(symbol, price, direction, atr, sl_atr, tp_atr)
+                # 🔧 FIX #2: _calc_sl_tp n'existe pas sur FTMOProtector.
+                # Utiliser ftmo.trailer.calc_sl_tp (la bonne méthode).
+                logger.debug(
+                    f"[FIX#2] {symbol}: recalcul SL/TP via trailer.calc_sl_tp "
+                    f"entry={price:.5f} dir={direction} atr={atr:.5f} sl_atr={sl_atr} tp_atr={tp_atr}"
+                )
+                sl, tp = self.ftmo.trailer.calc_sl_tp(symbol, price, direction, atr, sl_atr, tp_atr)
+                logger.debug(f"[FIX#2] {symbol}: SL={sl} TP={tp} après recalcul")
 
         # REFUS catégorique si SL ou TP est encore None
         if sl is None or tp is None:
@@ -294,8 +317,16 @@ class TradeExecutor:
         lot = self._calc_lot(symbol, price, sl, quality=lot_quality, signal_risk_mult=signal_rm)
 
         # Validation avant envoi (avec symbol_info pour vérifier volume_max broker)
+        # 🐛 FIX #13: Utiliser min_rr du SYMBOL_CONFIG (per-symbol) pour la validation RR
+        # Le global cfg.MIN_RR_RATIO=2.5 est trop strict pour des symboles comme
+        # NZDUSD (min_rr=1.3) ou XAUUSD (min_rr=1.5). On lit depuis la config
+        # du symbole directement, comme le fait ftmo_protector.py.
+        from engine_simple.strategy import SYMBOL_CONFIG, DEFAULT_SYMBOL_CONFIG
+
+        sym_cfg = SYMBOL_CONFIG.get(symbol, DEFAULT_SYMBOL_CONFIG)
+        symbol_min_rr = sym_cfg.get("min_rr", OrderValidator.MIN_RR)
         info = self.mt5.get_symbol_info(symbol)
-        err = OrderValidator.validate(symbol, action, lot, price, sl, tp, info)
+        err = OrderValidator.validate(symbol, action, lot, price, sl, tp, info, min_rr=symbol_min_rr)
         if err:
             logger.warning(f"{symbol}: validation echouee: {err}")
             return None
@@ -326,6 +357,24 @@ class TradeExecutor:
         try:
             regime = self._get_signal_value(signal, "regime") or self._get_signal_value(signal, "_regime") or "RANGING"
             result = self._place_order(symbol, action, lot, price, sl, tp, regime)
+            # Stocker sl_atr/tp_atr/atr dans le meta pour le logging post-trade
+            if (
+                result is not None
+                and hasattr(result, "retcode")
+                and result.retcode == 10009
+                and hasattr(result, "order")
+                and result.order
+            ):
+                _atr_meta = {
+                    "sl_atr": _sl_atr_val if _sl_atr_val is not None else "",
+                    "tp_atr": _tp_atr_val if _tp_atr_val is not None else "",
+                    "atr": _atr_val or 0.0,
+                }
+                self.tracker.add_meta(result.order, _atr_meta)
+                logger.debug(
+                    f"[ATR-META] {symbol} #{result.order}: "
+                    f"sl_atr={_atr_meta['sl_atr']} tp_atr={_atr_meta['tp_atr']} atr={_atr_meta['atr']}"
+                )
         finally:
             # Si l'ordre a échoué, on libère les rate limiters
             if result is None or (hasattr(result, "retcode") and result.retcode != 10009):
@@ -340,23 +389,23 @@ class TradeExecutor:
     def _calc_lot(self, symbol, entry, sl, quality=1.0, signal_risk_mult=None):
         lot = self.ftmo.calculate_lot(symbol, entry, sl, quality=quality, signal_risk_mult=signal_risk_mult)
         if lot is not None and lot > 0:
-            # 🔒 Sûreté redondante : clamp à max_lot depuis la config module-level
+            # 🔒 Safety clamp : ftmo_protector.calculate_lot() gère déjà le clamping
+            # Ce clamp est une sécurité ABSOLUE (catastrophe) — cap à 10.0
             try:
                 import config_simple as _cfg
 
-                _sym_cfg = _cfg.SYMBOL_LIMITS.get(symbol, {})
-                _max = _sym_cfg.get("max_lot", 10.0)
-                _min = _sym_cfg.get("min_lot", 0.01)
+                _max = 10.0  # sécurité absolue — ne pas brider la progression WR
+                _min = 0.05  # minimum absolu (×5 Juillet 2026)
                 if lot > _max:
-                    logger.warning(f"[LOT CLAMP] {symbol}: lot={lot:.3f} > max_lot={_max} (clamp redondant)")
+                    logger.warning(f"[LOT SAFETY] {symbol}: lot={lot:.3f} > {_max} (safety clamp)")
                     lot = _max
                 if lot < _min:
                     lot = _min
             except (ImportError, AttributeError, Exception) as _e:
-                logger.debug(f"[LOT CLAMP] config_simple non disponible: {_e}")
+                logger.debug(f"[LOT SAFETY] config_simple non disponible: {_e}")
             return lot
-        # Fallback sécurisé : jamais plus que 0.01 en cas d'erreur
-        return 0.01
+        # Fallback sécurisé : lot minimum en cas d'erreur
+        return 0.05
 
     REGIME_TO_SHORT = {
         "TREND_UP": "TRE",
@@ -375,8 +424,9 @@ class TradeExecutor:
             return None
 
         # Ensure symbol is in Market Watch (crypto non-standard symbols need this)
+        # 🔧 FIX 6 Juillet 2026: Utilise self.mt5.symbol_select (timeout) au lieu de mt5.symbol_select direct
         try:
-            mt5.symbol_select(symbol, True)
+            self.mt5.symbol_select(symbol, True)
         except Exception as e:
             logger.warning(f"[SYMBOL_SELECT] {symbol}: activation Market Watch échouée: {e}")
         # Get symbol info for slippage calculation
@@ -436,6 +486,7 @@ class TradeExecutor:
                     logger.info(
                         f"PlaceOrder RETRY OK: {symbol} {action} {lot}@{fill_price} (slip={slippage_pts:.0f}pts)"
                     )
+
             elif result:
                 comment = getattr(result, "comment", "?") or "?"
                 logger.warning(f"PlaceOrder RETRY FAILED {symbol}: retcode={result.retcode} comment={comment}")

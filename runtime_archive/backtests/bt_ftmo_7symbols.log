@@ -1,0 +1,827 @@
+05:55:26 [INFO] bt_run: Symboles: XAUUSD, BTCUSD, EURUSD, USDJPY, GBPUSD, AUDUSD, USDCAD
+05:55:26 [INFO] bt_run: Timeframe: H1 | Stratégie: mom20x3 | Coûts: realistic
+05:55:26 [INFO] backtest_core.data_loader: Chargé XAUUSD H1: 100000 barres, 2009-10-13 14:00:00 → 2026-06-22 14:00:00
+05:55:26 [INFO] backtest_core.data_loader:   [CLEAN] XAUUSD: 594 barres supprimées (100000 → 99406)
+05:55:29 [INFO] bt_run: Backtest XAUUSD H1...
+05:58:21 [WARNING] backtest_core.trade:   [GAP] XAUUSD BUY gap baissier 1415.03000→1391.67000, SL sauté
+05:58:24 [WARNING] backtest_core.trade:   [GAP] XAUUSD BUY gap baissier 1520.04000→1486.13000, SL sauté
+06:01:08 [INFO] backtest_core.engine: [BACKTEST] XAUUSD H1 — 2460 trades, WR 84.3%, PnL $223510.84, DD 2.4%
+06:01:08 [INFO] bt_run: Terminé en 339.2s: 2460 trades, WR 84.3%, PnL $223510.84
+06:01:08 [INFO] backtest_core.data_loader: Chargé BTCUSD H1: 74638 barres, 2011-03-24 01:00:00 → 2026-06-22 14:00:00
+06:01:08 [INFO] backtest_core.data_loader:   [CLEAN] BTCUSD: 642 barres supprimées (74638 → 73996)
+06:01:11 [INFO] bt_run: Backtest BTCUSD H1...
+06:07:02 [INFO] backtest_core.engine: [BACKTEST] BTCUSD H1 — 1884 trades, WR 76.4%, PnL $120837.59, DD 2.5%
+06:07:02 [INFO] bt_run: Terminé en 350.2s: 1884 trades, WR 76.4%, PnL $120837.59
+06:07:02 [INFO] backtest_core.data_loader: Chargé EURUSD H1: 100000 barres, 2010-04-27 23:00:00 → 2026-06-04 02:00:00
+06:07:02 [INFO] backtest_core.data_loader:   [CLEAN] EURUSD: 359 barres supprimées (100000 → 99641)
+06:07:07 [INFO] bt_run: Backtest EURUSD H1...
+06:07:54 [WARNING] backtest_core.trade:   [GAP] EURUSD BUY gap baissier 1.38314→1.37068, SL sauté
+06:09:24 [WARNING] backtest_core.trade:   [GAP] EURUSD BUY gap baissier 1.25515→1.24662, SL sauté
+06:13:40 [INFO] backtest_core.engine: [BACKTEST] EURUSD H1 — 3052 trades, WR 80.9%, PnL $76043.53, DD 2.1%
+06:13:40 [INFO] bt_run: Terminé en 393.4s: 3052 trades, WR 80.9%, PnL $76043.53
+06:13:40 [INFO] backtest_core.data_loader: Chargé USDJPY H1: 100000 barres, 2010-05-07 21:00:00 → 2026-06-22 21:00:00
+06:13:40 [INFO] backtest_core.data_loader:   [CLEAN] USDJPY: 351 barres supprimées (100000 → 99649)
+06:13:43 [INFO] bt_run: Backtest USDJPY H1...
+06:15:46 [WARNING] backtest_core.trade:   [GAP] USDJPY BUY gap baissier 102.08600→100.98800, SL sauté
+06:18:37 [WARNING] backtest_core.trade:   [GAP] USDJPY BUY gap baissier 131.55000→130.45400, SL sauté
+06:18:42 [WARNING] backtest_core.trade:   [GAP] USDJPY BUY gap baissier 137.51000→136.42400, SL sauté
+06:19:33 [WARNING] backtest_core.trade:   [GAP] USDJPY BUY gap baissier 150.58500→148.61700, SL sauté
+06:19:49 [WARNING] backtest_core.trade:   [GAP] USDJPY BUY gap baissier 157.77600→155.93000, SL sauté
+06:19:51 [INFO] backtest_core.engine: [BACKTEST] USDJPY H1 — 2949 trades, WR 82.1%, PnL $329609.26, DD 2.5%
+06:19:51 [INFO] bt_run: Terminé en 368.0s: 2949 trades, WR 82.1%, PnL $329609.26
+06:19:51 [INFO] backtest_core.data_loader: Chargé GBPUSD H1: 100000 barres, 2010-04-16 08:00:00 → 2026-06-04 02:00:00
+06:19:51 [INFO] backtest_core.data_loader:   [CLEAN] GBPUSD: 331 barres supprimées (100000 → 99669)
+06:19:54 [INFO] bt_run: Backtest GBPUSD H1...
+06:20:51 [WARNING] backtest_core.trade:   [GAP] GBPUSD BUY gap baissier 1.52664→1.51013, SL sauté
+06:23:32 [WARNING] backtest_core.trade:   [GAP] GBPUSD BUY gap baissier 1.25799→1.23944, SL sauté
+06:24:50 [INFO] backtest_core.engine: [BACKTEST] GBPUSD H1 — 3037 trades, WR 80.8%, PnL $86522.95, DD 1.9%
+06:24:50 [INFO] bt_run: Terminé en 295.7s: 3037 trades, WR 80.8%, PnL $86522.95
+
+================================================================================
+BACKTEST REPORT — XAUUSD H1 mom20x3
+================================================================================
+
+  Trades: 2460 | Wins: 2073 | Losses: 387
+
+  ─── Performance ───
+  Net Profit   : $+223510.84
+  Gross Profit : $+504377.45
+  Gross Loss   : $+280866.61
+  Return       :    +111.76%
+  Win Rate     :      84.3%
+  Profit Factor:      1.80
+  Expectancy   : $   +90.86
+  Avg Trade    : $   +90.86
+  Avg RR       :      0.34
+
+  ─── Ratios de Risque ───
+  Sharpe Ratio :     2.976
+  Sortino Ratio:     4.245
+  Calmar Ratio :    32.317
+  Recovery F.  :     32.32
+
+  ─── Drawdown ───
+  Max DD %     :      2.36%
+  Max DD $     : $ +6916.29
+  Avg DD %     :      0.29%
+  Max DD Durée : 5097 barres
+
+  ─── Significativité ───
+  P-Value      : 0.0000 (SIGNIFICATIF)
+  Z-Score      :   +33.993
+
+  ─── Séquence ───
+  Max Wins     : 30
+  Max Losses   : 3
+
+  ─── Direction ───
+  LONG   : 1307 trades, WR  83.4%, PnL $+105798.43
+  SHORT  : 1153 trades, WR  85.3%, PnL $+117712.41
+
+  ─── Sessions ───
+  ASIA    :  443 trades, WR  81.5%, PnL $+34461.40
+  LONDON  : 1282 trades, WR  90.4%, PnL $+164687.15
+  NY      : 1206 trades, WR  81.8%, PnL $+98054.27
+
+  ─── Performance Mensuelle ───
+  Mois        Trades      WR          PnL
+  ----------------------------------------
+  2009-10          8   87.5% $   +439.38
+  2009-11         10   80.0% $  +1560.05
+  2009-12         20   80.0% $    +18.39
+  2010-01         13   69.2% $  +1136.12
+  2010-02         13   76.9% $   -222.47
+  2010-03         10   60.0% $  -1020.14
+  2010-04         15   86.7% $   +909.58
+  2010-05         10  100.0% $  +3139.59
+  2010-06         21   90.5% $  +3924.18
+  2010-07         21   90.5% $  +2511.85
+  2010-08         11   81.8% $   +510.87
+  2010-09          9   88.9% $  +1290.45
+  2010-10         13   92.3% $  +1252.27
+  2010-11         16   93.8% $  +3144.19
+  2010-12         15   60.0% $   +612.01
+  2011-01         11   81.8% $   +459.86
+  2011-02         18   83.3% $  +1753.99
+  2011-03         12   83.3% $  +2049.01
+  2011-04          9  100.0% $  +1399.36
+  2011-05         14   92.9% $  +2367.43
+  2011-06         18   88.9% $  +2466.16
+  2011-07         12   66.7% $  -1485.79
+  2011-08         18   77.8% $  +1220.08
+  2011-09         18  100.0% $  +7964.07
+  ... et 177 mois supplémentaires
+
+  ─── Performance Annuelle ───
+  Année     Trades      WR          PnL
+  --------------------------------------
+  2009          38   81.6% $  +2017.82
+  2010         167   83.2% $ +17188.50
+  2011         174   86.8% $ +23308.31
+  2012         138   85.5% $ +14233.05
+  2013         146   82.9% $ +11042.73
+  2014         125   85.6% $  +9169.72
+  2015         136   86.0% $  +9580.17
+  2016         127   82.7% $  +6479.37
+  2017         135   88.9% $ +13391.40
+  2018         104   86.5% $ +11785.75
+  2019         122   84.4% $  +5903.44
+  2020         117   90.6% $ +22921.85
+  2021         152   84.9% $ +14439.30
+  2022         178   83.1% $ +10706.43
+  2023         181   82.9% $ +14578.08
+  2024         177   78.0% $  +8283.35
+  2025         162   81.5% $ +11109.02
+  2026          81   84.0% $ +17372.55
+
+================================================================================
+
+================================================================================
+BACKTEST REPORT — BTCUSD H1 mom20x3
+================================================================================
+
+  Trades: 1884 | Wins: 1439 | Losses: 445
+
+  ─── Performance ───
+  Net Profit   : $+120837.59
+  Gross Profit : $+280246.08
+  Gross Loss   : $+159408.49
+  Return       :     +60.42%
+  Win Rate     :      76.4%
+  Profit Factor:      1.76
+  Expectancy   : $   +64.14
+  Avg Trade    : $   +64.14
+  Avg RR       :      0.54
+
+  ─── Ratios de Risque ───
+  Sharpe Ratio :     2.079
+  Sortino Ratio:     2.286
+  Calmar Ratio :    20.571
+  Recovery F.  :     20.57
+
+  ─── Drawdown ───
+  Max DD %     :      2.53%
+  Max DD $     : $ +5874.14
+  Avg DD %     :      0.28%
+  Max DD Durée : 8003 barres
+
+  ─── Significativité ───
+  P-Value      : 0.0000 (SIGNIFICATIF)
+  Z-Score      :   +22.901
+
+  ─── Séquence ───
+  Max Wins     : 56
+  Max Losses   : 18
+
+  ─── Direction ───
+  LONG   : 1019 trades, WR  76.1%, PnL $+54954.29
+  SHORT  :  865 trades, WR  76.8%, PnL $+65883.30
+
+  ─── Sessions ───
+  ASIA    :  521 trades, WR  70.8%, PnL $+39837.99
+  LONDON  :  613 trades, WR  81.6%, PnL $+42536.51
+  NY      :  893 trades, WR  77.2%, PnL $+44999.36
+
+  ─── Performance Mensuelle ───
+  Mois        Trades      WR          PnL
+  ----------------------------------------
+  2012-02          1    0.0% $    -12.07
+  2012-03          1    0.0% $    -13.26
+  2012-06          2    0.0% $    -17.83
+  2012-07          1    0.0% $     -8.72
+  2012-09          1    0.0% $     -8.76
+  2012-10          1    0.0% $    -13.09
+  2013-05          2  100.0% $     +3.23
+  2013-06          2    0.0% $    -14.12
+  2013-07          1    0.0% $    -21.19
+  2013-08          1    0.0% $    -12.03
+  2013-09          1    0.0% $     -6.10
+  2014-01          2   50.0% $    -63.27
+  2014-03          2   50.0% $     +9.30
+  2014-04          1  100.0% $     +7.60
+  2014-05          2    0.0% $    -88.24
+  2014-07          2    0.0% $    -55.85
+  2014-09          2   50.0% $    +13.78
+  2014-10          1  100.0% $     +4.10
+  2014-11          1    0.0% $    -43.26
+  2014-12          1    0.0% $     -4.81
+  2015-01          1  100.0% $    +14.89
+  2015-02          1    0.0% $    -10.08
+  2015-03          1    0.0% $     -0.58
+  2015-04          3    0.0% $    -16.10
+  ... et 128 mois supplémentaires
+
+  ─── Performance Annuelle ───
+  Année     Trades      WR          PnL
+  --------------------------------------
+  2012           7    0.0% $    -73.73
+  2013           7   28.6% $    -50.21
+  2014          14   35.7% $   -220.65
+  2015          14   28.6% $    -61.47
+  2016          12   16.7% $   -148.53
+  2017         199   49.2% $  +2402.22
+  2018         171   71.9% $  +2920.84
+  2019         140   82.9% $  +3085.30
+  2020         121   87.6% $  +5781.52
+  2021         191   84.3% $ +29788.99
+  2022         234   82.9% $  +7497.48
+  2023         231   75.8% $  +1134.45
+  2024         217   82.9% $ +24890.26
+  2025         212   82.5% $ +23120.93
+  2026         114   86.0% $ +20770.19
+
+================================================================================
+06:24:50 [INFO] backtest_core.data_loader: Chargé AUDUSD H1: 100000 barres, 2010-04-27 23:00:00 → 2026-06-04 02:00:00
+06:24:50 [INFO] backtest_core.data_loader:   [CLEAN] AUDUSD: 306 barres supprimées (100000 → 99694)
+06:24:52 [INFO] bt_run: Backtest AUDUSD H1...
+06:26:11 [WARNING] backtest_core.trade:   [GAP] AUDUSD BUY gap baissier 0.88800→0.88038, SL sauté
+06:26:34 [WARNING] backtest_core.trade:   [GAP] AUDUSD BUY gap baissier 0.71108→0.70198, SL sauté
+06:26:37 [WARNING] backtest_core.trade:   [GAP] AUDUSD BUY gap baissier 0.77451→0.76610, SL sauté
+06:27:09 [WARNING] backtest_core.trade:   [GAP] AUDUSD BUY gap baissier 0.78701→0.77872, SL sauté
+06:29:06 [WARNING] backtest_core.trade:   [GAP] AUDUSD BUY gap baissier 0.66661→0.66073, SL sauté
+06:29:14 [WARNING] backtest_core.trade:   [GAP] AUDUSD BUY gap baissier 0.66292→0.65906, SL sauté
+06:29:36 [WARNING] backtest_core.trade:   [GAP] AUDUSD BUY gap baissier 0.70599→0.69777, SL sauté
+06:29:43 [INFO] backtest_core.engine: [BACKTEST] AUDUSD H1 — 3034 trades, WR 79.3%, PnL $45233.19, DD 3.6%
+06:29:43 [INFO] bt_run: Terminé en 290.6s: 3034 trades, WR 79.3%, PnL $45233.19
+06:29:43 [INFO] backtest_core.data_loader: Chargé USDCAD H1: 100000 barres, 2010-04-28 09:00:00 → 2026-06-04 02:00:00
+06:29:43 [INFO] backtest_core.data_loader:   [CLEAN] USDCAD: 354 barres supprimées (100000 → 99646)
+06:29:46 [INFO] bt_run: Backtest USDCAD H1...
+06:29:53 [WARNING] backtest_core.trade:   [GAP] USDCAD BUY gap baissier 1.03276→1.02341, SL sauté
+06:31:09 [WARNING] backtest_core.trade:   [GAP] USDCAD BUY gap baissier 1.27117→1.26180, SL sauté
+06:31:47 [WARNING] backtest_core.trade:   [GAP] USDCAD BUY gap baissier 1.35146→1.34435, SL sauté
+06:31:49 [WARNING] backtest_core.trade:   [GAP] USDCAD BUY gap baissier 1.29795→1.29022, SL sauté
+06:34:08 [WARNING] backtest_core.trade:   [GAP] USDCAD BUY gap baissier 1.44621→1.43132, SL sauté
+06:34:34 [INFO] backtest_core.engine: [BACKTEST] USDCAD H1 — 2946 trades, WR 80.5%, PnL $64073.04, DD 1.2%
+06:34:34 [INFO] bt_run: Terminé en 288.6s: 2946 trades, WR 80.5%, PnL $64073.04
+
+================================================================================
+BACKTEST REPORT — EURUSD H1 mom20x3
+================================================================================
+
+  Trades: 3052 | Wins: 2470 | Losses: 582
+
+  ─── Performance ───
+  Net Profit   : $ +76043.53
+  Gross Profit : $+241000.57
+  Gross Loss   : $+164957.04
+  Return       :     +38.02%
+  Win Rate     :      80.9%
+  Profit Factor:      1.46
+  Expectancy   : $   +24.92
+  Avg Trade    : $   +24.92
+  Avg RR       :      0.34
+
+  ─── Ratios de Risque ───
+  Sharpe Ratio :     0.829
+  Sortino Ratio:     0.933
+  Calmar Ratio :    15.456
+  Recovery F.  :     15.46
+
+  ─── Drawdown ───
+  Max DD %     :      2.10%
+  Max DD $     : $ +4919.86
+  Avg DD %     :      0.24%
+  Max DD Durée : 6657 barres
+
+  ─── Significativité ───
+  P-Value      : 0.0000 (SIGNIFICATIF)
+  Z-Score      :   +34.175
+
+  ─── Séquence ───
+  Max Wins     : 33
+  Max Losses   : 7
+
+  ─── Direction ───
+  LONG   : 1530 trades, WR  81.1%, PnL $+41694.27
+  SHORT  : 1522 trades, WR  80.7%, PnL $+34349.26
+
+  ─── Sessions ───
+  ASIA    :  739 trades, WR  91.6%, PnL $+42659.77
+  LONDON  : 2111 trades, WR  78.5%, PnL $+36540.60
+  NY      :  695 trades, WR  72.8%, PnL $-3344.70
+
+  ─── Performance Mensuelle ───
+  Mois        Trades      WR          PnL
+  ----------------------------------------
+  2010-05         20   70.0% $   +220.71
+  2010-06         13   84.6% $   +465.38
+  2010-07         20   90.0% $  +1976.96
+  2010-08         14   71.4% $   -115.77
+  2010-09         16   87.5% $   +455.90
+  2010-10         19   84.2% $  +1060.58
+  2010-11         20   80.0% $  +3128.43
+  2010-12         20   80.0% $   -325.23
+  2011-01         20   95.0% $  +2585.31
+  2011-02         14   85.7% $  +1057.55
+  2011-03         16   93.8% $  +1145.55
+  2011-04         13   92.3% $  +1269.61
+  2011-05         17   88.2% $  +1731.35
+  2011-06         16   87.5% $  +1586.06
+  2011-07         15   93.3% $  +1973.68
+  2011-08         16   75.0% $   +925.27
+  2011-09         14   71.4% $   +205.65
+  2011-10         16   87.5% $  +1751.32
+  2011-11         12   66.7% $  -1481.48
+  2011-12         19   84.2% $  +1103.63
+  2012-01         17   88.2% $  +1178.55
+  2012-02         20   65.0% $   -353.84
+  2012-03         19   84.2% $   +844.21
+  2012-04         16   81.2% $   -180.01
+  ... et 170 mois supplémentaires
+
+  ─── Performance Annuelle ───
+  Année     Trades      WR          PnL
+  --------------------------------------
+  2010         142   81.0% $  +6866.96
+  2011         188   85.6% $ +13853.50
+  2012         203   86.7% $  +7034.71
+  2013         200   80.5% $  +1594.91
+  2014         199   79.9% $  +1249.44
+  2015         190   82.6% $  +7249.93
+  2016         174   82.2% $  +4105.96
+  2017         196   79.6% $  +2582.41
+  2018         197   83.2% $  +4850.36
+  2019         128   85.2% $  +2964.28
+  2020         178   74.7% $  +2934.67
+  2021         206   68.0% $   +633.85
+  2022         184   81.5% $  +6609.46
+  2023         197   83.2% $  +4869.33
+  2024         195   80.0% $  +1438.83
+  2025         181   82.3% $  +4852.09
+  2026          94   81.9% $  +2352.84
+
+================================================================================
+
+================================================================================
+BACKTEST REPORT — USDJPY H1 mom20x3
+================================================================================
+
+  Trades: 2949 | Wins: 2422 | Losses: 527
+
+  ─── Performance ───
+  Net Profit   : $+329609.26
+  Gross Profit : $+813781.21
+  Gross Loss   : $+484171.95
+  Return       :    +164.80%
+  Win Rate     :      82.1%
+  Profit Factor:      1.68
+  Expectancy   : $  +111.77
+  Avg Trade    : $  +111.77
+  Avg RR       :      0.37
+
+  ─── Ratios de Risque ───
+  Sharpe Ratio :     2.812
+  Sortino Ratio:     4.176
+  Calmar Ratio :    63.287
+  Recovery F.  :     63.29
+
+  ─── Drawdown ───
+  Max DD %     :      2.51%
+  Max DD $     : $ +5208.19
+  Avg DD %     :      0.30%
+  Max DD Durée : 4053 barres
+
+  ─── Significativité ───
+  P-Value      : 0.0000 (SIGNIFICATIF)
+  Z-Score      :   +34.896
+
+  ─── Séquence ───
+  Max Wins     : 45
+  Max Losses   : 4
+
+  ─── Direction ───
+  LONG   : 1576 trades, WR  81.3%, PnL $+157931.98
+  SHORT  : 1373 trades, WR  83.1%, PnL $+171677.28
+
+  ─── Sessions ───
+  ASIA    :  933 trades, WR  86.9%, PnL $+145659.73
+  LONDON  : 1363 trades, WR  82.3%, PnL $+142033.88
+  NY      : 1037 trades, WR  78.7%, PnL $+109032.17
+
+  ─── Performance Mensuelle ───
+  Mois        Trades      WR          PnL
+  ----------------------------------------
+  2010-05         10   80.0% $  +1117.49
+  2010-06         16   87.5% $  +3266.93
+  2010-07         19   73.7% $   +924.27
+  2010-08         18   66.7% $  -1172.81
+  2010-09         14   78.6% $   +178.65
+  2010-10         13   84.6% $  +1090.22
+  2010-11          9   88.9% $  +1490.45
+  2010-12         18   77.8% $   +416.77
+  2011-01         15   73.3% $  -1308.19
+  2011-02         13  100.0% $  +4053.71
+  2011-03         17   82.4% $     -7.22
+  2011-04         16   87.5% $  +2715.96
+  2011-05          9   88.9% $  +1575.52
+  2011-06         13   76.9% $    +59.37
+  2011-07         13   84.6% $  +1307.73
+  2011-08         11   63.6% $  -2049.42
+  2011-09         10   80.0% $   -137.82
+  2011-10          8   75.0% $   -767.85
+  2011-11         14   71.4% $   +152.21
+  2011-12         14   92.9% $  +3188.44
+  2012-01         14   92.9% $  +3037.26
+  2012-02         14   85.7% $  +4096.85
+  2012-03         16   93.8% $  +2737.11
+  2012-04         11   72.7% $  +1343.98
+  ... et 170 mois supplémentaires
+
+  ─── Performance Annuelle ───
+  Année     Trades      WR          PnL
+  --------------------------------------
+  2010         117   78.6% $  +7311.97
+  2011         153   81.7% $  +8782.44
+  2012         185   82.7% $ +23950.40
+  2013         188   86.2% $ +35245.32
+  2014         195   83.1% $ +24886.70
+  2015         179   78.8% $  +8562.31
+  2016         202   85.1% $ +28119.95
+  2017         192   82.8% $ +19995.84
+  2018         189   84.1% $ +26761.47
+  2019         128   83.6% $ +21858.62
+  2020         175   85.1% $ +25247.49
+  2021         188   83.0% $ +26439.24
+  2022         185   78.4% $ +17056.23
+  2023         194   83.5% $ +23756.35
+  2024         201   76.6% $ +14604.11
+  2025         196   79.6% $ +12379.25
+  2026          82   82.9% $  +4651.57
+
+================================================================================
+06:34:34 [INFO] bt_run: ============================================================
+06:34:34 [INFO] bt_run: SIMULATION FTMO PORTFOLIO MULTI-SYMBOLES
+06:34:34 [INFO] bt_run: ============================================================
+06:34:34 [INFO] bt_run:   Portfolio mom20x3: 7 symboles
+06:34:34 [INFO] backtest_core.ftmo:   Portfolio: XAUUSD → 2460 trades, PnL $+223510.84
+06:34:34 [INFO] backtest_core.ftmo:   Portfolio: BTCUSD → 1884 trades, PnL $+120837.59
+06:34:34 [INFO] backtest_core.ftmo:   Portfolio: EURUSD → 3052 trades, PnL $+76043.53
+06:34:34 [INFO] backtest_core.ftmo:   Portfolio: USDJPY → 2949 trades, PnL $+329609.26
+06:34:34 [INFO] backtest_core.ftmo:   Portfolio: GBPUSD → 3037 trades, PnL $+86522.95
+06:34:34 [INFO] backtest_core.ftmo:   Portfolio: AUDUSD → 3034 trades, PnL $+45233.19
+06:34:34 [INFO] backtest_core.ftmo:   Portfolio: USDCAD → 2946 trades, PnL $+64073.04
+06:34:34 [INFO] backtest_core.ftmo:   Portfolio combiné: 19362 trades, 7 symboles
+06:34:34 [INFO] bt_run: ✅ Backtest terminé
+
+================================================================================
+BACKTEST REPORT — GBPUSD H1 mom20x3
+================================================================================
+
+  Trades: 3037 | Wins: 2453 | Losses: 584
+
+  ─── Performance ───
+  Net Profit   : $ +86522.95
+  Gross Profit : $+290993.81
+  Gross Loss   : $+204470.86
+  Return       :     +43.26%
+  Win Rate     :      80.8%
+  Profit Factor:      1.42
+  Expectancy   : $   +28.49
+  Avg Trade    : $   +28.49
+  Avg RR       :      0.34
+
+  ─── Ratios de Risque ───
+  Sharpe Ratio :     0.920
+  Sortino Ratio:     1.149
+  Calmar Ratio :    22.842
+  Recovery F.  :     22.84
+
+  ─── Drawdown ───
+  Max DD %     :      1.87%
+  Max DD $     : $ +3787.93
+  Avg DD %     :      0.30%
+  Max DD Durée : 6068 barres
+
+  ─── Significativité ───
+  P-Value      : 0.0000 (SIGNIFICATIF)
+  Z-Score      :   +33.915
+
+  ─── Séquence ───
+  Max Wins     : 28
+  Max Losses   : 4
+
+  ─── Direction ───
+  LONG   : 1512 trades, WR  81.0%, PnL $+37337.04
+  SHORT  : 1525 trades, WR  80.5%, PnL $+49185.91
+
+  ─── Sessions ───
+  ASIA    :  776 trades, WR  91.5%, PnL $+40924.42
+  LONDON  : 2145 trades, WR  77.9%, PnL $+41398.63
+  NY      :  559 trades, WR  73.0%, PnL $ +816.86
+
+  ─── Performance Mensuelle ───
+  Mois        Trades      WR          PnL
+  ----------------------------------------
+  2010-04          6  100.0% $  +1325.39
+  2010-05         15   73.3% $   -926.83
+  2010-06         18   83.3% $   +826.48
+  2010-07         15   86.7% $   +751.18
+  2010-08         12   58.3% $  -1392.72
+  2010-09         15   66.7% $   -413.13
+  2010-10         16   75.0% $   -337.37
+  2010-11         17   82.4% $  +1135.96
+  2010-12         16   68.8% $  -1143.72
+  2011-01         17   88.2% $   +643.98
+  2011-02         12   91.7% $   +554.34
+  2011-03         18   83.3% $   +176.51
+  2011-04         12   83.3% $   +779.77
+  2011-05         16   93.8% $  +2007.23
+  2011-06         17   94.1% $  +1507.51
+  2011-07         10   80.0% $   +372.68
+  2011-08         20   85.0% $    -82.72
+  2011-09         14   78.6% $   +505.08
+  2011-10         11   63.6% $  -1036.24
+  2011-11         19   89.5% $   +379.41
+  2011-12         13   84.6% $   +876.20
+  2012-01         17   88.2% $   +730.33
+  2012-02         11   54.5% $  -1237.90
+  2012-03         14   78.6% $    +55.13
+  ... et 171 mois supplémentaires
+
+  ─── Performance Annuelle ───
+  Année     Trades      WR          PnL
+  --------------------------------------
+  2010         130   76.2% $   -174.76
+  2011         179   85.5% $  +6683.75
+  2012         176   81.2% $  +1969.27
+  2013         210   83.8% $ +10964.94
+  2014         187   86.1% $  +7332.64
+  2015         200   82.0% $  +6906.73
+  2016         182   83.0% $  +8259.61
+  2017         202   78.7% $  +3611.17
+  2018         185   83.8% $  +6484.71
+  2019         177   76.8% $   -234.66
+  2020         188   79.8% $  +9823.42
+  2021         204   80.9% $  +5191.58
+  2022         189   80.4% $  +5573.95
+  2023         193   79.3% $  +6623.79
+  2024         176   75.0% $   -497.34
+  2025         176   77.8% $  +4686.56
+  2026          83   80.7% $  +3317.59
+
+================================================================================
+
+================================================================================
+BACKTEST REPORT — AUDUSD H1 mom20x3
+================================================================================
+
+  Trades: 3034 | Wins: 2405 | Losses: 629
+
+  ─── Performance ───
+  Net Profit   : $ +45233.19
+  Gross Profit : $+232672.64
+  Gross Loss   : $+187439.45
+  Return       :     +22.62%
+  Win Rate     :      79.3%
+  Profit Factor:      1.24
+  Expectancy   : $   +14.91
+  Avg Trade    : $   +14.91
+  Avg RR       :      0.32
+
+  ─── Ratios de Risque ───
+  Sharpe Ratio :     0.038
+  Sortino Ratio:     0.047
+  Calmar Ratio :     5.910
+  Recovery F.  :      5.91
+
+  ─── Drawdown ───
+  Max DD %     :      3.61%
+  Max DD $     : $ +7654.22
+  Avg DD %     :      0.57%
+  Max DD Durée : 13373 barres
+
+  ─── Significativité ───
+  P-Value      : 0.0000 (SIGNIFICATIF)
+  Z-Score      :   +32.243
+
+  ─── Séquence ───
+  Max Wins     : 19
+  Max Losses   : 4
+
+  ─── Direction ───
+  LONG   : 1547 trades, WR  78.6%, PnL $+15490.94
+  SHORT  : 1487 trades, WR  80.0%, PnL $+29742.25
+
+  ─── Sessions ───
+  ASIA    : 1115 trades, WR  82.2%, PnL $+31754.11
+  LONDON  : 1405 trades, WR  77.1%, PnL $+5962.45
+  NY      :  878 trades, WR  74.9%, PnL $+1746.05
+
+  ─── Performance Mensuelle ───
+  Mois        Trades      WR          PnL
+  ----------------------------------------
+  2010-05         13   76.9% $   -560.68
+  2010-06         16   81.2% $   +237.84
+  2010-07         21   81.0% $   +141.26
+  2010-08         15   80.0% $   +482.75
+  2010-09         17   82.4% $   +986.65
+  2010-10         17   76.5% $   +332.59
+  2010-11         19   68.4% $   +432.36
+  2010-12         17   88.2% $  +1438.58
+  2011-01         18   88.9% $  +1873.80
+  2011-02         14   92.9% $   +736.04
+  2011-03         18   77.8% $   +175.07
+  2011-04         12   91.7% $   +780.82
+  2011-05         11   81.8% $   -242.45
+  2011-06         19   78.9% $   +250.16
+  2011-07         14   85.7% $   +629.85
+  2011-08         15   86.7% $  +1570.15
+  2011-09         12   75.0% $   -455.42
+  2011-10         15   93.3% $  +2074.88
+  2011-11         19   84.2% $   +870.46
+  2011-12         15   66.7% $  -2145.63
+  2012-01         20   50.0% $  -2939.50
+  2012-02         15   80.0% $    +28.19
+  2012-03         23   73.9% $   +135.86
+  2012-04         19   63.2% $  -1029.43
+  ... et 170 mois supplémentaires
+
+  ─── Performance Annuelle ───
+  Année     Trades      WR          PnL
+  --------------------------------------
+  2010         135   79.3% $  +3491.35
+  2011         182   83.5% $  +6117.73
+  2012         215   73.5% $  -2789.78
+  2013         212   75.9% $  +4224.59
+  2014         201   74.6% $  +2556.84
+  2015         186   79.6% $  +5013.24
+  2016         208   76.4% $   -525.02
+  2017         185   81.1% $  +2315.22
+  2018         172   79.1% $  +1852.90
+  2019         149   85.9% $  +3624.27
+  2020         178   74.7% $  +2210.56
+  2021         196   84.7% $  +7157.58
+  2022         185   80.0% $  +2319.78
+  2023         182   77.5% $  +1499.57
+  2024         180   85.0% $  +4159.04
+  2025         183   81.4% $  +2359.49
+  2026          85   77.6% $   -354.17
+
+================================================================================
+
+================================================================================
+BACKTEST REPORT — USDCAD H1 mom20x3
+================================================================================
+
+  Trades: 2946 | Wins: 2372 | Losses: 574
+
+  ─── Performance ───
+  Net Profit   : $ +64073.04
+  Gross Profit : $+224116.58
+  Gross Loss   : $+160043.54
+  Return       :     +32.04%
+  Win Rate     :      80.5%
+  Profit Factor:      1.40
+  Expectancy   : $   +21.75
+  Avg Trade    : $   +21.75
+  Avg RR       :      0.34
+
+  ─── Ratios de Risque ───
+  Sharpe Ratio :     0.600
+  Sortino Ratio:     0.721
+  Calmar Ratio :    20.649
+  Recovery F.  :     20.65
+
+  ─── Drawdown ───
+  Max DD %     :      1.20%
+  Max DD $     : $ +3102.91
+  Avg DD %     :      0.27%
+  Max DD Durée : 7590 barres
+
+  ─── Significativité ───
+  P-Value      : 0.0000 (SIGNIFICATIF)
+  Z-Score      :   +33.126
+
+  ─── Séquence ───
+  Max Wins     : 22
+  Max Losses   : 6
+
+  ─── Direction ───
+  LONG   : 1435 trades, WR  80.7%, PnL $+25068.13
+  SHORT  : 1511 trades, WR  80.3%, PnL $+39004.91
+
+  ─── Sessions ───
+  ASIA    :  500 trades, WR  90.6%, PnL $+24410.57
+  LONDON  : 2029 trades, WR  79.4%, PnL $+25969.13
+  NY      : 1075 trades, WR  73.5%, PnL $+8276.24
+
+  ─── Performance Mensuelle ───
+  Mois        Trades      WR          PnL
+  ----------------------------------------
+  2010-05         18   83.3% $  +2816.77
+  2010-06         15   80.0% $   +122.09
+  2010-07         15   80.0% $   +403.02
+  2010-08         18   94.4% $  +1491.90
+  2010-09         19   84.2% $     +6.61
+  2010-10         16   81.2% $   +257.08
+  2010-11         14   57.1% $   -163.57
+  2010-12          9  100.0% $   +827.18
+  2011-01         16   81.2% $   +278.68
+  2011-02         11   45.5% $  -1076.88
+  2011-03         18   77.8% $   -341.95
+  2011-04          9   66.7% $   -380.73
+  2011-05         18   72.2% $   +651.20
+  2011-06         17   88.2% $   +389.97
+  2011-07         16   68.8% $   -131.73
+  2011-08         13   76.9% $  +1200.63
+  2011-09         14   92.9% $  +1496.64
+  2011-10         16   75.0% $   -214.58
+  2011-11         13   92.3% $   +884.19
+  2011-12         17   64.7% $   -428.29
+  2012-01         14   71.4% $    -71.74
+  2012-02         11   36.4% $   -733.29
+  2012-03         20   75.0% $   +186.61
+  2012-04         14   78.6% $   -263.27
+  ... et 169 mois supplémentaires
+
+  ─── Performance Annuelle ───
+  Année     Trades      WR          PnL
+  --------------------------------------
+  2010         124   82.3% $  +5761.08
+  2011         178   75.8% $  +2327.15
+  2012         182   73.6% $   +977.41
+  2013         179   84.4% $  +2378.67
+  2014         182   77.5% $   +957.59
+  2015         194   80.9% $  +4282.07
+  2016         186   82.8% $  +8627.19
+  2017         198   82.3% $  +5194.45
+  2018         183   80.3% $  +5687.82
+  2019         124   90.3% $  +5977.38
+  2020         184   81.0% $  +6032.90
+  2021         201   81.1% $  +5608.07
+  2022         198   79.3% $  +1514.33
+  2023         167   80.2% $  +2447.27
+  2024         210   77.1% $   +190.32
+  2025         190   82.1% $  +2930.01
+  2026          66   83.3% $  +3179.33
+
+================================================================================
+
+══════════════════════════════════════════════════════════════════════
+  CHALLENGE FTMO — PORTEFEUILLE MULTI-SYMBOLES  
+══════════════════════════════════════════════════════════════════════
+
+  Compte: $200,000.0
+  Symboles: XAUUSD, BTCUSD, EURUSD, USDJPY, GBPUSD, AUDUSD, USDCAD (7 actifs)
+  Profit Target: +$10,000
+
+  ✅  CHALLENGE PASSÉ
+
+  ─── Résultats Portefeuille ───
+  PnL total      : $+945830.40 (+472.92%)
+  Max DD         : 5.59%
+  Pire Daily Loss: 1.13%
+  Jours tradés   : 4592
+  Trades total    : 19362 (WR 80.7%, PF 1.58)
+
+  ─── PnL par Symbole ───
+  USDJPY    : $+329609.26 (2949 trades)
+  XAUUSD    : $+223510.84 (2460 trades)
+  BTCUSD    : $+120837.59 (1884 trades)
+  GBPUSD    : $+86522.95 (3037 trades)
+  EURUSD    : $+76043.53 (3052 trades)
+  USDCAD    : $+64073.04 (2946 trades)
+  AUDUSD    : $+45233.19 (3034 trades)
+
+  ─── Règles FTMO ───
+  Profit Target: $+945830.40 / $   +10,000 ✅
+  Max DD       :     5.59% / 10% ✅
+  Daily Loss   :     1.13% / 2% ✅
+  Consistency  :      0.5% / 30% ✅
+  Min Jours    :     4592 / 10 ✅
+
+  ─── Marge de Sécurité ───
+  Marge DD: 4409.6%
+  ✅ Confortable (> 50%)
+══════════════════════════════════════════════════════════════════════
+
+================================================================================
+  Comparaison Multi-Symboles
+================================================================================
+
+  Symbole           Trades      WR          PnL     PF      DD   Sharpe      Avg$
+  --------------------------------------------------------------------------------
+  AUDUSD_H1_mom20x3    3034   79.3% $+45233.19  1.24   3.61%   0.038 $ +14.91
+  BTCUSD_H1_mom20x3    1884   76.4% $+120837.59  1.76   2.53%   2.079 $ +64.14
+  EURUSD_H1_mom20x3    3052   80.9% $+76043.53  1.46   2.10%   0.829 $ +24.92
+  FTMO_PORTFOLIO_mom20x3       0    0.0% $    +0.00  0.00   0.00%   0.000 $  +0.00
+  GBPUSD_H1_mom20x3    3037   80.8% $+86522.95  1.42   1.87%   0.920 $ +28.49
+  USDCAD_H1_mom20x3    2946   80.5% $+64073.04  1.40   1.20%   0.600 $ +21.75
+  USDJPY_H1_mom20x3    2949   82.1% $+329609.26  1.68   2.51%   2.812 $+111.77
+  XAUUSD_H1_mom20x3    2460   84.3% $+223510.84  1.80   2.36%   2.976 $ +90.86
+  --------------------------------------------------------------------------------
+  TOTAL              19362   80.7% $+945830.40
+
+================================================================================
+
+============================================================
+  RÉSUMÉ EXÉCUTIF
+============================================================
+  XAUUSD   H1    2460 trades | WR  84.3% | PnL $+223510.84 | PF 1.80 | DD  2.36% | Sharpe 2.976 | ✅
+  BTCUSD   H1    1884 trades | WR  76.4% | PnL $+120837.59 | PF 1.76 | DD  2.53% | Sharpe 2.079 | ✅
+  EURUSD   H1    3052 trades | WR  80.9% | PnL $+76043.53 | PF 1.46 | DD  2.10% | Sharpe 0.829 | ✅
+  USDJPY   H1    2949 trades | WR  82.1% | PnL $+329609.26 | PF 1.68 | DD  2.51% | Sharpe 2.812 | ✅
+  GBPUSD   H1    3037 trades | WR  80.8% | PnL $+86522.95 | PF 1.42 | DD  1.87% | Sharpe 0.920 | ✅
+  AUDUSD   H1    3034 trades | WR  79.3% | PnL $+45233.19 | PF 1.24 | DD  3.61% | Sharpe 0.038 | ✅
+  USDCAD   H1    2946 trades | WR  80.5% | PnL $+64073.04 | PF 1.40 | DD  1.20% | Sharpe 0.600 | ✅
+============================================================

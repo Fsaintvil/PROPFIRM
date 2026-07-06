@@ -28,7 +28,7 @@ def get_ftmo_report():
     try:
         with open(FTMO_REPORT) as f:
             return json.load(f)
-    except:
+    except Exception:
         return {}
 
 
@@ -36,7 +36,7 @@ def get_pid():
     try:
         with open(PID_FILE) as f:
             return int(f.read().strip())
-    except:
+    except Exception:
         return None
 
 
@@ -60,7 +60,7 @@ def get_trades():
                             "pnl": float(row[10]),
                         }
                     )
-                except:
+                except Exception:
                     pass
     return trades
 
@@ -76,7 +76,7 @@ def get_positions_from_log():
 
                     dict_str = line.split("Par symbole: ")[1].strip()
                     return ast.literal_eval(dict_str)
-                except:
+                except Exception:
                     return {}
     return {}
 
@@ -197,7 +197,7 @@ def print_console(
                     pid_alive = True  # assume alive on Windows without psutil
                 else:
                     pid_alive = _os.path.exists(f"/proc/{pid}")
-            except:
+            except Exception:
                 pass
 
     print(f"\n📡 ROBOT STATUS: {'🟢 ACTIF' if pid_alive else '🔴 ARRETE'} (PID {pid or 'N/A'})")

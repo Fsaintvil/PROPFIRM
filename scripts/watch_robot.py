@@ -19,7 +19,7 @@ def check():
                 mem = p.memory_info().rss / 1024 / 1024
                 if mem > 50:
                     robot = {"pid": p.pid, "mem": mem}
-        except:
+        except Exception:
             pass
 
     if not robot:
@@ -54,7 +54,7 @@ def check():
         else:
             issues.append("MT5 KO")
             bal, eq, pnl, dd_pct = 0, 0, 0, 0
-    except:
+    except Exception:
         issues.append("MT5 err")
         bal, eq, pnl, dd_pct = 0, 0, 0, 0
 

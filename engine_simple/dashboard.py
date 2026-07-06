@@ -155,7 +155,7 @@ class Dashboard:
         self._start_time = time.time()
 
     def generate_report(
-        self, robot_state: dict = None, positions: list[dict] = None, metrics: dict = None
+        self, robot_state: dict | None = None, positions: list[dict] | None = None, metrics: dict | None = None
     ) -> RobotStatus:
         """Génère un rapport complet.
 
@@ -336,7 +336,9 @@ class Dashboard:
 _default_dashboard = Dashboard()
 
 
-def generate_report(robot_state: dict = None, positions: list[dict] = None, metrics: dict = None) -> RobotStatus:
+def generate_report(
+    robot_state: dict | None = None, positions: list[dict] | None = None, metrics: dict | None = None
+) -> RobotStatus:
     """Génère un rapport (fonction convenience)."""
     return _default_dashboard.generate_report(robot_state, positions, metrics)
 

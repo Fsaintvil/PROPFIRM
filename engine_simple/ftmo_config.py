@@ -20,17 +20,21 @@ Calibration spécifique par actif (Juin 2026).
 
 TRAILING_BY_SYMBOL = {
     # ═══════════════════════════════════════════════════════════════════════
-    # XAUUSD H4 — Or (Juin 2026 — SYNCHRONISÉ AVEC PROFIL)
-    # Lock unifié à 1.0×ATR pour tous les régimes (profil institutionnel).
-    # Trailing modérément serré : tendances H4 longues → protéger les gains.
+    # XAUUSD H4 — Or (FIX 6 Juillet 2026 — TRAILING SERRÉ)
+    # Lock 0.6-1.0×ATR selon régime (était 1.5-2.0×ATR). L'ATR H4≈$20 signifie
+    # qu'un gain de +$200 à lot 0.10 = 1.0×ATR. Le trailing doit verrouiller tôt
+    # pour protéger les gains sur ce symbole à forte WR (73% backtest).
     # ═══════════════════════════════════════════════════════════════════════
     "XAUUSD": {
-        # 🔧 FIX 1er Juillet 2026: Distances élargies (synchro avec TRAILING_BY_REGIME)
-        "TREND_UP": [(1.50, 1.00), (3.00, 0.65), (5.00, 0.35), (8.00, 0.18)],
-        "TREND_DOWN": [(1.50, 1.00), (3.00, 0.65), (5.00, 0.35), (8.00, 0.18)],
-        "RANGING": [(1.50, 0.80), (3.00, 0.55), (5.00, 0.30), (8.00, 0.15)],
-        "HIGH_VOL": [(1.50, 1.20), (3.00, 0.85), (5.00, 0.55), (8.00, 0.30)],
-        "LOW_VOL": [(1.50, 0.65), (3.00, 0.40), (5.00, 0.22), (8.00, 0.12)],
+        # 🔧 FIX 6 Juillet 2026: Premier lock BAISSÉ (1.0→0.8×ATR TREND, 0.8→0.6×ATR RANGING)
+        # Cause: XAUUSD H4 ATR≈$20, lot 0.10 → +$200 = 1.0×ATR. L'ancien lock à 2.0×ATR
+        # ne verrouillait AUCUN gain < 2.0×ATR, laissant les profits s'évaporer.
+        # Nouveau lock 0.6-0.8×ATR : verrouille dès +$12-16 de move (+$120-160).
+        "TREND_UP": [(1.00, 0.50), (2.00, 0.35), (4.00, 0.20), (6.00, 0.10)],
+        "TREND_DOWN": [(1.00, 0.50), (2.00, 0.35), (4.00, 0.20), (6.00, 0.10)],
+        "RANGING": [(0.80, 0.40), (1.50, 0.25), (3.00, 0.15), (5.00, 0.08)],
+        "HIGH_VOL": [(1.20, 0.60), (2.50, 0.40), (4.00, 0.25), (6.00, 0.12)],
+        "LOW_VOL": [(0.60, 0.30), (1.20, 0.20), (2.50, 0.12), (4.00, 0.06)],
     },
     # ═══════════════════════════════════════════════════════════════════════
     # BTCUSD H1 — Bitcoin (Juin 2026 — AJUSTÉ)
@@ -39,12 +43,12 @@ TRAILING_BY_SYMBOL = {
     # Avec ATR≈$493, lock à 1.0 = activation après ~$493 de mouvement.
     # ═══════════════════════════════════════════════════════════════════════
     "BTCUSD": {
-        # 🔧 FIX 1er Juillet 2026: Distances élargies (synchro avec TRAILING_BY_REGIME)
+        # 🔧 OPTIMIZER 2 Juillet 2026: Synchro TRAILING_BY_REGIME (premier lock 2.0×ATR)
         # Bitcoin garde un trailing légèrement plus large que le standard (volatilité)
-        "TREND_UP": [(1.50, 1.10), (3.00, 0.70), (5.00, 0.40), (8.00, 0.20)],
-        "TREND_DOWN": [(1.50, 1.10), (3.00, 0.70), (5.00, 0.40), (8.00, 0.20)],
+        "TREND_UP": [(2.00, 1.10), (4.00, 0.70), (6.00, 0.40), (8.00, 0.20)],
+        "TREND_DOWN": [(2.00, 1.10), (4.00, 0.70), (6.00, 0.40), (8.00, 0.20)],
         "RANGING": [(1.50, 0.90), (3.00, 0.60), (5.00, 0.35), (8.00, 0.18)],
-        "HIGH_VOL": [(1.50, 1.30), (3.00, 0.90), (5.00, 0.60), (8.00, 0.30)],
+        "HIGH_VOL": [(2.00, 1.30), (4.00, 0.90), (6.00, 0.60), (8.00, 0.30)],
         "LOW_VOL": [(1.50, 0.70), (3.00, 0.45), (5.00, 0.25), (8.00, 0.14)],
     },
     # ═══════════════════════════════════════════════════════════════════════
@@ -59,14 +63,17 @@ TRAILING_BY_SYMBOL = {
 
 # Fallback par défaut (ancien comportement)
 TRAILING_BY_REGIME = {
-    # 🔧 FIX 1er Juillet 2026: Distances élargies pour laisser les trades respirer
-    # Cause: trailing trop serré (0.35×ATR à 2.0×ATR profit) → RR réalisé ~0.84
-    #   au lieu de RR attendu ≥2.0. Une correction de 18% suffisait à stopper.
-    # Solution: Activation à 1.5×ATR (au lieu de 1.0), distances ×1.5-2.0 plus larges
-    "TREND_UP": [(1.50, 1.00), (3.00, 0.65), (5.00, 0.35), (8.00, 0.18)],
-    "TREND_DOWN": [(1.50, 1.00), (3.00, 0.65), (5.00, 0.35), (8.00, 0.18)],
-    "RANGING": [(1.50, 0.80), (3.00, 0.55), (5.00, 0.30), (8.00, 0.15)],
-    "HIGH_VOL": [(1.50, 1.20), (3.00, 0.85), (5.00, 0.55), (8.00, 0.30)],
+    # 🔧 OPTIMIZER 2 Juillet 2026: First lock repoussé de 1.5→2.0×ATR (TREND)
+    # Cause racine: Quant Auditor a montré RR réalisé=0.85 vs cible 2.0.
+    # Le trailing activé à 1.5×ATR avec SL à 1.0×ATR du peak signifiait
+    # qu'un retracement de seulement 0.5×ATR stoppait le trade avant d'atteindre
+    # le TP 5.0×ATR. Solution: lock à 2.0×ATR, SL=1.0×ATR → besoin de 1.0×ATR
+    # de retracement pour stopper. Objectif: laisser les trades respirer jusqu'à
+    # au moins 2:1 RR avant d'activer le trailing.
+    "TREND_UP": [(2.00, 1.00), (4.00, 0.65), (6.00, 0.35), (8.00, 0.18)],
+    "TREND_DOWN": [(2.00, 1.00), (4.00, 0.65), (6.00, 0.35), (8.00, 0.18)],
+    "RANGING": [(1.50, 0.50), (3.00, 0.35), (5.00, 0.20), (8.00, 0.10)],  # MR: lock serré, petits mouvements
+    "HIGH_VOL": [(2.00, 1.20), (4.00, 0.85), (6.00, 0.55), (8.00, 0.30)],  # Volatile: plus de place
     "LOW_VOL": [(1.50, 0.65), (3.00, 0.40), (5.00, 0.22), (8.00, 0.12)],
 }
 
@@ -100,13 +107,13 @@ BE_BUFFER_BY_SYMBOL = {
         "HIGH_VOL": 1.10,  # haute vol: extrêmement large
         "LOW_VOL": 0.50,  # basse vol: standard
     },
-    "US500.cash": {
-        "TREND_UP": 0.60,  # indice: standard
-        "TREND_DOWN": 0.60,
-        "RANGING": 0.80,  # ranging: large
-        "HIGH_VOL": 1.00,  # haute vol: très large
-        "LOW_VOL": 0.50,  # basse vol: serré
-    },
+    # "US500.cash": {  # DÉSACTIVÉ — PF 0.39 toxique (25 Juin 2026)
+    #     "TREND_UP": 0.60,  # indice: standard
+    #     "TREND_DOWN": 0.60,
+    #     "RANGING": 0.80,  # ranging: large
+    #     "HIGH_VOL": 1.00,  # haute vol: très large
+    #     "LOW_VOL": 0.50,  # basse vol: serré
+    # },
 }
 
 # Fallback par défaut
@@ -221,9 +228,8 @@ PULLBACK_FILTER_SCORE_THRESHOLD = 0.50  # ↓ 0.60→0.50 pour + de trades (plus
 # Premier lock par symbole — uniquement 3 symboles actifs
 # Les symboles inactifs utilisent FIRST_LOCK_ATR (0.5) comme fallback
 FIRST_LOCK_BY_SYMBOL = {
-    "XAUUSD": 1.0,  # TRAILING: TREND_UP first lock = 1.0
-    "BTCUSD": 1.0,  # TRAILING: TREND_UP first lock = 1.0
-    "US30.cash": 0.5,  # TRAILING: TREND_UP first lock = 0.5 (harmonisé US500.cash)
+    "XAUUSD": 1.0,  # Or: lock unifié à 1.0×ATR
+    "BTCUSD": 1.0,  # Bitcoin: lock à 1.0×ATR (risk_mult réduit à 0.20)
 }
 
 

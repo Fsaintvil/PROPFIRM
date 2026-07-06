@@ -195,11 +195,13 @@ class TestOnlineLearner:
         assert params["thresh"] == 1.8  # ↓ 2.3→1.8 (OL recalibré pour + de trades)
 
     def test_update_params_wr_70_to_78_neutral(self):
-        ol = OnlineLearner(window=20)
-        # 15 wins out of 20 = 75% WR → in (70, 78] range → neutral
-        for _ in range(15):
+        ol = OnlineLearner(window=200)
+        # 30 wins out of 40 = 75% WR → in (70, 78] range → neutral
+        # 🐛 FIX #10: min_trades passé de max(15,window//10) à max(30,window//5)
+        # Donc window=200 → min_trades=40. On enregistre 40 trades.
+        for _ in range(30):
             ol.record_trade("EURUSD", 1.0, "TREND_UP")
-        for _ in range(5):
+        for _ in range(10):
             ol.record_trade("EURUSD", -1.0, "RANGING")
         params = ol.get_params("EURUSD")
         assert params["risk_mult"] == 1.0
@@ -207,22 +209,24 @@ class TestOnlineLearner:
 
     def test_update_params_wr_below_70(self):
         ol = OnlineLearner(window=40)
-        # 16 wins out of 40 = 40% WR < 70%, expectancy=0.1 > 0 → risk_mult=0.75, thresh=2.0
+        # 16 wins out of 40 = 40% WR < 70%, expectancy=0.1 > 0 → risk_mult=0.85, thresh=2.0
         for _ in range(16):
             ol.record_trade("EURUSD", 1.0, "TREND_UP")
         for _ in range(24):
             ol.record_trade("EURUSD", -0.5, "RANGING")
         params = ol.get_params("EURUSD")
-        assert params["risk_mult"] == 0.75
+        assert params["risk_mult"] == 0.85  # ⬆️ 0.75→0.85 : moins de pénalité (anti-spirale)
         assert params["thresh"] == 2.0  # ↓ 2.5→2.0 (OL recalibré pour + de trades)
 
     def test_update_params_expectancy_negative_overrides_risk(self):
-        ol = OnlineLearner(window=40)
-        # All losses, WR=0 → < 70%, expectancy negative, > 10 trades
-        for _ in range(25):
+        ol = OnlineLearner(window=200)
+        # All losses, WR=0 → < 70%, expectancy negative
+        # ⬆️ 0.75→0.85 pour anti-spirale, puis expectancy<0 → min(risk_mult,0.85)=0.85
+        # Plancher absolu 0.50
+        for _ in range(40):
             ol.record_trade("EURUSD", -1.0, "RANGING")
         params = ol.get_params("EURUSD")
-        assert params["risk_mult"] == 0.5  # expectancy override
+        assert params["risk_mult"] == 0.85  # ⬆️ 0.75→0.85 : moins de pénalité
 
     def test_not_enough_trades_no_update(self):
         ol = OnlineLearner(window=20)

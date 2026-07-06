@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Analyse détaillée des 19 trades pour identifier pourquoi WR=31.6% (au lieu de 60%)."""
+
 import json
 from pathlib import Path
 from collections import defaultdict
@@ -23,12 +24,14 @@ print("\n📊 PERFORMANCE PAR SYMBOLE:")
 for symbol in sorted(by_symbol.keys()):
     sym_trades = by_symbol[symbol]
     wr = sum(1 for t in sym_trades if t.get("profit", 0) > 0) / len(sym_trades)
-    pf = sum(t.get("profit", 0) for t in sym_trades if t.get("profit", 0) > 0) / max(1, abs(sum(t.get("profit", 0) for t in sym_trades if t.get("profit", 0) < 0)))
+    pf = sum(t.get("profit", 0) for t in sym_trades if t.get("profit", 0) > 0) / max(
+        1, abs(sum(t.get("profit", 0) for t in sym_trades if t.get("profit", 0) < 0))
+    )
     total_pnl = sum(t.get("profit", 0) for t in sym_trades)
-    
+
     print(f"\n  {symbol}: {len(sym_trades)} trades")
     print(f"    WR={wr:.1%} | PF={pf:.2f} | PnL=${total_pnl:.2f}")
-    
+
     # Détails
     for i, t in enumerate(sym_trades, 1):
         action = t.get("action", "?")
@@ -40,7 +43,7 @@ for symbol in sorted(by_symbol.keys()):
             try:
                 dt = datetime.fromisoformat(t["ts"].replace("Z", "+00:00"))
                 hour = f"{dt.hour:02d}"
-            except:
+            except Exception:
                 pass
         status = "✓" if profit > 0 else "✗"
         print(f"      {i}. {status} {action:4} {regime:8} score={str(score):5} profit=${profit:7.2f} (hour={hour})")
@@ -53,7 +56,7 @@ for t in trades:
         try:
             dt = datetime.fromisoformat(t["ts"].replace("Z", "+00:00"))
             by_hour[dt.hour].append(t)
-        except:
+        except Exception:
             pass
 
 for hour in sorted(by_hour.keys()):

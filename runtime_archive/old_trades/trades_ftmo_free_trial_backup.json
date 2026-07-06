@@ -1,0 +1,1690 @@
+[
+  {
+    "time": "2026.06.08 09:00:12",
+    "symbol": "USDCHF",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": 141.67,
+    "ticket": 466442493
+  },
+  {
+    "time": "2026.06.08 09:00:37",
+    "symbol": "USDCHF",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": 137.92,
+    "ticket": 466442842
+  },
+  {
+    "time": "2026.06.08 10:03:38",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 4.06,
+    "ticket": 466442991
+  },
+  {
+    "time": "2026.06.08 10:14:05",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": -26.56,
+    "ticket": 466443147
+  },
+  {
+    "time": "2026.06.08 10:15:05",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": -22.26,
+    "ticket": 466443819
+  },
+  {
+    "time": "2026.06.08 10:15:50",
+    "symbol": "EURUSD",
+    "direction": "SELL",
+    "volume": "0.5",
+    "profit": 0.0,
+    "ticket": 466444102
+  },
+  {
+    "time": "2026.06.08 10:16:50",
+    "symbol": "EURUSD",
+    "direction": "SELL",
+    "volume": "0.5",
+    "profit": -8.0,
+    "ticket": 466444976
+  },
+  {
+    "time": "2026.06.08 10:03:38",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 4.41,
+    "ticket": 466445395
+  },
+  {
+    "time": "2026.06.08 16:00:26",
+    "symbol": "USDCHF",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": -250.16,
+    "ticket": 466688785
+  },
+  {
+    "time": "2026.06.08 12:15:46",
+    "symbol": "USDCHF",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": 90.19,
+    "ticket": 466693669
+  },
+  {
+    "time": "2026.06.08 12:37:15",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 5.06,
+    "ticket": 466744664
+  },
+  {
+    "time": "2026.06.08 12:37:15",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 5.81,
+    "ticket": 466745286
+  },
+  {
+    "time": "2026.06.08 12:37:14",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": 50.16,
+    "ticket": 466754146
+  },
+  {
+    "time": "2026.06.08 11:09:31",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": 65.23,
+    "ticket": 466756770
+  },
+  {
+    "time": "2026.06.08 12:36:41",
+    "symbol": "EURUSD",
+    "direction": "SELL",
+    "volume": "0.5",
+    "profit": 107.0,
+    "ticket": 466758385
+  },
+  {
+    "time": "2026.06.08 12:15:44",
+    "symbol": "EURUSD",
+    "direction": "SELL",
+    "volume": "0.5",
+    "profit": 100.0,
+    "ticket": 466759035
+  },
+  {
+    "time": "2026.06.08 15:42:33",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": -132.13,
+    "ticket": 466801202
+  },
+  {
+    "time": "2026.06.08 14:20:19",
+    "symbol": "USDCHF",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": -262.53,
+    "ticket": 466855581
+  },
+  {
+    "time": "2026.06.08 13:34:29",
+    "symbol": "EURUSD",
+    "direction": "SELL",
+    "volume": "0.5",
+    "profit": -118.5,
+    "ticket": 466856648
+  },
+  {
+    "time": "2026.06.08 14:10:55",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -17.14,
+    "ticket": 466881695
+  },
+  {
+    "time": "2026.06.08 14:11:01",
+    "symbol": "EURUSD",
+    "direction": "SELL",
+    "volume": "0.5",
+    "profit": -120.5,
+    "ticket": 466883201
+  },
+  {
+    "time": "2026.06.08 15:42:33",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": -136.44,
+    "ticket": 466883409
+  },
+  {
+    "time": "2026.06.08 13:34:29",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -16.29,
+    "ticket": 466883625
+  },
+  {
+    "time": "2026.06.08 21:10:31",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.04",
+    "profit": -1.2,
+    "ticket": 466952957
+  },
+  {
+    "time": "2026.06.08 17:31:56",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.5",
+    "profit": 66.5,
+    "ticket": 466959789
+  },
+  {
+    "time": "2026.06.08 17:31:56",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.5",
+    "profit": 64.0,
+    "ticket": 466960822
+  },
+  {
+    "time": "2026.06.08 21:50:31",
+    "symbol": "EURUSD",
+    "direction": "SELL",
+    "volume": "0.5",
+    "profit": 2.0,
+    "ticket": 467003498
+  },
+  {
+    "time": "2026.06.08 18:02:40",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 3.94,
+    "ticket": 467003508
+  },
+  {
+    "time": "2026.06.08 20:46:04",
+    "symbol": "USDCHF",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": 114.1,
+    "ticket": 467003522
+  },
+  {
+    "time": "2026.06.08 23:16:53",
+    "symbol": "EURUSD",
+    "direction": "SELL",
+    "volume": "0.5",
+    "profit": 27.5,
+    "ticket": 467005674
+  },
+  {
+    "time": "2026.06.08 17:00:31",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": 68.13,
+    "ticket": 467109673
+  },
+  {
+    "time": "2026.06.08 17:28:47",
+    "symbol": "USDCHF",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": 323.55,
+    "ticket": 467109745
+  },
+  {
+    "time": "2026.06.08 17:00:31",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": 73.16,
+    "ticket": 467113517
+  },
+  {
+    "time": "2026.06.08 23:17:04",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": -3.15,
+    "ticket": 467482937
+  },
+  {
+    "time": "2026.06.08 23:16:59",
+    "symbol": "USDCHF",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": 52.62,
+    "ticket": 467482947
+  },
+  {
+    "time": "2026.06.08 23:17:05",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 1.06,
+    "ticket": 467482966
+  },
+  {
+    "time": "2026.06.08 23:17:05",
+    "symbol": "EURUSD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": -1.09,
+    "ticket": 467488448
+  },
+  {
+    "time": "2026.06.09 02:37:06",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": 18.37,
+    "ticket": 467505587
+  },
+  {
+    "time": "2026.06.09 02:37:05",
+    "symbol": "USDCHF",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": -2.6,
+    "ticket": 467505592
+  },
+  {
+    "time": "2026.06.09 02:36:58",
+    "symbol": "EURUSD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": 7.26,
+    "ticket": 467505624
+  },
+  {
+    "time": "2026.06.09 02:37:06",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 2.06,
+    "ticket": 467505918
+  },
+  {
+    "time": "2026.06.09 02:37:00",
+    "symbol": "EURUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 1.04,
+    "ticket": 467507296
+  },
+  {
+    "time": "2026.06.09 09:03:28",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": -88.81,
+    "ticket": 467554682
+  },
+  {
+    "time": "2026.06.09 08:52:22",
+    "symbol": "USDCHF",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": -224.82,
+    "ticket": 467554688
+  },
+  {
+    "time": "2026.06.09 16:21:46",
+    "symbol": "NZDUSD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": 78.11,
+    "ticket": 467696615
+  },
+  {
+    "time": "2026.06.09 09:12:28",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -8.14,
+    "ticket": 467696770
+  },
+  {
+    "time": "2026.06.09 12:16:13",
+    "symbol": "EURUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -6.24,
+    "ticket": 467700276
+  },
+  {
+    "time": "2026.06.09 15:49:40",
+    "symbol": "AUDUSD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": 2.21,
+    "ticket": 467736762
+  },
+  {
+    "time": "2026.06.09 15:02:48",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": -64.81,
+    "ticket": 467782516
+  },
+  {
+    "time": "2026.06.09 12:22:35",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -9.34,
+    "ticket": 467851582
+  },
+  {
+    "time": "2026.06.09 15:03:36",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.04",
+    "profit": -8.12,
+    "ticket": 467906900
+  },
+  {
+    "time": "2026.06.09 16:21:48",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": 44.22,
+    "ticket": 467997331
+  },
+  {
+    "time": "2026.06.09 18:41:16",
+    "symbol": "USDCHF",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": 231.65,
+    "ticket": 468040415
+  },
+  {
+    "time": "2026.06.09 17:17:31",
+    "symbol": "EURUSD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": -76.44,
+    "ticket": 468078257
+  },
+  {
+    "time": "2026.06.09 18:35:20",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -72.6,
+    "ticket": 468078275
+  },
+  {
+    "time": "2026.06.09 17:42:06",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": 25.23,
+    "ticket": 468218120
+  },
+  {
+    "time": "2026.06.09 19:00:50",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": 16.95,
+    "ticket": 468263726
+  },
+  {
+    "time": "2026.06.09 18:41:21",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": 9.6,
+    "ticket": 468383982
+  },
+  {
+    "time": "2026.06.09 19:43:52",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 7.76,
+    "ticket": 468394494
+  },
+  {
+    "time": "2026.06.09 18:42:00",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": 5.4,
+    "ticket": 468394722
+  },
+  {
+    "time": "2026.06.09 18:47:02",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -0.6,
+    "ticket": 468402391
+  },
+  {
+    "time": "2026.06.09 19:02:27",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -1.8,
+    "ticket": 468426028
+  },
+  {
+    "time": "2026.06.09 19:29:17",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": 0.6,
+    "ticket": 468471960
+  },
+  {
+    "time": "2026.06.09 21:18:59",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -9.99,
+    "ticket": 468501722
+  },
+  {
+    "time": "2026.06.10 09:39:27",
+    "symbol": "USDCHF",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": -87.31,
+    "ticket": 468629230
+  },
+  {
+    "time": "2026.06.10 09:39:58",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -0.29,
+    "ticket": 468955107
+  },
+  {
+    "time": "2026.06.10 09:46:02",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -1.1,
+    "ticket": 468959070
+  },
+  {
+    "time": "2026.06.10 09:46:07",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -0.14,
+    "ticket": 468959083
+  },
+  {
+    "time": "2026.06.10 09:48:58",
+    "symbol": "EURUSD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": 1.66,
+    "ticket": 468960390
+  },
+  {
+    "time": "2026.06.10 10:19:20",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 1.25,
+    "ticket": 468985635
+  },
+  {
+    "time": "2026.06.10 10:19:24",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 0.06,
+    "ticket": 468985650
+  },
+  {
+    "time": "2026.06.10 10:24:33",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.93,
+    "ticket": 468989748
+  },
+  {
+    "time": "2026.06.10 11:41:52",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 37.47,
+    "ticket": 469002932
+  },
+  {
+    "time": "2026.06.10 10:57:17",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -0.04,
+    "ticket": 469015451
+  },
+  {
+    "time": "2026.06.10 11:03:02",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 1.36,
+    "ticket": 469017430
+  },
+  {
+    "time": "2026.06.10 11:05:48",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -0.29,
+    "ticket": 469030719
+  },
+  {
+    "time": "2026.06.10 14:00:28",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 1.16,
+    "ticket": 469036480
+  },
+  {
+    "time": "2026.06.10 11:32:43",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -0.14,
+    "ticket": 469053377
+  },
+  {
+    "time": "2026.06.10 13:26:29",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 67.75,
+    "ticket": 469059193
+  },
+  {
+    "time": "2026.06.10 11:48:26",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -0.14,
+    "ticket": 469066555
+  },
+  {
+    "time": "2026.06.10 12:19:25",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -0.09,
+    "ticket": 469090635
+  },
+  {
+    "time": "2026.06.10 12:24:42",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -0.34,
+    "ticket": 469094712
+  },
+  {
+    "time": "2026.06.10 12:40:14",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -0.14,
+    "ticket": 469106662
+  },
+  {
+    "time": "2026.06.10 13:10:58",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.04",
+    "profit": -0.2,
+    "ticket": 469132015
+  },
+  {
+    "time": "2026.06.10 13:11:12",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.08,
+    "ticket": 469132522
+  },
+  {
+    "time": "2026.06.10 15:30:04",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 37.14,
+    "ticket": 469143590
+  },
+  {
+    "time": "2026.06.10 13:42:32",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.26,
+    "ticket": 469151085
+  },
+  {
+    "time": "2026.06.10 13:42:56",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.14,
+    "ticket": 469152031
+  },
+  {
+    "time": "2026.06.10 13:59:30",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 0.16,
+    "ticket": 469165445
+  },
+  {
+    "time": "2026.06.10 14:06:46",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": 2.56,
+    "ticket": 469167565
+  },
+  {
+    "time": "2026.06.10 15:29:31",
+    "symbol": "USDCHF",
+    "direction": "BUY",
+    "volume": "1",
+    "profit": -166.66,
+    "ticket": 469176106
+  },
+  {
+    "time": "2026.06.10 16:35:37",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -10.54,
+    "ticket": 469181766
+  },
+  {
+    "time": "2026.06.10 14:15:00",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -0.34,
+    "ticket": 469189148
+  },
+  {
+    "time": "2026.06.10 15:29:52",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.05",
+    "profit": -6.99,
+    "ticket": 469219821
+  },
+  {
+    "time": "2026.06.10 15:35:31",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.04",
+    "profit": -2.68,
+    "ticket": 469296769
+  },
+  {
+    "time": "2026.06.10 16:50:48",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": 56.4,
+    "ticket": 469307941
+  },
+  {
+    "time": "2026.06.10 16:00:23",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 20.4,
+    "ticket": 469321408
+  },
+  {
+    "time": "2026.06.10 19:51:46",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.04",
+    "profit": 110.56,
+    "ticket": 469337263
+  },
+  {
+    "time": "2026.06.10 16:44:32",
+    "symbol": "USDCAD",
+    "direction": "SELL",
+    "volume": "0.04",
+    "profit": 2.44,
+    "ticket": 469379243
+  },
+  {
+    "time": "2026.06.10 16:35:59",
+    "symbol": "USDCHF",
+    "direction": "SELL",
+    "volume": "0.04",
+    "profit": -0.25,
+    "ticket": 469392071
+  },
+  {
+    "time": "2026.06.10 16:35:59",
+    "symbol": "EURUSD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": 0.56,
+    "ticket": 469392123
+  },
+  {
+    "time": "2026.06.10 17:21:25",
+    "symbol": "USDCAD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -4.15,
+    "ticket": 469416765
+  },
+  {
+    "time": "2026.06.10 18:10:38",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -69.3,
+    "ticket": 469432153
+  },
+  {
+    "time": "2026.06.10 18:10:38",
+    "symbol": "EURUSD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": -105.04,
+    "ticket": 469433151
+  },
+  {
+    "time": "2026.06.10 17:36:49",
+    "symbol": "USDCAD",
+    "direction": "SELL",
+    "volume": "0.04",
+    "profit": -0.23,
+    "ticket": 469506637
+  },
+  {
+    "time": "2026.06.10 18:07:19",
+    "symbol": "USDCAD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.1,
+    "ticket": 469562902
+  },
+  {
+    "time": "2026.06.10 19:50:43",
+    "symbol": "USDCAD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.12,
+    "ticket": 469682424
+  },
+  {
+    "time": "2026.06.10 20:46:35",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 33.9,
+    "ticket": 469683438
+  },
+  {
+    "time": "2026.06.11 01:30:43",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 176.99,
+    "ticket": 469732015
+  },
+  {
+    "time": "2026.06.10 21:00:43",
+    "symbol": "USDCAD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.16,
+    "ticket": 469742635
+  },
+  {
+    "time": "2026.06.10 21:05:20",
+    "symbol": "USDCAD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.16,
+    "ticket": 469747877
+  },
+  {
+    "time": "2026.06.11 04:25:03",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -158.79,
+    "ticket": 469886354
+  },
+  {
+    "time": "2026.06.11 02:00:30",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.2,
+    "ticket": 469911440
+  },
+  {
+    "time": "2026.06.11 09:00:56",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -4.07,
+    "ticket": 469911941
+  },
+  {
+    "time": "2026.06.11 07:29:26",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.6,
+    "ticket": 470125989
+  },
+  {
+    "time": "2026.06.11 07:30:44",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -8.73,
+    "ticket": 470126700
+  },
+  {
+    "time": "2026.06.11 07:46:23",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -1.23,
+    "ticket": 470133752
+  },
+  {
+    "time": "2026.06.11 07:51:34",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 3.3,
+    "ticket": 470136023
+  },
+  {
+    "time": "2026.06.11 07:56:31",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 1.65,
+    "ticket": 470137831
+  },
+  {
+    "time": "2026.06.11 08:01:16",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 2.01,
+    "ticket": 470140240
+  },
+  {
+    "time": "2026.06.11 08:06:46",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.04",
+    "profit": 6.5,
+    "ticket": 470143087
+  },
+  {
+    "time": "2026.06.11 08:11:31",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.04",
+    "profit": -2.78,
+    "ticket": 470145467
+  },
+  {
+    "time": "2026.06.11 08:19:26",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -2.85,
+    "ticket": 470148248
+  },
+  {
+    "time": "2026.06.11 08:35:01",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -1.23,
+    "ticket": 470162693
+  },
+  {
+    "time": "2026.06.11 09:05:29",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.9,
+    "ticket": 470183792
+  },
+  {
+    "time": "2026.06.11 09:10:42",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -1.17,
+    "ticket": 470188356
+  },
+  {
+    "time": "2026.06.11 09:26:12",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 1.23,
+    "ticket": 470197908
+  },
+  {
+    "time": "2026.06.11 09:31:25",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.21,
+    "ticket": 470200618
+  },
+  {
+    "time": "2026.06.11 09:47:16",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.51,
+    "ticket": 470207792
+  },
+  {
+    "time": "2026.06.11 10:01:00",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": 0.0,
+    "ticket": 470215622
+  },
+  {
+    "time": "2026.06.11 10:16:40",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": -2.36,
+    "ticket": 470226450
+  },
+  {
+    "time": "2026.06.11 10:17:43",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -1.89,
+    "ticket": 470228126
+  },
+  {
+    "time": "2026.06.11 12:15:10",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": 58.64,
+    "ticket": 470249047
+  },
+  {
+    "time": "2026.06.11 10:48:13",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.6,
+    "ticket": 470249573
+  },
+  {
+    "time": "2026.06.11 11:18:43",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -2.67,
+    "ticket": 470271436
+  },
+  {
+    "time": "2026.06.11 11:40:58",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.66,
+    "ticket": 470285945
+  },
+  {
+    "time": "2026.06.11 11:53:58",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.23,
+    "ticket": 470295400
+  },
+  {
+    "time": "2026.06.11 11:56:27",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -1.53,
+    "ticket": 470298466
+  },
+  {
+    "time": "2026.06.11 12:09:29",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.14,
+    "ticket": 470307986
+  },
+  {
+    "time": "2026.06.11 15:44:34",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.55",
+    "profit": 29.5,
+    "ticket": 470326152
+  },
+  {
+    "time": "2026.06.11 12:33:35",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.13,
+    "ticket": 470326165
+  },
+  {
+    "time": "2026.06.11 12:33:31",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.0,
+    "ticket": 470326194
+  },
+  {
+    "time": "2026.06.11 12:48:51",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -2.91,
+    "ticket": 470339766
+  },
+  {
+    "time": "2026.06.11 12:49:19",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.05,
+    "ticket": 470339874
+  },
+  {
+    "time": "2026.06.11 17:25:47",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": 13.92,
+    "ticket": 470639152
+  },
+  {
+    "time": "2026.06.11 17:00:31",
+    "symbol": "NZDUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.23,
+    "ticket": 470639210
+  },
+  {
+    "time": "2026.06.11 17:01:00",
+    "symbol": "XAUUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -4.77,
+    "ticket": 470640679
+  },
+  {
+    "time": "2026.06.11 17:01:31",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.25,
+    "ticket": 470641954
+  },
+  {
+    "time": "2026.06.11 17:02:47",
+    "symbol": "GBPUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.46,
+    "ticket": 470644087
+  },
+  {
+    "time": "2026.06.11 20:30:10",
+    "symbol": "AUDUSD",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -6.11,
+    "ticket": 470651811
+  },
+  {
+    "time": "2026.06.11 17:55:18",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": 18.19,
+    "ticket": 470697477
+  },
+  {
+    "time": "2026.06.11 20:30:11",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -47.16,
+    "ticket": 470737826
+  },
+  {
+    "time": "2026.06.11 23:23:49",
+    "symbol": "USDJPY",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.03,
+    "ticket": 471124604
+  },
+  {
+    "time": "2026.06.11 23:25:09",
+    "symbol": "NZDUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": 0.13,
+    "ticket": 471124612
+  },
+  {
+    "time": "2026.06.11 23:24:01",
+    "symbol": "ETHUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": 0.14,
+    "ticket": 471124620
+  },
+  {
+    "time": "2026.06.11 23:25:09",
+    "symbol": "USDCHF",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.2,
+    "ticket": 471124824
+  },
+  {
+    "time": "2026.06.11 23:26:06",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -0.9,
+    "ticket": 471125123
+  },
+  {
+    "time": "2026.06.11 23:30:43",
+    "symbol": "USDCHF",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.31,
+    "ticket": 471126310
+  },
+  {
+    "time": "2026.06.11 23:34:39",
+    "symbol": "USDJPY",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.03,
+    "ticket": 471127467
+  },
+  {
+    "time": "2026.06.11 23:35:08",
+    "symbol": "NZDUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": -0.17,
+    "ticket": 471127473
+  },
+  {
+    "time": "2026.06.11 23:35:08",
+    "symbol": "USDCHF",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.26,
+    "ticket": 471127781
+  },
+  {
+    "time": "2026.06.11 23:35:34",
+    "symbol": "AUDUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -3.9,
+    "ticket": 471127962
+  },
+  {
+    "time": "2026.06.11 23:36:41",
+    "symbol": "ETHUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": 0.14,
+    "ticket": 471128309
+  },
+  {
+    "time": "2026.06.11 23:38:00",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -1.5,
+    "ticket": 471128588
+  },
+  {
+    "time": "2026.06.11 23:39:58",
+    "symbol": "USDJPY",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.2,
+    "ticket": 471129076
+  },
+  {
+    "time": "2026.06.11 23:39:47",
+    "symbol": "NZDUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": -0.14,
+    "ticket": 471129082
+  },
+  {
+    "time": "2026.06.11 23:39:47",
+    "symbol": "AUDUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -0.6,
+    "ticket": 471129099
+  },
+  {
+    "time": "2026.06.11 23:40:51",
+    "symbol": "ETHUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": 0.52,
+    "ticket": 471130051
+  },
+  {
+    "time": "2026.06.11 23:40:48",
+    "symbol": "USDCHF",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.56,
+    "ticket": 471130242
+  },
+  {
+    "time": "2026.06.11 23:41:35",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -3.9,
+    "ticket": 471130737
+  },
+  {
+    "time": "2026.06.11 23:44:41",
+    "symbol": "USDJPY",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.14,
+    "ticket": 471131698
+  },
+  {
+    "time": "2026.06.11 23:46:00",
+    "symbol": "ETHUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": 0.25,
+    "ticket": 471132862
+  },
+  {
+    "time": "2026.06.12 00:08:19",
+    "symbol": "AUDUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -12.6,
+    "ticket": 471134987
+  },
+  {
+    "time": "2026.06.12 00:11:49",
+    "symbol": "NZDUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": -0.86,
+    "ticket": 471135167
+  },
+  {
+    "time": "2026.06.12 00:15:25",
+    "symbol": "AUDUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -8.1,
+    "ticket": 471135318
+  },
+  {
+    "time": "2026.06.12 00:15:47",
+    "symbol": "ETHUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": 0.2,
+    "ticket": 471135485
+  },
+  {
+    "time": "2026.06.12 00:19:43",
+    "symbol": "EURUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": -0.71,
+    "ticket": 471135540
+  },
+  {
+    "time": "2026.06.12 00:26:45",
+    "symbol": "NZDUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": -1.4,
+    "ticket": 471136030
+  },
+  {
+    "time": "2026.06.12 00:31:14",
+    "symbol": "ETHUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": 0.36,
+    "ticket": 471136219
+  },
+  {
+    "time": "2026.06.12 00:32:44",
+    "symbol": "AUDUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -15.3,
+    "ticket": 471136247
+  },
+  {
+    "time": "2026.06.12 00:37:53",
+    "symbol": "ETHUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": 0.16,
+    "ticket": 471136367
+  },
+  {
+    "time": "2026.06.12 00:50:57",
+    "symbol": "EURUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": -0.44,
+    "ticket": 471136931
+  },
+  {
+    "time": "2026.06.12 00:53:13",
+    "symbol": "ETHUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": -0.04,
+    "ticket": 471137027
+  },
+  {
+    "time": "2026.06.12 00:55:10",
+    "symbol": "NZDUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": -4.76,
+    "ticket": 471137168
+  },
+  {
+    "time": "2026.06.12 01:01:50",
+    "symbol": "USDJPY",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": 0.1,
+    "ticket": 471137675
+  },
+  {
+    "time": "2026.06.12 01:02:40",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": 5.4,
+    "ticket": 471137731
+  },
+  {
+    "time": "2026.06.12 01:02:13",
+    "symbol": "USDCHF",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.37,
+    "ticket": 471137920
+  },
+  {
+    "time": "2026.06.12 01:03:43",
+    "symbol": "AUDUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": 0.6,
+    "ticket": 471137971
+  },
+  {
+    "time": "2026.06.12 01:05:21",
+    "symbol": "XAUUSD",
+    "direction": "BUY",
+    "volume": "0.09",
+    "profit": -10.89,
+    "ticket": 471138832
+  },
+  {
+    "time": "2026.06.12 07:42:57",
+    "symbol": "USDCHF",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.22,
+    "ticket": 471325399
+  },
+  {
+    "time": "2026.06.12 07:43:23",
+    "symbol": "XAUUSD",
+    "direction": "BUY",
+    "volume": "0.08",
+    "profit": -4.1,
+    "ticket": 471325603
+  },
+  {
+    "time": "2026.06.12 07:44:12",
+    "symbol": "EURUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": 0.13,
+    "ticket": 471325763
+  },
+  {
+    "time": "2026.06.12 07:45:40",
+    "symbol": "USDCHF",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.07,
+    "ticket": 471326483
+  },
+  {
+    "time": "2026.06.12 07:45:38",
+    "symbol": "XAUUSD",
+    "direction": "BUY",
+    "volume": "0.07",
+    "profit": -1.75,
+    "ticket": 471326542
+  },
+  {
+    "time": "2026.06.12 07:46:07",
+    "symbol": "EURUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": 0.01,
+    "ticket": 471326608
+  },
+  {
+    "time": "2026.06.12 07:48:01",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -2.1,
+    "ticket": 471326876
+  },
+  {
+    "time": "2026.06.12 07:48:57",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": 0.21,
+    "ticket": 471327726
+  },
+  {
+    "time": "2026.06.12 07:49:16",
+    "symbol": "NZDUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": -0.14,
+    "ticket": 471327924
+  },
+  {
+    "time": "2026.06.12 07:49:47",
+    "symbol": "AUDUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -0.9,
+    "ticket": 471328034
+  },
+  {
+    "time": "2026.06.12 08:01:51",
+    "symbol": "USDCHF",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -0.18,
+    "ticket": 471331746
+  },
+  {
+    "time": "2026.06.12 08:01:33",
+    "symbol": "XAUUSD",
+    "direction": "BUY",
+    "volume": "0.06",
+    "profit": -5.22,
+    "ticket": 471331820
+  },
+  {
+    "time": "2026.06.12 08:01:56",
+    "symbol": "EURUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": 0.01,
+    "ticket": 471331915
+  },
+  {
+    "time": "2026.06.12 08:03:31",
+    "symbol": "GBPUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -2.7,
+    "ticket": 471332624
+  },
+  {
+    "time": "2026.06.12 08:04:32",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": -0.22,
+    "ticket": 471333284
+  },
+  {
+    "time": "2026.06.12 08:05:25",
+    "symbol": "NZDUSD",
+    "direction": "BUY",
+    "volume": "0.03",
+    "profit": -0.2,
+    "ticket": 471333448
+  },
+  {
+    "time": "2026.06.12 08:05:46",
+    "symbol": "AUDUSD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": 0.6,
+    "ticket": 471333696
+  },
+  {
+    "time": "2026.06.12 15:12:51",
+    "symbol": "USDCHF",
+    "direction": "SELL",
+    "volume": "0.03",
+    "profit": -2.1,
+    "ticket": 471337704
+  },
+  {
+    "time": "2026.06.12 13:00:07",
+    "symbol": "XAUUSD",
+    "direction": "BUY",
+    "volume": "0.08",
+    "profit": 268.71,
+    "ticket": 471337901
+  },
+  {
+    "time": "2026.06.12 15:19:21",
+    "symbol": "USDCAD",
+    "direction": "BUY",
+    "volume": "0.3",
+    "profit": 31.74,
+    "ticket": 471338052
+  },
+  {
+    "time": "2026.06.15 01:25:47",
+    "symbol": "XAUUSD",
+    "direction": "BUY",
+    "volume": "0.06",
+    "profit": 461.28,
+    "ticket": 471605610
+  },
+  {
+    "time": "2026.06.07 23:30:38",
+    "symbol": null,
+    "direction": "BALANCE",
+    "volume": "",
+    "profit": 0.0,
+    "ticket": 447406952
+  }
+]

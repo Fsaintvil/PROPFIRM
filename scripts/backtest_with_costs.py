@@ -68,7 +68,7 @@ COMMISSION_PER_100K = 7.0
 def get_pip_info(symbol):
     if symbol in ("XAUUSD", "XAGUSD"):
         return 0.01, 1.0
-    if symbol in ("US500.cash", "JP225.cash", "US30.cash", "NAS100.cash"):
+    if symbol in ("US500.cash", "JP225.cash", "US30.cash", "US100.cash"):
         return 0.01, 1.0
     if symbol in ("USOIL.cash", "UKOIL.cash"):
         return 0.01, 1.0
@@ -85,7 +85,7 @@ def get_pip_value_per_lot(symbol):
 def get_contract_size(symbol):
     if symbol in ("XAUUSD", "XAGUSD"):
         return 100
-    if symbol in ("US500.cash", "JP225.cash", "US30.cash", "NAS100.cash"):
+    if symbol in ("US500.cash", "JP225.cash", "US30.cash", "US100.cash"):
         return 1
     if symbol in ("USOIL.cash", "UKOIL.cash"):
         return 100

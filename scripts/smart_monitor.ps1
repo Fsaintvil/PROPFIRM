@@ -147,6 +147,17 @@ function Check-Metrics {
         if ($dash.alerts) { $result.alerts = $dash.alerts }
     }
 
+    # Helper: convertit une valeur potentiellement formatée (ex: "1.0%") en nombre
+    function Convert-NumericField {
+        param($Value)
+        if ($null -eq $Value) { return $null }
+        if ($Value -is [string]) {
+            $clean = $Value -replace '%','' -replace ',','.'
+            try { return [double]$clean } catch { return $null }
+        }
+        return [double]$Value
+    }
+
     $ftmo = Get-JsonFile -Path $FtmoFile
     if ($ftmo) {
         $result.ftmo_status = $ftmo.status
@@ -155,14 +166,17 @@ function Check-Metrics {
         $result.trading_days = $ftmo.trading_days
         $result.days_remaining = $ftmo.days_remaining
         $result.consecutive_losses = $ftmo.consecutive_losses
-        if (-not $result.balance) { $result.balance = $ftmo.balance }
-        if (-not $result.equity)  { $result.equity = $ftmo.equity }
-        if (-not $result.dd)      { $result.dd = $ftmo.dd_from_peak / 100 }
-        if (-not $result.wr)      {
-            $wr_str = $ftmo.win_rate -replace '%',''
-            $result.wr = [double]$wr_str / 100
+        if (-not $result.balance) { $result.balance = Convert-NumericField $ftmo.balance }
+        if (-not $result.equity)  { $result.equity = Convert-NumericField $ftmo.equity }
+        if (-not $result.dd)      {
+            $dd_val = Convert-NumericField $ftmo.dd_from_peak
+            $result.dd = if ($dd_val) { $dd_val / 100 } else { $null }
         }
-        if (-not $result.trades)  { $result.trades = $ftmo.total_trades }
+        if (-not $result.wr)      {
+            $wr_val = Convert-NumericField $ftmo.win_rate
+            $result.wr = if ($wr_val) { $wr_val / 100 } else { $null }
+        }
+        if (-not $result.trades)  { $result.trades = [int](Convert-NumericField $ftmo.total_trades) }
     }
 
     return $result

@@ -11,11 +11,14 @@ Usage:
     alerts = pm.check_alerts()
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import threading
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger("perf_monitor")
 
@@ -42,7 +45,7 @@ ALERT_THRESHOLDS = {
 class PerformanceMonitor:
     """Surveille les performances en continu et détecte les tendances."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.history = self._load_history()
         self._ensure_structure()
         self._lock = (
@@ -51,7 +54,7 @@ class PerformanceMonitor:
         self._import_from_csv()  # Sync CSV → performance_history
         self._last_alert_time = {}  # Déduplication: metric → last timestamp
 
-    def _ensure_structure(self):
+    def _ensure_structure(self) -> None:
         """Crée la structure si le fichier est vide ou corrompu."""
         required = ["daily", "rolling", "symbols", "alerts", "challenge"]
         for key in required:
@@ -71,7 +74,7 @@ class PerformanceMonitor:
                 "last_status": "UNKNOWN",
             }
 
-    def _import_from_csv(self):
+    def _import_from_csv(self) -> None:
         """Importe les trades depuis trades_log.csv si performance_history est vide.
         Résout le désync entre CSV (8 trades) et performance_history (3 trades)
         causé par MT5 history expiration + restarts.
@@ -140,7 +143,7 @@ class PerformanceMonitor:
         except Exception as e:
             logger.debug(f"[PERF] CSV import skip: {e}")
 
-    def _load_history(self):
+    def _load_history(self) -> dict[str, Any]:
         """Charge l'historique depuis le fichier JSON avec validation.
         Rejette les données contaminées (trades sans timestamp = backtest).
         Applique une migration pour garantir la présence de toutes les clés."""
@@ -208,7 +211,7 @@ class PerformanceMonitor:
             logger.warning(f"Historique corrompu, réinitialisation: {e}")
         return default_history
 
-    def _save(self):
+    def _save(self) -> None:
         """Sauvegarde l'historique (thread-safe via _lock)."""
         with self._lock:
             # 🔧 Dédoublonnage systématique des alertes avant sauvegarde
@@ -232,7 +235,7 @@ class PerformanceMonitor:
             except OSError as e:
                 logger.error(f"Impossible de sauvegarder l'historique: {e}")
 
-    def record_trade(self, symbol, profit, regime="UNKNOWN", direction="BUY"):
+    def record_trade(self, symbol: str, profit: float, regime: str = "UNKNOWN", direction: str = "BUY") -> None:
         """Enregistre un trade fermé dans l'historique."""
         with self._lock:
             today = datetime.utcnow().strftime("%Y-%m-%d")
@@ -339,7 +342,7 @@ class PerformanceMonitor:
 
             self._save()
 
-    def _update_rolling(self):
+    def _update_rolling(self) -> None:
         """Met à jour les métriques glissantes (20, 50, 100, 200 trades).
         Utilise la liste exacte des trades individuels (recent_trades).
         Nettoie les fenêtres obsolètes si données insuffisantes."""
@@ -372,7 +375,7 @@ class PerformanceMonitor:
                 "avg": round(pnl / total, 2) if total > 0 else 0,
             }
 
-    def record_challenge(self, ftmo_data):
+    def record_challenge(self, ftmo_data: dict[str, Any]) -> None:
         """Met à jour les métriques du challenge FTMO.
 
         ftmo_data: dict avec balance, equity, peak_equity, drawdown, status, etc.
@@ -461,7 +464,7 @@ class PerformanceMonitor:
         self._last_alert_time[metric_key] = now
         return True
 
-    def check_alerts(self):
+    def check_alerts(self) -> list[dict[str, Any]]:
         """Vérifie les seuils d'alerte et retourne les alertes actives."""
         alerts = []
         today = datetime.utcnow().strftime("%Y-%m-%d")
@@ -582,12 +585,12 @@ class PerformanceMonitor:
 
         return alerts
 
-    def _recent_series(self, n_trades):
+    def _recent_series(self, n_trades: int) -> list[dict[str, Any]]:
         """Retourne les N trades les plus récents (liste individuelle)."""
         recent = self.history.get("recent_trades", [])
         return recent[-n_trades:]
 
-    def generate_report(self):
+    def generate_report(self) -> dict[str, Any]:
         """Génère un rapport complet de performance."""
         report = {
             "generated_at": datetime.utcnow().isoformat(),
@@ -613,7 +616,7 @@ class PerformanceMonitor:
 
         return report
 
-    def _challenge_summary(self):
+    def _challenge_summary(self) -> dict[str, Any]:
         """Résumé de l'avancement du challenge FTMO."""
         c = self.history["challenge"]
         pp = c.get("profit_progress_pct", 0)
@@ -658,7 +661,7 @@ class PerformanceMonitor:
             "on_track": avg_daily_pnl > 0 and (pp >= 0 or td <= 5),
         }
 
-    def _rolling_summary(self):
+    def _rolling_summary(self) -> dict[str, Any]:
         """Résumé des métriques glissantes."""
         summary = {}
         for window in ROLLING_WINDOWS:
@@ -680,7 +683,7 @@ class PerformanceMonitor:
                 }
         return summary
 
-    def _symbol_summary(self):
+    def _symbol_summary(self) -> dict[str, Any]:
         """Résumé par symbole."""
         summary = {}
         for sym, sdata in sorted(self.history["symbols"].items()):
@@ -702,7 +705,7 @@ class PerformanceMonitor:
             }
         return summary
 
-    def _daily_recent(self, n_days=7):
+    def _daily_recent(self, n_days: int = 7) -> list[dict[str, Any]]:
         """Derniers N jours de trading."""
         recent = []
         for date_str in sorted(self.history["daily"].keys()):
@@ -720,7 +723,7 @@ class PerformanceMonitor:
             )
         return recent[-n_days:]
 
-    def _trend_analysis(self):
+    def _trend_analysis(self) -> dict[str, Any]:
         """Analyse les tendances sur plusieurs fenêtres."""
         trends = {}
 
@@ -749,7 +752,7 @@ class PerformanceMonitor:
 
         return trends
 
-    def _generate_recommendations(self, report):
+    def _generate_recommendations(self, report: dict[str, Any]) -> list[dict[str, Any]]:
         """Génère des recommandations basées sur l'analyse."""
         recs = []
 
@@ -801,7 +804,7 @@ class PerformanceMonitor:
 
         return recs
 
-    def get_daily_pnl(self, date_str=None):
+    def get_daily_pnl(self, date_str: str | None = None) -> dict[str, Any]:
         """Récupère le PnL d'un jour spécifique ou d'aujourd'hui."""
         if date_str is None:
             date_str = datetime.utcnow().strftime("%Y-%m-%d")
@@ -813,7 +816,7 @@ class PerformanceMonitor:
             "losses": d.get("losses", 0),
         }
 
-    def summary_text(self, detailed=False):
+    def summary_text(self, detailed: bool = False) -> str:
         """Retourne un texte formaté du rapport."""
         report = self.generate_report()
         c = report["challenge"]
@@ -868,7 +871,7 @@ _monitor = None
 _monitor_lock = threading.Lock()
 
 
-def get_monitor():
+def get_monitor() -> PerformanceMonitor:
     global _monitor
     if _monitor is None:
         with _monitor_lock:
@@ -879,7 +882,7 @@ def get_monitor():
 
 
 # Fonction appelable depuis main.py pour enregistrer un trade
-def record_trade(symbol, profit, regime="UNKNOWN", direction="BUY"):
+def record_trade(symbol: str, profit: float, regime: str = "UNKNOWN", direction: str = "BUY") -> None:
     """Enregistre un trade dans le monitoring. Utilisable depuis main.py."""
     try:
         import traceback
@@ -897,7 +900,7 @@ def record_trade(symbol, profit, regime="UNKNOWN", direction="BUY"):
 
 
 # Fonction appelable depuis main.py pour mettre à jour le challenge
-def update_challenge(ftmo_data):
+def update_challenge(ftmo_data: dict[str, Any]) -> None:
     """Met à jour les métriques du challenge."""
     try:
         pm = get_monitor()

@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import logging
 import re
 import time
 from datetime import datetime, timedelta
+from typing import Any, Optional
 
 import MetaTrader5 as mt5
 import numpy as np
@@ -21,6 +24,7 @@ from engine_simple.ftmo_config import (
     get_be_buffer_for_symbol,
 )
 from engine_simple.news_filter import is_news_blocked
+from engine_simple.signal_validator import SignalValidator
 from engine_simple.structure_analyzer import structure_exit_signal
 from engine_simple.trailer import Trailer
 
@@ -28,7 +32,7 @@ logger = logging.getLogger("ftmo")
 
 
 class FTMOProtector:
-    def __init__(self, mt5, config):
+    def __init__(self, mt5: Any, config: dict[str, Any]) -> None:
         self.mt5 = mt5
         self.config = config
 
@@ -98,12 +102,21 @@ class FTMOProtector:
         self.trailer = Trailer(mt5, config)
         self.trailer.partial_closed = self.partial_closed
         self.trailer.trailing_peaks = self.trailing_peaks
+
+        # ── SignalValidator (validation des signaux) ──────────────────
+        self.signal_validator = SignalValidator(
+            mt5=mt5,
+            trailer=self.trailer,
+            symbol_limits=self.symbol_limits,
+            symbol_trade_history=self._symbol_trade_history,
+            staleness_check_fn=self.check_price_staleness,
+        )
         self.trailer.position_regime = self.position_regime
         self.trailer.position_meta = self.position_meta
         self.trailer.position_open_times = self.position_open_times
         self.trailer.peak_profit = self.peak_profit
 
-    def check_price_staleness(self, symbol, max_age=60):
+    def check_price_staleness(self, symbol: str, max_age: int = 60) -> bool:
         tick = self.mt5.get_tick(symbol)
         if tick is None:
             return False
@@ -120,7 +133,7 @@ class FTMOProtector:
             return False
         return True
 
-    def _reconcile_positions(self, positions):
+    def _reconcile_positions(self, positions: Any) -> None:
         open_tickets = {str(p.ticket) for p in positions}
         for p in positions:
             ticket_key = str(p.ticket)
@@ -151,7 +164,7 @@ class FTMOProtector:
                 del self.peak_profit[t]
         self.partial_closed &= open_tickets
 
-    def _parse_comment_regime(self, comment, ticket_key):
+    def _parse_comment_regime(self, comment: str, ticket_key: str) -> None:
         m = re.match(r"ADAPT_(\w{3})", comment)
         short = m.group(1) if m else "RAN"
         self.position_regime[ticket_key] = self.REGIME_FROM_COMMENT.get(short, "RANGING")
@@ -160,7 +173,7 @@ class FTMOProtector:
     # Vérifications de corrélation via portfolio_controller.py (groupes de corrélation).
     # Max 3 trades/groupe, max 2/direction. Limite les pertes simultanées.
 
-    def _get_profile(self, symbol):
+    def _get_profile(self, symbol: str) -> Any:
         """Retourne le profil institutionnel du symbole (caché)."""
         if symbol not in self._profile_cache:
             try:
@@ -171,7 +184,13 @@ class FTMOProtector:
                 self._profile_cache[symbol] = None
         return self._profile_cache[symbol]
 
-    def can_trade(self, symbol, signal=None, positions=None, check_danger_hours=True):
+    def can_trade(
+        self,
+        symbol: str,
+        signal: Optional[dict[str, Any]] = None,
+        positions: Any = None,
+        check_danger_hours: bool = True,
+    ) -> tuple[bool, str | None]:
         """Vérifie si un trade est autorisé pour le symbole.
 
         Pipeline de vérification (chaque étape peut bloquer) :
@@ -205,6 +224,7 @@ class FTMOProtector:
             lambda: self._check_risk_state(symbol, signal),
             lambda: self._check_profile(symbol, signal),
             lambda: self._check_session(symbol, signal, check_danger_hours),
+            lambda: self._check_consistency_cap(),  # 🔒 CONSISTENCY CAP (préventif, 6 Juillet 2026)
             lambda: self._check_ftmo_status(),
         ):
             ok, reason = check()
@@ -215,7 +235,7 @@ class FTMOProtector:
 
     # ── Sub-checks (extraites de can_trade pour lisibilité) ─────────
 
-    def _check_auto_stop(self):
+    def _check_auto_stop(self) -> tuple[bool, str | None]:
         """🔒 AUTO-STOP : pause auto-ranging basée sur ADX moyen des symboles.
 
         🐛 FIX #9 (3 Juillet): Si RATIO_STOP >= 1.0, AUTO_STOP est désactivé
@@ -255,7 +275,7 @@ class FTMOProtector:
             logger.debug(f"  [AUTO-STOP] erreur: {e}")
         return True, None
 
-    def _check_symbol_health(self, symbol, signal):
+    def _check_symbol_health(self, symbol: str, signal: Optional[dict[str, Any]]) -> tuple[bool, str | None]:
         """🔒 AUTO-DISABLE : symbole avec WR < 20% sur les 20 derniers trades."""
         if signal is None:
             return True, None
@@ -271,7 +291,7 @@ class FTMOProtector:
                 )
         return True, None
 
-    def _check_spread(self, symbol):
+    def _check_spread(self, symbol: str) -> tuple[bool, str | None]:
         """Spread check — points absolus + ratio ATR (max 10% de l'ATR)."""
         info = self.mt5.get_symbol_info(symbol)
         if not (info and hasattr(info, "point") and info.point > 0):
@@ -301,7 +321,7 @@ class FTMOProtector:
             )
         return True, None
 
-    def _check_global_cooldown(self):
+    def _check_global_cooldown(self) -> tuple[bool, str | None]:
         """🔒 Global cooldown: pause après AUTO_PAUSE_LOSSES pertes consécutives."""
         if self.global_cooldown_until is None:
             return True, None
@@ -315,7 +335,7 @@ class FTMOProtector:
         self.global_cooldown_until = None
         return True, None
 
-    def _check_daily_limits(self):
+    def _check_daily_limits(self) -> tuple[bool, str | None]:
         """Max trades/jour (fermés + ouverts)."""
         max_trades = self.config.get("MAX_TRADES_PER_DAY", 200)
         if self.daily_stats["trades"] >= max_trades:
@@ -325,7 +345,7 @@ class FTMOProtector:
         return True, None
 
     # 🔧 FIX_SUPREME_COUNCIL 2 Juillet 2026: Per-Symbol Daily Loss Limit
-    def _check_symbol_daily_loss(self, symbol):
+    def _check_symbol_daily_loss(self, symbol: str) -> tuple[bool, str | None]:
         """Bloque un symbole si sa perte quotidienne dépasse le seuil (0.5% du capital par défaut).
         Les autres symboles ne sont pas affectés.
 
@@ -348,199 +368,16 @@ class FTMOProtector:
             )
         return True, None
 
-    def _check_signal_valid(self, symbol, signal, positions):
-        """Direction restrictions, corrélation, score minimum, SL/TP obligatoire."""
-        if signal is None:
-            return True, None
+    def _check_signal_valid(
+        self, symbol: str, signal: Optional[dict[str, Any]], positions: Any
+    ) -> tuple[bool, str | None]:
+        """Direction restrictions, corrélation, score minimum, SL/TP obligatoire.
 
-        # Direction restrictions
-        sym_cfg = self.symbol_limits.get(symbol, {})
-        if not sym_cfg.get("allow_shorts", True) and signal.get("action") == "SELL":
-            return False, f"Shorts not allowed on {symbol} (per-symbol config)"
-        if not sym_cfg.get("allow_buys", True) and signal.get("action") == "BUY":
-            return False, f"Buys not allowed on {symbol} (per-symbol config)"
+        Délégué à SignalValidator (signal_validator.py).
+        """
+        return self.signal_validator.check(symbol, signal, positions)
 
-        # P4: Correlation groups — supprimé Juin 2026
-        # La corrélation est centralisée dans portfolio_controller.py
-        # (CORR_GROUPS avec FOREX_MAJORS 7 sym, CRYPTO, COMMODITIES, INDICES)
-        # Ce bloc était incomplet (crypto seulement) → délégué à portfolio_controller
-
-        # Signal quality gate — via SymbolParamManager (unifié)
-        # cfg_score = min_score statique (strategy.py SYMBOL_CONFIG)
-        # dyn_score = min_score dynamique (WR < 55% → 0.80 minimum)
-        # effective_min_score = max(cfg_score, dyn_score)
-        from engine_simple.symbol_params import get_symbol_params, update_dyn_score
-
-        sym_params = get_symbol_params(symbol)
-        cfg_score = sym_params.get("cfg_score", 0.60)
-
-        # Calcul du dynamic min_score basé sur WR réel (50 derniers trades)
-        # 🐛 FIX #11 (3 Juillet): Abaissé dyn_score de 0.80→0.60 pour correspondre
-        # au nouveau min_score. Le WR global est à 44% — dyn_score=0.80 tuait tout.
-        # Aussi augmenté le nombre de trades minimum de 5→15 pour éviter les faux
-        # positifs sur petits échantillons.
-        # Si WR < 50% sur ≥15 trades, dyn_score = max(cfg_score, 0.60)
-        sym_trades = self._symbol_trade_history.get(symbol, [])
-        dyn_score = None
-        if len(sym_trades) >= 15:
-            wins = sum(1 for t in sym_trades if t.get("profit", 0) > 0)
-            wr = wins / len(sym_trades)
-            if wr < 0.50:
-                dyn_score = max(cfg_score, 0.60)
-                if dyn_score != cfg_score:
-                    logger.info(
-                        f"  [DYNAMIC SCORE] {symbol}: WR={wr:.0f}% ({wins}/{len(sym_trades)}) "
-                        f"→ min_score {cfg_score:.2f} → {dyn_score:.2f}"
-                    )
-
-        # Stocke le dyn_score dans le SymbolParamManager
-        if dyn_score is not None:
-            update_dyn_score(symbol, dyn_score)
-
-        effective_min_score = max(cfg_score, dyn_score or 0)
-        sig_score = signal.get("score", 0)
-
-        # MeanReversion adjustment: les signaux MR ont un score bas (0.60) par conception
-        # car ils sont basés sur RSI (extrêmes), pas sur l'intensité MOM20x3.
-        # Au lieu de bypasser, on abaisse le seuil pour MR tout en gardant les autres validations.
-        if signal.get("_strategy") == "MR":
-            effective_min_score = min(effective_min_score, 0.55)
-
-        # 🐛 FIX #12 (3 Juillet): Tolérance floating point 0.001
-        # Les scores passent par des multiplications successives dans le pipeline
-        # (h4_conf ×0.90, OBV ×0.95, VP ×0.90, MTF ×0.82...), ce qui crée des
-        # erreurs d'arrondi: 0.5999999999 < 0.6 = True → signaux valides rejetés.
-        # La tolérance de 0.001 évite ce faux rejet sans compromettre la sélectivité.
-        if sig_score < effective_min_score - 0.001:
-            return (
-                False,
-                f"Signal score too low: {sig_score:.4f} < {effective_min_score} (cfg={cfg_score}, dyn={dyn_score or 'N/A'})",
-            )
-
-        # FIX #3: SL OBLIGATOIRE — calcul auto si ATR disponible, sinon blocage
-        sl = signal.get("sl")
-        tp = signal.get("tp")
-        if sl is None or tp is None or sl == 0 or tp == 0:
-            try:
-                atr = signal.get("atr")
-                sl_atr = signal.get("sl_atr", 2.0)
-                tp_atr = signal.get("tp_atr", 4.0)
-                entry = signal.get("entry_price")
-                action = signal.get("action")
-                if entry is None or entry == 0:
-                    tick = self.mt5.get_tick(symbol)
-                    if tick:
-                        entry = tick.ask if action == "BUY" else tick.bid
-                if entry and entry > 0 and action:
-                    direction = 0 if action == "BUY" else 1
-                    logger.debug(
-                        f"  [SL_CALC] {symbol}: entry={entry:.2f} atr={atr:.4f} "
-                        f"sl_atr={sl_atr:.2f} tp_atr={tp_atr:.2f} dir={direction}"
-                    )
-                    new_sl, new_tp = self.trailer.calc_sl_tp(symbol, entry, direction, atr, sl_atr, tp_atr)
-                    if new_sl is not None and new_tp is not None and new_sl > 0 and new_tp > 0:
-                        signal["sl"] = new_sl
-                        signal["tp"] = new_tp
-                        sl, tp = new_sl, new_tp
-            except Exception as exc:
-                logger.debug(f"  [SL CALC] {symbol}: echec calcul SL={sl} TP={tp}: {exc}")
-            if sl is None or tp is None or sl == 0 or tp == 0:
-                return False, f"SL/TP manquant — transaction BLOQUÉE (SL={sl}, TP={tp})"
-
-        # 🔒 GARDE-FOU SUPPLÉMENTAIRE 30 Juin 2026
-        # Vérifie que SL est différent du prix d'entrée (SL=entry = pas de protection)
-        entry_price = signal.get("entry_price", 0)
-        if entry_price and sl and abs(float(sl) - float(entry_price)) / max(abs(float(entry_price)), 1) < 0.0001:
-            return False, f"SL identique au prix d'entrée ({sl} ≈ {entry_price}) — PAS DE PROTECTION, BLOQUÉ"
-
-        # Ajuster SL si order block non mitigé proche
-        obs = signal.get("_structure_obs", [])
-        current_atr = signal.get("atr", 0)
-        max_sl_atr = 3.0  # Cap: jamais plus de 3×ATR de distance SL (préserve RR)
-        # 🔒 GARDE: entry/action peuvent ne pas être définis si une exception est survenue
-        # avant leur assignation dans le try/except ci-dessus. On utilise UnboundLocalError
-        # (Python lance ceci pour une variable définie dans un try mais pas exécutée) +
-        # NameError (variable jamais définie dans le scope).
-        try:
-            _ = entry
-        except (NameError, UnboundLocalError):
-            entry = signal.get("entry_price", 0) if signal else 0
-        try:
-            _ = action
-        except (NameError, UnboundLocalError):
-            action = signal.get("action", "") if signal else ""
-        if obs and sl and entry:
-            for ob in obs:
-                if not ob.get("is_mitigated"):
-                    ob_high = ob.get("high", 0)
-                    ob_low = ob.get("low", 0)
-                    ob_type = ob.get("type", "")
-                    # BUY: SL ne doit pas être dans un OB haussier non mitigé (support faible)
-                    if action == "BUY" and ob_type == "bullish" and ob_low > 0:
-                        if sl < ob_high and sl > ob_low * 0.99:
-                            # SL est dans la zone de l'OB → ajuster en dessous
-                            new_sl = ob_low - (ob_high - ob_low) * 0.1
-                            # 🔒 Cap: ne pas dépasser max_sl_atr×ATR (préserve RR)
-                            if current_atr > 0 and (entry - new_sl) > current_atr * max_sl_atr:
-                                min_sl = entry - current_atr * max_sl_atr
-                                logger.debug(
-                                    f"  [SL OB] {symbol}: SL OB {new_sl:.5f} > {max_sl_atr}×ATR → cap à {min_sl:.5f}"
-                                )
-                                new_sl = min_sl
-                            if new_sl > 0:
-                                # 🔒 GARDE: SL BUY ne doit JAMAIS être au-dessus de l'entrée
-                                min_sl_dist = current_atr * 0.3 if current_atr > 0 else 0.0005
-                                if new_sl > entry - min_sl_dist:
-                                    new_sl = entry - min_sl_dist
-                                    logger.debug(f"  [SL OB] {symbol}: SL BUY reculé à {new_sl:.5f} (garde entrée)")
-                                logger.debug(
-                                    f"  [SL OB] {symbol}: SL ajusté {sl:.5f} → {new_sl:.5f} (sous OB haussier)"
-                                )
-                                sl = new_sl
-                                signal["sl"] = sl
-                    # SELL: SL ne doit pas être dans un OB baissier non mitigé (résistance forte)
-                    elif action == "SELL" and ob_type == "bearish" and ob_high > 0:
-                        if sl > ob_low and sl < ob_high * 1.01:
-                            new_sl = ob_high + (ob_high - ob_low) * 0.1
-                            # 🔒 GARDE: SL SELL ne doit JAMAIS être en dessous de l'entrée
-                            min_sl_dist = current_atr * 0.3 if current_atr > 0 else 0.0005
-                            if new_sl < entry + min_sl_dist:
-                                new_sl = entry + min_sl_dist
-                                logger.debug(f"  [SL OB] {symbol}: SL SELL relevé à {new_sl:.5f} (garde entrée)")
-                            # 🔒 Cap: ne pas dépasser max_sl_atr×ATR
-                            if current_atr > 0 and (new_sl - entry) > current_atr * max_sl_atr:
-                                max_sl = entry + current_atr * max_sl_atr
-                                logger.debug(
-                                    f"  [SL OB] {symbol}: SL OB {new_sl:.5f} > {max_sl_atr}×ATR → cap à {max_sl:.5f}"
-                                )
-                                new_sl = max_sl
-                            if new_sl > 0:
-                                logger.debug(
-                                    f"  [SL OB] {symbol}: SL ajusté {sl:.5f} → {new_sl:.5f} (dessus OB baissier)"
-                                )
-                                sl = new_sl
-                                signal["sl"] = sl
-
-        # 🔒 MIN RR PER-SYMBOL (Juillet 2026 — Full Customisation)
-        # Vérifie que le RR du signal respecte le min_rr du symbole
-        # Utilise entry_price (toujours défini ligne 369) plutôt que entry (conditionnel)
-        rr_min_sym = sym_params.get("min_rr", 1.5)
-        rr_entry = entry_price or signal.get("entry_price", 0)
-        if sl and tp and rr_entry and sl != rr_entry:
-            rr_actual = abs(float(tp) - float(rr_entry)) / abs(float(sl) - float(rr_entry))
-            if rr_actual < rr_min_sym - 0.01:  # petite tolérance arrondi
-                return False, (
-                    f"RR {rr_actual:.2f} < min_rr {rr_min_sym} pour {symbol} "
-                    f"(SL={sl:.5f}, TP={tp:.5f}, entry={rr_entry:.5f})"
-                )
-
-        # Price staleness
-        if not self.check_price_staleness(symbol):
-            return False, "Stale price: tick > 60s"
-
-        return True, None
-
-    def _check_risk_state(self, symbol, signal):
+    def _check_risk_state(self, symbol: str, signal: Optional[dict[str, Any]]) -> tuple[bool, str | None]:
         """Volatility spike, DD circuit breaker, daily loss zones, auto-pause, cooldown."""
         # Volatility spike
         atr_pct = signal.get("atr_pct", 0) if signal else 0
@@ -638,7 +475,7 @@ class FTMOProtector:
 
         return True, None
 
-    def _check_profile(self, symbol, signal):
+    def _check_profile(self, symbol: str, signal: Optional[dict[str, Any]]) -> tuple[bool, str | None]:
         """Institutional profile: ranging restriction, DL required, ATR scaling."""
         if signal is None:
             return True, None
@@ -675,7 +512,9 @@ class FTMOProtector:
 
         return True, None
 
-    def _check_session(self, symbol, signal, check_danger_hours):
+    def _check_session(
+        self, symbol: str, signal: Optional[dict[str, Any]], check_danger_hours: bool
+    ) -> tuple[bool, str | None]:
         """News, danger hours, session block, preferred hours, weekend block."""
         # News filter — returns (blocked: bool, reason: str)
         news_blocked, news_reason = is_news_blocked(symbol=symbol)
@@ -712,7 +551,52 @@ class FTMOProtector:
 
         return True, None
 
-    def _check_ftmo_status(self):
+    def _check_consistency_cap(self) -> tuple[bool, str | None]:
+        """🔒 CONSISTENCY CAP: PRÉVENTIF — bloque les trades si le PnL du jour
+        dépasse déjà le seuil de consistance FTMO (30% du total des jours positifs).
+
+        Règle FTMO : best_day ≤ 30% × sum(jours positifs)
+        Si aujourd'hui dépasse déjà ce seuil, tout trade supplémentaire
+        (même gagnant) ne ferait qu'aggraver la situation.
+
+        C'est la version PRÉVENTIVE : on bloque avant la violation,
+        contrairement à _check_consistency() qui détecte après coup.
+
+        La dilution (ajouter des trades pour réduire le ratio) n'est plus
+        possible une fois le seuil atteint, car le PnL du jour monte aussi
+        vite que le total — le ratio reste à ~100% si aujourd'hui est le
+        seul jour profitable.
+
+        Ajouté 6 Juillet 2026 — Session Robot Manager.
+        """
+        total_positive = sum(v for v in self.daily_pnl_by_date.values() if v > 0)
+        if len(self.daily_pnl_by_date) < 2 or total_positive <= 0:
+            return True, None
+
+        today = datetime.utcnow().date()
+        today_pnl = self.daily_pnl_by_date.get(today, 0)
+
+        if today_pnl <= 0:
+            return True, None
+
+        ratio = today_pnl / total_positive
+        if ratio >= self.consistency_max_pct:
+            return False, (
+                f"Consistency cap: today PnL ${today_pnl:.0f} = "
+                f"{ratio:.1%} du total positif ${total_positive:.0f} "
+                f">= {self.consistency_max_pct:.0%} — trades bloqués préventivement"
+            )
+
+        # Alerte si proche du seuil (> 75% du max)
+        if ratio >= self.consistency_max_pct * 0.75:
+            logger.warning(
+                f"  [CONSISTENCY WARN] today PnL ${today_pnl:.0f} = {ratio:.1%} "
+                f"du total positif (seuil à {self.consistency_max_pct:.0%})"
+            )
+
+        return True, None
+
+    def _check_ftmo_status(self) -> tuple[bool, str | None]:
         """Challenge expiry, profit target, consistency."""
         # Max trading days
         if self.max_trading_days > 0 and len(self.trading_days) >= self.max_trading_days:
@@ -743,7 +627,7 @@ class FTMOProtector:
 
         return True, None
 
-    def reset_challenge(self, new_initial_balance=None):
+    def reset_challenge(self, new_initial_balance: Optional[float] = None) -> None:
         """Reset challenge state. Delegates to ChallengeTracker."""
         self.challenge.reset_challenge(new_initial_balance)
         # Sync aliases
@@ -752,7 +636,7 @@ class FTMOProtector:
         self.consecutive_losses = self.challenge.consecutive_losses
         self.challenge_status = self.challenge.challenge_status
 
-    def _adaptive_lot_mult(self):
+    def _adaptive_lot_mult(self) -> float:
         """Multiplicateur adaptatif (0.30-1.0) basé sur performance récente.
         Augmente les lots quand le robot performe bien, les réduit en cas de difficulté.
         """
@@ -807,77 +691,12 @@ class FTMOProtector:
         return max(0.30, min(1.0, mult))
 
     def _adx_market_risk_mult(self) -> float:
-        """🔒 ADX Market Filter : si >50% des symboles actifs ont ADX < seuil,
-        le marché est majoritairement rangeant → risque réduit de 50%.
-        Le seuil ADX vient de cfg.REGIME_ADX_TREND_ENTER (default.yaml).
-        Cache 15 min pour éviter les appels API excessifs."""
-        now = time.time()
-        if now - self._adx_cache_ts < self._adx_cache_ttl:
-            return self._adx_cache_mult
-
-        symbols = cfg.SYMBOLS
-        adx_threshold = cfg.REGIME_ADX_TREND_ENTER  # configurable depuis default.yaml
-        low_adx_count = 0
-        total_checked = 0
-
-        for sym in symbols:
-            try:
-                rates = self.mt5.get_rates(sym, "H1", 30)
-                if rates is None or len(rates) < 26:
-                    continue
-                total_checked += 1
-                high = np.array([r[2] for r in rates[-26:]], dtype=np.float64)
-                low = np.array([r[3] for r in rates[-26:]], dtype=np.float64)
-                close = np.array([r[4] for r in rates[-26:]], dtype=np.float64)
-
-                # ADX simplifié (DM-based)
-                up_move = np.diff(high)
-                down_move = -np.diff(low)
-                plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0.0)
-                minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0.0)
-                tr = np.maximum(
-                    high[1:] - low[1:], np.maximum(np.abs(high[1:] - close[:-1]), np.abs(low[1:] - close[:-1]))
-                )
-                period = 14
-                if len(tr) < period:
-                    continue
-                atr = np.mean(tr[-period:])
-                if atr <= 0:
-                    continue
-                avg_plus = np.mean(plus_dm[-period:])
-                avg_minus = np.mean(minus_dm[-period:])
-                di_plus = 100.0 * avg_plus / atr if atr > 0 else 0
-                di_minus = 100.0 * avg_minus / atr if atr > 0 else 0
-                dx = 100.0 * abs(di_plus - di_minus) / (di_plus + di_minus) if (di_plus + di_minus) > 0 else 0
-                adx_val = dx  # simplified ADX
-
-                if adx_val < adx_threshold:
-                    low_adx_count += 1
-                    logger.debug(f"  [ADX FILTER] {sym}: ADX={adx_val:.1f} < {adx_threshold} → LOW")
-                else:
-                    logger.debug(f"  [ADX FILTER] {sym}: ADX={adx_val:.1f} >= {adx_threshold} → OK")
-            except Exception as e:
-                logger.debug(f"  [ADX FILTER] {sym}: erreur {e}")
-                continue
-
-        if total_checked == 0:
-            return 1.0
-
-        ratio = low_adx_count / total_checked
-        if ratio >= 0.50:
-            self._adx_cache_mult = 0.50
-            logger.warning(
-                f"  [ADX FILTER] {low_adx_count}/{total_checked} symboles ADX<{adx_threshold} "
-                f"({ratio:.0%}) → RISK × 0.50 (marché RANGING)"
-            )
-        else:
-            self._adx_cache_mult = 1.0
-            logger.info(
-                f"  [ADX FILTER] {low_adx_count}/{total_checked} symboles ADX<{adx_threshold} ({ratio:.0%}) → risque normal"
-            )
-
-        self._adx_cache_ts = now
-        return self._adx_cache_mult
+        """🔒 ADX Market Filter — DÉPRÉCIÉ (6 Juillet 2026).
+        Remplacé par le per-symbol regime detection (MarketRegime + OnlineLearner)
+        qui est plus granulaire et précis. Cette fonction itérait 27 symboles × ADX
+        tous les 15 min pour un bénéfice marginal.
+        Conservée comme stub pour compatibilité ascendante."""
+        return 1.0
 
     def _get_symbol_perf_risk_mult(self, symbol: str) -> float:
         """Multiplicateur de risque par symbole basé sur les 20 derniers trades.
@@ -930,16 +749,23 @@ class FTMOProtector:
 
         Fenêtre : 20 derniers trades du symbole (minimum 10 pour activer).
 
+        ⚠️ Le max_lot de la config YAML (symbol_limits) sert de PLAFOND ABSOLU.
+        Même si le WR est élevé, le lot ne dépassera jamais cette limite.
+
         Args:
             symbol: Nom du symbole
 
         Returns:
-            float: max_lot basé sur le WR (entre 0.05 et 0.50)
+            float: max_lot basé sur le WR (entre 0.05 et 0.50), plafonné par la config
         """
+        # Limite absolue depuis la config YAML
+        cfg_max_lot = self.symbol_limits.get(symbol, {}).get("max_lot", 0.05)
+
         sym_trades = self._symbol_trade_history.get(symbol, [])
         if len(sym_trades) < 10:
-            logger.debug(f"  [WR-LOT] {symbol}: {len(sym_trades)} trades < 10 → lot=0.05 (pas assez de données)")
-            return 0.05
+            # Pas assez de trades live → utiliser le max_lot de la config
+            logger.debug(f"  [WR-LOT] {symbol}: {len(sym_trades)} trades < 10 → config max_lot={cfg_max_lot}")
+            return cfg_max_lot
 
         recent = sym_trades[-20:] if len(sym_trades) >= 20 else sym_trades
         wins = sum(1 for t in recent if t.get("profit", 0) > 0)
@@ -956,10 +782,23 @@ class FTMOProtector:
         else:
             max_lot = 0.05
 
-        logger.debug(f"  [WR-LOT] {symbol}: {wins}/{len(recent)} WR={wr:.0%} → max_lot={max_lot:.2f}")
+        # Plafonnement absolu par la config YAML (ne jamais dépasser)
+        max_lot = min(max_lot, cfg_max_lot)
+
+        logger.debug(
+            f"  [WR-LOT] {symbol}: {wins}/{len(recent)} WR={wr:.0%} → max_lot={max_lot:.2f} (cfg_cap={cfg_max_lot})"
+        )
         return max_lot
 
-    def calculate_lot(self, symbol, entry, sl, quality=1.0, direction=0, signal_risk_mult=None):
+    def calculate_lot(
+        self,
+        symbol: str,
+        entry: float,
+        sl: float,
+        quality: float = 1.0,
+        direction: int = 0,
+        signal_risk_mult: Optional[float] = None,
+    ) -> float:
         account = self.mt5.get_account_info()
         if account is None:
             return 0.05
@@ -1061,14 +900,14 @@ class FTMOProtector:
         "LOW": "LOW_VOL",
     }
 
-    def register_open_trade(self, symbol=None):
+    def register_open_trade(self, symbol: Optional[str] = None) -> None:
         """Enregistre un trade qui VIENT d'être ouvert.
         Permet au MAX_TRADES_PER_DAY de compter aussi les trades ouverts,
         pas seulement les fermés (était la cause des 222 trades/jour)."""
         self._opened_today += 1
         self._reset_daily()  # reset si jour a changé
 
-    def refresh_symbol_limits(self):
+    def refresh_symbol_limits(self) -> None:
         """Recharge les symbol_limits depuis la config globale.
         Charge DIRECTEMENT depuis les YAML (contourne le mtime check buggé)."""
         try:
@@ -1103,7 +942,7 @@ class FTMOProtector:
 
             logger.warning(traceback.format_exc())
 
-    def check_invariants(self, position):
+    def check_invariants(self, position: Any) -> None:
         ticket_key = str(position.ticket)
         if ticket_key not in self.position_open_times:
             open_time = getattr(position, "time", None) or datetime.utcnow()
@@ -1132,10 +971,10 @@ class FTMOProtector:
             except Exception as e:
                 logger.warning(f"[GUARD] {position.symbol} ticket={ticket_key}: {name} err: {e}")
 
-    def set_position_regime(self, ticket, regime):
+    def set_position_regime(self, ticket: int, regime: str) -> None:
         self.position_regime[str(ticket)] = regime
 
-    def _prune_position_times(self):
+    def _prune_position_times(self) -> None:
         if len(self.position_open_times) > 200:
             try:
                 old = sorted(self.position_open_times.keys(), key=lambda k: self.position_open_times[k]["open_time"])[
@@ -1147,36 +986,36 @@ class FTMOProtector:
                 logger.warning(f"Prune failed: {e}")
                 self.position_open_times = dict(list(self.position_open_times.items())[-150:])
 
-    def record_trade_result(self, symbol, profit, historical=False, trade_time=None):
+    def record_trade_result(self, symbol: str, profit: float, historical: bool = False, trade_time: Any = None) -> None:
         """Enregistre le résultat d'un trade fermé. Delegates to ChallengeTracker."""
         self.challenge.record_trade_result(symbol, profit, historical, trade_time=trade_time)
         # Sync aliases
         self.consecutive_losses = self.challenge.consecutive_losses
         self.challenge_status = self.challenge.challenge_status
 
-    def _check_consistency(self):
+    def _check_consistency(self) -> None:
         """FTMO consistency rule. Delegates to ChallengeTracker."""
         # Sync state in case tests/code reassigned aliases
         self.challenge.daily_pnl_by_date = self.daily_pnl_by_date
         self.challenge._check_consistency()
         self.consistency_violated = self.challenge.consistency_violated
 
-    def _check_daily_loss_limit(self, symbol=None):
+    def _check_daily_loss_limit(self, symbol: Optional[str] = None) -> None:
         """Daily loss limit check. Delegates to ChallengeTracker."""
         self.challenge._check_daily_loss_limit(symbol)
         self._daily_loss_violated = self.challenge._daily_loss_violated
         self.challenge_status = self.challenge.challenge_status
 
-    def current_dd_pct(self):
+    def current_dd_pct(self) -> float:
         """Current drawdown %. Delegates to ChallengeTracker."""
         return self.challenge.current_dd_pct()
 
-    def _check_drawdown_limit(self):
+    def _check_drawdown_limit(self) -> None:
         """Drawdown limit check. Delegates to ChallengeTracker."""
         self.challenge._check_drawdown_limit()
         self.challenge_status = self.challenge.challenge_status
 
-    def _prune_histories(self):
+    def _prune_histories(self) -> None:
         """Prune both challenge and position histories."""
         # Sync in case alias was broken by reassignment
         self.challenge._trade_history = self._trade_history
@@ -1199,38 +1038,51 @@ class FTMOProtector:
             for k in old:
                 del self.position_regime[k]
 
-    def get_progress_report(self):
+    def get_progress_report(self) -> dict[str, Any]:
         """Progress report. Delegates to ChallengeTracker."""
         return self.challenge.get_progress_report()
 
     # ── Trailing & Exit — delegated to Trailer (shared state) ─────────
 
-    def _pip_offset(self, symbol, pips=10):
+    def _pip_offset(self, symbol: str, pips: int = 10) -> float:
         return self.trailer._pip_offset(symbol, pips)
 
-    def _check_partial_tp(self, position):
+    def _check_partial_tp(self, position: Any) -> Any:
         return self.trailer._check_partial_tp(position)
 
-    def _check_time_stop(self, position):
+    def _check_time_stop(self, position: Any) -> Any:
         return self.trailer._check_time_stop(position)
 
-    def _get_atr(self, symbol, period=14):
+    def _get_atr(self, symbol: str, period: int = 14) -> Any:
         return self.trailer._get_atr(symbol, period)
 
-    def _check_step_trailing(self, position):
+    def _check_step_trailing(self, position: Any) -> Any:
         return self.trailer._check_step_trailing(position)
 
-    def _reconstruct_peak(self, position):
+    def _reconstruct_peak(self, position: Any) -> Any:
         return self.trailer._reconstruct_peak(position)
 
-    def _check_structure_exit(self, position):
+    def _check_structure_exit(self, position: Any) -> Any:
         return self.trailer._check_structure_exit(position)
 
-    def _calc_sl_tp(self, symbol, entry, direction, atr_val=None, sl_mult=2.0, tp_mult=4.0):
+    def _calc_sl_tp(
+        self,
+        symbol: str,
+        entry: float,
+        direction: int,
+        atr_val: Optional[float] = None,
+        sl_mult: float = 2.0,
+        tp_mult: float = 4.0,
+    ) -> Any:
         return self.trailer.calc_sl_tp(symbol, entry, direction, atr_val, sl_mult, tp_mult)
 
-    def _reset_daily(self):
-        """Reset daily stats. Delegates to ChallengeTracker."""
+    def _reset_daily(self) -> None:
+        """Reset daily stats. Delegates to ChallengeTracker.
+
+        🔧 FIX 6 Juillet 2026: sync _opened_today après reset challenge
+        (l'alias int est cassé par l'immutabilité Python — doit être ré-syncé explicitement)
+        """
         self.challenge._reset_daily()
         self.daily_stats = self.challenge.daily_stats
         self.daily_start_equity = self.challenge.daily_start_equity
+        self._opened_today = self.challenge._opened_today

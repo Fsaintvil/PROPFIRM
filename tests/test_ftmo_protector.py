@@ -5,7 +5,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 from engine_simple.ftmo_protector import FTMOProtector
@@ -245,7 +245,7 @@ class TestCanTrade:
                     "EURUSD",
                     signal={
                         "action": "BUY",
-                        "score": 0.70,
+                        "score": 0.80,
                         "sl": 1.0900,
                         "tp": 1.1200,
                     },
@@ -513,8 +513,8 @@ class TestCalculateLot:
     def test_basic_long(self):
         p = self._make_protector()
         lot = p.calculate_lot("EURUSD", 1.1, 1.095)
-        # risk=200000*0.004=800, sl_profit=-200/0.1=>2000perlot, lot=800/2000*0.1=0.04
-        assert 0.01 <= lot <= 1.0
+        # risk=200000*0.004=800, sl_profit=-200/0.1=>2000perlot, lot=800/2000*0.1=0.04 → clamp min_lot=0.05
+        assert 0.05 <= lot <= 1.0
 
     def test_short_half_risk(self):
         p = self._make_protector()
@@ -583,7 +583,7 @@ class TestCalculateLot:
         p = make_protector()
         p.mt5.get_account_info.return_value = None
         lot = p.calculate_lot("EURUSD", 1.1, 1.095)
-        assert lot == 0.01
+        assert lot == 0.05
 
     def test_zone2_half_risk(self):
         p = self._make_protector()
@@ -624,7 +624,7 @@ class TestCircuitBreaker:
                     "EURUSD",
                     signal={
                         "action": "SELL",
-                        "score": 0.70,
+                        "score": 0.80,
                         "sl": 1.1000,
                         "tp": 1.0800,
                     },
@@ -645,7 +645,7 @@ class TestCircuitBreaker:
                     "EURUSD",
                     signal={
                         "action": "SELL",
-                        "score": 0.70,
+                        "score": 0.80,
                         "sl": 1.1000,
                         "tp": 1.0800,
                     },
@@ -685,7 +685,7 @@ class TestCircuitBreaker:
                     "EURUSD",
                     signal={
                         "action": "BUY",
-                        "score": 0.70,
+                        "score": 0.80,
                         "sl": 1.0900,
                         "tp": 1.1200,
                     },
@@ -708,10 +708,134 @@ class TestCircuitBreaker:
                     "EURUSD",
                     signal={
                         "action": "BUY",
-                        "score": 0.70,
+                        "score": 0.80,
                         "sl": 1.0900,
                         "tp": 1.1200,
                     },
                 )
                 assert not ok
                 assert "consistency" in reason.lower()
+
+
+class TestConsistencyCap:
+    """Tests pour _check_consistency_cap() — préventif FTMO consistency."""
+
+    def _mock_symbol_info(self, p, symbol="EURUSD"):
+        info = MagicMock(point=0.00001, digits=5)
+        p.mt5.get_symbol_info.return_value = info
+        tick = MagicMock(ask=1.10005, bid=1.10000)
+        tick.time = time.time()
+        p.mt5.get_tick.return_value = tick
+
+    def test_blocks_when_today_exceeds_consistency(self):
+        """Si le PnL du jour dépasse 30% du total positif, les trades sont bloqués."""
+        p = make_protector()
+        self._mock_symbol_info(p)
+        p.initial_balance = 200000
+
+        # 3 jours: jour1=$1000, jour2=$500, jour3 (today)=$2000
+        # total positif = 1000+500+2000 = $3500
+        # today_pnl = $2000, ratio = 2000/3500 = 57.1% > 30%
+        p.daily_pnl_by_date = {
+            date(2026, 7, 3): 1000.0,
+            date(2026, 7, 4): 500.0,
+            date(2026, 7, 6): 2000.0,
+        }
+        p.mt5.get_account_info.return_value = MagicMock(equity=203500)
+        p.mt5.get_positions.return_value = []
+        with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
+            mock_dt.utcnow.return_value = datetime(2026, 7, 6, 11, 0)
+            with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
+                ok, reason = p.can_trade(
+                    "EURUSD",
+                    signal={
+                        "action": "BUY",
+                        "score": 0.80,
+                        "sl": 1.0900,
+                        "tp": 1.1200,
+                    },
+                )
+                assert not ok, f"Expected blocked, got: {reason}"
+                assert "consistency cap" in reason.lower(), f"Wrong reason: {reason}"
+
+    def test_allows_when_today_is_under_limit(self):
+        """Si le PnL du jour est sous 30% du total, les trades sont autorisés."""
+        p = make_protector()
+        self._mock_symbol_info(p)
+        p.initial_balance = 200000
+
+        # 3 jours: jour1=$1000, jour2=$2000, jour3 (today)=$500
+        # total positif = 1000+2000+500 = $3500
+        # today_pnl = $500, ratio = 500/3500 = 14.3% < 30%
+        p.daily_pnl_by_date = {
+            date(2026, 7, 3): 1000.0,
+            date(2026, 7, 4): 2000.0,
+            date(2026, 7, 6): 500.0,
+        }
+        p.mt5.get_account_info.return_value = MagicMock(equity=203500)
+        p.mt5.get_positions.return_value = []
+        with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
+            mock_dt.utcnow.return_value = datetime(2026, 7, 6, 11, 0)
+            with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
+                ok, reason = p.can_trade(
+                    "EURUSD",
+                    signal={
+                        "action": "BUY",
+                        "score": 0.80,
+                        "sl": 1.0900,
+                        "tp": 1.1200,
+                    },
+                )
+                assert ok, f"Expected allowed, got: {reason}"
+
+    def test_passes_when_today_is_negative(self):
+        """Si aujourd'hui est négatif, pas de risque de consistance."""
+        p = make_protector()
+        self._mock_symbol_info(p)
+        p.initial_balance = 200000
+
+        # Aujourd'hui en perte → pas de risque consistance
+        p.daily_pnl_by_date = {
+            date(2026, 7, 3): 5000.0,
+            date(2026, 7, 6): -1000.0,  # today, négatif
+        }
+        p.mt5.get_account_info.return_value = MagicMock(equity=204000)
+        p.mt5.get_positions.return_value = []
+        with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
+            mock_dt.utcnow.return_value = datetime(2026, 7, 6, 14, 0)
+            with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
+                ok, reason = p.can_trade(
+                    "EURUSD",
+                    signal={
+                        "action": "BUY",
+                        "score": 0.80,
+                        "sl": 1.0900,
+                        "tp": 1.1200,
+                    },
+                )
+                assert ok, f"Expected allowed (negative day), got: {reason}"
+
+    def test_passes_with_single_day_only(self):
+        """Avec un seul jour de trading, pas de règle de consistance applicable."""
+        p = make_protector()
+        self._mock_symbol_info(p)
+        p.initial_balance = 200000
+
+        p.daily_pnl_by_date = {
+            date(2026, 7, 6): 10000.0,  # only day
+        }
+        p.mt5.get_account_info.return_value = MagicMock(equity=210000)
+        p.mt5.get_positions.return_value = []
+        with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
+            mock_dt.utcnow.return_value = datetime(2026, 7, 6, 14, 0)
+            with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
+                ok, reason = p.can_trade(
+                    "EURUSD",
+                    signal={
+                        "action": "BUY",
+                        "score": 0.80,
+                        "sl": 1.0900,
+                        "tp": 1.1200,
+                    },
+                )
+                assert ok, f"Expected allowed (single day), got: {reason}"

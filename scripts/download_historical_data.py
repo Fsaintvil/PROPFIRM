@@ -40,7 +40,7 @@ ALL_SYMBOLS = [
     "ETHUSD",
     # Indices
     "US500.cash",
-    "NAS100.cash",
+    "US100.cash",
     "JP225.cash",
     # Forex — Majors
     "EURUSD",

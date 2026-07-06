@@ -9,7 +9,7 @@ try:
     import MetaTrader5 as mt5
 
     MT5_AVAIL = True
-except:
+except Exception:
     MT5_AVAIL = False
 
 print("=" * 68)
@@ -239,7 +239,7 @@ for p in psutil.process_iter(["pid", "name", "cmdline"]):
             if mem > 50:
                 robot_mem = mem
                 break
-    except:
+    except Exception:
         pass
 
 # Vérifier crash récent

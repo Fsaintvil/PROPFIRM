@@ -39,17 +39,17 @@ logger = logging.getLogger("robot.symbol_params")
 # ═════════════════════════════════════════════════════════════════════════════
 
 LOT_PROGRESSION_RULES = [
-    # (win_rate_min, win_rate_max, lot_size)
-    (0.00, 0.60, 0.01),  # WR < 60%  → lot minimum
-    (0.60, 0.65, 0.02),  # WR 60-65% → lot 0.02
-    (0.65, 0.70, 0.03),  # WR 65-70% → lot 0.03
-    (0.70, 0.75, 0.05),  # WR 70-75% → lot 0.05
-    (0.75, 0.80, 0.07),  # WR 75-80% → lot 0.07
-    (0.80, 1.01, 0.10),  # WR ≥ 80%  → lot 0.10
+    # (win_rate_min, win_rate_max, lot_size) — ×5 Juillet 2026
+    (0.00, 0.60, 0.05),  # WR < 60%  → lot minimum
+    (0.60, 0.65, 0.10),  # WR 60-65% → lot 0.10
+    (0.65, 0.70, 0.15),  # WR 65-70% → lot 0.15
+    (0.70, 0.75, 0.25),  # WR 70-75% → lot 0.25
+    (0.75, 0.80, 0.35),  # WR 75-80% → lot 0.35
+    (0.80, 1.01, 0.50),  # WR ≥ 80%  → lot 0.50
 ]
 
 
-def get_lot_for_wr(wr: float, lot_base: float = 0.01, lot_max: float = 0.10) -> float:
+def get_lot_for_wr(wr: float, lot_base: float = 0.05, lot_max: float = 0.50) -> float:
     """Calcule la taille de lot selon le win rate."""
     if wr <= 0:
         return lot_base
@@ -213,8 +213,8 @@ class SymbolParamManager:
     def _get_lot_params(self, symbol: str, wr_all: float | None = None) -> dict:
         """Calcule les paramètres de taille de lot."""
         strat_cfg = self._get_static_config(symbol)
-        lot_base = strat_cfg.get("lot_base", 0.01)
-        lot_max = strat_cfg.get("lot_max", 0.10)
+        lot_base = strat_cfg.get("lot_base", 0.05)
+        lot_max = strat_cfg.get("lot_max", 0.50)
         if wr_all is None:
             metrics = self._get_tracker_metrics(symbol)
             wr_all = metrics.get("WR_all", 0)

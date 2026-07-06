@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard MOM20x3 — 2026-07-01 04:55 UTC</title>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; margin: 20px; background: #0d1117; color: #c9d1d9; }
+  h1 { color: #58a6ff; border-bottom: 2px solid #30363d; padding-bottom: 10px; }
+  h2 { color: #f0f6fc; margin-top: 30px; }
+  .status { padding: 15px; border-radius: 8px; margin: 10px 0; }
+  .ok { background: #161b22; border-left: 4px solid #3fb950; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 15px; }
+  .card h3 { margin: 0 0 10px 0; color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .value { font-size: 24px; font-weight: bold; }
+  .positive { color: #3fb950; }
+  .negative { color: #f85149; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #30363d; }
+  th { color: #8b949e; font-size: 12px; text-transform: uppercase; }
+  tr:hover { background: #1c2128; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+  .badge-buy { background: #1a3a1a; color: #3fb950; }
+  .badge-sell { background: #3a1a1a; color: #f85149; }
+  .footer { margin-top: 30px; color: #484f58; font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<h1>📊 Dashboard MOM20x3 — FTMO $200K Challenge</h1>
+<p style="color: #8b949e;">2026-07-01 04:55 UTC</p>
+
+<div class="status ok">
+  <strong>🤖 Robot ACTIF</strong> (PID 37468)
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h3>Solde</h3>
+    <div class="value">$198,299.95</div>
+  </div>
+  <div class="card">
+    <h3>Equity</h3>
+    <div class="value">$198,272.76</div>
+  </div>
+  <div class="card">
+    <h3>PnL</h3>
+    <div class="value negative">$-1,727.24</div>
+  </div>
+  <div class="card">
+    <h3>Drawdown</h3>
+    <div class="value">0.9%</div>
+  </div>
+  <div class="card">
+    <h3>Win Rate</h3>
+    <div class="value">71%</div>
+  </div>
+  <div class="card">
+    <h3>Jours restants</h3>
+    <div class="value">7</div>
+  </div>
+</div>
+
+<h2>📈 Performance Globale</h2>
+<div class="grid">
+  <div class="card">
+    <h3>Trades</h3>
+    <div class="value">429</div>
+    <div style="color:#8b949e;font-size:14px;">212W / 217L</div>
+  </div>
+  <div class="card">
+    <h3>Win Rate</h3>
+    <div class="value">49.4%</div>
+  </div>
+  <div class="card">
+    <h3>PnL Total</h3>
+    <div class="value negative">$-958.86</div>
+  </div>
+  <div class="card">
+    <h3>Direction</h3>
+    <div><span class="badge badge-buy">237 BUY</span> <span class="badge badge-sell">192 SELL</span></div>
+  </div>
+</div>
+
+<h2>📅 Aujourd'hui</h2>
+<div class="grid">
+  <div class="card">
+    <h3>Trades</h3>
+    <div class="value">45</div>
+    <div style="color:#8b949e;">16W / 29L</div>
+  </div>
+  <div class="card">
+    <h3>PnL</h3>
+    <div class="value negative">$-149.65</div>
+  </div>
+  <div class="card">
+    <h3>B/S</h3>
+    <div><span class="badge badge-buy">13 BUY</span> <span class="badge badge-sell">32 SELL</span></div>
+  </div>
+</div>
+
+<h2>💼 Positions Ouvertes (7)</h2>
+<table>
+<tr><th>Symbole</th><th>Quantité</th></tr>
+<tr><td>BTCUSD</td><td>3</td></tr>
+<tr><td>EURUSD</td><td>2</td></tr>
+<tr><td>USOIL.cash</td><td>1</td></tr>
+<tr><td>US100.cash</td><td>1</td></tr>
+</table>
+
+<h2>📈 PnL par Symbole</h2>
+<table>
+<tr><th>Symbole</th><th>Trades</th><th>WR</th><th>PnL</th><th>Direction</th></tr>
+<tr><td>AUDUSD</td><td>23</td><td>26.1%</td><td class="negative">$-50.22</td><td><span class="badge badge-buy">15B</span> <span class="badge badge-sell">8S</span></td></tr>
+<tr><td>BTCUSD</td><td>94</td><td>51.1%</td><td class="negative">$-87.50</td><td><span class="badge badge-buy">76B</span> <span class="badge badge-sell">18S</span></td></tr>
+<tr><td>ETHUSD</td><td>34</td><td>29.4%</td><td class="negative">$-139.21</td><td><span class="badge badge-buy">15B</span> <span class="badge badge-sell">19S</span></td></tr>
+<tr><td>EURUSD</td><td>51</td><td>47.1%</td><td class="positive">$33.94</td><td><span class="badge badge-buy">33B</span> <span class="badge badge-sell">18S</span></td></tr>
+<tr><td>GBPJPY</td><td>3</td><td>100.0%</td><td class="positive">$18.63</td><td><span class="badge badge-buy">0B</span> <span class="badge badge-sell">3S</span></td></tr>
+<tr><td>GBPUSD</td><td>5</td><td>0.0%</td><td class="negative">$-26.28</td><td><span class="badge badge-buy">0B</span> <span class="badge badge-sell">5S</span></td></tr>
+<tr><td>JP225.cash</td><td>8</td><td>100.0%</td><td class="positive">$6.09</td><td><span class="badge badge-buy">0B</span> <span class="badge badge-sell">8S</span></td></tr>
+<tr><td>NZDUSD</td><td>10</td><td>60.0%</td><td class="positive">$30.07</td><td><span class="badge badge-buy">0B</span> <span class="badge badge-sell">10S</span></td></tr>
+<tr><td>US100.cash</td><td>13</td><td>30.8%</td><td class="negative">$-24.63</td><td><span class="badge badge-buy">0B</span> <span class="badge badge-sell">13S</span></td></tr>
+<tr><td>US30.cash</td><td>7</td><td>28.6%</td><td class="negative">$-13.00</td><td><span class="badge badge-buy">0B</span> <span class="badge badge-sell">7S</span></td></tr>
+<tr><td>US500.cash</td><td>40</td><td>50.0%</td><td class="negative">$-7.14</td><td><span class="badge badge-buy">14B</span> <span class="badge badge-sell">26S</span></td></tr>
+<tr><td>USDCAD</td><td>22</td><td>45.5%</td><td class="negative">$-20.89</td><td><span class="badge badge-buy">9B</span> <span class="badge badge-sell">13S</span></td></tr>
+<tr><td>USDCHF</td><td>4</td><td>0.0%</td><td class="negative">$-36.15</td><td><span class="badge badge-buy">4B</span> <span class="badge badge-sell">0S</span></td></tr>
+<tr><td>USDJPY</td><td>29</td><td>79.3%</td><td class="positive">$68.58</td><td><span class="badge badge-buy">1B</span> <span class="badge badge-sell">28S</span></td></tr>
+<tr><td>XAGUSD</td><td>21</td><td>33.3%</td><td class="negative">$-1,264.55</td><td><span class="badge badge-buy">10B</span> <span class="badge badge-sell">11S</span></td></tr>
+<tr><td>XAUUSD</td><td>65</td><td>63.1%</td><td class="positive">$553.40</td><td><span class="badge badge-buy">60B</span> <span class="badge badge-sell">5S</span></td></tr>
+</table>
+
+<h2>🔄 Derniers Trades</h2>
+<table>
+<tr><th>Heure</th><th>Symbole</th><th>Action</th><th>PnL</th></tr>
+<tr><td>04:46:31</td><td>BTCUSD</td><td><span class="badge badge-buy">BUY</span></td><td class="negative">🔴 $-12.17</td></tr>
+<tr><td>04:46:31</td><td>BTCUSD</td><td><span class="badge badge-buy">BUY</span></td><td class="negative">🔴 $-11.33</td></tr>
+<tr><td>04:46:31</td><td>BTCUSD</td><td><span class="badge badge-buy">BUY</span></td><td class="negative">🔴 $-12.23</td></tr>
+<tr><td>02:09:43</td><td>NZDUSD</td><td><span class="badge badge-sell">SELL</span></td><td class="negative">🔴 $-0.75</td></tr>
+<tr><td>02:09:43</td><td>NZDUSD</td><td><span class="badge badge-sell">SELL</span></td><td class="negative">🔴 $-0.70</td></tr>
+<tr><td>02:05:43</td><td>AUDUSD</td><td><span class="badge badge-sell">SELL</span></td><td class="negative">🔴 $-1.29</td></tr>
+<tr><td>02:05:43</td><td>AUDUSD</td><td><span class="badge badge-sell">SELL</span></td><td class="negative">🔴 $-0.93</td></tr>
+<tr><td>02:01:28</td><td>US100.cash</td><td><span class="badge badge-sell">SELL</span></td><td class="negative">🔴 $-0.87</td></tr>
+<tr><td>02:01:28</td><td>US100.cash</td><td><span class="badge badge-sell">SELL</span></td><td class="negative">🔴 $-0.42</td></tr>
+<tr><td>02:01:12</td><td>US500.cash</td><td><span class="badge badge-sell">SELL</span></td><td class="negative">🔴 $-0.22</td></tr>
+
+</table>
+
+<div class="footer">
+  Rapport généré le 2026-07-01 04:55:49 UTC
+</div>
+</body>
+</html>

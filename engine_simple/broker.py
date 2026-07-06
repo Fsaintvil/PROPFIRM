@@ -8,51 +8,57 @@ Améliorations vs mt5_connector.py :
   - Rate limiter intégré
   - Failover-ready (interface abstraite)
 """
+
 import contextlib
 import logging
 import time
 from collections import deque
+from typing import Any, Optional
 
 logger = logging.getLogger("robot.broker")
 
 
 class LatencyTracker:
-    def __init__(self, max_samples=1000):
-        self._samples = deque(maxlen=max_samples)
+    """Suivi des latences des appels broker (p50/p95/p99)."""
 
-    def record(self, operation, duration):
-        self._samples.append({
-            "operation": operation,
-            "duration": duration,
-            "timestamp": time.time(),
-        })
+    def __init__(self, max_samples: int = 1000) -> None:
+        self._samples: deque = deque(maxlen=max_samples)
 
-    def percentile(self, p):
+    def record(self, operation: str, duration: float) -> None:
+        self._samples.append(
+            {
+                "operation": operation,
+                "duration": duration,
+                "timestamp": time.time(),
+            }
+        )
+
+    def percentile(self, p: float) -> float:
         if not self._samples:
-            return 0
+            return 0.0
         sorted_d = sorted(s["duration"] for s in self._samples)
         idx = int(len(sorted_d) * p / 100)
-        return sorted_d[min(idx, len(sorted_d) - 1)]
+        return float(sorted_d[min(idx, len(sorted_d) - 1)])
 
     @property
-    def p50(self):
+    def p50(self) -> float:
         return self.percentile(50)
 
     @property
-    def p95(self):
+    def p95(self) -> float:
         return self.percentile(95)
 
     @property
-    def p99(self):
+    def p99(self) -> float:
         return self.percentile(99)
 
     @property
-    def avg(self):
+    def avg(self) -> float:
         if not self._samples:
-            return 0
+            return 0.0
         return sum(s["duration"] for s in self._samples) / len(self._samples)
 
-    def summary(self):
+    def summary(self) -> dict[str, Any]:
         return {
             "avg_ms": round(self.avg * 1000, 1),
             "p50_ms": round(self.p50 * 1000, 1),
@@ -73,29 +79,29 @@ class Broker:
       - Health check proactif
     """
 
-    def __init__(self, mt5_connector, audit=None, max_connect_attempts=5):
-        self._mt5 = mt5_connector
-        self.audit = audit
-        self.latency = LatencyTracker()
-        self._connected = False
-        self._reconnect_attempts = 0
-        self._max_backoff = 60
-        self._max_connect_attempts = max_connect_attempts
-        self._base_delay = 0.1
-        self._last_health_check = 0
-        self._health_check_interval = 30
-        self._consecutive_failures = 0
-        self._max_failures = 5
-        self._last_connect_time = 0
-        self._rate_limits = {}
-        self._max_calls_per_second = 10
-        self._call_timestamps = deque()
+    def __init__(self, mt5_connector: Any, audit: Any = None, max_connect_attempts: int = 5) -> None:
+        self._mt5: Any = mt5_connector
+        self.audit: Any = audit
+        self.latency: LatencyTracker = LatencyTracker()
+        self._connected: bool = False
+        self._reconnect_attempts: int = 0
+        self._max_backoff: int = 60
+        self._max_connect_attempts: int = max_connect_attempts
+        self._base_delay: float = 0.1
+        self._last_health_check: float = 0.0
+        self._health_check_interval: int = 30
+        self._consecutive_failures: int = 0
+        self._max_failures: int = 5
+        self._last_connect_time: float = 0.0
+        self._rate_limits: dict = {}
+        self._max_calls_per_second: int = 10
+        self._call_timestamps: deque = deque()
 
     @property
-    def is_connected(self):
+    def is_connected(self) -> bool:
         return self._connected
 
-    def connect(self):
+    def connect(self) -> bool:
         delay = self._base_delay
         attempt = 0
         while attempt < self._max_connect_attempts:
@@ -121,16 +127,16 @@ class Broker:
         )
         return False
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         with contextlib.suppress(RuntimeError, OSError):
             self._mt5.disconnect()
         self._connected = False
 
-    def reconnect(self):
+    def reconnect(self) -> bool:
         self.disconnect()
         return self.connect()
 
-    def health_check(self):
+    def health_check(self) -> bool:
         now = time.time()
         if now - self._last_health_check < self._health_check_interval:
             return self._connected
@@ -154,7 +160,7 @@ class Broker:
                 return True
         return False
 
-    def _check_rate_limit(self):
+    def _check_rate_limit(self) -> None:
         now = time.time()
         while self._call_timestamps and now - self._call_timestamps[0] > 1.0:
             self._call_timestamps.popleft()
@@ -162,7 +168,7 @@ class Broker:
             time.sleep(0.1)
         self._call_timestamps.append(now)
 
-    def _call(self, method_name, *args, **kwargs):
+    def _call(self, method_name: str, *args: Any, **kwargs: Any) -> Any:
         if not self._connected and method_name not in ("connect", "disconnect", "health_check"):
             if not self.reconnect():
                 raise ConnectionError("MT5 deconnecte")
@@ -182,8 +188,8 @@ class Broker:
                 self.audit.log_error(f"Broker.{method_name}", str(e))
             raise
 
-    def __getattr__(self, name):
-        if name.startswith('_'):
+    def __getattr__(self, name: str) -> Any:
+        if name.startswith("_"):
             raise AttributeError(name)
         underlying = getattr(self._mt5, name, None)
         if underlying is None:

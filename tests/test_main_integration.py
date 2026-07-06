@@ -72,7 +72,7 @@ class TestFTMOCycle:
                     "EURUSD",
                     signal={
                         "action": "BUY",
-                        "score": 0.70,
+                        "score": 0.80,
                         "sl": 0.7800,
                         "tp": 0.7900,
                     },
@@ -95,7 +95,7 @@ class TestFTMOCycle:
                     "EURUSD",
                     signal={
                         "action": "BUY",
-                        "score": 0.70,
+                        "score": 0.80,
                         "sl": 0.7800,
                         "tp": 0.7900,
                     },
@@ -114,7 +114,7 @@ class TestFTMOCycle:
                     "EURUSD",
                     signal={
                         "action": "BUY",
-                        "score": 0.70,
+                        "score": 0.80,
                         "sl": 0.7800,
                         "tp": 0.7900,
                     },
@@ -161,7 +161,7 @@ class TestFTMOCycle:
                     "EURUSD",
                     signal={
                         "action": "BUY",
-                        "score": 0.70,
+                        "score": 0.80,
                         "atr_pct": 3.0,
                         "atr_median_14": 0.5,
                         "sl": 0.7800,
@@ -186,7 +186,7 @@ class TestFTMOCycle:
                     "EURUSD",
                     signal={
                         "action": "BUY",
-                        "score": 0.70,
+                        "score": 0.80,
                         "sl": 0.7800,
                         "tp": 0.7900,
                     },

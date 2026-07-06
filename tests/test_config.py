@@ -59,8 +59,8 @@ def test_symbol_limits_defaults():
     cfg = load_config("default")
     assert "XAUUSD" in cfg.symbol_limits
     assert "BTCUSD" in cfg.symbol_limits
-    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.20  # 🚀 PHASE 2: ↑ 0.05→0.20
-    assert cfg.symbol_limits["XAUUSD"].min_lot == 0.05
+    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.10  # 🔧 FIX 6 Juil: ↓ 0.20→0.10 (lot excessif)
+    assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01  # 🔧 FIX 6 Juil: ↓ 0.05→0.01 (aligné strategy.py)
     assert cfg.symbol_limits["XAUUSD"].risk_mult == 1.50  # 🔧 OPTIMIZER: ↑ pour WR 73.9%
 
 

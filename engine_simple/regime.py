@@ -80,6 +80,7 @@ class RegimeDetector:
 
         if adx_val is None:
             adx_val, _, _ = self._calc_adx(high, low, close)
+        adx_val = adx_val or 0.0  # Guarantee float for comparisons
         atr_arr = atr(high, low, close, 14)
         atr_val = float(atr_arr[-1]) if isinstance(atr_arr, np.ndarray) else float(atr_arr)
 

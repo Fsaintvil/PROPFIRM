@@ -4,8 +4,11 @@ Extrait de ftmo_protector.py (P2.3, v4.1.0).
 Gère : record_trade_result, consistency, daily loss, drawdown, progress report.
 """
 
+from __future__ import annotations
+
 import logging
 from datetime import date, datetime, timedelta
+from typing import Any, Optional
 
 logger = logging.getLogger("ftmo")
 
@@ -13,8 +16,9 @@ logger = logging.getLogger("ftmo")
 class ChallengeTracker:
     """Suivi du challenge FTMO 200K — règles de risque et progress tracking."""
 
-    def __init__(self, mt5, config):
+    def __init__(self, mt5: Any, config: dict) -> None:
         self.mt5 = mt5
+        self.config: dict = config  # stocké pour accès ultérieur (cooldown, etc.)
 
         # ── Règles FTMO ──────────────────────────────────────────────
         self.initial_balance = config.get("INITIAL_BALANCE", 200000)
@@ -47,10 +51,14 @@ class ChallengeTracker:
         self.global_cooldown_until: datetime | None = None
         self._trade_history: list[dict] = []
         self._symbol_trade_history: dict[str, list[dict]] = {}
+        # 🔧 FIX_SUPREME_COUNCIL 2 Juillet 2026: suivi PnL quotidien par symbole
+        self._symbol_daily_pnl: dict[str, float] = {}
 
     # ── Trade recording ──────────────────────────────────────────────
 
-    def record_trade_result(self, symbol, profit, historical=False, trade_time=None):
+    def record_trade_result(
+        self, symbol: str, profit: float, historical: bool = False, trade_time: Optional[datetime] = None
+    ) -> None:
         """Enregistre le résultat d'un trade fermé.
 
         Args:
@@ -87,6 +95,8 @@ class ChallengeTracker:
             self.daily_stats["trades"] += 1
             self._daily_trades_per_symbol[symbol] = self._daily_trades_per_symbol.get(symbol, 0) + 1
             self.daily_stats["pnl"] += profit
+            # 🔧 FIX_SUPREME_COUNCIL: suivi PnL quotidien par symbole
+            self._symbol_daily_pnl[symbol] = self._symbol_daily_pnl.get(symbol, 0) + profit
             today = datetime.utcnow().date()
             self.trading_days.add(today)
             self.daily_pnl_by_date[today] = self.daily_pnl_by_date.get(today, 0) + profit
@@ -100,12 +110,18 @@ class ChallengeTracker:
             if profit < 0:
                 self.daily_stats["losses"] += 1
                 self.consecutive_losses += 1
-                # Cooldown progressif: 5 min pour 1 perte, 10 min pour 2+ consécutives
+                # Cooldown progressif: 15 min normal, 120 min après 3 pertes consécutives
                 sym_losses = self._symbol_consecutive_losses.get(symbol, 0) + 1
                 self._symbol_consecutive_losses[symbol] = sym_losses
-                cd_minutes = self.symbol_limits.get(symbol, {}).get(
-                    "cooldown_minutes", getattr(self, "cooldown_minutes", 15)
-                )
+                if sym_losses >= 3:
+                    cd_minutes = self.symbol_limits.get(symbol, {}).get(
+                        "cooldown_minutes_consecutive",  # configurable par symbole
+                        self.config.get("COOLDOWN_MINUTES_CONSECUTIVE", 120),  # global, fallback 120
+                    )
+                else:
+                    cd_minutes = self.symbol_limits.get(symbol, {}).get(
+                        "cooldown_minutes", getattr(self, "cooldown_minutes", 15)
+                    )
                 self.cooldowns[symbol] = datetime.utcnow() + timedelta(minutes=cd_minutes)
                 logger.info(f"  [COOLDOWN] {symbol}: {sym_losses} perte(s) consecutive(s) → {cd_minutes}min")
             elif profit > 0:
@@ -120,7 +136,7 @@ class ChallengeTracker:
 
     # ── Règles FTMO ─────────────────────────────────────────────────
 
-    def _check_consistency(self):
+    def _check_consistency(self) -> None:
         """FTMO consistency rule: aucun jour ne doit dépasser 30% du profit RÉEL.
         Règle FTMO 1-Step authentique: le meilleur jour ≤ 30% × profit total réalisé.
         Exemple: profit total $1,000 → max $300/jour.
@@ -143,20 +159,21 @@ class ChallengeTracker:
         if len(self.daily_pnl_by_date) < 2 or total_net <= 0:
             return
         best_day = max(positive_days)
-        max_per_day = total_net * self.consistency_max_pct  # FTMO: 30% du PnL NET
+        positive_total = sum(positive_days)
+        max_per_day = positive_total * self.consistency_max_pct  # FTMO: 30% des GAINS (fix: total_net→positive_total)
         for day, day_pnl in sorted(self.daily_pnl_by_date.items()):
             if day_pnl <= 0:
                 continue
             if day_pnl > max_per_day:
                 self.consistency_violated = True
-                day_pct_of_net = day_pnl / total_net if total_net > 0 else 0
+                day_pct_of_net = day_pnl / positive_total if positive_total > 0 else 0
                 logger.critical(
                     f"FTMO CONSISTENCY VIOLATED: {day} = ${day_pnl:.0f} "
                     f"({day_pct_of_net:.1%} du PnL net ${total_net:.0f}) "
                     f"> max {self.consistency_max_pct:.0%} du PnL net"
                 )
 
-    def _check_daily_loss_limit(self, symbol=None):
+    def _check_daily_loss_limit(self, symbol: Optional[str] = None) -> None:
         """Vérifie la daily loss avec coordination et caching.
         Met à jour _daily_loss_violated pour synchronisation avec can_trade().
         """
@@ -185,7 +202,7 @@ class ChallengeTracker:
             self.challenge_status = "FAILED_DD"
             logger.warning(f"DAILY LOSS LIMIT: {daily_loss_pct:.1%}")
 
-    def current_dd_pct(self):
+    def current_dd_pct(self) -> float:
         """Retourne le drawdown actuel en ratio (0.0 = pas de DD, 1.0 = 100%).
         En cas d'erreur, retourne 1.0 (conservateur : bloque tous les trades)."""
         try:
@@ -200,7 +217,7 @@ class ChallengeTracker:
             logger.error(f"[DD] current_dd_pct() FAILED: {e} — returning 1.0")
             return 1.0
 
-    def _check_drawdown_limit(self):
+    def _check_drawdown_limit(self) -> None:
         """Vérifie le drawdown max (10% FTMO)."""
         try:
             account = self.mt5.get_account_info()
@@ -214,7 +231,7 @@ class ChallengeTracker:
 
     # ── Progress report ──────────────────────────────────────────────
 
-    def get_progress_report(self):
+    def get_progress_report(self) -> dict:
         """Génère le rapport de progression du challenge."""
         account = self.mt5.get_account_info()
         equity = account.equity if account else self.peak_equity
@@ -237,7 +254,8 @@ class ChallengeTracker:
         if best_day == 0 and self._trade_history and current_pnl > 0:
             temp_daily = {}
             for t in self._trade_history:
-                d = t.get("time").date() if isinstance(t.get("time"), datetime) else None
+                t_time = t.get("time")
+                d = t_time.date() if isinstance(t_time, datetime) else None
                 if d is None:
                     continue
                 temp_daily[d] = temp_daily.get(d, 0) + t.get("profit", 0)
@@ -284,7 +302,7 @@ class ChallengeTracker:
 
     # ── Reset ────────────────────────────────────────────────────────
 
-    def reset_challenge(self, new_initial_balance=None):
+    def reset_challenge(self, new_initial_balance: Optional[float] = None) -> None:
         """Reset l'état du challenge (utile pour comptes practice/Free Trial).
         Ne PAS appeler en cours de vrai challenge FTMO."""
         self.challenge_status = "ACTIVE"
@@ -313,12 +331,13 @@ class ChallengeTracker:
             f"balance=${self.initial_balance:.2f}, peak=${self.peak_equity:.2f}"
         )
 
-    def _reset_daily(self):
+    def _reset_daily(self) -> None:
         """Reset les stats quotidiennes à minuit UTC."""
         now = datetime.utcnow()
         if now.date() != self.daily_stats.get("day"):
             self.daily_stats = {"trades": 0, "losses": 0, "pnl": 0, "day": now.date()}
             self._daily_trades_per_symbol = {}
+            self._symbol_daily_pnl = {}  # Reset PnL quotidien par symbole
             self._opened_today = 0
             self._daily_profit_reduced = False
             account = self.mt5.get_account_info()
@@ -329,7 +348,7 @@ class ChallengeTracker:
 
     # ── Pruning ──────────────────────────────────────────────────────
 
-    def _prune_histories(self):
+    def _prune_histories(self) -> None:
         """Nettoie les historiques pour limiter la mémoire.
         Utilise slice assignment pour préserver les aliases FTMOProtector."""
         if len(self._trade_history) > 1000:

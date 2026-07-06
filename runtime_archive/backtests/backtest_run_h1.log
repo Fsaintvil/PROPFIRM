@@ -1,0 +1,135 @@
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+C:\Users\saint\Documents\MT5_FTMO_IA.7\scripts\backtest_universe.py:131: RuntimeWarning: invalid value encountered in divide
+  dx = np.where(di_sum > 0, 100 * np.abs(pos_di - neg_di) / di_sum, 0)
+========================================================================================================================
+  BACKTEST MOM20x3 ÔÇö Univers de 26 symboles (2012-2026)
+  TF: H1  |  Min trades: 20
+  Filtres: ADX slope + DI + DI Override + Pullback + Danger hours + Weekend
+  Co├╗ts: spread + slippage (1.0 pip) + commission ($7.0/100K)
+  Risk: 0.44%/trade, lots max 1.0
+========================================================================================================================
+  ÔÜá´©Å ADAUSD        Prod+Cost:   886 trades  WR= 69.5%  PnL=$-28896.64  PF= 0.87  DD= 17.0%  Cost=$+24.12/tr  1.8s
+  ÔÜá´©Å AUDUSD        Prod+Cost:  3817 trades  WR= 57.6%  PnL=$-160563.88  PF= 0.55  DD= 80.3%  Cost=$+35.73/tr  5.0s
+  Ô£à BCHUSD        Prod+Cost:  1011 trades  WR= 74.5%  PnL=$+417059.14  PF= 1.15  DD= 50.0%  Cost=$+52.64/tr  2.8s
+  ÔÜá´©Å BNBUSD        Prod+Cost:   997 trades  WR= 69.6%  PnL=$-11000.20  PF= 0.95  DD= 12.9%  Cost=$+9.44/tr  2.6s
+  Ô£à BTCUSD        Prod+Cost:  1592 trades  WR= 75.9%  PnL=$+201880.91  PF= 1.50  DD=  6.4%  Cost=$+0.83/tr  4.0s
+  ÔÜá´©Å DOGEUSD       Prod+Cost:   836 trades  WR= 60.8%  PnL=$-24858.87  PF= 0.75  DD= 13.1%  Cost=$+30.92/tr  2.1s
+  ÔÜá´©Å DOTUSD        Prod+Cost:   865 trades  WR= 72.6%  PnL=$ -2449.81  PF= 0.99  DD= 10.0%  Cost=$+8.05/tr  2.1s
+  Ô£à ETHUSD        Prod+Cost:  1699 trades  WR= 73.9%  PnL=$+60759.23  PF= 1.18  DD= 11.6%  Cost=$+5.17/tr  4.0s
+  ÔØî EURJPY        Prod+Cost:  2622 trades  WR=  0.0%  PnL=$-4994790.11  PF= 0.00  DD=2497.4%  Cost=$+1904.55/tr  4.9s
+  ÔÜá´©Å EURUSD        Prod+Cost:  3034 trades  WR= 53.7%  PnL=$-102933.03  PF= 0.64  DD= 51.5%  Cost=$+41.26/tr  5.1s
+  ÔØî GBPJPY        Prod+Cost:  2557 trades  WR=  0.0%  PnL=$-5789806.49  PF= 0.00  DD=2894.9%  Cost=$+2263.82/tr  5.1s
+  ÔÜá´©Å GBPUSD        Prod+Cost:  2442 trades  WR= 60.3%  PnL=$-76537.09  PF= 0.71  DD= 38.4%  Cost=$+44.15/tr  5.1s
+  Ô£à JP225.cash    Prod+Cost:  1042 trades  WR= 70.7%  PnL=$ +9073.84  PF= 1.03  DD= 10.8%  Cost=$+0.34/tr  1.9s
+  ÔØî LNKUSD        Prod+Cost:   948 trades  WR= 28.2%  PnL=$-10704.85  PF= 0.32  DD=  5.4%  Cost=$+11.00/tr  2.5s
+  Ô£à LTCUSD        Prod+Cost:   946 trades  WR= 71.5%  PnL=$+482559.99  PF= 1.58  DD= 10.5%  Cost=$+14.67/tr  2.6s
+  ÔÜá´©Å NZDUSD        Prod+Cost:  3516 trades  WR= 56.1%  PnL=$-155483.45  PF= 0.51  DD= 77.8%  Cost=$+34.70/tr  5.0s
+  Ô£à SOLUSD        Prod+Cost:   238 trades  WR= 77.3%  PnL=$ +3155.43  PF= 1.17  DD=  1.2%  Cost=$+11.02/tr  0.6s
+  ÔÜá´©Å UNIUSD        Prod+Cost:   856 trades  WR= 70.1%  PnL=$-28478.17  PF= 0.88  DD= 17.1%  Cost=$+6.38/tr  2.2s
+  Ô£à US500.cash    Prod+Cost:  1000 trades  WR= 74.6%  PnL=$+18526.87  PF= 1.08  DD=  5.1%  Cost=$+1.68/tr  1.8s
+  ÔÜá´©Å USDCAD        Prod+Cost:  3695 trades  WR= 53.6%  PnL=$-155181.48  PF= 0.55  DD= 77.6%  Cost=$+42.69/tr  5.1s
+  ÔÜá´©Å USDCHF        Prod+Cost:  2541 trades  WR= 54.7%  PnL=$-76556.47  PF= 0.62  DD= 38.3%  Cost=$+37.98/tr  5.0s
+  ÔØî USDJPY        Prod+Cost:  2736 trades  WR=  0.0%  PnL=$-4535162.02  PF= 0.00  DD=2267.6%  Cost=$+1657.89/tr  5.1s
+  ÔÜá´©Å USOIL.cash    Prod+Cost:   963 trades  WR= 65.9%  PnL=$ -5521.53  PF= 0.79  DD=  3.9%  Cost=$+7.07/tr  1.9s
+  Ô£à XAUUSD        Prod+Cost:  3294 trades  WR= 73.0%  PnL=$+218406.01  PF= 1.32  DD= 14.2%  Cost=$+24.75/tr  4.9s
+  ÔÜá´©Å XLMUSD        Prod+Cost:  1023 trades  WR= 63.9%  PnL=$-34958.20  PF= 0.77  DD= 18.8%  Cost=$+29.49/tr  2.9s
+  Ô£à XRPUSD        Prod+Cost:   955 trades  WR= 73.8%  PnL=$+55239.88  PF= 1.26  DD=  9.5%  Cost=$+20.65/tr  2.6s
+
+========================================================================================================================
+  ­ƒÅå CLASSEMENT ÔÇö MOM20x3 PROD+CO├øTS (H1) ÔÇö 2012-2026
+  Trie par PnL net (apr├¿s tous filtres + co├╗ts)
+========================================================================================================================
+   # Symbole        TF Trades    WR         PnL     PF     DD   AvgWin  AvgLoss  Cost/tr   Signif
+  ---------------------------------------------------------------------------------------------------------
+   1 LTCUSD         H1    946 71.5%Ô£à $+482559.99  1.58  10.5% $+1941.39 $-3073.40 $+14.67 Ô£à
+   2 BCHUSD         H1   1011 74.5%Ô£à $+417059.14  1.15  50.0% $+4229.79 $-10728.58 $+52.64 Ô£à
+   3 XAUUSD         H1   3294 73.0%Ô£à $+218406.01  1.32  14.2% $+370.51 $-755.38 $+24.75 Ô£à
+   4 BTCUSD         H1   1592 75.9%Ô£à $+201880.91  1.50   6.4% $+503.58 $-1062.53 $ +0.83 Ô£à
+   5 ETHUSD         H1   1699 73.9%Ô£à $+60759.23  1.18  11.6% $+323.95 $-778.81 $ +5.17 Ô£à
+   6 XRPUSD         H1    955 73.8%Ô£à $+55239.88  1.26   9.5% $+375.72 $-838.57 $+20.65 Ô£à
+   7 US500.cash     H1   1000 74.6%Ô£à $+18526.87  1.08   5.1% $+321.81 $-872.22 $ +1.68 Ô£à
+   8 JP225.cash     H1   1042 70.7%Ô£à $ +9073.84  1.03  10.8% $+378.12 $-883.93 $ +0.34 Ô£à
+   9 SOLUSD         H1    238 77.3%Ô£à $ +3155.43  1.17   1.2% $+117.90 $-343.30 $+11.02 Ô£à
+  10 DOTUSD         H1    865 72.6%ÔÜá´©Å $ -2449.81  0.99  10.0% $+341.81 $-916.07 $ +8.05 Ô£à
+  11 USOIL.cash     H1    963 65.9%ÔÜá´©Å $ -5521.53  0.79   3.9% $+33.51 $-81.70 $ +7.07 Ô£à
+  12 LNKUSD         H1    948 28.2%ÔØî $-10704.85  0.32   5.4% $+19.16 $-23.23 $+11.00 ÔØî
+  13 BNBUSD         H1    997 69.6%ÔÜá´©Å $-11000.20  0.95  12.9% $+274.53 $-665.09 $ +9.44 Ô£à
+  14 DOGEUSD        H1    836 60.8%ÔÜá´©Å $-24858.87  0.75  13.1% $+145.57 $-301.25 $+30.92 Ô£à
+  15 UNIUSD         H1    856 70.1%ÔÜá´©Å $-28478.17  0.88  17.1% $+345.65 $-921.36 $ +6.38 Ô£à
+  16 ADAUSD         H1    886 69.5%ÔÜá´©Å $-28896.64  0.87  17.0% $+301.19 $-794.18 $+24.12 Ô£à
+  17 XLMUSD         H1   1023 63.9%ÔÜá´©Å $-34958.20  0.77  18.8% $+178.21 $-410.58 $+29.49 Ô£à
+  18 GBPUSD         H1   2442 60.3%ÔÜá´©Å $-76537.09  0.71  38.4% $+125.32 $-269.08 $+44.15 Ô£à
+  19 USDCHF         H1   2541 54.7%ÔÜá´©Å $-76556.47  0.62  38.3% $+90.09 $-175.08 $+37.98 Ô£à
+  20 EURUSD         H1   3034 53.7%ÔÜá´©Å $-102933.03  0.64  51.5% $+112.42 $-203.83 $+41.26 Ô£à
+  ---------------------------------------------------------------------------------------------------------
+            TOTAL  46111 51.9%   $-14727220.99  0.39
+
+  ­ƒÅå SYMBOLES QUI SURVIVENT (WR>50%, PnL>0, p<0.05)
+   1. LTCUSD          946 trades  WR= 71.5%  PnL=$+482559.99  PF=1.58  DD=10.5%  $+510.11/trade  Cost=$+14.67/tr
+   2. BCHUSD         1011 trades  WR= 74.5%  PnL=$+417059.14  PF=1.15  DD=50.0%  $+412.52/trade  Cost=$+52.64/tr
+   3. XAUUSD         3294 trades  WR= 73.0%  PnL=$+218406.01  PF=1.32  DD=14.2%  $+66.30/trade  Cost=$+24.75/tr
+   4. BTCUSD         1592 trades  WR= 75.9%  PnL=$+201880.91  PF=1.50  DD= 6.4%  $+126.81/trade  Cost=$+0.83/tr
+   5. ETHUSD         1699 trades  WR= 73.9%  PnL=$+60759.23  PF=1.18  DD=11.6%  $+35.76/trade  Cost=$+5.17/tr
+   6. XRPUSD          955 trades  WR= 73.8%  PnL=$+55239.88  PF=1.26  DD= 9.5%  $+57.84/trade  Cost=$+20.65/tr
+   7. US500.cash     1000 trades  WR= 74.6%  PnL=$+18526.87  PF=1.08  DD= 5.1%  $+18.53/trade  Cost=$+1.68/tr
+   8. JP225.cash     1042 trades  WR= 70.7%  PnL=$ +9073.84  PF=1.03  DD=10.8%  $+8.71/trade  Cost=$+0.34/tr
+   9. SOLUSD          238 trades  WR= 77.3%  PnL=$ +3155.43  PF=1.17  DD= 1.2%  $+13.26/trade  Cost=$+11.02/tr
+
+  ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  RECOMMANDATION POUR LE CHALLENGE FTMO 200K$
+  ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  Symboles recommand├®s: LTCUSD, BCHUSD, XAUUSD, BTCUSD, ETHUSD, XRPUSD, US500.cash, JP225.cash, SOLUSD
+  PnL net cumul├®: $+1466661.30
+  Ô£à Un portefeuille de 9 symboles a un edge r├®el apr├¿s co├╗ts.
+
+  Rapport: runtime/backtest_universe_report.json
+  Termin├® en 90.7s

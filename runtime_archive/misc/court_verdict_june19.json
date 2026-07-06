@@ -1,0 +1,199 @@
+{
+  "ftmo": {
+    "ftmo_daily_loss_compliance": 0.95,
+    "ftmo_max_loss_compliance": 0.95,
+    "gap_handling": 0.65,
+    "slippage_handling": 0.5,
+    "consecutive_loss_survival": 0.9,
+    "ftmo_overall": 0.85,
+    "details": {
+      "daily_loss": "\u2705 2.0% \u2264 2% FTMO",
+      "max_dd": "\u2705 10.0% \u2264 10% FTMO",
+      "gap": "\u26a0\ufe0f Weekend block \u2705, gap detection explicite \u274c",
+      "slippage": "\u26a0\ufe0f Spread filtr\u00e9 (120 pts), large",
+      "consecutive_losses": "\u2705 Pause apr\u00e8s 10 pertes + 3 min cooldown"
+    },
+    "warnings": []
+  },
+  "prosecutor": {
+    "scenarios": [
+      {
+        "scenario": "\u00c9v\u00e9nement macro (NFP, FOMC, etc.)",
+        "probability": "\ud83d\udd34 mod\u00e9r\u00e9e",
+        "impact": "Gap \u00e0 l'ouverture, slippage massif",
+        "mitigation": "News filter dans main.py, weekend block, max_spread_points",
+        "current": "Filtr\u00e9 5 min avant/apr\u00e8s news"
+      },
+      {
+        "scenario": "Erreur de sizing (lot trop gros)",
+        "probability": "\u2705 tr\u00e8s faible",
+        "impact": "Daily loss explos\u00e9e en 1 trade",
+        "mitigation": "max_lot par symbole, RISK_PER_TRADE fixe",
+        "current": "Contr\u00f4l\u00e9 par symbol_limits et OrderValidator"
+      },
+      {
+        "scenario": "Bug d'ex\u00e9cution (ordre non pris, SL non plac\u00e9)",
+        "probability": "\u26a0\ufe0f faible",
+        "impact": "Position sans protection",
+        "mitigation": "OrderValidator, 3 points de contr\u00f4le SL, retry logic",
+        "current": "Tout trade sans SL est REFUS\u00c9 (3 v\u00e9rifs)"
+      },
+      {
+        "scenario": "Reconnexion MT5 perdue",
+        "probability": "\u26a0\ufe0f faible",
+        "impact": "Impossible de fermer une position perdante",
+        "mitigation": "Auto-reconnect dans mt5_connector.py, boucle 15s",
+        "current": "Connexion: INCONNUE"
+      },
+      {
+        "scenario": "VPS red\u00e9marre en pleine position",
+        "probability": "\u26a0\ufe0f faible",
+        "impact": "Position orpheline, pas de trailing",
+        "mitigation": "PID lock + state.json persistant, MT5 garde les SL/TP",
+        "current": "SL/TP plac\u00e9s c\u00f4t\u00e9 MT5 \u2192 survivent au red\u00e9marrage"
+      }
+    ],
+    "failure_chains": [
+      "1. S\u00e9rie de pertes concentr\u00e9es sur 1-2 jours \u2192 daily loss > 2%",
+      "2. Gap d'ouverture du weekend qui traverse le SL",
+      "3. Drawdown prolong\u00e9 approchant 10% sans r\u00e9cup\u00e9ration",
+      "4. Panne MT5/VPS emp\u00eachant de fermer une position perdante"
+    ],
+    "most_likely_failure": "Daily loss viol\u00e9e par une concentration de pertes sur max_lot symbols en 1 jour"
+  },
+  "auditor_mt5": {
+    "scores": {
+      "connection": 0.95,
+      "connection_note": "\u2705 Initialized server=FTMO-Demo",
+      "auto_reconnect": 0.9,
+      "error_handling": 0.9,
+      "error_note": "\u2705 171 try/except dans 44 modules",
+      "order_rejection": 0.9,
+      "order_rejection_note": "\u2705 OrderValidator + PerSymbolRateLimiter en place",
+      "sl_tp_modifications": 0.7,
+      "sl_tp_note": "\u26a0\ufe0f Tentatives r\u00e9p\u00e9t\u00e9es, pas de fallback",
+      "forced_close": 0.85,
+      "forced_close_note": "\u2705 position_tracker.py avec gestion d'erreurs",
+      "api_timeout": 0.8,
+      "api_timeout_note": "\u2705 timeout param dans les appels",
+      "mt5_crash": 0.75,
+      "mt5_crash_note": "\u26a0\ufe0f D\u00e9tection \u2192 reconnexion, pause 30s",
+      "vps_restart": 0.85,
+      "vps_restart_note": "\u2705 PID lock + state.json persistant"
+    },
+    "mt5_robustness_score": 0.95,
+    "critical_gaps": [
+      "SL/TP modification: pas de fallback si \u00e9chec",
+      "MT5 crash: pas de fallback vers un second terminal"
+    ]
+  },
+  "auditor_python": {
+    "risks": {
+      "race_conditions": {
+        "score": 0.85,
+        "note": "GIL prot\u00e8ge, pas de lock sur state.json (\u00e9criture unique)",
+        "risk": "low"
+      },
+      "threads": {
+        "score": 0.9,
+        "note": "asyncio + boucle 15s, pas de threads explicites",
+        "risk": "low"
+      },
+      "memory_leaks": {
+        "score": 0.85,
+        "note": "Logs: 17 MB \u2014 correct",
+        "risk": "low"
+      },
+      "unhandled_exceptions": {
+        "score": 0.85,
+        "note": "Aucune erreur enregistr\u00e9e",
+        "risk": "low"
+      },
+      "infinite_loops": {
+        "score": 0.95,
+        "note": "Cycle principal contr\u00f4l\u00e9 par timer 15s",
+        "risk": "low"
+      }
+    },
+    "python_runtime_stability": 0.88,
+    "can_run_30_days": true,
+    "risk_after_1M_ticks": "low \u2014 pas de circular buffer growth"
+  },
+  "architecture": {
+    "scores": {
+      "modularity": 1.0,
+      "modularity_note": "44 modules engine_simple/",
+      "maintainability": 0.85,
+      "maintainability_note": "Documentation compl\u00e8te (63 KB)",
+      "testability": 0.699,
+      "testability_note": "33 fichiers de test",
+      "coupling": 0.75,
+      "coupling_note": "Config globale partag\u00e9e entre modules"
+    },
+    "architecture_score": 0.82,
+    "maintainability_score": 0.85
+  },
+  "capital": {
+    "analysis": {
+      "max_dd_backtest_all": 126.2,
+      "max_dd_active_h1": 11.8,
+      "worst_symbol": "GBPUSD",
+      "note_max_dd": "DD max backtest: 126.2% (tous), 11.8% (actifs H1)",
+      "margin_above_10pct": 1.8,
+      "risk_per_trade_200k": 800.0,
+      "trades_to_10pct_dd": 25,
+      "max_trades_per_day": 80,
+      "auto_pause_losses": 10,
+      "safety_margin": "excellente"
+    },
+    "warnings": [
+      "DD max des symboles actifs (11.8%) d\u00e9passe 10% FTMO"
+    ]
+  },
+  "dissidents": {
+    "objections": [
+      {
+        "title": "\ud83d\udcc8 Surapprentissage du timeframe H1",
+        "detail": "Les backtests multi-TF montrent 67-68% WR partout \u2192 possible biais de lookahead",
+        "severity": "HIGH",
+        "mitigation": "Walk-forward LOW risk confirm\u00e9, mais \u00e0 valider en live"
+      },
+      {
+        "title": "\ud83c\udf0a Changement de r\u00e9gime brutal",
+        "detail": "MOM20x3 suppose tendances persistantes sur 20 bougies \u2192 WR peut chuter en range",
+        "severity": "MEDIUM",
+        "mitigation": "ADX filtre d\u00e9j\u00e0 les ranges (seuil 25 pour signaux)"
+      },
+      {
+        "title": "\ud83d\udcc9 Donn\u00e9es backtest non repr\u00e9sentatives",
+        "detail": "Pas de spread r\u00e9el, pas de slippage, pas de gap \u2192 r\u00e9alit\u00e9 inf\u00e9rieure",
+        "severity": "HIGH",
+        "mitigation": "Comparer avec les 958 trades historiques r\u00e9els (60.8% WR)"
+      },
+      {
+        "title": "\ud83c\udfaf Param\u00e8tres non optimis\u00e9s",
+        "detail": "Seuils 2.0\u00d7/2.5\u00d7 ATR et fen\u00eatre 20 choisis visuellement",
+        "severity": "MEDIUM",
+        "mitigation": "Peut \u00eatre am\u00e9lior\u00e9 par optimisation g\u00e9n\u00e9tique"
+      },
+      {
+        "title": "\ud83d\udd04 XAUUSD H1 bear market",
+        "detail": "2013-2020: WR 55-60%, pertes massives. Depuis 2021: WR 67-70%, profits.",
+        "severity": "MEDIUM",
+        "mitigation": "Lot r\u00e9duit (0.05), min_score relev\u00e9 (0.65), ADX 22"
+      }
+    ],
+    "overall_risk": "MEDIUM",
+    "verdict": "Le robot a un edge statistique r\u00e9el mais la marge est fine. ~30% de probabilit\u00e9 d'\u00e9chec dans les 12 premiers mois sur un changement de r\u00e9gime non anticip\u00e9."
+  },
+  "supreme_court": {
+    "challenge_pass_probability": 0.64,
+    "funded_account_survival_3m": 0.62,
+    "funded_account_survival_6m": 0.5,
+    "funded_account_survival_12m": 0.34,
+    "risk_of_rule_violation": 0.15,
+    "risk_of_technical_failure": 0.05,
+    "risk_of_strategy_failure": 0.05,
+    "overall_verdict": "R\u00e9sultats mitig\u00e9s. Le robot doit \u00eatre surveill\u00e9 quotidiennement. Envisager de r\u00e9duire le nombre de symboles et/ou le risque par trade."
+  }
+}

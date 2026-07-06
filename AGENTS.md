@@ -122,17 +122,17 @@ Niveaux par régime :
 - Corrélation: max 2 trades par direction dans un groupe
 - DD max: 10% depuis peak
 - Daily loss: 2%
-- RR≥2.0 enforce avant execution
+- RR≥1.8 enforce avant execution (MIN_RR_RATIO configurable)
 
 ## Configuration
 ```python
-RISK_PER_TRADE = 0.004      # 0.40% par trade
+RISK_PER_TRADE = 0.008      # 0.80% par trade (production.yaml)
 COOLDOWN_MINUTES = 15
-MAX_POSITIONS = 10
-MAX_POSITIONS_PER_SYMBOL = 4
-MAX_TRADES_PER_DAY = 20
+MAX_POSITIONS = 18           # production.yaml
+MAX_POSITIONS_PER_SYMBOL = 6 # production.yaml
+MAX_TRADES_PER_DAY = 75      # production.yaml
 MAX_SPREAD_POINTS = 120
-MIN_RR_RATIO = 2.0
+MIN_RR_RATIO = 1.8
 CONSISTENCY_MAX_PCT = 0.30
 ```
 

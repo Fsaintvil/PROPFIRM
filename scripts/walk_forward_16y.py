@@ -144,7 +144,7 @@ TIMEFRAMES = ["H1", "H4", "D1"]
 def get_pip_info(symbol):
     if symbol in ("XAUUSD", "XAGUSD"):
         return 0.01, 1.0
-    elif symbol in ("US500.cash", "JP225.cash", "US30.cash", "NAS100.cash"):
+    elif symbol in ("US500.cash", "JP225.cash", "US30.cash", "US100.cash"):
         return 0.01, 1.0
     elif symbol in ("USOIL.cash", "UKOIL.cash", "BTCUSD", "ETHUSD"):
         return 0.01, 1.0

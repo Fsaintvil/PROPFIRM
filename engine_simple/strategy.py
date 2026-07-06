@@ -45,7 +45,7 @@ logger = logging.getLogger("strategy")
 # THRESHOLD_TRENDING / THRESHOLD_RANGING sont DÉPRÉCIÉS (Juin 2026)
 # Les seuils réels viennent de SYMBOL_CONFIG (per-symbol) ou DEFAULT_SYMBOL_CONFIG.
 # Ces constantes ne sont plus utilisées dans le calcul du signal.
-THRESHOLD_MAX = 2.5  # Plafond absolu (clamping sécurité)
+THRESHOLD_MAX = 3.0  # 🔧 FIX #5: Plafond ultra-conservateur (était 2.5)
 THRESHOLD_MIN = 1.5  # Plancher absolu (clamping sécurité)
 
 # ============================================================================
@@ -89,8 +89,8 @@ SYMBOL_CONFIG = {
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 5.0,
         # Seuils ATR (validés backtest 12+ ans, assouplis mode modéré)
-        "threshold_trending": 2.0,  # Mode modéré: -0.5 vs 2.5
-        "threshold_ranging": 1.5,  # Mode modéré: -0.5 vs 2.0
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5  # Mode modéré: -0.5 vs 2.5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)  # Mode modéré: -0.5 vs 2.0
         # Filtres ADX (restauré valeur originale Juin 2026 — plus performant)
         "adx_slope_threshold": -8.0,
         "adx_slope_threshold_strong": -12.0,
@@ -109,13 +109,17 @@ SYMBOL_CONFIG = {
         # News filter
         "news_minutes_before": 10,
         "news_minutes_after": 10,
-        "min_score": 0.7,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
-        "risk_per_trade": 0.004,
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
+        # 🔧 FIX 6 Juillet 2026: Lot réduit — 3 trades simultanés à 0.20 lot = -$528
+        # lot_base 0.05→0.01, lot_max 0.50→0.10 pour limiter les dégâts XAUUSD
+        # ⚠️ lot_base/lot_max ici sont DÉCORATIFS — le calcul réel du lot utilise
+        # config/default.yaml: max_lot/min_lot. Voir ftmo_protector._get_wr_based_max_lot().
+        # Pour changer le lot, modifier default.yaml: XAUUSD.max_lot.
         "lot_base": 0.01,
         "lot_max": 0.10,
         "daily_loss_limit_pct": 0.02,
@@ -138,8 +142,8 @@ SYMBOL_CONFIG = {
         "sl_atr_ranging": 2.5,
         "tp_atr_ranging": 5.0,
         # Seuils ATR (abaissés — ADX crypto peu fiable, capter 40%+ signaux supplémentaires)
-        "threshold_trending": 1.8,  # ↓ 2.0→1.8 (BTCUSD frôle le seuil sans le passer — mom~950, thresh~1050)
-        "threshold_ranging": 1.5,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5  # ↓ 2.0→1.8 (BTCUSD frôle le seuil sans le passer — mom~950, thresh~1050)
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         # Filtres ADX (restauré valeur originale Juin 2026 — plus performant)
         "adx_slope_threshold": -3.0,
         "adx_slope_threshold_strong": -6.0,
@@ -158,15 +162,14 @@ SYMBOL_CONFIG = {
         # News filter
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.7,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 20,
         "min_rr": 1.8,
         "risk_mult": 1.0,
-        "risk_per_trade": 0.004,
         "cooldown_minutes": 20,
         "auto_pause_losses": 3,
-        "lot_base": 0.01,
-        "lot_max": 0.10,
+        "lot_base": 0.05,
+        "lot_max": 0.50,
         "daily_loss_limit_pct": 0.02,
         "max_dd_pct": 0.10,
     },
@@ -193,8 +196,8 @@ SYMBOL_CONFIG = {
         "sl_atr_ranging": 1.2,
         "tp_atr_ranging": 3.0,
         # Seuils ATR standard
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         # Filtres ADX standard (indices US)
         "adx_slope_threshold": -6.0,
         "adx_slope_threshold_strong": -10.0,
@@ -208,7 +211,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         # 🔒 RENFORCÉ 1er Juillet 2026 — WR 28.6% live
-        "min_score": 0.75,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.75,
@@ -226,8 +229,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -235,7 +238,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.7,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -248,8 +251,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -258,7 +261,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 0% live (5 trades, -$26)
-        # risk_mult=0.05 = 95% de réduction de risque, micro-lot 0.01
+        # risk_mult=0.05 = 95% de réduction de risque, micro-lot 0.05 (×5)
         # min_score=0.90 = seuls les signaux exceptionnels passent
         "min_score": 0.90,  # très sélectif
         "adx_thresh": 22,
@@ -273,8 +276,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -282,7 +285,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.7,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -295,8 +298,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -305,7 +308,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         # 🔒 RENFORCÉ 1er Juillet 2026 — WR 45.5% live
-        "min_score": 0.75,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -318,8 +321,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -328,7 +331,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         # 🔒 RENFORCÉ 1er Juillet 2026 — WR 26.1% live
-        "min_score": 0.75,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.50,
@@ -341,8 +344,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -350,9 +353,9 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.7,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
-        "min_rr": 1.5,
+        "min_rr": 1.3,
         "risk_mult": 1.0,
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
@@ -363,8 +366,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -372,7 +375,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.7,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -385,8 +388,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -402,7 +405,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 0,
         "news_minutes_after": 0,
         # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 29.4% live, -$139
-        # risk_mult=0.05 = 95% de réduction de risque, micro-lot 0.01
+        # risk_mult=0.05 = 95% de réduction de risque, micro-lot 0.05 (×5)
         # min_score=0.90 = seuls les signaux exceptionnels passent
         "min_score": 0.90,  # très sélectif
         "adx_thresh": 20,
@@ -411,8 +414,8 @@ SYMBOL_CONFIG = {
         "risk_per_trade": 0.001,  # risque réduit (soft block)
         "cooldown_minutes": 30,
         "auto_pause_losses": 3,
-        "lot_base": 0.01,
-        "lot_max": 0.02,  # plafonné (soft block)
+        "lot_base": 0.05,
+        "lot_max": 0.10,  # plafonné (soft block ×5)
         "daily_loss_limit_pct": 0.01,  # 1% max par jour (soft block)
         "max_dd_pct": 0.05,  # 5% max drawdown (soft block)
     },
@@ -426,8 +429,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,  # ↑ 4.5→5.0 (30 Juin: RR≥1.67 avec SL OB cap 3.0×ATR)
         "sl_atr_ranging": 1.2,
         "tp_atr_ranging": 5.0,  # ↑ 4.5→5.0 (30 Juin: RR≥1.67 avec SL OB cap 3.0×ATR)
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         # Filtres ADX standard
         "adx_slope_threshold": -6.0,
         "adx_slope_threshold_strong": -10.0,
@@ -437,7 +440,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         # 🔒 RENFORCÉ 1er Juillet 2026 — WR 30.8% live
-        "min_score": 0.75,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.75,
@@ -454,8 +457,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 4.5,
         "sl_atr_ranging": 1.2,
         "tp_atr_ranging": 4.5,  # 29 Juin: 3.0→4.5 — même fix que US100.cash (SL OB cap → RR≥1.5)
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.3,
@@ -463,7 +466,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.7,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -476,8 +479,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -486,11 +489,12 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 33.3%, -$1,265 (hémorragie)
-        # risk_mult=0.05 = 95% de réduction de risque, micro-lot 0.01
+        # risk_mult=0.05 = 95% de réduction de risque, micro-lot 0.05 (×5)
         # min_score=0.90 = seuls les signaux exceptionnels passent
         # Si les signaux redeviennent bons, l'OL détectera la guérison
+        # 🔧 FIX_SUPREME_COUNCIL 2 Juillet 2026: ADX 22→25 pour réduire faux signaux
         "min_score": 0.90,  # très sélectif
-        "adx_thresh": 22,
+        "adx_thresh": 25,
         "min_rr": 2.0,
         "risk_mult": 0.05,  # micro-risque (5% du risque normal)
         "cooldown_minutes": 30,
@@ -507,8 +511,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -516,7 +520,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.72,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 1.0,
@@ -534,8 +538,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -6.0,
         "adx_slope_threshold_strong": -10.0,
         "pullback_band_trending": 0.3,
@@ -543,7 +547,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8],  # Asian session
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.72,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.9,
@@ -561,8 +565,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -595,7 +599,7 @@ SYMBOL_CONFIG = {
         ],  # 24/7 (↑ 30 Juin: débloquer Asie)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.75,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 0.9,
@@ -613,8 +617,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -622,7 +626,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.72,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -640,8 +644,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 4.0,  # TP plus court (basse volatilité)
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 3.0,  # TP court en range (RR 2.0)
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -4.0,  # plus permissif (basse volatilité)
         "adx_slope_threshold_strong": -7.0,
         "pullback_band_trending": 0.5,
@@ -649,7 +653,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres seulement
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.75,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 20,
         "min_rr": 1.5,
         "risk_mult": 0.8,
@@ -667,8 +671,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -676,7 +680,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],  # Asie + Londres
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.72,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -693,8 +697,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 2.0,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.0,  # crypto: seuils abaissés
-        "threshold_ranging": 1.5,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5  # crypto: seuils abaissés
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.8,  # bandes larges (volatilité)
@@ -702,7 +706,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 24/7
         "news_minutes_before": 0,
         "news_minutes_after": 0,
-        "min_score": 0.75,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 20,
         "min_rr": 1.8,
         "risk_mult": 0.8,
@@ -719,8 +723,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 2.0,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.0,
-        "threshold_ranging": 1.5,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.8,
@@ -728,7 +732,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 0,
         "news_minutes_after": 0,
-        "min_score": 0.75,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 20,
         "min_rr": 1.8,
         "risk_mult": 0.8,
@@ -745,8 +749,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 2.0,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.0,
-        "threshold_ranging": 1.5,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.8,
@@ -754,7 +758,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 0,
         "news_minutes_after": 0,
-        "min_score": 0.75,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 20,
         "min_rr": 1.8,
         "risk_mult": 0.8,
@@ -771,8 +775,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.2,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.3,
@@ -780,7 +784,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.72,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -797,8 +801,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.2,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.3,
@@ -806,7 +810,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.72,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.9,
@@ -823,8 +827,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -832,7 +836,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.75,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 0.9,
@@ -849,8 +853,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 5.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 3.5,
-        "threshold_trending": 2.5,
-        "threshold_ranging": 2.0,
+        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
+        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -5.0,
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
@@ -858,7 +862,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],  # NY session
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.8,
+        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
         "adx_thresh": 22,
         "min_rr": 1.8,
         "risk_mult": 0.6,
@@ -877,8 +881,8 @@ DEFAULT_SYMBOL_CONFIG = {
     "tp_atr_trending": 5.0,
     "sl_atr_ranging": 1.5,
     "tp_atr_ranging": 5.0,
-    "threshold_trending": 2.5,
-    "threshold_ranging": 2.0,
+    "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5: Ultra-conservateur (était 2.5)
+    "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!): Ultra-conservateur (était 2.0)
     "adx_slope_threshold": -6.0,
     "adx_slope_threshold_strong": -10.0,
     "pullback_band_trending": 0.5,
@@ -889,18 +893,17 @@ DEFAULT_SYMBOL_CONFIG = {
     "news_minutes_before": 5,
     "news_minutes_after": 5,
     # ── Filtres & Score ───────────────────────────────────────────────
-    "min_score": 0.70,  # score minimum pour entrer (cfg_score)
+    "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
     "conf": 0.85,  # seuil HIGH_CONF confidence
     "adx_thresh": 22,  # ADX minimum pour régime TREND
     "min_rr": 1.5,  # RR minimum exigé
     # ── Risque ────────────────────────────────────────────────────────
     "risk_mult": 1.0,  # multiplicateur risque (1.0 = normal)
-    "risk_per_trade": 0.004,  # risque en % du capital par trade
     "cooldown_minutes": 15,  # pause après perte
     "auto_pause_losses": 5,  # pertes consécutives avant pause
     # ── Lots ──────────────────────────────────────────────────────────
-    "lot_base": 0.01,  # lot minimum de départ
-    "lot_max": 0.10,  # lot maximum après progression WR
+    "lot_base": 0.05,  # lot minimum de départ (×5)
+    "lot_max": 0.50,  # lot maximum après progression WR (×5)
     # ── Spreads & Positions ───────────────────────────────────────────
     "max_spread_points": 120,  # spread maximum en points
     "max_positions_per_symbol": 6,  # positions max par symbole
@@ -951,10 +954,13 @@ def get_symbol_full_config(symbol: str) -> dict:
 
 
 def _get_momentum_period(symbol: str | None) -> int:
-    """Retourne la période momentum adaptée au symbole."""
+    """Retourne la période momentum adaptée au symbole.
+    Vérifie d'abord _MOMENTUM_OVERRIDES (OnlineLearner), puis SYMBOL_MOMENTUM_PERIODS.
+    🔧 FIX #6 (3 Juillet 2026): _MOMENTUM_OVERRIDES était ignoré — l'optimisation des périodes
+    par OnlineLearner ne produisait AUCUN effet sur les signaux."""
     if symbol is None:
         return DEFAULT_SYMBOL_MOMENTUM_PERIOD
-    return SYMBOL_MOMENTUM_PERIODS.get(symbol, DEFAULT_SYMBOL_MOMENTUM_PERIOD)
+    return _MOMENTUM_OVERRIDES.get(symbol) or SYMBOL_MOMENTUM_PERIODS.get(symbol, DEFAULT_SYMBOL_MOMENTUM_PERIOD)
 
 
 def mom20x3_signal(
@@ -968,9 +974,8 @@ def mom20x3_signal(
     symbol: str | None = None,
     custom_thresh_trending: float | None = None,
     custom_thresh_ranging: float | None = None,
-    market_memory=None,
 ) -> dict | None:
-    """Génère un signal MOM20x3 avec filtres ADX slope, +DI/-DI, pullback, S/R et patterns.
+    """Génère un signal MOM20x3 avec filtres ADX slope, +DI/-DI, pullback.
 
     Args:
         close: np.array de prix de clôture (au moins period + 1 éléments)
@@ -987,7 +992,8 @@ def mom20x3_signal(
     Returns:
         dict avec 'action' ('BUY'/'SELL'), 'score', 'atr', 'adx',
         'plus_di', 'minus_di', 'adx_slope', 'pullback_active',
-        'sl_atr', 'tp_atr', 'thresh_used', 'ol_thresh_applied'
+        'sl_atr', 'tp_atr', 'thresh_used', 'ol_thresh_applied',
+        '_regime', 'structure_trend', 'structure_score'
         ou None si pas de signal
     """
     # Configuration spécifique par symbole
@@ -1272,78 +1278,6 @@ def mom20x3_signal(
             f"(dist={pullback_dist:.2f}% > band={pullback_band:.2f}%) → OK (momentum)"
         )
 
-    # === S/R Level Filter (MarketMemory) ===
-    # Pénalité si prix proche d'une résistance/support majeur
-    _nearest_support = None
-    _nearest_resistance = None
-    if market_memory is not None and symbol is not None:
-        try:
-            current_price = float(close[-1])
-            sr_levels = market_memory.get_nearby_levels(symbol, current_price, distance=0.5)
-            for level in sr_levels:
-                if level["type"] == "support" and (
-                    _nearest_support is None or level["price"] > _nearest_support["price"]
-                ):
-                    _nearest_support = level
-                elif level["type"] == "resistance" and (
-                    _nearest_resistance is None or level["price"] < _nearest_resistance["price"]
-                ):
-                    _nearest_resistance = level
-
-            # Pénalité si prix proche d'une résistance majeure et signal BUY
-            if _nearest_resistance and _nearest_resistance.get("strength") == "major":
-                dist_pct = abs(current_price - _nearest_resistance["price"]) / current_price * 100
-                if dist_pct < 0.3:  # < 0.3% de la résistance
-                    score = max(0.35, score * 0.85)  # -15%
-                    logger.debug(
-                        f"  [S/R] {symbol}: BUY proche résistance {_nearest_resistance['price']:.5f} → score -15%"
-                    )
-
-            # Pénalité si prix proche d'un support majeur et signal SELL
-            if _nearest_support and _nearest_support.get("strength") == "major":
-                dist_pct = abs(current_price - _nearest_support["price"]) / current_price * 100
-                if dist_pct < 0.3:
-                    score = max(0.35, score * 0.85)
-                    logger.debug(f"  [S/R] {symbol}: SELL proche support {_nearest_support['price']:.5f} → score -15%")
-        except Exception as e:
-            logger.debug(f"  [S/R] {symbol}: erreur S/R levels: {e}")
-
-    # === Pattern Confluence (MarketMemory) ===
-    _pattern_signal = "NEUTRE"
-    _pattern_confidence = 0.0
-    if market_memory is not None and symbol is not None and len(close) >= 30:
-        try:
-            import pandas as pd
-
-            _open_arr = open_[-30:] if open_ is not None else close[-30:] * 0.999
-            recent_df = pd.DataFrame(
-                {
-                    "open": _open_arr,  # fix m4: utilise open_ réel si disponible
-                    "close": close[-30:],
-                    "high": high[-30:],
-                    "low": low[-30:],
-                }
-            )
-            pattern_ctx = market_memory.get_pattern_context(symbol, recent_df, use_dtw=False)
-            _pattern_signal = pattern_ctx.get("signal", "NEUTRE")
-            _pattern_confidence = pattern_ctx.get("confidence", 0.0)
-
-            # Bonus/pénalité selon concordance
-            if _pattern_signal == "HAUSSE" and action == "BUY":
-                score = min(0.99, score + 0.10)  # +10% bonus
-                logger.debug(f"  [PATTERN] {symbol}: HAUSSE + BUY → score +10%")
-            elif _pattern_signal == "BAISSE" and action == "SELL":
-                score = min(0.99, score + 0.10)
-                logger.debug(f"  [PATTERN] {symbol}: BAISSE + SELL → score +10%")
-            elif _pattern_signal == "BAISSE" and action == "BUY":
-                score = max(0.35, score - 0.10)  # -10% penalty
-                logger.debug(f"  [PATTERN] {symbol}: BAISSE + BUY → score -10%")
-            elif _pattern_signal == "HAUSSE" and action == "SELL":
-                score = max(0.35, score - 0.10)
-                logger.debug(f"  [PATTERN] {symbol}: HAUSSE + SELL → score -10%")
-        except Exception as e:
-            logger.debug(f"  [PATTERN] {symbol}: erreur pattern detection: {e}")
-
     # SL/TP selon le régime ADX — paramètres spécifiques par symbole
     if is_trending:
         sl_atr = sym_cfg["sl_atr_trending"]
@@ -1372,12 +1306,12 @@ def mom20x3_signal(
             ma20_now = float(np.mean(close[-20:]))
             ma20_before = float(np.mean(close[-40:-20]))
             _ma_slope = (ma20_now - ma20_before) / max(abs(ma20_before), 1e-4)
-        except:
+        except Exception:
             _ma_slope = None
     elif len(close) >= 22:
         try:
             _ma_slope = float(close[-1] - close[-21]) / max(abs(close[-21]), 1e-4)
-        except:
+        except Exception:
             _ma_slope = None
 
     return {
@@ -1420,23 +1354,16 @@ def mom20x3_signal(
         "unmitigated_obs": _unmitigated_obs,
         "unmitigated_fvgs": _unmitigated_fvgs,
         "_structure_obs": _structure.get("order_blocks", []) if _structure else [],
-        # S/R levels data (MarketMemory)
-        "nearest_support": _nearest_support["price"] if _nearest_support else None,
-        "nearest_resistance": _nearest_resistance["price"] if _nearest_resistance else None,
-        # Pattern data (MarketMemory)
-        "pattern_signal": _pattern_signal,
-        "pattern_confidence": round(_pattern_confidence, 3),
     }
 
 
 class MOM20x3:
     """Wrapper de la stratégie MOM20x3 — utilise la période adaptative par symbole."""
 
-    def __init__(self, rates: list, symbol: str, period: int | None = None, market_memory=None):
+    def __init__(self, rates: list, symbol: str, period: int | None = None):
         self.rates = rates
         self.symbol = symbol
         self.period = period or _get_momentum_period(symbol)
-        self.market_memory = market_memory
         self._parse_rates()
 
     def _parse_rates(self):
@@ -1465,7 +1392,6 @@ class MOM20x3:
             symbol=self.symbol,
             custom_thresh_trending=custom_thresh_trending,
             custom_thresh_ranging=custom_thresh_ranging,
-            market_memory=self.market_memory,
         )
 
     def __call__(self) -> dict | None:

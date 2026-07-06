@@ -1,0 +1,15 @@
+╔══════════════════════════════════════════════════════╗
+║     📊 MARKET WATCH — 2026-06-05 23:04:26     ║
+╚══════════════════════════════════════════════════════╝
+❌ Robot: ARRÊTÉ
+🏆 FTMO: ACTIVE | Eq=$193674.92 | Prog=-5.9% | DD=0.6%
+   Balance=$193646.94 | PnL=$-1144.28999999998 | Trades=3 | WR=0%
+   Jours=1/9 restants | Pertes consec=0
+📊 2026-06-05 23:00:56,019 - robot - INFO - [Cycle 488] Balance=193647 Eq=193676 Fl=+29 DD=1144(0.6%) 3pos Pertes_cons=0
+📈 2026-06-05 23:00:56,028 - robot - DEBUG - Positions: 3, Pending: 0, Par symbole: {'USDCAD': 3}
+⚠️ Dernieres erreurs: 3
+📋 Analyse marche:
+   Regimes: 
+   🔴 FTMO Progress: -5.9%
+╚══════════════════════════════════════════════════════╝
+

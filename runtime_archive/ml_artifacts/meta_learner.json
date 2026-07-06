@@ -1,0 +1,1 @@
+{"DL_LSTM": {"regime_penalty": {}, "global_stats": {"wins": 499, "losses": 92, "total": 591}}, "MOM20x3": {"regime_penalty": {}, "global_stats": {"wins": 312, "losses": 299, "total": 611}}, "LGB": {"regime_penalty": {}, "global_stats": {"wins": 92, "losses": 499, "total": 591}}}

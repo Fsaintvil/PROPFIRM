@@ -34,7 +34,7 @@ if ($Status) {
     } else { Write-Host "Pas de log" }
     Write-Host ""
     Write-Host "=== PROCESSUS ==="
-    $robot = Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "main\.py" }
+    $robot = Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match "main\.py" }
     if ($robot) { 
         $rmb = [math]::Round($robot.WorkingSetSize/1MB, 1)
         Write-Host " Robot:    PID $($robot.ProcessId) - ACTIF (${rmb}MB)" 
@@ -82,8 +82,8 @@ while ($true) {
         $lastRestartDate = $now.Date
     }
 
-    # ── CHECK 1: Robot MT5 (python main.py) ──
-    $robotProc = Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue |
+    # ── CHECK 1: Robot MT5 (python main.py ou pythonw main.py) ──
+    $robotProc = Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" -ErrorAction SilentlyContinue |
         Where-Object { $_.CommandLine -match "main\.py" }
     if (-not $robotProc) {
         $issues += "ROBOT_ARRETE"

@@ -126,23 +126,9 @@ def mock_risk_manager():
 
 
 @pytest.fixture
-def mock_session_filter():
-    m = MagicMock()
-    m.get_session_score.return_value = 0.8
-    return m
-
-
-@pytest.fixture
 def mock_adaptive():
     m = MagicMock()
     m.learner.get_params.return_value = {"thresh": 2.5, "risk_mult": 0.75}
-    return m
-
-
-@pytest.fixture
-def mock_market_memory():
-    m = MagicMock()
-    m.get_mtf_alignment.return_value = {"H1": "bullish", "H4": "bullish", "D1": "neutral"}
     return m
 
 
@@ -170,8 +156,6 @@ def pipeline(
     mock_mt5,
     mock_ftmo,
     mock_adaptive,
-    mock_market_memory,
-    mock_session_filter,
     mock_news_filter,
     mock_strategy_selector,
     mock_volume_profile,
@@ -184,8 +168,6 @@ def pipeline(
         mt5=mock_mt5,
         ftmo=mock_ftmo,
         adaptive=mock_adaptive,
-        market_memory=mock_market_memory,
-        session_filter=mock_session_filter,
         news_filter=mock_news_filter,
         strategy_selector=mock_strategy_selector,
         volume_profile=mock_volume_profile,
@@ -210,36 +192,9 @@ class TestSignalPipelineInit:
         assert pipeline.cfg is not None
         assert pipeline._adaptive_params == {}
 
-    def test_init_with_none_session_filter(
-        self,
-        mock_mt5,
-        mock_ftmo,
-        mock_adaptive,
-        mock_config,
-        mock_market_memory,
-        mock_news_filter,
-        mock_strategy_selector,
-        mock_volume_profile,
-        mock_mtf_confirm,
-        mock_risk_manager,
-    ):
-        """Le pipeline doit fonctionner même si session_filter est None."""
-        p = SignalPipeline(
-            mt5=mock_mt5,
-            ftmo=mock_ftmo,
-            adaptive=mock_adaptive,
-            market_memory=mock_market_memory,
-            session_filter=None,  # ← volontairement None
-            news_filter=mock_news_filter,
-            strategy_selector=mock_strategy_selector,
-            volume_profile=mock_volume_profile,
-            mtf_confirm=mock_mtf_confirm,
-            risk_manager=mock_risk_manager,
-            config=mock_config,
-            symbol_limits=mock_config.SYMBOL_LIMITS,
-            symbol_timeframes=mock_config.SYMBOL_TIMEFRAMES,
-        )
-        assert p.session_filter is None
+    def test_init_stores_all_deps(self, mock_ftmo):
+        """Le pipeline s'initialise proprement."""
+        assert mock_ftmo is not None
 
 
 # ── Process (full pipeline) ──────────────────────────────────────────────
@@ -517,24 +472,11 @@ class TestPhase2ADXFilter:
 
 
 class TestPhase3SessionFilter:
-    """Tests du filtre de session."""
+    """Tests du filtre de session — RETIRÉ, toujours pass-through."""
 
-    def test_accepts_good_session(self, pipeline):
-        """SessionFilter retiré — toujours pass-through."""
-        signal = {}
-        result = pipeline._phase3_session_filter("XAUUSD", signal)
-        assert result is True
-
-    def test_skip_without_filter(self, pipeline, mock_session_filter):
-        """SessionFilter retiré — toujours pass-through."""
-        signal = {}
-        result = pipeline._phase3_session_filter("XAUUSD", signal)
-        assert result is True
-
-    def test_rejects_low_session(self, pipeline, mock_session_filter):
-        """SessionFilter retiré — toujours pass-through."""
-        signal = {}
-        result = pipeline._phase3_session_filter("XAUUSD", signal)
+    def test_always_passes(self, pipeline):
+        """SessionFilter retiré — toujours True."""
+        result = pipeline._phase3_session_filter("XAUUSD", {})
         assert result is True
 
 

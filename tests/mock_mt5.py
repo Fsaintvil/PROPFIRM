@@ -7,6 +7,7 @@ Simule:
   - Account info (balance, equity)
   - Symbol info (bid/ask, spread)
 """
+
 import random
 import time
 from dataclasses import dataclass
@@ -83,7 +84,9 @@ class MockMT5Server:
     def get_price(self, symbol):
         p = self._prices.get(symbol)
         if p is None:
-            base = 1.10 if symbol.startswith("EUR") or symbol.startswith("GBP") else 1.05 if symbol == "USDCHF" else 1.35
+            base = (
+                1.10 if symbol.startswith("EUR") or symbol.startswith("GBP") else 1.05 if symbol == "USDCHF" else 1.35
+            )
             bid = base + random.uniform(-0.001, 0.001)
             ask = bid + self.spread
             self._prices[symbol] = (bid, ask)
@@ -172,9 +175,16 @@ class MockMT5Server:
         self._next_ticket += 1
 
         pos = MockPosition(
-            ticket=ticket, symbol=symbol, type=direction,
-            volume=volume, price_open=price, sl=sl, tp=tp,
-            profit=0.0, magic=magic, comment=comment,
+            ticket=ticket,
+            symbol=symbol,
+            type=direction,
+            volume=volume,
+            price_open=price,
+            sl=sl,
+            tp=tp,
+            profit=0.0,
+            magic=magic,
+            comment=comment,
             time=int(time.time()),
         )
         self._positions.append(pos)
@@ -202,10 +212,13 @@ class MockMT5Server:
 
                 # Record deal
                 deal = MockDeal(
-                    position_id=pos.ticket, symbol=pos.symbol,
+                    position_id=pos.ticket,
+                    symbol=pos.symbol,
                     type=1 if pos.type == 0 else 0,  # opposite type
-                    volume=pos.volume, price=close_price,
-                    profit=profit, magic=pos.magic,
+                    volume=pos.volume,
+                    price=close_price,
+                    profit=profit,
+                    magic=pos.magic,
                     time=int(time.time()),
                 )
                 self._deals.append(deal)
@@ -217,6 +230,16 @@ class MockMT5Server:
                 return removed, profit
 
         return None, 0.0
+
+    def update_sl(self, position, new_sl):
+        """Simule la modification du SL d'une position."""
+        for pos in self._positions:
+            if pos.ticket == position.ticket:
+                pos.sl = new_sl
+                break
+        result = MagicMock()
+        result.retcode = 10009  # TRADE_RETCODE_DONE
+        return result
 
     def calc_profit(self, order_type, symbol, volume, price_open, price_close):
         bid, ask = self.get_price(symbol)

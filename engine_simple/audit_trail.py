@@ -13,18 +13,21 @@ Usage:
     audit.log_risk_check("PASS", {"daily_loss": 0.5, "dd": 3.2})
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import uuid
 from datetime import datetime, timezone
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger("robot.audit")
 
 
 class AuditTrail:
-    def __init__(self, log_dir="logs/audit", max_bytes=10 * 1024 * 1024, backup_count=5):
+    def __init__(self, log_dir: str = "logs/audit", max_bytes: int = 10 * 1024 * 1024, backup_count: int = 5) -> None:
         self.log_dir = Path(log_dir)
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self._audit_logger = logging.getLogger("audit_trail")
@@ -38,10 +41,10 @@ class AuditTrail:
         )
         handler.setFormatter(logging.Formatter("%(message)s"))
         self._audit_logger.addHandler(handler)
-        self._decisions = []
-        self._max_memory = 1000
+        self._decisions: list[dict[str, Any]] = []
+        self._max_memory: int = 1000
 
-    def _entry(self, decision_type, context, status=None):
+    def _entry(self, decision_type: str, context: dict[str, Any], status: str | None = None) -> dict[str, Any]:
         return {
             "decision_id": str(uuid.uuid4()),
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -50,14 +53,22 @@ class AuditTrail:
             "context": context,
         }
 
-    def log_decision(self, decision_type, context, status=None):
+    def log_decision(self, decision_type: str, context: dict[str, Any], status: str | None = None) -> None:
         entry = self._entry(decision_type, context, status)
         self._audit_logger.info(json.dumps(entry))
         self._decisions.append(entry)
         if len(self._decisions) > self._max_memory:
             self._decisions = self._decisions[-self._max_memory // 2 :]
 
-    def log_signal(self, symbol, action, score, confidence, regime, details=None):
+    def log_signal(
+        self,
+        symbol: str,
+        action: str,
+        score: float,
+        confidence: float,
+        regime: str,
+        details: dict[str, Any] | None = None,
+    ) -> None:
         self.log_decision(
             "signal",
             {
@@ -70,7 +81,7 @@ class AuditTrail:
             },
         )
 
-    def log_risk_check(self, result, symbol=None, metrics=None):
+    def log_risk_check(self, result: str, symbol: str | None = None, metrics: dict[str, Any] | None = None) -> None:
         self.log_decision(
             "risk_check",
             {
@@ -80,7 +91,17 @@ class AuditTrail:
             },
         )
 
-    def log_execution(self, symbol, action, entry, sl, tp, lot, status="sent", retcode=None):
+    def log_execution(
+        self,
+        symbol: str,
+        action: str,
+        entry: float,
+        sl: float,
+        tp: float,
+        lot: float,
+        status: str = "sent",
+        retcode: int | None = None,
+    ) -> None:
         self.log_decision(
             "execution",
             {
@@ -96,7 +117,7 @@ class AuditTrail:
             status=status,
         )
 
-    def log_error(self, source, message, exc_info=None):
+    def log_error(self, source: str, message: str, exc_info: BaseException | None = None) -> None:
         self.log_decision(
             "error",
             {
@@ -107,7 +128,7 @@ class AuditTrail:
             status="ERROR",
         )
 
-    def log_state_change(self, key, old_value, new_value):
+    def log_state_change(self, key: str, old_value: Any, new_value: Any) -> None:
         self.log_decision(
             "state_change",
             {
@@ -117,17 +138,17 @@ class AuditTrail:
             },
         )
 
-    def recent_decisions(self, n=10, decision_type=None):
+    def recent_decisions(self, n: int = 10, decision_type: str | None = None) -> list[dict[str, Any]]:
         filtered = self._decisions
         if decision_type:
             filtered = [d for d in filtered if d["type"] == decision_type]
         return filtered[-n:]
 
-    def flush(self):
+    def flush(self) -> None:
         for h in self._audit_logger.handlers:
             h.flush()
 
-    def close(self):
+    def close(self) -> None:
         self.flush()
         for h in self._audit_logger.handlers:
             h.close()

@@ -1,16 +1,19 @@
+from __future__ import annotations
+
 import logging
+from typing import Any
 
 import numpy as np
 
 logger = logging.getLogger("structure")
 
 
-def multi_tf_alignment(d_close, h4_close, h1_close):
+def multi_tf_alignment(d_close: np.ndarray, h4_close: np.ndarray, h1_close: np.ndarray) -> tuple[str, int]:
     d_c = np.asarray(d_close, dtype=float)
     h4_c = np.asarray(h4_close, dtype=float)
     h1_c = np.asarray(h1_close, dtype=float)
 
-    def _trend(ma20, ma50):
+    def _trend(ma20: float, ma50: float) -> int:
         diff = (ma20 - ma50) / max(ma50, 0.0001)
         if diff > 0.0005:
             return 1
@@ -45,7 +48,7 @@ def multi_tf_alignment(d_close, h4_close, h1_close):
     return "NO_TRADE", alignment
 
 
-def multi_tf_bias(d_close, h4_close, h1_close):
+def multi_tf_bias(d_close: np.ndarray, h4_close: np.ndarray, h1_close: np.ndarray) -> dict[str, Any]:
     direction, alignment = multi_tf_alignment(d_close, h4_close, h1_close)
     return {
         "direction": direction,
@@ -54,7 +57,9 @@ def multi_tf_bias(d_close, h4_close, h1_close):
     }
 
 
-def detect_bos(h1_high, h1_low, h1_close, window=5):
+def detect_bos(
+    h1_high: np.ndarray, h1_low: np.ndarray, h1_close: np.ndarray, window: int = 5
+) -> tuple[str | None, float | None, int | None]:
     hh = np.asarray(h1_high, dtype=float)
     ll = np.asarray(h1_low, dtype=float)
 
@@ -62,9 +67,9 @@ def detect_bos(h1_high, h1_low, h1_close, window=5):
         return None, None, None
 
     recent_high = np.max(hh[-window:])
-    prev_high = np.max(hh[-(window * 2):-window])
+    prev_high = np.max(hh[-(window * 2) : -window])
     recent_low = np.min(ll[-window:])
-    prev_low = np.min(ll[-(window * 2):-window])
+    prev_low = np.min(ll[-(window * 2) : -window])
 
     if recent_low < prev_low and recent_high < prev_high:
         idx = int(np.argmin(ll[-window:]) + len(ll) - window)
@@ -77,7 +82,9 @@ def detect_bos(h1_high, h1_low, h1_close, window=5):
     return None, None, None
 
 
-def detect_choch(h1_high, h1_low, h1_close, window=5):
+def detect_choch(
+    h1_high: np.ndarray, h1_low: np.ndarray, h1_close: np.ndarray, window: int = 5
+) -> tuple[str | None, float | None, int | None]:
     hh = np.asarray(h1_high, dtype=float)
     ll = np.asarray(h1_low, dtype=float)
 
@@ -111,7 +118,9 @@ def detect_choch(h1_high, h1_low, h1_close, window=5):
     return None, None, None
 
 
-def detect_mss(h1_high, h1_low, h1_close, window=5):
+def detect_mss(
+    h1_high: np.ndarray, h1_low: np.ndarray, h1_close: np.ndarray, window: int = 5
+) -> tuple[str | None, float | None, int | None]:
     hh = np.asarray(h1_high, dtype=float)
     ll = np.asarray(h1_low, dtype=float)
     n = len(hh)
@@ -119,10 +128,12 @@ def detect_mss(h1_high, h1_low, h1_close, window=5):
     if n < window * 3:
         return None, None, None
 
-    recent_highs = [np.max(hh[i:i + window]) for i in range(-window * 3, -window + 1, window)
-                    if len(hh[i:i + window]) > 0]
-    recent_lows = [np.min(ll[i:i + window]) for i in range(-window * 3, -window + 1, window)
-                   if len(ll[i:i + window]) > 0]
+    recent_highs = [
+        np.max(hh[i : i + window]) for i in range(-window * 3, -window + 1, window) if len(hh[i : i + window]) > 0
+    ]
+    recent_lows = [
+        np.min(ll[i : i + window]) for i in range(-window * 3, -window + 1, window) if len(ll[i : i + window]) > 0
+    ]
 
     if len(recent_highs) < 3 or len(recent_lows) < 3:
         return None, None, None
@@ -138,7 +149,14 @@ def detect_mss(h1_high, h1_low, h1_close, window=5):
     return None, None, None
 
 
-def structure_exit_signal(position_type, h1_high, h1_low, h1_close, window=5, h1_time=None):
+def structure_exit_signal(
+    position_type: int,
+    h1_high: np.ndarray,
+    h1_low: np.ndarray,
+    h1_close: np.ndarray,
+    window: int = 5,
+    h1_time: Any = None,
+) -> tuple[bool, str | None, int | None]:
     """Retourne (should_exit, reason, candle_idx).
     candle_idx = index dans le tableau de la bougie qui a cassé la structure
     (None si pas de break). Permet de comparer avec le temps d'ouverture."""

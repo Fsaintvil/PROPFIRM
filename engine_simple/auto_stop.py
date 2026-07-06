@@ -16,6 +16,8 @@ Appelé par le robot à chaque cycle (15s) via ftmo_protector.py.
 Peut aussi être appelé standalone : python -m engine_simple.auto_stop
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os
@@ -23,6 +25,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -49,7 +52,7 @@ STATE_FILE = RUNTIME / "auto_state.json"
 try:
     ADX_LOW_THRESHOLD = cfg.AUTO_STOP_ADX_LOW_THRESHOLD if cfg else 22
     ADX_HIGH_THRESHOLD = cfg.AUTO_STOP_ADX_HIGH_THRESHOLD if cfg else 18
-    RATIO_STOP = cfg.AUTO_STOP_RATIO_STOP if cfg else 0.50
+    RATIO_STOP = cfg.AUTO_STOP_RATIO_STOP if cfg else 1.0  # 🔧 FIX #6: DÉSACTIVÉ — l'utilisateur ne veut plus de pause
     SYMBOLS_MIN_RESUME = cfg.AUTO_STOP_SYMBOLS_MIN_RESUME if cfg else 2
     PAUSE_MIN_DURATION = cfg.AUTO_STOP_PAUSE_MIN_DURATION if cfg else 1800
     ADX_SNAPSHOT_TTL = cfg.AUTO_STOP_ADX_SNAPSHOT_TTL if cfg else 300
@@ -58,7 +61,7 @@ except Exception:
     logger.warning("Config YAML indisponible, utilisation des fallbacks hardcodes")
     ADX_LOW_THRESHOLD = 22
     ADX_HIGH_THRESHOLD = 18
-    RATIO_STOP = 0.50
+    RATIO_STOP = 1.0  # 🔧 FIX #6: DÉSACTIVÉ — l'utilisateur ne veut plus de pause
     SYMBOLS_MIN_RESUME = 2
     PAUSE_MIN_DURATION = 1800
     ADX_SNAPSHOT_TTL = 300
@@ -76,7 +79,7 @@ else:
     ACTIVE_SYMBOLS = ["XAUUSD", "BTCUSD", "US30.cash"]  # fallback si .env non dispo
 
 
-def compute_adx(high_arr, low_arr, close_arr, period=14):
+def compute_adx(high_arr: list[float], low_arr: list[float], close_arr: list[float], period: int = 14) -> float:
     """Calcule ADX simplifié sur un array de prix."""
     if len(close_arr) < period + 2:
         return 0.0
@@ -105,7 +108,7 @@ def compute_adx(high_arr, low_arr, close_arr, period=14):
 class _NumpyEncoder(json.JSONEncoder):
     """JSON Encoder qui gère les types numpy (np.bool_, np.float64, etc.)."""
 
-    def default(self, obj):
+    def default(self, obj: Any) -> Any:
         if isinstance(obj, (np.bool_,)):
             return bool(obj)
         if isinstance(obj, (np.integer,)):
@@ -148,7 +151,7 @@ def _validate_adx_snapshot(snapshot: dict) -> dict:
     return snapshot
 
 
-def load_state():
+def load_state() -> dict[str, Any]:
     """Charge l'état auto depuis STATE_FILE."""
     if STATE_FILE.exists():
         try:
@@ -168,7 +171,7 @@ def load_state():
     }
 
 
-def save_state(state):
+def save_state(state: dict[str, Any]) -> None:
     """Sauvegarde l'état auto."""
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -179,7 +182,7 @@ def save_state(state):
         logger.error(f"Erreur sauvegarde auto_state: {e}")
 
 
-def check_adx(mt5_connector=None):
+def check_adx(mt5_connector: Any = None) -> tuple[float, int, dict[str, Any]]:
     """Check ADX sur tous les symboles actifs. Retourne (ratio_low, total, details).
 
     Args:
@@ -213,7 +216,7 @@ def check_adx(mt5_connector=None):
             # Créer un wrapper minimal pour get_rates
             class _MiniConnector:
                 @staticmethod
-                def get_rates(sym, tf, count):
+                def get_rates(sym: str, tf: str, count: int) -> Any:
                     return mt5.copy_rates_from_pos(sym, eval(f"mt5.TIMEFRAME_{tf}"), 0, count)
 
             connector = _MiniConnector()
@@ -247,7 +250,7 @@ def check_adx(mt5_connector=None):
     return ratio, total, details
 
 
-def decision(force_check=False, mt5_connector=None):
+def decision(force_check: bool = False, mt5_connector: Any = None) -> tuple[str, dict[str, Any]]:
     """
     Retourne le verdict auto_stop :
       "STOP"  → arrêter le trading
@@ -344,7 +347,7 @@ def decision(force_check=False, mt5_connector=None):
     return "NOOP", state
 
 
-def main():
+def main() -> None:
     """Mode standalone : diagnostic et décision."""
     print("=== AUTO-STOP DIAGNOSTIC ===")
     print()

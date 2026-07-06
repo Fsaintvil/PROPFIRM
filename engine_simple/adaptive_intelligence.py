@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import logging
 import os
 from collections import deque
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Optional
 
 import numpy as np
 
@@ -21,12 +24,12 @@ logger = logging.getLogger("adaptive")
 class MarketRegime:
     """Enhanced regime detection — délègue à regime.py + enrichit avec structure/volume."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         from engine_simple.regime import RegimeDetector
 
         self._detector = RegimeDetector()
 
-    def detect(self, rates, symbol: str = "_default"):
+    def detect(self, rates: list, symbol: str = "_default") -> tuple[str, dict]:
         closes = np.array([r[4] for r in rates], dtype=float)
         highs = np.array([r[2] for r in rates], dtype=float)
         lows = np.array([r[3] for r in rates], dtype=float)
@@ -93,13 +96,13 @@ class MarketRegime:
 
         return regime, meta_result
 
-    def _adx(self, highs, lows, closes, p=14):
+    def _adx(self, highs: np.ndarray, lows: np.ndarray, closes: np.ndarray, p: int = 14) -> Any:
         """Hook pour compatibilité tests. Délègue à regime._calc_adx."""
         return self._detector._calc_adx(highs, lows, closes)
 
 
 class OnlineLearner:
-    def __init__(self, window=200, state_path=None):
+    def __init__(self, window: int = 200, state_path: Optional[str] = None) -> None:
         self.window = window
         self.history = {}
         self.adapted_params = {}
@@ -108,12 +111,12 @@ class OnlineLearner:
         if self._state_path:
             self._load_state()
 
-    def batch_mode(self, active=True):
+    def batch_mode(self, active: bool = True) -> None:
         """Active/désactive le mode batch. En mode batch, save_state() est
         un no-op. Appeler flush() pour sauvegarder une fois à la fin."""
         self._batch_mode = active
 
-    def flush(self):
+    def flush(self) -> None:
         """Force la sauvegarde si en mode batch."""
         if self._batch_mode:
             self._batch_mode = False
@@ -123,8 +126,8 @@ class OnlineLearner:
     # ── Persistance disque ──────────────────────────────────────────
     STATE_FILENAME = "runtime/ol_state.json"
 
-    def save_state(self, path=None):
-        path = path or self._state_path or self.STATE_FILENAME
+    def save_state(self, path: Optional[str] = None) -> None:
+        path_str = path or self._state_path or self.STATE_FILENAME
         try:
             data = {
                 "window": self.window,
@@ -133,17 +136,17 @@ class OnlineLearner:
             }
             import json
 
-            path = Path(str(path))
-            path.parent.mkdir(parents=True, exist_ok=True)
+            p = Path(str(path_str))
+            p.parent.mkdir(parents=True, exist_ok=True)
             # Écriture atomique : tmp fixe (sans timestamp) + replace
             # Un nom fixe garantit que l'écriture précédente échouée est écrasée
-            tmp = path.with_suffix(".json.tmp")
+            tmp = p.with_suffix(".json.tmp")
             tmp.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
-            tmp.replace(path)  # atomique sur NTFS
+            tmp.replace(p)  # atomique sur NTFS
         except Exception as e:
             logger.warning(f"[OnlineLearner] save_state failed: {e}")  # Warning pour visibilité
 
-    def _load_state(self, path=None):
+    def _load_state(self, path: Optional[str] = None) -> None:
         path = path or self._state_path or self.STATE_FILENAME
         try:
             import json
@@ -229,7 +232,7 @@ class OnlineLearner:
 
     # ── Enregistrement ──────────────────────────────────────────────
 
-    def record_trade(self, symbol, r_multiple, regime):
+    def record_trade(self, symbol: str, r_multiple: float, regime: str) -> None:
         if symbol not in self.history:
             self.history[symbol] = deque(maxlen=self.window)
         self.history[symbol].append({"r": r_multiple, "regime": regime})
@@ -244,21 +247,7 @@ class OnlineLearner:
         if not self._batch_mode:
             self.save_state()
 
-    def record_trades_batch(self, symbol, trades):
-        """Ajoute plusieurs trades d'un coup sans sauvegarder entre chaque."""
-        if symbol not in self.history:
-            self.history[symbol] = deque(maxlen=self.window)
-        for t in trades:
-            self.history[symbol].append(t)
-        self._update_params(symbol)
-        if not self._batch_mode:
-            self.save_state()
-
-    def set_params_direct(self, symbol, params_dict):
-        """Définit directement adapted_params sans recalcul (pour restauration)."""
-        self.adapted_params[symbol] = params_dict
-
-    def get_params(self, symbol, base_thresh=3.0):
+    def get_params(self, symbol: str, base_thresh: float = 3.0) -> dict:
         if symbol not in self.adapted_params:
             # ⚠️ R1: Fallback transparent — pas de paramètres appris pour ce symbole
             # Le risk_mult=1.0 signifie "pas d'ajustement OL" → la config symbole est utilisée telle quelle.
@@ -268,10 +257,13 @@ class OnlineLearner:
             return {"thresh": base_thresh, "risk_mult": 1.0, "sl_mult": 2.0, "tp_mult": 5.0}
         return self.adapted_params[symbol]
 
-    def _update_params(self, symbol):
+    def _update_params(self, symbol: str) -> None:
         h = list(self.history.get(symbol, []))
-        # 🔧 R3: Seuil réduit window//4=50 au lieu de window//2=100 (trop long à atteindre en live)
-        min_trades = max(15, self.window // 10)
+        # 🐛 FIX #10 (3 Juillet): min_trades augmenté à window//5 pour éviter
+        # que le OL pénalise trop vite des symboles avec peu de données.
+        # La cascade WR→expectancy→PF tuait les symboles à 15-30 trades
+        # (risk_mult tombait à 0.10-0.15). On laisse le temps de prouver l'edge.
+        min_trades = max(30, self.window // 5)
         if len(h) < min_trades:
             return
         # Filtrer les trades avec régime valide (IGNORE les trades UNKNOWN/?)
@@ -308,7 +300,7 @@ class OnlineLearner:
         logger.info(
             f"[OnlineLearner] {symbol}: {len(h_valid)} trades valides, WR={wr:.1%}, expectancy={expectancy:.2f}"
         )
-        thresh = 2.0  # ↓ 2.5→2.0 pour + de trades
+        thresh = 2.0
         risk_mult = 1.0
 
         # 🔧 FIX 1er Juillet 2026: NE PAS pénaliser les symboles rentables
@@ -322,8 +314,8 @@ class OnlineLearner:
             risk_mult = 1.0  # ne pas réduire le risque des champions
             logger.info(f"  → Champion préservé: WR={wr:.1%}, expectancy={expectancy:.2f}, risk_mult=1.0")
         elif wr < 0.70:
-            thresh = 2.0  # ↓ 2.5→2.0 (neutre plus agressif)
-            risk_mult = 0.75
+            thresh = 2.0  # seuil neutre — pas plus agressif quand WR bas
+            risk_mult = 0.85  # ⬆️ 0.75→0.85 : moins de pénalité pour éviter la spirale mortelle
         elif wr > 0.82:
             thresh = 1.5  # ↓ 2.0→1.5 (très agressif quand WR excellent)
             risk_mult = 1.15
@@ -332,7 +324,22 @@ class OnlineLearner:
             risk_mult = 1.05
 
         if expectancy < 0 and len(h) > 10 and not is_proven_winner:
-            risk_mult = 0.5
+            risk_mult = min(risk_mult, 0.85)  # ⬆️ 0.75→0.85 (évite la spirale)
+
+        # 🔧 PF-based penalty: réduire le risque si le Profit Factor est bas
+        # Corrige le biais BTCUSD (risk_mult=1.0 malgré PF 0.87 et PnL négatif)
+        if len(h_valid) >= 10:
+            wins = rr[rr > 0]
+            losses = rr[rr < 0]
+            if len(wins) > 0 and len(losses) > 0:
+                pf = sum(wins) / max(abs(sum(losses)), 0.001)
+                if pf < 0.8:
+                    risk_mult *= max(0.7, pf)  # ⬆️ plancher 0.6→0.7 : moins agressif
+                    logger.info(f"  → PF={pf:.2f} < 0.8, risk_mult ajusté à {risk_mult:.2f}")
+
+        # 🚫 PLANCHER ABSOLU : risk_mult ne peut pas descendre en dessous de 0.50
+        # Évite la spirale mortelle WR bas → risque 0 → pas de trades → pas de récupération
+        risk_mult = max(0.50, risk_mult)
         self.adapted_params[symbol] = {
             "thresh": thresh,
             "risk_mult": risk_mult,
@@ -340,7 +347,7 @@ class OnlineLearner:
             "tp_mult": 5.0,
         }
 
-    def get_summary(self, symbol):
+    def get_summary(self, symbol: str) -> dict:
         h = list(self.history.get(symbol, []))
         if not h:
             return {}
@@ -360,7 +367,7 @@ DL_SAFE_SCORE = 0.60  # Seuil historique : scores >= 0.60 = risque plein
 
 
 class AdaptiveEngine:
-    def __init__(self, mt5, calibration_path=None):
+    def __init__(self, mt5: Any, calibration_path: Optional[str] = None) -> None:
         self.mt5 = mt5
         self.regime = MarketRegime()
         # OnlineLearner persistant : charge l'état depuis le disque,
@@ -368,7 +375,7 @@ class AdaptiveEngine:
         self.learner = OnlineLearner(window=200, state_path=OnlineLearner.STATE_FILENAME)
         self.learner.seed_from_csv("runtime/online_learner_seed.csv")
         # P7: DL désactivé — aucun modèle .pkl trouvé
-        self.dl = None
+        self.dl: Optional[Any] = None
         self.ml = None
         # LightGBM désactivé — aucun modèle entraîné
         self.lgb = None
@@ -383,7 +390,7 @@ class AdaptiveEngine:
         # Walk-Forward Validator retiré — module archivé dans retired/
         self.validator = None
 
-    def _load_calibration(self, path):
+    def _load_calibration(self, path: str) -> None:
         if not os.path.exists(path):
             logger.warning(f"  [CAL] Calibration file not found: {path}")
             return
@@ -450,7 +457,7 @@ class AdaptiveEngine:
         except (KeyError, ValueError, TypeError, AttributeError, OSError) as e:
             logger.warning(f"  [CAL] Failed to load calibration: {e}")
 
-    def _save_calibration(self):
+    def _save_calibration(self) -> None:
         if not self.calibration_path:
             return
         try:
@@ -468,7 +475,7 @@ class AdaptiveEngine:
         except (OSError, KeyError, ValueError, TypeError) as e:
             logger.warning(f"  [CAL] Failed to save calibration: {e}")
 
-    def vigilance(self, symbol, rates_dict):
+    def vigilance(self, symbol: str, rates_dict: dict) -> Optional[dict]:
         """Run full pipeline (regime + DL) for any symbol without needing a signal. Logs everything."""
         h1_rates = rates_dict.get("H1")
         if h1_rates is None or len(h1_rates) < 50:
@@ -501,7 +508,7 @@ class AdaptiveEngine:
             "dl_buy_prob": dl_result["buy_prob"] if dl_result else None,
         }
 
-    def analyze(self, symbol, rates_dict, signal, trade_stats=None):
+    def analyze(self, symbol: str, rates_dict: dict, signal: dict, trade_stats: Optional[dict] = None) -> dict:
         h1_rates = rates_dict.get("H1")
         if h1_rates is None or len(h1_rates) < 50:
             return signal
@@ -710,23 +717,30 @@ class AdaptiveEngine:
         adapted["_sweep_type"] = sweep_type
         adapted["_sweep_level"] = sweep_level
 
+        # 🔒 CAP de sécurité risk_mult : éviter les multiplications destructrices
+        # Les multiplications successives (OL × structure × régime × stats) peuvent
+        # produire des risk_mult < 0.4 ou > 1.5, générant des lots absurdes (35× max_lot)
+        adapted["risk_mult"] = max(0.5, min(adapted.get("risk_mult", 1.0), 1.5))
+
         return adapted
 
-    def save_calibration(self):
+    def save_calibration(self) -> None:
         self._save_calibration()
 
-    def record_result(self, symbol, r_multiple, regime=None, dl_features=None, batch=False):
-        self.learner.record_trade(symbol, r_multiple, regime)
+    def record_result(
+        self, symbol: str, r_multiple: float, regime: Optional[str] = None, dl_features: Any = None, batch: bool = False
+    ) -> None:
+        self.learner.record_trade(symbol, r_multiple, regime or "UNKNOWN")
         if not batch:
             self._save_calibration()  # persistence immédiate après chaque trade réel
         if dl_features is not None and self.dl is not None and self.dl.available:
             self.dl.record_trade(symbol, dl_features, r_multiple)
 
-    def record_meta_result(self, symbol, regime, predictions_outcomes):
+    def record_meta_result(self, symbol: str, regime: str, predictions_outcomes: Any) -> None:
         # Meta-Learner désactivé — no-op (record_result gère déjà _save_calibration)
         pass
 
-    def train_dl_if_ready(self):
+    def train_dl_if_ready(self) -> None:
         if self.dl is not None and self.dl.available:
             total = sum(len(v) for v in self.dl.training_buffer.values())
             if total >= 32:
@@ -735,7 +749,7 @@ class AdaptiveEngine:
                 n_symbols = sum(1 for v in self.dl.training_buffer.values() if len(v) >= 32)
                 logger.info(f"  [DL] Online training: {total} samples across {n_symbols} symbols")
 
-    def build_dl_features(self, rates_dict):
+    def build_dl_features(self, rates_dict: dict) -> Any:
         if self.dl is None or not self.dl.available:
             return None
         h1 = rates_dict.get("H1")
@@ -746,5 +760,5 @@ class AdaptiveEngine:
         except (ValueError, TypeError, IndexError):
             return None
 
-    def get_report(self, symbol):
+    def get_report(self, symbol: str) -> dict:
         return self.learner.get_summary(symbol)

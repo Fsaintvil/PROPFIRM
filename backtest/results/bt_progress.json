@@ -1,0 +1,23 @@
+{
+  "GBPJPY": {
+    "done": true,
+    "n_trades": 1727,
+    "win_rate": 63.2,
+    "pnl": 113426.61,
+    "elapsed": 207.0
+  },
+  "XAUUSD": {
+    "done": true,
+    "n_trades": 1440,
+    "win_rate": 64.6,
+    "pnl": 60003.44,
+    "elapsed": 187.0
+  },
+  "BTCUSD": {
+    "done": true,
+    "n_trades": 1534,
+    "win_rate": 62.8,
+    "pnl": 51804.93,
+    "elapsed": 183.0
+  }
+}

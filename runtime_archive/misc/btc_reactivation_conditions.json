@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-06-23T06:44:41.355713",
+  "btcusd": {
+    "momentum_above_threshold": false,
+    "wr_above_55": false,
+    "both_conditions_met": false,
+    "details": {
+      "wr": 32.8,
+      "trades": 44
+    }
+  },
+  "new_symbols": {
+    "USDJPY": {
+      "trades": 0,
+      "awaiting_optimization": true
+    },
+    "GBPUSD": {
+      "trades": 0,
+      "awaiting_optimization": true
+    },
+    "AUDUSD": {
+      "trades": 0,
+      "awaiting_optimization": true
+    },
+    "USDCAD": {
+      "trades": 0,
+      "awaiting_optimization": true
+    }
+  },
+  "challenge": {
+    "balance": 200659.06,
+    "equity": 200783.36,
+    "pnl": 783.359999999986,
+    "dd_peak": "0.2%",
+    "wr": "45%",
+    "days": 9,
+    "consecutive_losses": 0
+  }
+}

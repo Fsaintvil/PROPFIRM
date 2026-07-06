@@ -19,6 +19,7 @@ import random
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Optional
 
 import MetaTrader5 as mt5
 import numpy as np
@@ -33,7 +34,7 @@ from engine_simple.ftmo_config import (
     get_be_buffer_for_symbol,
 )
 from engine_simple.structure_analyzer import structure_exit_signal
-from engine_simple.symbol_profile import get_profile as _get_symbol_profile
+from engine_simple.symbol_profile import SymbolInstitutionalProfile, get_profile as _get_symbol_profile
 
 logger = logging.getLogger("ftmo.trailer")
 
@@ -41,9 +42,9 @@ logger = logging.getLogger("ftmo.trailer")
 class Trailer:
     """ATR-based trailing SL + partial TP + time-stop + structure exit."""
 
-    def __init__(self, mt5_connector, config: dict):
-        self.mt5 = mt5_connector
-        self.config = config
+    def __init__(self, mt5_connector: Any, config: dict) -> None:
+        self.mt5: Any = mt5_connector
+        self.config: dict = config
 
         # State — managed by FTMOProtector, accessed via references
         self.partial_closed: set = set()
@@ -59,7 +60,7 @@ class Trailer:
 
     # ── Note: Utiliser FTMOProtector.check_invariants() pour la séquence production ──
 
-    def _pip_offset(self, symbol, pips=10):
+    def _pip_offset(self, symbol: str, pips: int = 10) -> float:
         info = self.mt5.get_symbol_info(symbol)
         if info is None:
             return 0.001
@@ -67,7 +68,7 @@ class Trailer:
         pip_size = point * (10 if info.digits >= 3 else 1)
         return pips * pip_size
 
-    def _get_atr(self, symbol, period=14):
+    def _get_atr(self, symbol: str, period: int = 14) -> Optional[float]:
         """Get current ATR in price units (True Range) for a symbol (cached TTL=60s)."""
         now = time.time()
         cached = self._atr_cache.get(symbol)
@@ -93,7 +94,7 @@ class Trailer:
             logger.warning(f"ATR calc (True Range) failed for {symbol}: {e}")
             return None
 
-    def _get_profile(self, symbol):
+    def _get_profile(self, symbol: str) -> Optional[SymbolInstitutionalProfile]:
         """Get symbol institutional profile from profile cache (cached by symbol)."""
         now = time.time()
         cached = self._profile_cache.get(symbol)
@@ -105,7 +106,7 @@ class Trailer:
 
     # ── Partial TP ────────────────────────────────────────────────────
 
-    def _check_partial_tp(self, position):
+    def _check_partial_tp(self, position: Any) -> None:
         ticket = str(position.ticket)
         if ticket in self.partial_closed:
             return
@@ -186,7 +187,7 @@ class Trailer:
         elif result and result.retcode != 10009:
             logger.warning(f"PARTIAL TP FAILED {position.symbol}: retcode={result.retcode}")
 
-    def _persist_partial_closed(self):
+    def _persist_partial_closed(self) -> None:
         try:
             # 🐛 FIX 26 Juin 2026: utiliser le chemin absolu depuis le fichier
             # au lieu du CWD pour éviter les écritures au mauvais endroit
@@ -202,7 +203,7 @@ class Trailer:
 
     # ── Time-stop ─────────────────────────────────────────────────────
 
-    def _check_time_stop(self, position):
+    def _check_time_stop(self, position: Any) -> None:
         ticket = str(position.ticket)
         if ticket not in self.position_open_times:
             return
@@ -255,7 +256,7 @@ class Trailer:
 
     # ── ATR Trailing ──────────────────────────────────────────────────
 
-    def _check_step_trailing(self, position):
+    def _check_step_trailing(self, position: Any) -> None:
         """ATR-based trailing SL — niveaux progressifs adaptés au régime."""
         ticket = str(position.ticket)
         atr_val = self._get_atr(position.symbol)
@@ -374,7 +375,7 @@ class Trailer:
 
     # ── Peak reconstruction ───────────────────────────────────────────
 
-    def _reconstruct_peak(self, position):
+    def _reconstruct_peak(self, position: Any) -> float:
         """Trouve le vrai peak depuis l'ouverture du trade (H1, 48 bars = ~2 jours)."""
         try:
             rates = self.mt5.get_rates(position.symbol, "H1", count=120)  # ~5 jours (fix M9: 48→120)
@@ -405,7 +406,7 @@ class Trailer:
 
     # ── Force breakeven (pour retracement excessif) ────────────────────
 
-    def _force_breakeven(self, position):
+    def _force_breakeven(self, position: Any) -> None:
         """Force le SL au BE quand le retracement dépasse 1 ATR et que le SL est en dessous de l'entrée."""
         info = self.mt5.get_symbol_info(position.symbol)
         if info is None:
@@ -434,7 +435,7 @@ class Trailer:
 
     # ── Structure exit ────────────────────────────────────────────────
 
-    def _check_structure_exit(self, position):
+    def _check_structure_exit(self, position: Any) -> None:
         """Structure-based exit: resserre le SL si BOS/CHoCH invalide la direction.
 
         Au lieu de fermer en market order (perdait le trailing ATR),
@@ -472,7 +473,7 @@ class Trailer:
 
         # Extraire le niveau BOS du message (ex: "BEARISH_BOS @ 1.13829")
         level = None
-        if "@" in reason:
+        if reason and "@" in reason:
             try:
                 level = float(reason.split("@")[1].strip())
             except (ValueError, IndexError):
@@ -509,7 +510,15 @@ class Trailer:
 
     # ── SL/TP calculation ─────────────────────────────────────────────
 
-    def calc_sl_tp(self, symbol, entry, direction, atr_val=None, sl_mult=2.0, tp_mult=4.0):
+    def calc_sl_tp(
+        self,
+        symbol: str,
+        entry: float,
+        direction: int,
+        atr_val: Optional[float] = None,
+        sl_mult: float = 2.0,
+        tp_mult: float = 4.0,
+    ) -> tuple[Optional[float], Optional[float]]:
         info = self.mt5.get_symbol_info(symbol)
         if info is None:
             return None, None
