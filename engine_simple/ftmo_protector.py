@@ -447,25 +447,33 @@ class FTMOProtector:
         sym_auto_pause = sym_full_cfg.get("auto_pause_losses", self.config.get("AUTO_PAUSE_LOSSES", 5))
         sym_cooldown_minutes = sym_full_cfg.get("cooldown_minutes", self.config.get("COOLDOWN_MINUTES", 15))
         if self.consecutive_losses >= sym_auto_pause:
+            now = datetime.utcnow()
+            # 🔧 FIX 6 Juillet 2026: Cooldown progressif — durée × 2 à chaque palier
+            # Évite 21+ pertes consécutives non stoppées
+            cooldown_levels = [5, 10, 15, 20]
+            cooldown_durations = [sym_cooldown_minutes, 60, 120, 240]
+            for level, dur in zip(cooldown_levels, cooldown_durations):
+                if self.consecutive_losses >= level:
+                    actual_cooldown = dur
             if self.global_cooldown_until is None:
-                self.global_cooldown_until = datetime.utcnow() + timedelta(minutes=sym_cooldown_minutes)
+                self.global_cooldown_until = now + timedelta(minutes=actual_cooldown)
                 logger.warning(
                     f"AUTO PAUSE ({symbol}): {self.consecutive_losses} consecutive losses >= {sym_auto_pause}, "
-                    f"cooldown {sym_cooldown_minutes}min jusqu'à {self.global_cooldown_until}"
+                    f"cooldown {actual_cooldown}min jusqu'à {self.global_cooldown_until}"
                 )
                 return (
                     False,
-                    f"Global cooldown: {sym_cooldown_minutes}min (after {self.consecutive_losses} consecutive losses)",
+                    f"Global cooldown: {actual_cooldown}min (after {self.consecutive_losses} consecutive losses)",
                 )
-            now = datetime.utcnow()
             if now < self.global_cooldown_until:
                 remaining = int((self.global_cooldown_until - now).total_seconds() // 60)
                 return False, f"Global cooldown: {remaining}min (after {self.consecutive_losses} consecutive losses)"
-            new_count = max(0, self.consecutive_losses - sym_auto_pause)
-            logger.info(
-                f"Global cooldown expired — reducing consecutive_losses from {self.consecutive_losses} to {new_count}"
-            )
-            self.consecutive_losses = new_count
+            # 🔧 FIX 6 Juillet 2026: Reset à 0 au lieu de réduire —
+            # L'ancien comportement (new_count = max(0, consec - sym_auto_pause))
+            # permettait à 21 pertes de s'accumuler sur plusieurs cycles de cooldown.
+            logger.info(f"Global cooldown expired — resetting consecutive_losses from {self.consecutive_losses} to 0")
+            self.consecutive_losses = 0
+            self._symbol_consecutive_losses.clear()
             self.global_cooldown_until = None
 
         # Per-symbol cooldown

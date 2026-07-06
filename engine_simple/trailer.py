@@ -25,6 +25,7 @@ import MetaTrader5 as mt5
 import numpy as np
 
 import config_simple as cfg
+from engine_simple.state_manager import update_state_field
 from engine_simple.ftmo_config import (
     ATR_CACHE_TTL,
     BE_BUFFER_BY_REGIME,
@@ -188,16 +189,15 @@ class Trailer:
             logger.warning(f"PARTIAL TP FAILED {position.symbol}: retcode={result.retcode}")
 
     def _persist_partial_closed(self) -> None:
+        """Persiste partial_closed avec lock thread-safe.
+
+        Utilise state_manager.update_state_field() qui acquiert le même
+        lock que save_full_state() dans main.py — évite la race condition
+        où trailer.py et main.py écrivent concurrentiellement robot_state.json.
+        """
         try:
-            # 🐛 FIX 26 Juin 2026: utiliser le chemin absolu depuis le fichier
-            # au lieu du CWD pour éviter les écritures au mauvais endroit
-            state_path = Path(__file__).resolve().parent.parent / "runtime" / "robot_state.json"
-            if state_path.exists():
-                d = json.loads(state_path.read_text())
-                d["partial_closed"] = list(self.partial_closed)
-                atomic = state_path.with_suffix(".tmp")
-                atomic.write_text(json.dumps(d, default=str))
-                atomic.replace(state_path)
+            state_path = str(Path(__file__).resolve().parent.parent / "runtime" / "robot_state.json")
+            update_state_field(state_path, "partial_closed", list(self.partial_closed))
         except Exception as e:
             logger.debug(f"[PERSIST] partial_closed non persisté: {e}")
 

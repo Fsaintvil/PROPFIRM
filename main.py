@@ -42,6 +42,7 @@ from engine_simple.strategy import MOM20x3
 from engine_simple.indicators import ema
 from engine_simple.indicators import rsi as ind_rsi
 from engine_simple.performance_monitor import update_challenge, get_monitor
+from engine_simple.state_manager import save_full_state
 
 # ── Phase 7-16 Modules ──
 from engine_simple.strategy_selector import StrategySelector
@@ -955,7 +956,7 @@ class FTMO_SIMPLE:
                 # Évite le bypass de MAX_TRADES_PER_DAY au restart (compteur repartait à 0)
                 opened_today=self.ftmo._opened_today if hasattr(self, "ftmo") else 0,
             )
-            _atomic_write_json(STATE_FILE, state)
+            save_full_state(STATE_FILE, state)
         except Exception as e:
             logger.warning(f"State save failed: {e}")
 
