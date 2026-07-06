@@ -15,6 +15,7 @@ from engine_simple.ftmo_config import (
     ATR_CACHE_TTL,
     BE_BUFFER_BY_REGIME,
     FIRST_LOCK_ATR,
+    MAX_TOTAL_LOTS,
     TRAILING_BY_REGIME,
     RISK_MULT_CAP,
     DD_REDUCE_THRESHOLD,
@@ -452,6 +453,7 @@ class FTMOProtector:
             # Évite 21+ pertes consécutives non stoppées
             cooldown_levels = [5, 10, 15, 20]
             cooldown_durations = [sym_cooldown_minutes, 60, 120, 240]
+            actual_cooldown = sym_cooldown_minutes  # fallback par défaut
             for level, dur in zip(cooldown_levels, cooldown_durations):
                 if self.consecutive_losses >= level:
                     actual_cooldown = dur
@@ -811,6 +813,22 @@ class FTMOProtector:
         if account is None:
             return 0.05
         current_equity = account.equity
+
+        # 🔒 GARDE-FOU MAX TOTAL LOTS: refuse tout trade si le volume total
+        # de toutes les positions dépasse MAX_TOTAL_LOTS (anti-runaway).
+        # Évite la répétition du scénario tuple bug (91 positions, 1.20 lots XAUUSD).
+        try:
+            all_pos = self.mt5.get_positions()
+            total_vol = sum(getattr(p, "volume", 0) or 0 for p in all_pos) if all_pos else 0
+            if total_vol >= MAX_TOTAL_LOTS:
+                logger.warning(
+                    f"[LOT SAFETY] Volume total {total_vol:.2f} >= MAX_TOTAL_LOTS={MAX_TOTAL_LOTS} "
+                    f"— refus nouveau trade {symbol}, retour min_lot"
+                )
+                min_lot = self.symbol_limits.get(symbol, {}).get("min_lot", 0.05)
+                return min_lot
+        except Exception as e:
+            logger.debug(f"[LOT SAFETY] Volume check failed: {e}")
 
         # Base risk from RISK_PER_TRADE, ajusté par direction
         base_risk = self.config.get("RISK_PER_TRADE", 0.004)

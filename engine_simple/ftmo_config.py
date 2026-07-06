@@ -243,3 +243,14 @@ def get_first_lock_atr(symbol: str) -> float:
         float: premier lock en multiples d'ATR (ex: 0.8 pour XAUUSD)
     """
     return FIRST_LOCK_BY_SYMBOL.get(symbol, FIRST_LOCK_ATR)
+
+
+# ============================================================================
+# MAX TOTAL LOTS — Anti-runaway guard
+# ============================================================================
+# Limite le volume total maximum de toutes les positions ouvertes combinées.
+# Protège contre les bugs qui rendent le robot aveugle à ses propres positions
+# (ex: tuple bug positions_get → 91 positions au lieu de 18).
+# Une fois ce seuil atteint, calculate_lot() retourne min_lot pour tout nouveau trade.
+# ============================================================================
+MAX_TOTAL_LOTS = 2.0  # volume total max (ex: 20 positions × 0.10 = 2.0)
