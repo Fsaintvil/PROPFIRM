@@ -176,13 +176,18 @@ class MT5Connector:
 
     def get_positions(self) -> list[Any]:
         # 🔧 FIX 6 Juillet 2026: Timeout 15s pour éviter freeze
+        # 🐛 FIX 6 Juillet 2026 (2): MT5 Python API retourne des tuples,
+        # pas des listes. Le isinstance(all_pos, list) rejetait TOUTES
+        # les positions → robot aveugle (0 positions visibles).
         all_pos = self._call_with_timeout(
             lambda: mt5.positions_get() or [],
             timeout=15,
             name="positions_get",
             default=[],
         )
-        if not isinstance(all_pos, list):
+        if isinstance(all_pos, tuple):
+            all_pos = list(all_pos)
+        elif not isinstance(all_pos, list):
             logger.warning(f"get_positions: type inattendu {type(all_pos)} — fallback liste vide")
             all_pos = []
         our_pos = [p for p in all_pos if p.magic == self.magic]
@@ -313,6 +318,10 @@ class MT5Connector:
                     name="close_all.positions_get",
                     default=[],
                 )
+                if isinstance(positions, tuple):
+                    positions = list(positions)
+                elif not isinstance(positions, list):
+                    positions = []
             else:
                 positions = self.get_positions()
         except Exception as e:
