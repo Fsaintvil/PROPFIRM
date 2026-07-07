@@ -279,7 +279,8 @@ class TestCheckDailyLossLimit:
         t.daily_stats["pnl"] = -5_000.0  # -2.5%
         t._check_daily_loss_limit()
         assert t._daily_loss_violated is True
-        assert t.challenge_status == "FAILED_DD"
+        # 🔧 FIX 7 Juillet 2026: daily loss ≠ FAILED_DD (réservé au max drawdown 10%)
+        assert t.challenge_status != "FAILED_DD"
 
     def test_boundary_not_violated(self):
         t = make_position_tracker(equity=196_000)

@@ -26,15 +26,14 @@ TRAILING_BY_SYMBOL = {
     # pour protéger les gains sur ce symbole à forte WR (73% backtest).
     # ═══════════════════════════════════════════════════════════════════════
     "XAUUSD": {
-        # 🔧 FIX 6 Juillet 2026: Premier lock BAISSÉ (1.0→0.8×ATR TREND, 0.8→0.6×ATR RANGING)
-        # Cause: XAUUSD H4 ATR≈$20, lot 0.10 → +$200 = 1.0×ATR. L'ancien lock à 2.0×ATR
-        # ne verrouillait AUCUN gain < 2.0×ATR, laissant les profits s'évaporer.
-        # Nouveau lock 0.6-0.8×ATR : verrouille dès +$12-16 de move (+$120-160).
-        "TREND_UP": [(1.00, 0.50), (2.00, 0.35), (4.00, 0.20), (6.00, 0.10)],
-        "TREND_DOWN": [(1.00, 0.50), (2.00, 0.35), (4.00, 0.20), (6.00, 0.10)],
-        "RANGING": [(0.80, 0.40), (1.50, 0.25), (3.00, 0.15), (5.00, 0.08)],
-        "HIGH_VOL": [(1.20, 0.60), (2.50, 0.40), (4.00, 0.25), (6.00, 0.12)],
-        "LOW_VOL": [(0.60, 0.30), (1.20, 0.20), (2.50, 0.12), (4.00, 0.06)],
+        # 🔧 FIX 7 Juillet 2026: Premier lock BAISSÉ à 0.60×ATR (était 1.00 TREND / 0.80 RANGING)
+        # Cause racine #4: Le peak était à 0.97×ATR (manqué de $0.40). Désormais le trailing
+        # s'active dès 0.60×ATR = +$12 sur lot 0.01 (+$120 sur lot 0.10). ATR H4≈$20.
+        "TREND_UP": [(0.60, 0.50), (2.00, 0.35), (4.00, 0.20), (6.00, 0.10)],
+        "TREND_DOWN": [(0.60, 0.50), (2.00, 0.35), (4.00, 0.20), (6.00, 0.10)],
+        "RANGING": [(0.60, 0.40), (1.50, 0.25), (3.00, 0.15), (5.00, 0.08)],
+        "HIGH_VOL": [(0.60, 0.60), (2.50, 0.40), (4.00, 0.25), (6.00, 0.12)],
+        "LOW_VOL": [(0.40, 0.30), (1.20, 0.20), (2.50, 0.12), (4.00, 0.06)],
     },
     # ═══════════════════════════════════════════════════════════════════════
     # BTCUSD H1 — Bitcoin (Juin 2026 — AJUSTÉ)

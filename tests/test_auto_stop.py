@@ -511,4 +511,4 @@ class TestConstants:
     def test_active_symbols_non_empty(self):
         assert len(ACTIVE_SYMBOLS) >= 3
         assert "XAUUSD" in ACTIVE_SYMBOLS
-        assert "BTCUSD" in ACTIVE_SYMBOLS
+        assert "USDJPY" in ACTIVE_SYMBOLS  # BTCUSD retiré de la liste active (Juil 2026)

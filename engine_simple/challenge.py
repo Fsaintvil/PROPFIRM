@@ -199,8 +199,11 @@ class ChallengeTracker:
 
         self._daily_loss_violated = daily_loss_pct >= daily_loss_limit
         if self._daily_loss_violated:
-            self.challenge_status = "FAILED_DD"
-            logger.warning(f"DAILY LOSS LIMIT: {daily_loss_pct:.1%}")
+            # ⚠️ Daily loss violation = BLOCAGE TEMPORAIRE, pas FAILED_DD
+            # Ne pas set challenge_status = "FAILED_DD" ici — le daily loss
+            # reset chaque jour. FAILED_DD est réservé au max drawdown (10%).
+            # Le blocage est géré via _daily_loss_violated dans can_trade().
+            logger.warning(f"DAILY LOSS LIMIT: {daily_loss_pct:.1%} — trading bloqué pour aujourd'hui")
 
     def current_dd_pct(self) -> float:
         """Retourne le drawdown actuel en ratio (0.0 = pas de DD, 1.0 = 100%).
@@ -393,6 +396,23 @@ class ChallengeTracker:
         self.daily_start_equity = state.get("daily_start_equity", self.initial_balance)
         self.peak_equity = state.get("peak_equity", self.initial_balance)
         self._daily_loss_violated = False
+
+        # 🔧 FIX 7 Juillet 2026: Sanity check — si FAILED_DD mais DD réel < 10%, reset
+        # Cause: daily loss limit set challenge_status="FAILED_DD" (bug avant fix).
+        # Un daily loss est temporaire, seul le max drawdown (10%) doit causer FAILED_DD.
+        if self.challenge_status == "FAILED_DD":
+            try:
+                account = self.mt5.get_account_info()
+                if account:
+                    current_dd = (self.peak_equity - account.equity) / max(self.peak_equity, 1)
+                    if current_dd < self.max_dd_pct:
+                        logger.info(
+                            f"[CHALLENGE RESET] FAILED_DD chargé depuis state mais DD réel={current_dd:.2%} "
+                            f"< {self.max_dd_pct:.0%} — reset à ACTIVE"
+                        )
+                        self.challenge_status = "ACTIVE"
+            except Exception:
+                pass  # keep FAILED_DD as safe default if MT5 unreachable
 
         # Restore cooldowns
         cd = state.get("cooldowns", {})

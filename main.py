@@ -594,10 +594,26 @@ class FTMO_SIMPLE:
             self.ftmo.challenge._opened_today = max(0, int(_ot))
             if int(_ot) > 0:
                 logger.info(f"[STATE] _opened_today restauré: {int(_ot)}")
+        else:
+            # 🔧 FIX 7 Juillet 2026: Si _opened_today non trouvé/nul dans state, forcer 0
+            # (cause: état corrompu après crash, valeurs fantômes persistées)
+            self.ftmo._opened_today = 0
+            self.ftmo.challenge._opened_today = 0
+        # 🔧 FIX 7 Juillet 2026: Forcer opened_today=0 après restauration
+        # pour éviter les valeurs fantômes persistées (91/75).
+        # Cause identifiée: _opened_today peut être réhydraté depuis des trades
+        # historiques importés lors de import_history() qui précède la boucle.
+        # Solution: reset garanti à 0 avant la boucle trading.
+        if hasattr(self, "ftmo") and getattr(self.ftmo, "_opened_today", 0) != 0:
+            logger.warning(f"[STATE] _opened_today={self.ftmo._opened_today} avant reset forcé!")
+            self.ftmo._opened_today = 0
+            self.ftmo.challenge._opened_today = 0
         _dse = self._state.get("daily_start_equity")
         if _dse is not None and _dse > 0:
             self.ftmo.daily_start_equity = _dse
-            logger.debug(f"[STATE] daily_start_equity restauré: {_dse}")
+            if hasattr(self.ftmo, "challenge"):
+                self.ftmo.challenge.daily_start_equity = _dse
+            logger.debug(f"[STATE] daily_start_equity restauré: {_dse} (ftmo + challenge)")
         else:
             logger.debug(f"[STATE] daily_start_equity ignoré: {_dse} (<=0 ou None)")
         # 🔧 FIX H3: Forcer le recalage de daily_start_equity après restart
@@ -615,16 +631,26 @@ class FTMO_SIMPLE:
                 if str(_today) != str(_saved_day):
                     # Jour différent → _reset_daily() va normalement corriger
                     pass
-                elif _acct.equity != self.ftmo.daily_start_equity:
+                # 🔧 FIX 7 Juillet 2026: Toujours forcer le recalage, pas seulement
+                # quand equity != daily_start_equity. Le challenge.daily_start_equity
+                # peut être resté à initial_balance si la restauration d'état ne l'a
+                # pas touché (line 613 ne set que ftmo, pas challenge).
+                # Comparer avec le challenge ET ftmo pour couvrir les deux cas.
+                _challenge_dse = getattr(self.ftmo, "challenge", None)
+                _challenge_dse_val = _challenge_dse.daily_start_equity if _challenge_dse else None
+                if _acct.equity != _challenge_dse_val:
                     # Même jour, restart dans la journée → on recale sur l'equity actuelle
-                    _old = self.ftmo.daily_start_equity
+                    _old_ftmo = self.ftmo.daily_start_equity
+                    _old_challenge = _challenge_dse_val
                     _new_eq = _acct.equity
                     # Modifier les DEUX (protector + challenge) car _reset_daily()
                     # copie challenge→protector à chaque cycle
                     self.ftmo.daily_start_equity = _new_eq
-                    if hasattr(self.ftmo, "challenge"):
-                        self.ftmo.challenge.daily_start_equity = _new_eq
-                    logger.info(f"[STATE] daily_start_equity recalculé: {_old}→{_new_eq} (restart intra-jour)")
+                    if _challenge_dse:
+                        _challenge_dse.daily_start_equity = _new_eq
+                    logger.info(
+                        f"[STATE] daily_start_equity recalculé: ftmo={_old_ftmo} challenge={_old_challenge}→{_new_eq}"
+                    )
 
         class _Cache:
             def __init__(self, mt5_conn):
@@ -1029,7 +1055,9 @@ class FTMO_SIMPLE:
         logger.info("=" * 60)
         logger.info("[PHASE 1.4] Cycle timeout 120s activé — détection granulaire")
         self.tracker.init_tickets()
+        logger.info(f"[TRACE _opened_today] AVANT import_history: {self.ftmo._opened_today}")
         self.tracker.import_history()
+        logger.info(f"[TRACE _opened_today] APRES import_history: {self.ftmo._opened_today}")
         # 🔧 FIX 6 Juillet 2026: Réconcilier _opened_today avec les positions ouvertes aujourd'hui
         # Évite le bypass de MAX_TRADES_PER_DAY après redémarrage :
         # les positions déjà ouvertes ne comptaient pas dans _opened_today,

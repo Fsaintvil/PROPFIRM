@@ -342,6 +342,9 @@ class FTMOProtector:
         if self.daily_stats["trades"] >= max_trades:
             return False, f"Daily trade limit (closed: {self.daily_stats['trades']}/{max_trades})"
         if self._opened_today >= max_trades:
+            logger.debug(
+                f"_check_daily_limits: _opened_today={self._opened_today} (bloque {max_trades}) — daily_stats={self.daily_stats}"
+            )
             return False, f"Daily trade limit (opened: {self._opened_today}/{max_trades})"
         return True, None
 
