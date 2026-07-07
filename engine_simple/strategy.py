@@ -875,6 +875,8 @@ SYMBOL_CONFIG = {
 # Tous les 27 symboles actifs ont leur propre config, donc ce fallback
 # n'est utilisé que pour les symboles non listés (cas d'erreur).
 DEFAULT_SYMBOL_CONFIG = {
+    # ── Stratégie (Strategy Registry) ──────────────────────────────────
+    "strategy": "MOM20x3",  # Stratégie par défaut pour tous les symboles
     # ── Trading ────────────────────────────────────────────────────────
     "momentum_period": 20,
     "sl_atr_trending": 2.0,

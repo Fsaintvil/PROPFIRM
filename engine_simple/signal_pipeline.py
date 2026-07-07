@@ -9,7 +9,7 @@ Simplifié le 25 Juin 2026 — retrait des couches qui tuaient le signal :
 
 Flux simplifié:
   process(symbol) → SignalResult | None
-    ├── phase1_mom20x3()         ← signal brut MOM20x3
+    ├── phase1_primary_strategy()  ← signal selon Strategy Registry (MOM20x3 par défaut)
     ├── phase2_adx_filter()      ← ADX threshold + bypass
     ├── phase4_news_filter()     ← news économique ?
     ├── phase5_regime_rule()     ← direction = régime ?
@@ -135,14 +135,14 @@ class SignalPipeline:
             logger.debug(f"  [PRECHECK] {symbol}: echec {failed}, reasons={reasons}")
             return None
 
-        # Phase 1a: MOM20x3 signal (primaire — tendances)
-        signal = self._phase1_mom20x3(symbol)
+        # Phase 1a: Signal primaire selon Strategy Registry (MOM20x3 par défaut)
+        signal = self._phase1_primary_strategy(symbol)
 
-        # Phase 1b: MeanReversion fallback (si MOM échoue ET marché en RANGING)
+        # Phase 1b: MeanReversion fallback (si stratégie primaire échoue ET marché en RANGING)
         if signal is None:
             signal = self._generate_mr_signal(symbol)
             if signal is not None:
-                logger.debug(f"  [MR FALLBACK] {symbol}: MOM20x3 échoué, MeanReversion pris")
+                logger.debug(f"  [MR FALLBACK] {symbol}: stratégie primaire échouée, MeanReversion pris")
 
         if signal is None:
             return None
@@ -259,10 +259,134 @@ class SignalPipeline:
         score = signal.get("score", score)
         return SignalResult(symbol=symbol, signal=signal, score=score)
 
-    # ── Phase 1: MOM20x3 Signal ───────────────────────────────────────────
+    # ── Phase 1: Primary Strategy (Strategy Registry) ─────────────────────
+
+    def _phase1_primary_strategy(self, symbol: str) -> dict | None:
+        """Génère le signal selon la stratégie assignée au symbole (Strategy Registry).
+
+        Délègue à la méthode appropriée selon la stratégie configurée pour ce symbole.
+        Par défaut: MOM20x3. Nouveautés: TrendFollow, MeanReversion (via fallback).
+        """
+        from engine_simple.strategy_registry import get_strategy_for
+
+        strategy_name = get_strategy_for(symbol)
+        logger.debug(f"  [STRATEGY] {symbol}: dispatch → {strategy_name}")
+
+        if strategy_name == "MOM20x3":
+            return self._phase1_mom20x3(symbol)
+        elif strategy_name == "TrendFollow":
+            return self._execute_trend_follow(symbol)
+        else:
+            logger.warning(f"  [STRATEGY] {symbol}: stratégie '{strategy_name}' inconnue, fallback MOM20x3")
+            return self._phase1_mom20x3(symbol)
+
+    def _execute_trend_follow(self, symbol: str) -> dict | None:
+        """Exécute la stratégie TrendFollow pour un symbole.
+
+        Appelée par _phase1_primary_strategy() quand le Strategy Registry
+        assigne "TrendFollow" au symbole.
+
+        TrendFollow est un suivi de tendance basé sur EMA50 + ADX :
+        - N'entre QUE si ADX ≥ 22 (tendance)
+        - SL large (2.5×ATR), TP large (6.0×ATR)
+        - Pas de trades en RANGING
+        """
+        from engine_simple.strategy_trend_follow import TrendFollow
+        from engine_simple.strategy import SYMBOL_CONFIG as _SYMBOL_CFG
+
+        tf = self.symbol_timeframes.get(symbol, "H1")
+
+        # OnlineLearner params (pour risk_mult seulement — pas de thresh tuning)
+        ol_risk_mult = 0.75
+        try:
+            ol_params = self.adaptive.learner.get_params(symbol, base_thresh=2.5)
+            ol_risk_mult = ol_params.get("risk_mult", 1.0)
+        except Exception:
+            pass
+
+        rates_tf = self._get_cached_rates(symbol, tf, count=200)
+        if rates_tf is None or len(rates_tf) < 70:  # besoin d'au moins EMA50 + marge
+            logger.debug(f"  [TF] {symbol}: rates {tf} insuffisantes ({0 if rates_tf is None else len(rates_tf)} bars)")
+            return None
+
+        tf_strat = TrendFollow(rates_tf, symbol)
+        raw = tf_strat.analyze()
+        if raw is None:
+            return None
+
+        # Higher TF confirmation
+        h4_conf = 1.0
+        higher_tf = "D1" if tf == "H4" else "H4"
+        try:
+            higher_cached = self._get_cached_rates(symbol, higher_tf, count=60)
+            if higher_cached is not None and len(higher_cached) > 30:
+                hc = np.array([r[4] for r in higher_cached], dtype=float)
+                from engine_simple.indicators import ema
+
+                he = ema(hc, 50)
+                if len(he) > 0 and not np.isnan(he[-1]) and he[-1] > 0:
+                    higher_ema50 = float(he[-1])
+                    higher_price = float(hc[-1])
+                    if raw["action"] == "BUY" and higher_price < higher_ema50 * 0.998:
+                        h4_conf = 0.80
+                    elif raw["action"] == "SELL" and higher_price > higher_ema50 * 1.002:
+                        h4_conf = 0.80
+        except Exception:
+            pass
+
+        # Enrich signal
+        tick = self.mt5.get_tick(symbol)
+        entry = tick.ask if tick else 0
+        signal = dict(raw)
+        signal["_raw_mom_score"] = signal.get("score", 0.6)
+        signal["symbol"] = symbol
+        signal["timeframe"] = tf
+        signal["details"] = f"TrendFollow_{tf}"
+        signal["quality"] = min(1.0, (signal.get("confidence", 0.5) + 0.1) * h4_conf)
+        if h4_conf < 1.0 and signal.get("score", 0.6) > 0.5:
+            signal["score"] = max(0.5, signal["score"] * 0.90)
+
+        # Per-symbol risk_mult
+        from engine_simple.symbol_params import get_symbol_param
+
+        static_risk_mult = get_symbol_param(symbol, "risk_mult", 1.0)
+        effective_risk_mult = static_risk_mult * ol_risk_mult
+        if static_risk_mult < effective_risk_mult:
+            logger.info(f"  [SOFT BLOCK] {symbol}: risk_mult {effective_risk_mult:.3f} → {static_risk_mult:.3f}")
+            effective_risk_mult = static_risk_mult
+        signal["risk_mult"] = effective_risk_mult
+        signal["entry_price"] = entry if raw["action"] == "BUY" else (tick.bid if tick else 0)
+        signal["higher_tf_conf"] = round(h4_conf, 2)
+        atr_price = signal.get("atr", 0)
+        price = tick.bid if tick else 0
+        signal["atr_pct"] = round(atr_price / price * 100, 4) if price > 0 else 0
+
+        # RSI
+        try:
+            close_prices = np.array([r[4] for r in rates_tf], dtype=float)
+            from engine_simple.indicators import rsi as ind_rsi
+
+            rsi_arr = ind_rsi(close_prices, period=14)
+            signal["rsi"] = round(float(rsi_arr[-1]), 1) if len(rsi_arr) > 0 and not np.isnan(rsi_arr[-1]) else 50.0
+        except Exception:
+            signal["rsi"] = 50.0
+
+        logger.debug(
+            f"  [TRENDFOLLOW] {signal['action']} {symbol} | "
+            f"score={signal['score']:.2f} conf={signal['confidence']:.2f} "
+            f"ADX={signal.get('adx', 0):.1f} EMA50_slope={signal.get('ema50_slope', 0):+.2%} "
+            f"risk_mult={signal['risk_mult']:.2f}"
+        )
+
+        return signal
 
     def _phase1_mom20x3(self, symbol: str) -> dict | None:
-        """Génère le signal MOM20x3 avec paramètres OnlineLearner."""
+        """Exécute la stratégie MOM20x3 pour un symbole.
+
+        Appelée par _phase1_primary_strategy() quand le Strategy Registry
+        assigne "MOM20x3" au symbole.
+        NOTE: Garde le nom _phase1_mom20x3 pour compatibilité ascendante.
+        """
         from engine_simple.strategy import MOM20x3, SYMBOL_CONFIG as _SYMBOL_CFG
 
         tf = self.symbol_timeframes.get(symbol, "H1")

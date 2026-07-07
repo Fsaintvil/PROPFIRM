@@ -473,12 +473,12 @@ class TestMRRegression:
             mock_mom_cls.return_value = mock_mom
 
             result = pipeline.process(
-                symbol="XAUUSD",
+                symbol="EURUSD",
                 cycle_count=1,
                 degraded_symbols={},
                 sym_dir_counts={},
                 sym_total_counts={},
-                config_limits={"XAUUSD": 4},
+                config_limits={"EURUSD": 4},
                 last_signals={},
                 log_throttle={},
             )

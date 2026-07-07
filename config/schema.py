@@ -137,6 +137,7 @@ class RiskConfig(BaseModel):
 class SymbolLimit(BaseModel):
     model_config = ConfigDict(extra="allow")
 
+    strategy: str = Field(default="MOM20x3", description="Nom de la stratégie. Ex: MOM20x3, TrendFollow, MeanReversion")
     max_lot: float = Field(default=0.50, ge=0.01, le=10)
     min_lot: float = Field(default=0.05, ge=0.01, le=10)
     risk_mult: float = Field(default=1.0, ge=0.0, le=3.0)

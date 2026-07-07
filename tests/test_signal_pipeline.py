@@ -232,18 +232,18 @@ class TestPipelineProcess:
     def test_process_returns_signal_result_on_success(self, mock_mom, pipeline):
         mock_mom.return_value = _make_mock_mom20x3()
         result = pipeline.process(
-            symbol="XAUUSD",
+            symbol="EURUSD",
             cycle_count=1,
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"XAUUSD": 4},
+            config_limits={"EURUSD": 4},
             last_signals={},
             log_throttle={},
         )
         assert result is not None
         assert isinstance(result, SignalResult)
-        assert result.symbol == "XAUUSD"
+        assert result.symbol == "EURUSD"
         assert "action" in result.signal
         assert result.signal["max_per_symbol"] > 0
 
@@ -253,12 +253,12 @@ class TestPipelineProcess:
             [{"rule": "danger_hours", "pass": False, "reason": "Danger hours block"}],
         )
         result = pipeline.process(
-            symbol="XAUUSD",
+            symbol="EURUSD",
             cycle_count=1,
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"XAUUSD": 4},
+            config_limits={"EURUSD": 4},
             last_signals={},
             log_throttle={},
         )
@@ -267,12 +267,12 @@ class TestPipelineProcess:
     def test_process_none_on_mom20x3_fail(self, pipeline, mock_mt5):
         mock_mt5.get_rates.return_value = None
         result = pipeline.process(
-            symbol="XAUUSD",
+            symbol="EURUSD",
             cycle_count=1,
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"XAUUSD": 4},
+            config_limits={"EURUSD": 4},
             last_signals={},
             log_throttle={},
         )
@@ -282,12 +282,12 @@ class TestPipelineProcess:
     def test_process_sets_degraded_flag(self, mock_mom, pipeline):
         mock_mom.return_value = _make_mock_mom20x3()
         result = pipeline.process(
-            symbol="XAUUSD",
+            symbol="EURUSD",
             cycle_count=1,
-            degraded_symbols={"XAUUSD": 0},
+            degraded_symbols={"EURUSD": 0},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"XAUUSD": 4},
+            config_limits={"EURUSD": 4},
             last_signals={},
             log_throttle={},
         )
@@ -299,12 +299,12 @@ class TestPipelineProcess:
         """Score >= 0.80 doit bypasser le filtre ADX si ADX >= 15."""
         mock_mom.return_value = _make_mock_mom20x3()
         result = pipeline.process(
-            symbol="XAUUSD",
+            symbol="EURUSD",
             cycle_count=1,
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"XAUUSD": 4},
+            config_limits={"EURUSD": 4},
             last_signals={},
             log_throttle={},
         )
@@ -315,12 +315,12 @@ class TestPipelineProcess:
         """Si la limite de direction est atteinte, process() retourne None."""
         mock_mom.return_value = _make_mock_mom20x3()
         result = pipeline.process(
-            symbol="XAUUSD",
+            symbol="EURUSD",
             cycle_count=1,
             degraded_symbols={},
-            sym_dir_counts={("XAUUSD", 0): 4},  # 4 BUY déjà
-            sym_total_counts={"XAUUSD": 4},
-            config_limits={"XAUUSD": 3},
+            sym_dir_counts={("EURUSD", 0): 4},  # 4 BUY déjà
+            sym_total_counts={"EURUSD": 4},
+            config_limits={"EURUSD": 3},
             last_signals={},
             log_throttle={},
         )
@@ -330,15 +330,12 @@ class TestPipelineProcess:
     def test_process_respects_total_position_limit(self, mock_mom, pipeline):
         mock_mom.return_value = _make_mock_mom20x3()
         result = pipeline.process(
-            symbol="XAUUSD",
+            symbol="EURUSD",
             cycle_count=1,
             degraded_symbols={},
             sym_dir_counts={},
-            # sym_total_count=12 dépasse max_pos_total=min(8*2=16, 10*2=20, 80)=16
-            # Mais avec phase 11 (MP) le score chute et la direction BUY est bloquée
-            # Utilisons un count très élevé pour tester le blocage
-            sym_total_counts={"XAUUSD": 20},
-            config_limits={"XAUUSD": 10},
+            sym_total_counts={"EURUSD": 20},
+            config_limits={"EURUSD": 10},
             last_signals={},
             log_throttle={},
         )
@@ -361,12 +358,12 @@ class TestPipelineProcess:
             }
         )
         result = pipeline.process(
-            symbol="XAUUSD",
+            symbol="EURUSD",
             cycle_count=1,
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"XAUUSD": 4},
+            config_limits={"EURUSD": 4},
             last_signals={},
             log_throttle={},
         )
