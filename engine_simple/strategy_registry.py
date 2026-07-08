@@ -34,22 +34,23 @@ logger = logging.getLogger(__name__)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 SYMBOL_STRATEGY_MAP: dict[str, str] = {
-    # ── PHASE 3: 7 symboles actifs ─────────────────────────────────────────
+    # ── PHASE 4: 12 symboles actifs (8 Juillet 2026) ─────────────────────
     "USDJPY": "MOM20x3",
     "XAUUSD": "TrendFollow",  # ✅ Activé 8 Juillet 2026 après validation backtest
     "JP225.cash": "MOM20x3",
-    "EURUSD": "MOM20x3",
+    "EURUSD": "MOM20x3",  # 🔓 Réactivé 8 Juillet (ghost trades bug MT5, WR réelle 63.2%)
     "GBPJPY": "MOM20x3",
     "AUDJPY": "MOM20x3",
     "EURGBP": "MOM20x3",
-    # ── Symboles inactifs (conservés pour référence) ───────────────────────
-    "BTCUSD": "MOM20x3",
-    "ETHUSD": "MOM20x3",
-    "XAGUSD": "MOM20x3",
-    "AUDUSD": "MOM20x3",
     "USDCAD": "MOM20x3",
     "NZDUSD": "MOM20x3",
     "USDCHF": "MOM20x3",
+    "BTCUSD": "TrendFollow",  # 🔥 PHASE 4: Crypto volatil, MOM20x3 sous-performe (48.6%) → TrendFollow
+    "USOIL.cash": "TrendFollow",  # 🔥 PHASE 4: Pétrole, tendances géopolitiques → TrendFollow
+    # ── Symboles inactifs (conservés pour référence, sans doublon) ─────────
+    "ETHUSD": "MOM20x3",
+    "XAGUSD": "MOM20x3",
+    "AUDUSD": "MOM20x3",
     "GBPUSD": "MOM20x3",
     "EURJPY": "MOM20x3",
     "US500.cash": "MOM20x3",
@@ -60,7 +61,6 @@ SYMBOL_STRATEGY_MAP: dict[str, str] = {
     "SOLUSD": "MOM20x3",
     "LNKUSD": "MOM20x3",
     "BNBUSD": "MOM20x3",
-    "USOIL.cash": "MOM20x3",
     "UKOIL.cash": "MOM20x3",
     "NATGAS.cash": "MOM20x3",
 }

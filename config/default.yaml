@@ -32,14 +32,15 @@ robot:
 # ── Trading ──────────────────────────────────────────────────────────────
 trading:
   symbols:
-    # ── 17 symboles — Intersection .env × YAML (3 Juillet 2026) ────────
+    # ── 18 symboles — Intersection .env × YAML (8 Juillet 2026) ────────
     # Seuls les symboles présents dans LES DEUX fichiers sont tradés.
-    # .env = ACTIVE_SYMBOLS (11), YAML = config complète (17).
+    # .env = ACTIVE_SYMBOLS (12), YAML = config complète (18).
     # ── FOREX MAJORS ────────────────────────────────────────────────────
     - EURUSD
     - USDJPY
     - NZDUSD
     - USDCAD
+    - USDCHF       # 🚀 PHASE 4: Ajouté 8 Juillet 2026 — réactivation backtest 68.1% WR
     # ── FOREX CROSSES ───────────────────────────────────────────────────
     - EURJPY
     - GBPJPY
@@ -58,12 +59,12 @@ trading:
     - XAUUSD
     - USOIL.cash
 
-  # 🔧 FIX #15: 11 symboles actifs (intersection .env × YAML)
-  max_positions: 18             # 🔧 ×1.5: 12→18 (portfolio_controller.py)
-  max_positions_per_symbol: 6   # 🔧 ×1.5: 4→6
-  max_trades_per_day: 30        # ↑ 25→30 (marge)
-  max_signals_per_cycle: 8      # ↓ 15→8 (11 symboles)
-  max_orders_per_minute: 6      # ↓ 12→6 (proportionnel)
+  # 🚀 PHASE 4: 12 symboles actifs (intersection .env × YAML)
+  max_positions: 24             # 🔧 ×2: 12→24 (plus de symboles)
+  max_positions_per_symbol: 6   # 🔧 conservé
+  max_trades_per_day: 45        # ↑ 30→45 (12 symboles)
+  max_signals_per_cycle: 10     # ↑ 8→10 (12 symboles)
+  max_orders_per_minute: 8      # ↑ 6→8 (proportionnel)
   lot_size: 0.05                # lot de démarrage (×5 Juillet 2026)
   min_trade_interval_sec: 120   # 2 min minimum entre trades par symbole
   batch_interval_sec: 5         # 5s
@@ -156,7 +157,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 0.20             # 🔧 OPTIMIZER: ↓ 1.00→0.20 — WR 49.5%, PF 0.87, PnL négatif (-$91)
+    risk_mult: 0.50  # 🔓 PHASE 4: Réactivation 8 Juillet 2026 — ↑ 0.20→0.50 (backtest 70% WR), OL ajustera
     max_spread_points: 150
     adx_thresh: 20
     allow_buys: true
@@ -184,13 +185,13 @@ symbol_limits:
 
   # ═══════════════════════════════════════════════════════════════════════════
   # EURUSD H1 — Euro/Dollar (forex majeur, spreads serrés)
-  # 🔴 PAUSE 3 Juillet 2026 — 30% trades fantômes entry=exit, OL contaminé par seed
+  # 🔓 RÉACTIVÉ 8 Juillet 2026 — 33% ghost trades (bug MT5), mais sans eux: WR 63.2%, +$78.90
   # ═══════════════════════════════════════════════════════════════════════════
   EURUSD:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 0.0   # 🔴 PAUSE 3 Juillet 2026 — WR 46.4%, 30% ghost trades
+    risk_mult: 0.50  # 🔓 RÉACTIVÉ 8 Juillet 2026 — ghost trades écartés, WR 63.2% réel
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -283,7 +284,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 0.0   # 🔴 HARD BLOCK 6 Juillet 2026 — WR 45.5%, PF 0.63 (Quant Auditor)
+    risk_mult: 0.50  # 🔓 PHASE 4: Réactivation 8 Juillet 2026 — risk_mult modéré, OL ajustera selon WR
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -379,7 +380,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 0.0   # 🔴 HARD BLOCK 3 Juillet 2026 — WR 20%, PF 0.01
+    risk_mult: 0.50  # 🔓 PHASE 4: Réactivation 8 Juillet 2026 — risk_mult modéré (backtest 68.1% WR), OL ajustera
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -567,8 +568,8 @@ symbol_limits:
     max_lot: 0.05
     min_lot: 0.05
     risk_mult: 1.00
-    max_spread_points: 80
-    max_spread_atr_ratio: 0.22  # USOIL spread volatile → 20% ATR
+    max_spread_points: 100
+    max_spread_atr_ratio: 0.22  # USOIL spread volatile → 20% ATR (↑ 80→100 pour spread réel ~86)
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true

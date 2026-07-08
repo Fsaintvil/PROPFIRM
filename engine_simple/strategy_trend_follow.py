@@ -64,8 +64,22 @@ SYMBOL_CONFIG: dict[str, dict[str, Any]] = {
         "pullback_band": 0.5,
         "risk_mult": 0.70,
     },
-    # Futures surcharges possibles :
-    # "BTCUSD": { ... }
+    "BTCUSD": {
+        "adx_threshold": 20,  # Crypto plus volatil, ADX seuil bas
+        "adx_strong": 25,
+        "sl_atr_trending": 3.0,  # SL large pour crypto volatile
+        "tp_atr_trending": 7.0,  # TP large pour laisser courir
+        "pullback_band": 0.8,
+        "risk_mult": 0.60,  # Conservatif pour crypto
+    },
+    "USOIL.cash": {
+        "adx_threshold": 22,
+        "adx_strong": 26,
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.0,
+        "pullback_band": 0.5,
+        "risk_mult": 0.70,
+    },
 }
 
 

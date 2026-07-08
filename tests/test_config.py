@@ -28,7 +28,7 @@ def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
     # 17 symboles (3 Juillet 2026) — portefeuille étendu (5 ajoutés pour synchro .env)
-    assert len(cfg.trading.symbols) == 17  # 17 symboles (3 Juillet 2026 — portefeuille étendu)
+    assert len(cfg.trading.symbols) == 18  # 🚀 PHASE 4: 18 symboles (8 Juillet 2026 — +USDCHF)
     assert "XAUUSD" in cfg.trading.symbols
     assert "BTCUSD" in cfg.trading.symbols
     assert "EURUSD" in cfg.trading.symbols  # réactivé 29 Juin (high confidence gate)
@@ -51,7 +51,7 @@ def test_as_flat_dict():
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
     assert flat["RISK_PER_TRADE_PCT"] == 0.008  # 🚀 PHASE 2: 0.80% (était 0.20%)
-    assert flat["TRADING_MAX_POSITIONS"] == 18  # 🔧 ×1.5: 12→18
+    assert flat["TRADING_MAX_POSITIONS"] == 24  # 🚀 PHASE 4: 24 (12 symboles actifs)
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -70,7 +70,7 @@ def test_symbol_limits_new_portfolio():
 
     cfg = load_config("default")
     btc = cfg.symbol_limits.get("BTCUSD", {})
-    assert btc.risk_mult == 0.2  # 🔧 OPTIMIZER: ↓ 1.00→0.20 — PF 0.87, PnL négatif
+    assert btc.risk_mult == 0.5  # 🚀 PHASE 4: ↑ 0.20→0.50 (réactivation 8 Juillet)
     assert btc.allow_buys is True
     assert btc.allow_shorts is True
     assert btc.max_lot == 0.05  # ×5 Juillet 2026
@@ -129,7 +129,7 @@ def test_config_simple_compat():
 
     assert cfg.ROBOT_MAGIC == 999001
     assert cfg.RISK_PER_TRADE == 0.008  # 🚀 PHASE 2: 0.80% (était 0.30%)
-    assert cfg.MAX_ORDERS_PER_MINUTE == 6  # 🔧 3 Juillet 2026: réduit post-crash (était 12)
+    assert cfg.MAX_ORDERS_PER_MINUTE == 8  # 🚀 PHASE 4: ↑ 6→8 (12 symboles actifs)
     assert cfg.__version__ == "4.1.0"
     assert cfg.MIN_SIGNAL_SCORE == 0.60  # 🔧 OPTIMIZER: Retour à 0.60 (était 0.80)
 

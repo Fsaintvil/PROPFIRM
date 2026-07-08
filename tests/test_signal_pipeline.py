@@ -544,12 +544,12 @@ class TestDynamicPositionLimits:
             }
         )
         result = pipeline.process(
-            symbol="BTCUSD",
+            symbol="USDJPY",
             cycle_count=1,
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"BTCUSD": 4},
+            config_limits={"USDJPY": 4},
             last_signals={},
             log_throttle={},
         )
@@ -574,12 +574,12 @@ class TestDynamicPositionLimits:
             }
         )
         result = pipeline.process(
-            symbol="BTCUSD",
+            symbol="USDJPY",
             cycle_count=1,
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"BTCUSD": 2},  # hard cap = 2
+            config_limits={"USDJPY": 2},  # hard cap = 2
             last_signals={},
             log_throttle={},
         )
@@ -604,12 +604,12 @@ class TestDynamicPositionLimits:
             }
         )
         result = pipeline.process(
-            symbol="BTCUSD",
+            symbol="USDJPY",
             cycle_count=1,
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"BTCUSD": 10},
+            config_limits={"USDJPY": 10},
             last_signals={},
             log_throttle={},
         )
@@ -634,12 +634,12 @@ class TestDynamicPositionLimits:
             }
         )
         result = pipeline.process(
-            symbol="BTCUSD",
+            symbol="USDJPY",
             cycle_count=1,
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"BTCUSD": 10},
+            config_limits={"USDJPY": 10},
             last_signals={},
             log_throttle={},
         )
@@ -664,12 +664,12 @@ class TestDynamicPositionLimits:
             }
         )
         result = pipeline.process(
-            symbol="BTCUSD",
+            symbol="USDJPY",
             cycle_count=1,
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"BTCUSD": 10},
+            config_limits={"USDJPY": 10},
             last_signals={},
             log_throttle={},
         )

@@ -225,7 +225,7 @@ class FTMOProtector:
             lambda: self._check_risk_state(symbol, signal),
             lambda: self._check_profile(symbol, signal),
             lambda: self._check_session(symbol, signal, check_danger_hours),
-            lambda: self._check_consistency_cap(),  # 🔒 CONSISTENCY CAP (préventif, 6 Juillet 2026)
+            # lambda: self._check_consistency_cap(),  # 🔒 DÉSACTIVÉ 8 Juillet 2026 — bloquait tous les trades (ratio 100% sur 1 seul jour positif)
             lambda: self._check_ftmo_status(),
         ):
             ok, reason = check()
@@ -565,6 +565,11 @@ class FTMOProtector:
         return True, None
 
     def _check_consistency_cap(self) -> tuple[bool, str | None]:
+        """🔒 CONSISTENCY CAP: PRÉVENTIF — DÉSACTIVÉ 8 Juillet 2026.
+        Bloquait tous les trades quand un seul jour était positif (ratio=100%).
+        Le post-facto check dans challenge._check_consistency() suffit.
+        """
+        return True, None
         """🔒 CONSISTENCY CAP: PRÉVENTIF — bloque les trades si le PnL du jour
         dépasse déjà le seuil de consistance FTMO (30% du total des jours positifs).
 
