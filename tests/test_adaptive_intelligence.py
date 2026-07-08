@@ -209,14 +209,15 @@ class TestOnlineLearner:
 
     def test_update_params_wr_below_70(self):
         ol = OnlineLearner(window=40)
-        # 16 wins out of 40 = 40% WR < 70%, expectancy=0.1 > 0 → risk_mult=0.85, thresh=2.0
+        # 16 wins out of 40 = 40% WR < 70% → risk_mult=0.85, thresh=2.5 (plus sélectif)
+        # 🔓 FIX 8 Juillet: thresh 2.0→2.5 pour être PLUS sélectif quand WR bas
         for _ in range(16):
             ol.record_trade("EURUSD", 1.0, "TREND_UP")
         for _ in range(24):
             ol.record_trade("EURUSD", -0.5, "RANGING")
         params = ol.get_params("EURUSD")
         assert params["risk_mult"] == 0.85  # ⬆️ 0.75→0.85 : moins de pénalité (anti-spirale)
-        assert params["thresh"] == 2.0  # ↓ 2.5→2.0 (OL recalibré pour + de trades)
+        assert params["thresh"] == 2.5  # 🔓 FIX: plus sélectif quand WR bas
 
     def test_update_params_expectancy_negative_overrides_risk(self):
         ol = OnlineLearner(window=200)

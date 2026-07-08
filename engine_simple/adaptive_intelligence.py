@@ -259,11 +259,11 @@ class OnlineLearner:
 
     def _update_params(self, symbol: str) -> None:
         h = list(self.history.get(symbol, []))
-        # 🐛 FIX #10 (3 Juillet): min_trades augmenté à window//5 pour éviter
-        # que le OL pénalise trop vite des symboles avec peu de données.
-        # La cascade WR→expectancy→PF tuait les symboles à 15-30 trades
-        # (risk_mult tombait à 0.10-0.15). On laisse le temps de prouver l'edge.
-        min_trades = max(30, self.window // 5)
+        # 🔓 FIX 8 Juillet: min_trades réduit à window//10 pour que l'OL s'active
+        # plus tôt (20 trades au lieu de 40). L'ancien seuil empêchait l'OL
+        # d'agir sur les symboles avec < 40 trades, le rendant inutile.
+        # Le plancher à 20 évite les décisions sur un échantillon trop petit.
+        min_trades = max(20, self.window // 10)
         if len(h) < min_trades:
             return
         # Filtrer les trades avec régime valide (IGNORE les trades UNKNOWN/?)
@@ -314,7 +314,10 @@ class OnlineLearner:
             risk_mult = 1.0  # ne pas réduire le risque des champions
             logger.info(f"  → Champion préservé: WR={wr:.1%}, expectancy={expectancy:.2f}, risk_mult=1.0")
         elif wr < 0.70:
-            thresh = 2.0  # seuil neutre — pas plus agressif quand WR bas
+            # 🔓 FIX 8 Juillet: thresh 2.0 → 2.5 (PLUS sélectif quand WR bas)
+            # Avant: thresh=2.0 était PLUS BAS que le défaut 2.5 → générait PLUS de trades en perdant
+            # Après: thresh=2.5 = plus sélectif = moins de trades mais meilleure qualité
+            thresh = 2.5  # plus sélectif quand WR bas
             risk_mult = 0.85  # ⬆️ 0.75→0.85 : moins de pénalité pour éviter la spirale mortelle
         elif wr > 0.82:
             thresh = 1.5  # ↓ 2.0→1.5 (très agressif quand WR excellent)
@@ -717,10 +720,11 @@ class AdaptiveEngine:
         adapted["_sweep_type"] = sweep_type
         adapted["_sweep_level"] = sweep_level
 
-        # 🔒 CAP de sécurité risk_mult : éviter les multiplications destructrices
+        # 🔓 FIX 8 Juillet: cap élargi à 2.0 (était 1.5) pour donner plus
+        # de marge à l'OL quand WR>82%. Le plancher à 0.5 est conservé.
         # Les multiplications successives (OL × structure × régime × stats) peuvent
-        # produire des risk_mult < 0.4 ou > 1.5, générant des lots absurdes (35× max_lot)
-        adapted["risk_mult"] = max(0.5, min(adapted.get("risk_mult", 1.0), 1.5))
+        # produire des risk_mult < 0.4 ou > 2.5, générant des lots absurdes.
+        adapted["risk_mult"] = max(0.5, min(adapted.get("risk_mult", 1.0), 2.0))
 
         return adapted
 

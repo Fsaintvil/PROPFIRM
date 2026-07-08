@@ -346,14 +346,14 @@ class SignalPipeline:
         if h4_conf < 1.0 and signal.get("score", 0.6) > 0.5:
             signal["score"] = max(0.5, signal["score"] * 0.90)
 
-        # Per-symbol risk_mult
+        # 🔓 FIX 8 Juillet: soft block SUPPRIMÉ — l'OL peut maintenant
+        # AUGMENTER le risk_mult (ex: WR>82% → risk_mult=1.15).
+        # Avant: static_risk_mult = 1.0 écrasait ol_risk_mult=1.15 → effet OL nul.
+        # Maintenant: effective = static × ol (OL peut monter ET descendre).
         from engine_simple.symbol_params import get_symbol_param
 
         static_risk_mult = get_symbol_param(symbol, "risk_mult", 1.0)
         effective_risk_mult = static_risk_mult * ol_risk_mult
-        if static_risk_mult < effective_risk_mult:
-            logger.info(f"  [SOFT BLOCK] {symbol}: risk_mult {effective_risk_mult:.3f} → {static_risk_mult:.3f}")
-            effective_risk_mult = static_risk_mult
         signal["risk_mult"] = effective_risk_mult
         signal["entry_price"] = entry if raw["action"] == "BUY" else (tick.bid if tick else 0)
         signal["higher_tf_conf"] = round(h4_conf, 2)
@@ -399,9 +399,11 @@ class SignalPipeline:
             ol_params = self.adaptive.learner.get_params(symbol, base_thresh=2.5)
             ol_thresh = ol_params.get("thresh", 2.5)
             ol_risk_mult = ol_params.get("risk_mult", 1.0)
-            # Appliquer le seuil OL si disponible, avec bornes sécurité [1.5, 2.5]
+            # 🔓 FIX 8 Juillet: supprimé le cap supérieur à 2.0 qui empêchait l'OL
+            # d'être plus sélectif. L'OL peut maintenant monter jusqu'à 2.5×ATR
+            # (voire plus si WR très bas). Le plancher à 1.5×ATR est conservé.
             if ol_thresh is not None:
-                ol_thresh_clamped = max(1.5, min(2.0, ol_thresh))  # cap à 2.0 (↓ 2.5 pour + de trades)
+                ol_thresh_clamped = max(1.5, ol_thresh)  # pas de cap supérieur — l'OL décide
                 ol_thresh_trending = ol_thresh_clamped
                 ol_thresh_ranging = max(1.5, ol_thresh_clamped - 0.5)
                 logger.debug(
@@ -462,21 +464,14 @@ class SignalPipeline:
         if h4_conf < 1.0 and signal.get("score", 0.6) > 0.5:
             signal["score"] = max(0.5, signal["score"] * 0.90)
 
-        # Per-symbol risk_mult — via SymbolParamManager (unifié)
-        #   strategy.py SYMBOL_CONFIG = source de vérité (soft blocks prioritaires)
-        #   OnlineLearner adapte selon WR (si pas de soft block)
-        #   cfg_score, dyn_score, WR_all, PnL, PF disponibles dans params
+        # 🔓 FIX 8 Juillet: soft block SUPPRIMÉ — l'OL peut maintenant
+        # AUGMENTER le risk_mult (ex: WR>82% → risk_mult=1.15).
+        # Avant: static_risk_mult = 1.0 écrasait ol_risk_mult=1.15 → effet OL nul.
+        # Maintenant: effective = static × ol (OL peut monter ET descendre).
         from engine_simple.symbol_params import get_symbol_param, update_dyn_score
 
         static_risk_mult = get_symbol_param(symbol, "risk_mult", 1.0)
         effective_risk_mult = static_risk_mult * ol_risk_mult
-        # Si la config statique est plus basse (soft block), elle gagne
-        if static_risk_mult < effective_risk_mult:
-            logger.info(
-                f"  [SOFT BLOCK] {symbol}: risk_mult {effective_risk_mult:.3f} → {static_risk_mult:.3f} "
-                f"(stratégie prioritaire)"
-            )
-            effective_risk_mult = static_risk_mult
         signal["risk_mult"] = effective_risk_mult
         signal["entry_price"] = entry if raw["action"] == "BUY" else (tick.bid if tick else 0)
         signal["higher_tf_conf"] = round(h4_conf, 2)
