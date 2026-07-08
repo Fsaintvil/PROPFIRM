@@ -728,14 +728,15 @@ class TestConsistencyCap:
         p.mt5.get_tick.return_value = tick
 
     def test_blocks_when_today_exceeds_consistency(self):
-        """Si le PnL du jour dépasse 30% du total positif, les trades sont bloqués."""
+        """🔓 DÉSACTIVÉ 8 Juillet 2026: consistency cap ne bloque plus (retour True, None).
+        Le test vérifie que la cap est bien ignorée, même quand today dépasse 30%."""
         p = make_protector()
         self._mock_symbol_info(p)
         p.initial_balance = 200000
 
         # 3 jours: jour1=$1000, jour2=$500, jour3 (today)=$2000
         # total positif = 1000+500+2000 = $3500
-        # today_pnl = $2000, ratio = 2000/3500 = 57.1% > 30%
+        # today_pnl = $2000, ratio = 2000/3500 = 57.1% > 30% → mais ne bloque plus
         p.daily_pnl_by_date = {
             date(2026, 7, 3): 1000.0,
             date(2026, 7, 4): 500.0,
@@ -755,8 +756,7 @@ class TestConsistencyCap:
                         "tp": 1.1200,
                     },
                 )
-                assert not ok, f"Expected blocked, got: {reason}"
-                assert "consistency cap" in reason.lower(), f"Wrong reason: {reason}"
+                assert ok, f"Consistency cap disabled but still blocking: {reason}"
 
     def test_allows_when_today_is_under_limit(self):
         """Si le PnL du jour est sous 30% du total, les trades sont autorisés."""
