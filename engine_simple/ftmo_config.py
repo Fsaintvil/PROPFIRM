@@ -313,14 +313,19 @@ SYMBOL_MAX_RISK = {
     "JP225.cash": 0.0,  # 🔴 Hard block — backtest -$22K après coûts
     "USDCHF": 0.0,  # 🔴 Re-bloqué 14 Juil — WR 16.7%, PF 0.012 (décision CIO + risk-compliance)
     "BNBUSD": 0.0,  # 🔴 Hard block — pas de données
-    "EURUSD": 0.30,  # 🔓 Débloqué 16 Juil 2026 — BUY-only, WR 44.8% live (+$28.72), cap 30%
+    "EURUSD": 0.30,  # 🔓 BUY-only 16 Juil — WR 44.8% live (58 trades), +$28.72, cap 30%
     "NZDUSD": 0.0,  # 🔴 Hard block 13 Juil — backtest -$240K après coûts
     "EURGBP": 1.0,  # 🔓 Débloqué 14 Juil 2026 — live WR 82.8% (29 trades)
     "AUDJPY": 1.0,  # 🔓 Débloqué 16 Juil 2026 — live WR 55.6%, PF 4.40 (+$11.34)
     "USDCAD": 0.0,  # 🔴 Hard block 13 Juil — backtest -$214K après coûts
     # Caps réduits — survivants backtest
-    "BTCUSD": 0.50,  # 🟡 Cap 50% — backtest +$232K après coûts (biaisé bull run)
+    "BTCUSD": 0.30,  # 🟡 Cap 30% — WR 48.0% live, -$193 sur 127 trades (Quant Auditor: réduire risque)
     "US500.cash": 0.10,  # 🟡 Cap 10% — backtest +$11K après coûts
     "US30.cash": 0.30,  # 🟡 Cap 30% — backtest +$71K après coûts
+    # Blocs préventifs — pas de données live, risque inconnu
+    "NATGAS.cash": 0.0,
+    "UKOIL.cash": 0.0,
+    "GER40.cash": 0.0,
+    "UK100.cash": 0.0,
     # USDJPY, USOIL.cash, SOLUSD — PAS hard-blockés (surveillance active)
 }

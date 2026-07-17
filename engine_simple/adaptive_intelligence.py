@@ -211,7 +211,23 @@ class OnlineLearner:
                 regime = row.get("direction", "?")[:5]  # BUY/SELL comme proxy de régime
                 if sym not in self.history:
                     self.history[sym] = deque(maxlen=self.window)
-                self.history[sym].append({"r": r_mul, "regime": regime})
+                self.history[sym].append(
+                    {
+                        "r": r_mul,
+                        "regime": regime,
+                        "time": row.get("timestamp", datetime.utcnow().isoformat())
+                        if "timestamp" in row
+                        else datetime.utcnow().isoformat(),
+                    }
+                )
+                # enrichir si disponible
+                try:
+                    pnl = float(row.get("pnl", 0))
+                    if pnl != 0:
+                        self.history[sym][-1]["profit"] = pnl
+                        self.history[sym][-1]["win"] = pnl > 0
+                except (ValueError, TypeError):
+                    pass
                 count += 1
         # Recalculer les paramètres pour chaque symbole
         for sym in list(self.history.keys()):
@@ -232,10 +248,21 @@ class OnlineLearner:
 
     # ── Enregistrement ──────────────────────────────────────────────
 
-    def record_trade(self, symbol: str, r_multiple: float, regime: str) -> None:
+    def record_trade(
+        self, symbol: str, r_multiple: float, regime: str, profit: Optional[float] = None, win: Optional[bool] = None
+    ) -> None:
         if symbol not in self.history:
             self.history[symbol] = deque(maxlen=self.window)
-        self.history[symbol].append({"r": r_multiple, "regime": regime})
+        entry = {
+            "r": r_multiple,
+            "regime": regime,
+            "time": datetime.utcnow().isoformat(),
+        }
+        if profit is not None:
+            entry["profit"] = profit
+        if win is not None:
+            entry["win"] = win
+        self.history[symbol].append(entry)
         # ⚠️ CRITIQUE: _update_params peut planter (ex: données corrompues).
         # try/finally garantit que save_state() est TOUJOURS appelée pour
         # ne JAMAIS perdre un trade live. Sans cela, l'OnlineLearner reste
@@ -776,9 +803,16 @@ class AdaptiveEngine:
         self._save_calibration()
 
     def record_result(
-        self, symbol: str, r_multiple: float, regime: Optional[str] = None, dl_features: Any = None, batch: bool = False
+        self,
+        symbol: str,
+        r_multiple: float,
+        regime: Optional[str] = None,
+        dl_features: Any = None,
+        batch: bool = False,
+        profit: Optional[float] = None,
+        win: Optional[bool] = None,
     ) -> None:
-        self.learner.record_trade(symbol, r_multiple, regime or "UNKNOWN")
+        self.learner.record_trade(symbol, r_multiple, regime or "UNKNOWN", profit=profit, win=win)
         if not batch:
             self._save_calibration()  # persistence immédiate après chaque trade réel
         if dl_features is not None and self.dl is not None and self.dl.available:

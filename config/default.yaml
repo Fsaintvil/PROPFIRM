@@ -60,9 +60,9 @@ trading:
     - USOIL.cash
 
   # 🚀 PHASE 4: 12 symboles actifs (intersection .env × YAML)
-  max_positions: 24             # 🔧 ×2: 12→24 (plus de symboles)
+  max_positions: 12             # 🔧 ×½: 24→12 (réduction post-audit, seuls ~6 symboles vraiment actifs)
   max_positions_per_symbol: 6   # 🔧 conservé
-  max_trades_per_day: 45        # ↑ 30→45 (12 symboles)
+  max_trades_per_day: 30        # ↓ 45→30 (réduction post-audit, focus qualité)
   max_signals_per_cycle: 10     # ↑ 8→10 (12 symboles)
   max_orders_per_minute: 8      # ↑ 6→8 (proportionnel)
   lot_size: 0.05                # lot de démarrage (×5 Juillet 2026)
@@ -75,7 +75,7 @@ trading:
 
 # ── Signal ───────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.75               # 🔴 URGENT 9 Juil 2026: ↑ 0.60→0.75 — filtre les mauvais trades (estimation: +$8,767/500 trades)
+  min_score: 0.80               # 🔴 URGENT 17 Juil 2026: ↑ 0.75→0.80 — filtre plus strict (WR challenge 42.6%)
   daily_profit_limit_pct: 0.008  # 0.8% profit/jour max (FTMO consistency)
 
 # ── Risque FTMO ─────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ risk:
   circuit_breaker_dd_pct: 0.06   # 🔧 FIX #5: 6% DD → arrêt d'urgence (était 8%)
 
   # --- Volume max global ---
-  global_max_lot: 0.02           # 🔴 FIX 10 Juil 2026: plafond absolu — évite les pertes $500+
+  global_max_lot: 0.01           # 🔴 FIX 17 Juil 2026: plafond absolu — évite les pertes $500+ (était 0.02)
 
   # --- Recalibration ---
   recalibration_frequency: 50    # recalib ML tous les 50 trades
@@ -160,7 +160,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 0.50  # 🔓 PHASE 4: Réactivation 8 Juillet 2026 — ↑ 0.20→0.50 (backtest 70% WR), OL ajustera
+    risk_mult: 0.30  # 🔻 REDUIT 17 Juil 2026: ↓ 0.50→0.30 — WR 48.0%, -$193 (Quant Auditor: structurellement perdant sur 127 trades)
     max_spread_points: 150
     adx_thresh: 20
     allow_buys: true
@@ -223,13 +223,13 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   GBPUSD:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 0.05  # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 0%, -$26
+    max_lot: 0.01                # 🔴 HARD BLOCK 17 Juil 2026 — WR 0% sur 5 trades, -$26 (Quant Auditor: aucun trade gagnant)
+    min_lot: 0.01
+    risk_mult: 0.0               # 🔴 HARD BLOCK 17 Juil 2026
     max_spread_points: 40
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false            # 🔴 HARD BLOCK 17 Juil 2026
+    allow_shorts: false          # 🔴 HARD BLOCK 17 Juil 2026
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -477,7 +477,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.02
     min_lot: 0.01
-    risk_mult: 0.50  # 🔓 DÉBLOQUÉ 14 Juillet 2026 — live WR 82.8% sur 29 trades (Signal Engine), mérite test
+    risk_mult: 0.80  # 🚀 BOOST 17 Juil 2026: ↑ 0.50→0.80 — WR 82.8% live sur 29 trades, +$27.45, PF excellent
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -600,13 +600,13 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   UKOIL.cash:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 1.00
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 0.0   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
     max_spread_points: 80
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -631,13 +631,13 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   NATGAS.cash:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 1.00
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 0.0   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
     max_spread_points: 100
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -724,13 +724,13 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   BNBUSD:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 1.00
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 0.0   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
     max_spread_points: 120
     adx_thresh: 20
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -880,13 +880,13 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   GER40.cash:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 1.00
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 0.0   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
     max_spread_points: 60
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -911,13 +911,13 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   UK100.cash:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 1.00
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 0.0   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
     max_spread_points: 60
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0

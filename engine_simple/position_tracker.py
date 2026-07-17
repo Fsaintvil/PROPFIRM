@@ -524,7 +524,9 @@ class PositionTracker:
             r1 = meta.get("r1_usd", 1)
             r_mul = round(closing.profit / r1, 2) if r1 > 0 else 0
             dl_features = meta.get("dl_features")
-            self.adaptive.record_result(closing.symbol, r_mul, regime, dl_features)
+            self.adaptive.record_result(
+                closing.symbol, r_mul, regime, dl_features, profit=closing.profit, win=closing.profit > 0
+            )
             self._perf(closing.symbol).record(closing.profit, r_mul)
             if self.audit:
                 self.audit.log_decision(

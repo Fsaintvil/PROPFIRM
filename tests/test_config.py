@@ -51,7 +51,7 @@ def test_as_flat_dict():
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
     assert flat["RISK_PER_TRADE_PCT"] == 0.004  # 🛡️ 9 Juil: ↓ 0.80%→0.40% (protection FTMO)
-    assert flat["TRADING_MAX_POSITIONS"] == 24  # 🚀 PHASE 4: 24 (12 symboles actifs)
+    assert flat["TRADING_MAX_POSITIONS"] == 12  # 🔧 17 Juil: ↓ 24→12 (post-audit, seuls ~6 symboles vraiment actifs)
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -72,7 +72,7 @@ def test_symbol_limits_new_portfolio():
 
     cfg = load_config("default")
     btc = cfg.symbol_limits.get("BTCUSD", {})
-    assert btc.risk_mult == 0.5  # 🚀 PHASE 4: ↑ 0.20→0.50 (réactivation 8 Juillet)
+    assert btc.risk_mult == 0.3  # 🔻 17 Juil: ↓ 0.50→0.30 (WR 48%, -$193, Quant Auditor)
     assert btc.allow_buys is True
     assert btc.allow_shorts is True
     assert btc.max_lot == 0.05  # ×5 Juillet 2026
@@ -133,7 +133,7 @@ def test_config_simple_compat():
     assert cfg.RISK_PER_TRADE == 0.002  # 🛡️ 10 Juil: ↓ 0.004→0.002 (production override per_trade_pct)
     assert cfg.MAX_ORDERS_PER_MINUTE == 8  # 🚀 PHASE 4: ↑ 6→8 (12 symboles actifs)
     assert cfg.__version__ == "4.1.0"
-    assert cfg.MIN_SIGNAL_SCORE == 0.75  # 🛡️ 9 Juil: ↑ 0.60→0.75 (filtrage renforcé)
+    assert cfg.MIN_SIGNAL_SCORE == 0.80  # 🛡️ 17 Juil: ↑ 0.75→0.80 (filtrage renforcé, WR challenge 42.6%)
 
 
 def test_config_reload():
