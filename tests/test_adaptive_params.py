@@ -60,7 +60,7 @@ class TestAdaptiveParametersInit:
         ap = AdaptiveParameters("BTCUSD", state_dir=str(tmp_path))
         assert ap.symbol == "BTCUSD"
         assert ap.lookback == 100
-        assert ap.min_trades == 20
+        assert ap.min_trades == 10  # 🔧 16 Juil 2026: 20→10 pour activation plus rapide
         assert ap._trades == []
         assert ap._params.sample_size == 0
 

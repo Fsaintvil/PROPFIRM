@@ -159,6 +159,16 @@ class StrategySelector:
         Returns:
             StrategyParams avec tous les multiplicateurs
         """
+        # 🐛 FIX C1: Normaliser les noms de régime de strategy.py vers les clés REGIME_PARAMS
+        # strategy.py envoie TREND_UP/TREND_DOWN mais REGIME_PARAMS utilise
+        # STRONG_UPTREND/STRONG_DOWNTREND. Sans ce mapping, TOUS les signaux
+        # trending reçoivent les paramètres RANGING (SL large, TP réduit).
+        REGIME_ALIAS = {
+            "TREND_UP": "STRONG_UPTREND",
+            "TREND_DOWN": "STRONG_DOWNTREND",
+        }
+        regime = REGIME_ALIAS.get(regime, regime)
+
         # Base params from regime
         base = REGIME_PARAMS.get(regime, REGIME_PARAMS["RANGING"])
 

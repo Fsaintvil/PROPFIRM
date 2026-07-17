@@ -43,11 +43,16 @@ logger = logging.getLogger("ftmo.trailer")
 class Trailer:
     """ATR-based trailing SL + partial TP + time-stop + structure exit."""
 
-    def __init__(self, mt5_connector: Any, config: dict) -> None:
+    def __init__(self, mt5_connector: Any, config: dict, shared_lock: Any = None) -> None:
         self.mt5: Any = mt5_connector
         self.config: dict = config
 
         # State — managed by FTMOProtector, accessed via references
+        # 🔧 FIX 16 Juillet 2026: shared_lock protège les 6 dicts partagés
+        # contre les race conditions (ThreadPoolExecutor interleaving).
+        # Note: threading.RLock est une factory function, pas une classe —
+        # on utilise Any pour la type hint.
+        self._shared_lock: Any = shared_lock
         self.partial_closed: set = set()
         self.trailing_peaks: dict = {}
         self.position_regime: dict = {}
@@ -529,7 +534,10 @@ class Trailer:
             # Avant: jitter_sl et jitter_tp indépendants → RR pouvait tomber à 1.8
             jitter = 1.0 + random.uniform(-0.05, 0.05)  # ±5% sur les deux
             sl_dist = max(sl_mult * atr_val * jitter, min_dist)
-            tp_dist = max(tp_mult * atr_val * jitter, min_dist)
+            # 🐛 FIX 13 Juil 2026: préserver le ratio RR quand sl_mult < ATR_MULTIPLIER
+            # Avant: tp_dist avait aussi min_dist comme plancher, ce qui détruisait le RR
+            # (ex: sl_mult=1.0, tp_mult=1.5 → les deux clampaient à 1.5×ATR → RR=1.00)
+            tp_dist = sl_dist * tp_mult / sl_mult
         else:
             sl_dist = self.config.get("SL_PIPS", 15) * (0.0001 if "JPY" not in symbol else 0.01)
             tp_dist = sl_dist * self.config.get("TP_MULTIPLIER", 2.0)

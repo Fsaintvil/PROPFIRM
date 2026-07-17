@@ -29,6 +29,7 @@ try:
     MAX_POSITIONS_PER_SYMBOL: int = _cfg.trading.max_positions_per_symbol
     MAX_TRADES_PER_DAY: int = _cfg.trading.max_trades_per_day
     LOT_SIZE: float = _cfg.trading.lot_size
+    GLOBAL_MAX_LOT: float = _cfg.trading.global_max_lot
     MIN_TRADE_INTERVAL_SEC: int = _cfg.trading.min_trade_interval_sec
     BATCH_INTERVAL_SEC: int = _cfg.trading.batch_interval_sec
     HISTORY_LOOKBACK_DAYS: int = _cfg.trading.history_lookback_days
@@ -135,7 +136,6 @@ except Exception as e:
         "BTCUSD",
         "ETHUSD",
         "SOLUSD",
-        "LNKUSD",
         "BNBUSD",
         "US500.cash",
         "US30.cash",

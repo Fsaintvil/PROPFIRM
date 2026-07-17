@@ -221,11 +221,11 @@ class PositionTracker:
         if hasattr(self.adaptive, "learner") and hasattr(self.adaptive.learner, "batch_mode"):
             self.adaptive.learner.batch_mode(True)
         try:
-            import MetaTrader5 as mt5
-
             since = int(time.time() - cfg.HISTORY_LOOKBACK_DAYS * 86400)
             now_ts = int(time.time())
-            deals = mt5.history_deals_get(since, now_ts) or []
+            # 🔧 FIX 16 Juillet 2026: Utiliser self.mt5.get_history() avec timeout
+            # au lieu de mt5.history_deals_get() direct (peut bloquer indéfiniment).
+            deals = self.mt5.get_history(since, now_ts) or []
             recorded = 0
             for d in deals:
                 if d.magic != cfg.ROBOT_MAGIC or d.profit == 0:
@@ -303,7 +303,6 @@ class PositionTracker:
             if p.ticket not in self._position_meta:
                 order_type = self.mt5.ORDER_TYPE_BUY if p.type == 0 else self.mt5.ORDER_TYPE_SELL
                 r1 = self.mt5.calc_profit(order_type, p.symbol, p.volume, p.price_open, p.sl)
-                raw_regime = p.comment.replace("ADAPT_", "") if p.comment.startswith("ADAPT_") else "LEGACY"
                 # Re-traduire le code court (3 lettres) en nom complet de régime
                 # Le commentaire MT5 stocke "RAN" pour "RANGING", "DOW" pour "TREND_DOWN", etc.
                 REGIME_SHORT_TO_FULL = {
@@ -313,7 +312,28 @@ class PositionTracker:
                     "HIG": "HIGH_VOL",
                     "LOW": "LOW_VOL",
                 }
-                regime = REGIME_SHORT_TO_FULL.get(raw_regime, raw_regime)
+                # 🔧 FIX 10 Juil 2026: Plus de fallback "LEGACY" systematique.
+                # Avant : comment sans "ADAPT_" → "LEGACY" (polluait l'OL avec donnees pourries)
+                # Apres : on essaie de parser le commentaire, sinon on utilise le regime
+                # stocke dans _position_meta (mis a jour par add_meta > track_new).
+                raw_regime = p.comment.replace("ADAPT_", "") if p.comment.startswith("ADAPT_") else ""
+                if raw_regime in REGIME_SHORT_TO_FULL:
+                    regime = REGIME_SHORT_TO_FULL[raw_regime]
+                elif raw_regime in ("", "LEGACY"):
+                    # Fallback: verifier le regime stocke anterieurement
+                    existing_meta = self._position_meta.get(p.ticket, {})
+                    stored_regime = existing_meta.get("regime", "")
+                    if stored_regime and stored_regime != "LEGACY":
+                        regime = stored_regime
+                    else:
+                        # Si on a un signal detecte par strategy.py, l'utiliser
+                        # sinon RANGING par defaut (neutre)
+                        regime = "RANGING"
+                        logger.debug(
+                            f"  [TRACK] {p.symbol} #{p.ticket}: fallback regime=RANGING (comment='{p.comment}')"
+                        )
+                else:
+                    regime = REGIME_SHORT_TO_FULL.get(raw_regime, raw_regime)
                 meta = dict(
                     symbol=p.symbol,
                     entry=p.price_open,
@@ -387,9 +407,9 @@ class PositionTracker:
             if closing is None:
                 # Fallback: chercher par position ID directement (plus fiable que time-range)
                 try:
-                    import MetaTrader5 as mt5
-
-                    direct = mt5.history_deals_get(position=ticket)
+                    # 🔧 FIX 16 Juillet 2026: Utiliser self.mt5.get_history_by_position() avec timeout
+                    # au lieu de mt5.history_deals_get(position=...) direct.
+                    direct = self.mt5.get_history_by_position(ticket)
                     if direct and len(direct) > 0:
                         for d in direct:
                             if d.profit != 0:
@@ -421,11 +441,18 @@ class PositionTracker:
             self._recorded_deals[ticket] = None
             # 🔒 Si le trade a été fermé AVANT le démarrage du robot, c'est un replay historique
             # → ne pas incrémenter consecutive_losses (sinon circuit breaker trip au restart)
-            # H-07: double vérification robuste (time float + timestamp int)
+            # 🔧 FIX 9 Juillet 2026: support datetime + int robuste (float(datetime) crashait)
             deal_time = getattr(closing, "time", None)
             if deal_time is None:
                 deal_time = getattr(closing, "timestamp", 0)
-            is_historical = bool(deal_time) and float(deal_time) < float(self._start_time)
+            # Conversion robuste: datetime → timestamp, int/float → float
+            if isinstance(deal_time, datetime):
+                deal_ts = deal_time.timestamp()
+            elif isinstance(deal_time, (int, float)):
+                deal_ts = float(deal_time)
+            else:
+                deal_ts = 0.0
+            is_historical = deal_ts > 0 and deal_ts < float(self._start_time)
             # Prendre le vrai timestamp MT5 pour que challenge.py filtre les trades >48h
             trade_dt = getattr(closing, "time", None)
             if isinstance(trade_dt, (int, float)):
@@ -541,6 +568,12 @@ class PositionTracker:
 
     def get_active_count(self) -> int:
         return len(self._position_meta)
+
+    def get_symbol_performance(self, symbol: str) -> SymbolPerformance | None:
+        """🔧 FIX 16 Juillet 2026: Retourne le SymbolPerformance pour un symbole.
+        Méthode ajoutée pour remplacer l'appel inexistant dans symbol_params.py.
+        """
+        return self._perf(symbol)
 
     def performance_summary(self) -> dict[str, Any]:
         return {sym: perf.summary() for sym, perf in self.performance.items()}

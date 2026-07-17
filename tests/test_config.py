@@ -35,7 +35,7 @@ def test_load_default_config():
     assert "USDJPY" in cfg.trading.symbols  # réactivé 24 Juin
     assert "NZDUSD" in cfg.trading.symbols  # WR 60% live
     assert "BTCUSD" in cfg.trading.symbols  # WR 52.7% live
-    assert cfg.risk.per_trade_pct == 0.008  # 🚀 PHASE 2: 0.80% par trade (était 0.20%)
+    assert cfg.risk.per_trade_pct == 0.004  # 🛡️ 9 Juil: ↓ 0.80%→0.40% (protection FTMO)
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 1.8  # 🔧 FIX #5: Ultra-conservateur (était 1.5)
 
@@ -50,7 +50,7 @@ def test_as_flat_dict():
     cfg = load_config("default")
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
-    assert flat["RISK_PER_TRADE_PCT"] == 0.008  # 🚀 PHASE 2: 0.80% (était 0.20%)
+    assert flat["RISK_PER_TRADE_PCT"] == 0.004  # 🛡️ 9 Juil: ↓ 0.80%→0.40% (protection FTMO)
     assert flat["TRADING_MAX_POSITIONS"] == 24  # 🚀 PHASE 4: 24 (12 symboles actifs)
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
@@ -59,9 +59,11 @@ def test_symbol_limits_defaults():
     cfg = load_config("default")
     assert "XAUUSD" in cfg.symbol_limits
     assert "BTCUSD" in cfg.symbol_limits
-    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.10  # 🔧 FIX 6 Juil: ↓ 0.20→0.10 (lot excessif)
-    assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01  # 🔧 FIX 6 Juil: ↓ 0.05→0.01 (aligné strategy.py)
-    assert cfg.symbol_limits["XAUUSD"].risk_mult == 1.50  # 🔧 OPTIMIZER: ↑ pour WR 73.9%
+    assert (
+        cfg.symbol_limits["XAUUSD"].max_lot == 0.01
+    )  # 🔴 HARD BLOCK 16 Juil 2026: ↓ 0.03→0.01 (stop XAUUSD, 89% pertes)
+    assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
+    assert cfg.symbol_limits["XAUUSD"].risk_mult == 0.0  # 🔴 HARD BLOCK 16 Juil 2026: 0.60→0.0 (stop XAUUSD)
 
 
 def test_symbol_limits_new_portfolio():
@@ -128,10 +130,10 @@ def test_config_simple_compat():
     import config_simple as cfg
 
     assert cfg.ROBOT_MAGIC == 999001
-    assert cfg.RISK_PER_TRADE == 0.008  # 🚀 PHASE 2: 0.80% (était 0.30%)
+    assert cfg.RISK_PER_TRADE == 0.002  # 🛡️ 10 Juil: ↓ 0.004→0.002 (production override per_trade_pct)
     assert cfg.MAX_ORDERS_PER_MINUTE == 8  # 🚀 PHASE 4: ↑ 6→8 (12 symboles actifs)
     assert cfg.__version__ == "4.1.0"
-    assert cfg.MIN_SIGNAL_SCORE == 0.60  # 🔧 OPTIMIZER: Retour à 0.60 (était 0.80)
+    assert cfg.MIN_SIGNAL_SCORE == 0.75  # 🛡️ 9 Juil: ↑ 0.60→0.75 (filtrage renforcé)
 
 
 def test_config_reload():

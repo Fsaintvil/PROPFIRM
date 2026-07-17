@@ -11,6 +11,7 @@ Couverture :
 import gc
 import os
 import sys
+import tempfile
 import time
 from threading import Thread
 from unittest.mock import MagicMock, patch
@@ -20,7 +21,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ["LOG_LEVEL"] = "CRITICAL"
 os.environ["SYMBOLS"] = (
-    "XAUUSD,BTCUSD,EURUSD,GBPUSD,USDJPY,US30.cash,USDCHF,USDCAD,AUDUSD,NZDUSD,USDJPY,EURJPY,GBPJPY,EURGBP,AUDJPY,ETHUSD,SOLUSD,XAGUSD,USOIL.cash,UKOIL.cash,NATGAS.cash,US500.cash,US100.cash,JP225.cash,GER40.cash,UK100.cash,BNBUSD,LNKUSD"
+    "XAUUSD,BTCUSD,EURUSD,GBPUSD,USDJPY,US30.cash,USDCHF,USDCAD,AUDUSD,NZDUSD,USDJPY,EURJPY,GBPJPY,EURGBP,AUDJPY,ETHUSD,SOLUSD,XAGUSD,USOIL.cash,UKOIL.cash,NATGAS.cash,US500.cash,US100.cash,JP225.cash,GER40.cash,UK100.cash,BNBUSD"
 )
 
 import config_simple as cfg
@@ -446,10 +447,9 @@ class TestCacheTTL:
 
     def test_rate_cache_set_get(self):
         """RateCache.set_rates/get_rates doit fonctionner"""
-        import tempfile, gc
+        import gc
 
-        tmp = tempfile.mkdtemp()
-        try:
+        with tempfile.TemporaryDirectory() as tmp:
             cache, _ = self._make_cache(tmp)
             cache.set_rates("EURUSD", "H1", 100, {"close": [1.1, 1.2]})
             result = cache.get_rates("EURUSD", "H1", 100)
@@ -457,34 +457,24 @@ class TestCacheTTL:
             assert result["close"] == [1.1, 1.2]
             del cache
             gc.collect()
-        finally:
-            import shutil
-
-            shutil.rmtree(tmp, ignore_errors=True)
 
     def test_rate_cache_expiry(self):
         """RateCache doit expirer après TTL=0 (immédiat)"""
-        import tempfile, gc
+        import gc
 
-        tmp = tempfile.mkdtemp()
-        try:
+        with tempfile.TemporaryDirectory() as tmp:
             cache, _ = self._make_cache(tmp, default_ttl=0)
             cache.set_rates("EURUSD", "H1", 50, {"close": [1.1]})
             result = cache.get_rates("EURUSD", "H1", 50)
             assert result is None, "RateCache n'a pas expiré avec TTL=0"
             del cache
             gc.collect()
-        finally:
-            import shutil
-
-            shutil.rmtree(tmp, ignore_errors=True)
 
     def test_rate_cache_clear(self):
         """RateCache.clear() doit vider le cache"""
-        import tempfile, gc
+        import gc
 
-        tmp = tempfile.mkdtemp()
-        try:
+        with tempfile.TemporaryDirectory() as tmp:
             cache, _ = self._make_cache(tmp, default_ttl=60)
             cache.set_rates("EURUSD", "H1", 100, {"close": [1.1]})
             cache.set_rates("GBPUSD", "H1", 100, {"close": [1.3]})
@@ -494,10 +484,6 @@ class TestCacheTTL:
             assert cache.get_rates("GBPUSD", "H1", 100) is None
             del cache
             gc.collect()
-        finally:
-            import shutil
-
-            shutil.rmtree(tmp, ignore_errors=True)
 
 
 # ═══════════════════════════════════════════════════════════════

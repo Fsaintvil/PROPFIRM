@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+import threading
 import time
 from datetime import datetime, timedelta
 from typing import Any, Optional
@@ -73,6 +74,11 @@ class FTMOProtector:
         self.global_cooldown_until = None  # trading control, not challenge tracking
 
         # ── Position tracking (still in FTMOProtector) ───────────────
+        # 🔧 FIX 16 Juillet 2026: Shared RLock protège les 6 dicts partagés
+        # entre FTMOProtector et Trailer contre les race conditions.
+        # Même si le robot est monothreadé, le ThreadPoolExecutor de MT5
+        # peut causer des entrelacements lors des callbacks timeout.
+        self._shared_lock = threading.RLock()
         self.position_open_times = {}
         self.partial_closed = set()
         self.peak_profit = {}
@@ -100,7 +106,7 @@ class FTMOProtector:
         self._auto_stop_until = None
 
         # ── Trailer (delegated) ──────────────────────────────────────
-        self.trailer = Trailer(mt5, config)
+        self.trailer = Trailer(mt5, config, shared_lock=self._shared_lock)
         self.trailer.partial_closed = self.partial_closed
         self.trailer.trailing_peaks = self.trailing_peaks
 
@@ -225,7 +231,9 @@ class FTMOProtector:
             lambda: self._check_risk_state(symbol, signal),
             lambda: self._check_profile(symbol, signal),
             lambda: self._check_session(symbol, signal, check_danger_hours),
-            # lambda: self._check_consistency_cap(),  # 🔒 DÉSACTIVÉ 8 Juillet 2026 — bloquait tous les trades (ratio 100% sur 1 seul jour positif)
+            lambda: (
+                self._check_consistency_cap()
+            ),  # 🔧 Réactivé 16 Juillet 2026 — FIX: guard `positive_days < 2` au lieu de `len(...) < 2`
             lambda: self._check_ftmo_status(),
         ):
             ok, reason = check()
@@ -439,17 +447,37 @@ class FTMOProtector:
         if self._daily_loss_violated:
             return False, f"FTMO daily loss limit: {daily_loss:.1%}"
 
-        # Zone 3: >1.5% daily loss → stop
+        # Zone 3: >1.5% daily loss → STOP TOTAL (global_cooldown)
         zone3 = self.config.get("ZONE3_LOSS_PCT", 0.015)
-        if daily_loss >= zone3 and self.daily_stats["losses"] > 0:
-            return False, f"Zone 3: daily DD {daily_loss:.1%} >= {zone3:.1%}, stop"
+        # 🐛 FIX C2: Supprimé `and self.daily_stats["losses"] > 0` qui bypassait
+        # le hard stop quand une seule position ouverte faisait perdre 2%+ (gap/news)
+        # sans avoir encore de `losses` comptabilisé (losses incrémenté APRÈS fermeture).
+        if daily_loss >= zone3:
+            # 🔧 13 Juillet 2026: Global cooldown jusqu'à la fin de la journée
+            now = datetime.utcnow()
+            end_of_day = now.replace(hour=23, minute=59, second=59)
+            remaining = (end_of_day - now).total_seconds() / 60
+            self.global_cooldown_until = now + timedelta(minutes=max(remaining, 1))
+            logger.warning(
+                f"  🛑 HARD STOP: daily loss {daily_loss:.2%} >= {zone3:.1%}, "
+                f"cooldown until {self.global_cooldown_until.strftime('%H:%M')} (fin de journée)"
+            )
+            return False, f"ZONE 3: daily DD {daily_loss:.1%} >= {zone3:.1%}, STOP total"
 
         # Per-symbol auto-pause après N pertes consécutives
         from engine_simple.strategy import get_symbol_full_config as _get_sym_full_cfg
 
         sym_full_cfg = _get_sym_full_cfg(symbol)
-        sym_auto_pause = sym_full_cfg.get("auto_pause_losses", self.config.get("AUTO_PAUSE_LOSSES", 5))
-        sym_cooldown_minutes = sym_full_cfg.get("cooldown_minutes", self.config.get("COOLDOWN_MINUTES", 15))
+        # 🔧 FIX 10 Juillet 2026: Config globale (production.yaml) DOIT primer sur SYMBOL_CONFIG
+        # Avant: sym_full_cfg.get() écrase la valeur de production.yaml
+        global_auto_pause = self.config.get("auto_pause_losses", self.config.get("AUTO_PAUSE_LOSSES"))
+        sym_auto_pause = (
+            global_auto_pause if global_auto_pause is not None else sym_full_cfg.get("auto_pause_losses", 5)
+        )
+        global_cooldown = self.config.get("cooldown_minutes", self.config.get("COOLDOWN_MINUTES"))
+        sym_cooldown_minutes = (
+            global_cooldown if global_cooldown is not None else sym_full_cfg.get("cooldown_minutes", 15)
+        )
         if self.consecutive_losses >= sym_auto_pause:
             now = datetime.utcnow()
             # 🔧 FIX 6 Juillet 2026: Cooldown progressif — durée × 2 à chaque palier
@@ -565,30 +593,22 @@ class FTMOProtector:
         return True, None
 
     def _check_consistency_cap(self) -> tuple[bool, str | None]:
-        """🔒 CONSISTENCY CAP: PRÉVENTIF — DÉSACTIVÉ 8 Juillet 2026.
-        Bloquait tous les trades quand un seul jour était positif (ratio=100%).
-        Le post-facto check dans challenge._check_consistency() suffit.
-        """
-        return True, None
-        """🔒 CONSISTENCY CAP: PRÉVENTIF — bloque les trades si le PnL du jour
-        dépasse déjà le seuil de consistance FTMO (30% du total des jours positifs).
+        """🔒 CONSISTENCY CAP: PRÉVENTIF — Réactivé 16 Juillet 2026.
+        Bloque les trades si le PnL du jour dépasse déjà le seuil de consistance FTMO
+        (30% du total des jours positifs).
 
         Règle FTMO : best_day ≤ 30% × sum(jours positifs)
         Si aujourd'hui dépasse déjà ce seuil, tout trade supplémentaire
         (même gagnant) ne ferait qu'aggraver la situation.
 
-        C'est la version PRÉVENTIVE : on bloque avant la violation,
-        contrairement à _check_consistency() qui détecte après coup.
-
-        La dilution (ajouter des trades pour réduire le ratio) n'est plus
-        possible une fois le seuil atteint, car le PnL du jour monte aussi
-        vite que le total — le ratio reste à ~100% si aujourd'hui est le
-        seul jour profitable.
-
-        Ajouté 6 Juillet 2026 — Session Robot Manager.
+        🔧 FIX 16 Juillet 2026:
+        - Ancien guard: `len(self.daily_pnl_by_date) < 2` (vérifiait TOUS les jours, même négatifs)
+        - Nouveau guard: `positive_days < 2` (ne compte que les jours AVEC PnL positif)
+        - Problème: si 1 seul jour positif = aujourd'hui, ratio = 100% → toujours bloqué.
         """
         total_positive = sum(v for v in self.daily_pnl_by_date.values() if v > 0)
-        if len(self.daily_pnl_by_date) < 2 or total_positive <= 0:
+        positive_days = sum(1 for v in self.daily_pnl_by_date.values() if v > 0)
+        if positive_days < 2 or total_positive <= 0:
             return True, None
 
         today = datetime.utcnow().date()
@@ -685,8 +705,9 @@ class FTMOProtector:
             elif dd > 0.03:
                 mult *= 0.90  # DD > 3% → -10%
 
-        # 3. Pertes consécutives (utilise AUTO_PAUSE_LOSSES de la config)
-        auto_pause = self.config.get("AUTO_PAUSE_LOSSES", 5)
+        # 3. Pertes consécutives (utilise auto_pause_losses de la config)
+        # 🔧 FIX 10 Juillet 2026: snake_case (YAML) pas UPPER_CASE (env-style)
+        auto_pause = self.config.get("auto_pause_losses", self.config.get("AUTO_PAUSE_LOSSES", 5))
         if self.consecutive_losses >= auto_pause:
             mult *= 0.50  # Pause imminente → risque réduit de moitié
         elif self.consecutive_losses >= max(3, auto_pause - 2):
@@ -756,57 +777,18 @@ class FTMOProtector:
         return mult
 
     def _get_wr_based_max_lot(self, symbol: str) -> float:
-        """Calcule le max_lot progressif basé sur le WR du symbole.
+        """Calcule le max_lot — DÉSACTIVÉ (16 Juillet 2026).
 
-        Système de lot progressif (×5 Juillet 2026) :
-          WR < 55%  → lot 0.05 (démarrage ×5)
-          WR ≥ 55%  → lot 0.15
-          WR ≥ 65%  → lot 0.25
-          WR ≥ 75%  → lot 0.35
-          WR ≥ 85%  → lot 0.50
+        Le système de lot progressif (WR→lot) est désactivé car il a causé
+        des pertes catastrophiques sur XAUUSD (lot 0.20 au lieu de 0.01).
+        Les lots de 0.20 ont transformé des petites pertes normales en
+        désastres de -$627.80 (5 pires trades = 65% des pertes totales).
 
-        Fenêtre : 20 derniers trades du symbole (minimum 10 pour activer).
-
-        ⚠️ Le max_lot de la config YAML (symbol_limits) sert de PLAFOND ABSOLU.
-        Même si le WR est élevé, le lot ne dépassera jamais cette limite.
-
-        Args:
-            symbol: Nom du symbole
-
-        Returns:
-            float: max_lot basé sur le WR (entre 0.05 et 0.50), plafonné par la config
+        Retourne toujours le max_lot de la config YAML (fixe, pas de WR).
         """
-        # Limite absolue depuis la config YAML
-        cfg_max_lot = self.symbol_limits.get(symbol, {}).get("max_lot", 0.05)
-
-        sym_trades = self._symbol_trade_history.get(symbol, [])
-        if len(sym_trades) < 10:
-            # Pas assez de trades live → utiliser le max_lot de la config
-            logger.debug(f"  [WR-LOT] {symbol}: {len(sym_trades)} trades < 10 → config max_lot={cfg_max_lot}")
-            return cfg_max_lot
-
-        recent = sym_trades[-20:] if len(sym_trades) >= 20 else sym_trades
-        wins = sum(1 for t in recent if t.get("profit", 0) > 0)
-        wr = wins / len(recent)
-
-        if wr >= 0.85:
-            max_lot = 0.50
-        elif wr >= 0.75:
-            max_lot = 0.35
-        elif wr >= 0.65:
-            max_lot = 0.25
-        elif wr >= 0.55:
-            max_lot = 0.15
-        else:
-            max_lot = 0.05
-
-        # Plafonnement absolu par la config YAML (ne jamais dépasser)
-        max_lot = min(max_lot, cfg_max_lot)
-
-        logger.debug(
-            f"  [WR-LOT] {symbol}: {wins}/{len(recent)} WR={wr:.0%} → max_lot={max_lot:.2f} (cfg_cap={cfg_max_lot})"
-        )
-        return max_lot
+        cfg_max_lot = self.symbol_limits.get(symbol, {}).get("max_lot", 0.01)
+        logger.debug(f"  [LOT] {symbol}: lot progressif désactivé → max_lot config={cfg_max_lot}")
+        return cfg_max_lot
 
     def calculate_lot(
         self,
@@ -977,14 +959,15 @@ class FTMOProtector:
             logger.warning(traceback.format_exc())
 
     def check_invariants(self, position: Any) -> None:
-        ticket_key = str(position.ticket)
-        if ticket_key not in self.position_open_times:
-            open_time = getattr(position, "time", None) or datetime.utcnow()
-            self.position_open_times[ticket_key] = {"open_time": open_time, "symbol": position.symbol}
-        if ticket_key not in self.position_regime:
-            comment = getattr(position, "comment", "") or ""
-            self._parse_comment_regime(comment, ticket_key)
-        self._prune_position_times()
+        with self._shared_lock:
+            ticket_key = str(position.ticket)
+            if ticket_key not in self.position_open_times:
+                open_time = getattr(position, "time", None) or datetime.utcnow()
+                self.position_open_times[ticket_key] = {"open_time": open_time, "symbol": position.symbol}
+            if ticket_key not in self.position_regime:
+                comment = getattr(position, "comment", "") or ""
+                self._parse_comment_regime(comment, ticket_key)
+            self._prune_position_times()
         # Chaque sous-vérification est protégée individuellement :
         # le "readonly attribute" d'MT5 survient si la position a été modifiée
         # entre la lecture et l'envoi (ex: partial TP puis trailing dans le même cycle)
@@ -1006,19 +989,21 @@ class FTMOProtector:
                 logger.warning(f"[GUARD] {position.symbol} ticket={ticket_key}: {name} err: {e}")
 
     def set_position_regime(self, ticket: int, regime: str) -> None:
-        self.position_regime[str(ticket)] = regime
+        with self._shared_lock:
+            self.position_regime[str(ticket)] = regime
 
     def _prune_position_times(self) -> None:
-        if len(self.position_open_times) > 200:
-            try:
-                old = sorted(self.position_open_times.keys(), key=lambda k: self.position_open_times[k]["open_time"])[
-                    :-150
-                ]
-                for k in old:
-                    del self.position_open_times[k]
-            except Exception as e:
-                logger.warning(f"Prune failed: {e}")
-                self.position_open_times = dict(list(self.position_open_times.items())[-150:])
+        with self._shared_lock:
+            if len(self.position_open_times) > 200:
+                try:
+                    old = sorted(
+                        self.position_open_times.keys(), key=lambda k: self.position_open_times[k]["open_time"]
+                    )[:-150]
+                    for k in old:
+                        del self.position_open_times[k]
+                except Exception as e:
+                    logger.warning(f"Prune failed: {e}")
+                    self.position_open_times = dict(list(self.position_open_times.items())[-150:])
 
     def record_trade_result(self, symbol: str, profit: float, historical: bool = False, trade_time: Any = None) -> None:
         """Enregistre le résultat d'un trade fermé. Delegates to ChallengeTracker."""
@@ -1057,20 +1042,21 @@ class FTMOProtector:
         # Re-sync after pruning (may have been replaced)
         self._trade_history = self.challenge._trade_history
         # Position-level pruning (stays in FTMOProtector)
-        if len(self.partial_closed) > 500:
-            self.partial_closed = set(list(self.partial_closed)[-300:])
-        if len(self.peak_profit) > 500:
-            old = sorted(self.peak_profit.keys(), key=lambda k: int(k))[:-300]
-            for k in old:
-                del self.peak_profit[k]
-        if len(self.trailing_peaks) > 500:
-            old = sorted(self.trailing_peaks.keys(), key=lambda k: int(k))[:-300]
-            for k in old:
-                del self.trailing_peaks[k]
-        if len(self.position_regime) > 500:
-            old = sorted(self.position_regime.keys(), key=lambda k: int(k))[:-300]
-            for k in old:
-                del self.position_regime[k]
+        with self._shared_lock:
+            if len(self.partial_closed) > 500:
+                self.partial_closed = set(list(self.partial_closed)[-300:])
+            if len(self.peak_profit) > 500:
+                old = sorted(self.peak_profit.keys(), key=lambda k: int(k))[:-300]
+                for k in old:
+                    del self.peak_profit[k]
+            if len(self.trailing_peaks) > 500:
+                old = sorted(self.trailing_peaks.keys(), key=lambda k: int(k))[:-300]
+                for k in old:
+                    del self.trailing_peaks[k]
+            if len(self.position_regime) > 500:
+                old = sorted(self.position_regime.keys(), key=lambda k: int(k))[:-300]
+                for k in old:
+                    del self.position_regime[k]
 
     def get_progress_report(self) -> dict[str, Any]:
         """Progress report. Delegates to ChallengeTracker."""

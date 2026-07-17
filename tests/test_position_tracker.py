@@ -191,7 +191,8 @@ class TestPositionTracker:
             tracker.track_new()
 
         meta = tracker._position_meta[101]
-        assert meta["regime"] == "LEGACY"  # no ADAPT_ prefix
+        # 🔧 FIX 10 Juil 2026: comment vide → fallback RANGING au lieu de LEGACY
+        assert meta["regime"] == "RANGING"  # no ADAPT_ prefix → fallback RANGING
         assert meta["r1_usd"] == 50.0
 
     def test_track_new_restores_dl_features(self):

@@ -61,7 +61,6 @@ SYMBOL_MOMENTUM_PERIODS = {
     "USOIL.cash": 20,
     # Crypto
     "SOLUSD": 20,
-    "LNKUSD": 20,
     "BNBUSD": 20,
 }
 
@@ -90,7 +89,6 @@ SYMBOL_COSTS = {
     "ETHUSD": (10.0, 0.01, 1.0, 1),
     # Altcoins (coûts similaires BTC — spread 10pts, pip 0.01, pip_value $1)
     "SOLUSD": (10.0, 0.01, 1.0, 1),
-    "LNKUSD": (10.0, 0.01, 1.0, 1),
     "BNBUSD": (10.0, 0.01, 1.0, 1),
     # Forex mineurs
     "NZDUSD": (1.5, 0.0001, 10.0, 100_000),

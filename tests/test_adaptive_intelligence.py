@@ -20,15 +20,32 @@ from engine_simple.adaptive_intelligence import AdaptiveEngine, MarketRegime, On
 @pytest.fixture(autouse=True)
 def _reset_seed():
     """Nettoie le lock seed ET le state file avant chaque test pour garantir l'isolation.
-    Sans cela, les tests partagent le fichier de production ol_state.json et le corrompent."""
-    lock = Path("runtime/online_learner_seed.lock")
-    if lock.exists():
-        lock.unlink()
-    # Nettoyer les deux state files (ancien + nouveau unifié)
-    for f in ["runtime/online_learner_state.json", "runtime/ol_state.json"]:
-        p = Path(f)
-        if p.exists():
-            p.unlink()
+    🐛 FIX T1 (16 Juillet 2026): Sauvegarde/restaure les fichiers de production au lieu
+    de les supprimer définitivement. L'ancien comportement (p.unlink()) effaçait
+    runtime/ol_state.json et runtime/online_learner_state.json entre chaque test."""
+    backed_up = []
+    try:
+        for f in ["runtime/online_learner_state.json", "runtime/ol_state.json"]:
+            p = Path(f)
+            if p.exists():
+                backup = p.with_suffix(".bak_test")
+                import shutil
+
+                shutil.copy2(str(p), str(backup))
+                backed_up.append((p, backup))
+                p.unlink()
+        lock = Path("runtime/online_learner_seed.lock")
+        if lock.exists():
+            lock.unlink()
+        yield
+    finally:
+        # Restaurer les fichiers après le test
+        import shutil
+
+        for p, backup in backed_up:
+            if backup.exists():
+                shutil.copy2(str(backup), str(p))
+                backup.unlink()
 
 
 def _make_h1_rates(n=100, trend="up"):
@@ -131,10 +148,10 @@ class TestOnlineLearner:
 
     def test_record_trade_creates_history(self):
         ol = OnlineLearner()
-        ol.record_trade("EURUSD", 1.5, "RANGING")
-        assert "EURUSD" in ol.history
-        assert len(ol.history["EURUSD"]) == 1
-        assert ol.history["EURUSD"][0]["r"] == 1.5
+        ol.record_trade("TESTX", 1.5, "RANGING")
+        assert "TESTX" in ol.history
+        assert len(ol.history["TESTX"]) == 1
+        assert ol.history["TESTX"][0]["r"] == 1.5
 
     def test_get_params_returns_defaults(self):
         ol = OnlineLearner()
@@ -146,53 +163,55 @@ class TestOnlineLearner:
     def test_update_params_high_wr(self):
         ol = OnlineLearner(window=10)
         for _ in range(10):
-            ol.record_trade("EURUSD", 1.0, "TREND_UP")
-        params = ol.get_params("EURUSD")
+            ol.record_trade("TESTX", 1.0, "TREND_UP")
+        params = ol.get_params("TESTX")
         assert params["risk_mult"] >= 1.0
 
     def test_update_params_low_wr(self):
         ol = OnlineLearner(window=10)
         for _ in range(10):
-            ol.record_trade("EURUSD", -1.0, "RANGING")
-        params = ol.get_params("EURUSD")
+            ol.record_trade("TESTX", -1.0, "RANGING")
+        params = ol.get_params("TESTX")
         assert params["risk_mult"] <= 1.0
 
     def test_get_summary(self):
         ol = OnlineLearner(window=10)
-        assert ol.get_summary("EURUSD") == {}
+        assert ol.get_summary("TESTX") == {}
         for _ in range(10):
-            ol.record_trade("EURUSD", 0.5, "RANGING")
-        s = ol.get_summary("EURUSD")
+            ol.record_trade("TESTX", 0.5, "RANGING")
+        s = ol.get_summary("TESTX")
         assert s["trades"] == 10
         assert s["wr"] > 0
         assert s["avg_r"] == 0.5
 
     def test_get_params_custom_base_thresh(self):
         ol = OnlineLearner()
-        params = ol.get_params("EURUSD", base_thresh=4.0)
+        params = ol.get_params("TESTX", base_thresh=4.0)
         assert params["thresh"] == 4.0
 
     def test_update_params_wr_above_82(self):
         ol = OnlineLearner(window=40)
-        # 36 wins out of 40 = 90% WR > 82% → risk_mult=1.15, thresh=1.5
+        # 36 wins out of 40 = 90% WR > 78% mais expectancy faible (0.08 < 0.4)
+        # → pas champion, entre dans wr_eff>0.78: risk_mult=1.0, thresh=1.8
         for _ in range(36):
-            ol.record_trade("EURUSD", 1.0, "TREND_UP")
+            ol.record_trade("TESTX", 0.2, "TREND_UP")  # petits gains
         for _ in range(4):
-            ol.record_trade("EURUSD", -1.0, "RANGING")
-        params = ol.get_params("EURUSD")
-        assert params["risk_mult"] == 1.15
-        assert params["thresh"] == 1.5  # ↓ 2.0→1.5 (OL recalibré pour + de trades)
+            ol.record_trade("TESTX", -1.0, "RANGING")
+        params = ol.get_params("TESTX")
+        assert params["risk_mult"] == 1.0  # 🔧 10 Juillet: cap recovery à 1.0
+        assert params["thresh"] == 1.8  # plus agressif
 
     def test_update_params_wr_78_to_82(self):
         ol = OnlineLearner(window=40)
-        # 32 wins out of 40 = 80% WR → in (78, 82] range
+        # 32 wins out of 40 = 80% WR > 78% mais expectancy faible (0.04 < 0.4)
+        # → pas champion, entre dans wr_eff>0.78: risk_mult=1.0, thresh=1.8
         for _ in range(32):
-            ol.record_trade("EURUSD", 1.0, "TREND_UP")
+            ol.record_trade("TESTX", 0.3, "TREND_UP")  # petits gains
         for _ in range(8):
-            ol.record_trade("EURUSD", -1.0, "RANGING")
-        params = ol.get_params("EURUSD")
-        assert params["risk_mult"] == 1.05
-        assert params["thresh"] == 1.8  # ↓ 2.3→1.8 (OL recalibré pour + de trades)
+            ol.record_trade("TESTX", -1.0, "RANGING")
+        params = ol.get_params("TESTX")
+        assert params["risk_mult"] == 1.0  # 🔧 10 Juillet: cap recovery à 1.0
+        assert params["thresh"] == 1.8
 
     def test_update_params_wr_70_to_78_neutral(self):
         ol = OnlineLearner(window=200)
@@ -200,49 +219,48 @@ class TestOnlineLearner:
         # 🐛 FIX #10: min_trades passé de max(15,window//10) à max(30,window//5)
         # Donc window=200 → min_trades=40. On enregistre 40 trades.
         for _ in range(30):
-            ol.record_trade("EURUSD", 1.0, "TREND_UP")
+            ol.record_trade("TESTX", 1.0, "TREND_UP")
         for _ in range(10):
-            ol.record_trade("EURUSD", -1.0, "RANGING")
-        params = ol.get_params("EURUSD")
+            ol.record_trade("TESTX", -1.0, "RANGING")
+        params = ol.get_params("TESTX")
         assert params["risk_mult"] == 1.0
         assert params["thresh"] == 2.0  # ↓ 2.5→2.0 (OL recalibré pour + de trades)
 
     def test_update_params_wr_below_70(self):
         ol = OnlineLearner(window=40)
-        # 16 wins out of 40 = 40% WR < 70% → risk_mult=0.85, thresh=2.5 (plus sélectif)
-        # 🔓 FIX 8 Juillet: thresh 2.0→2.5 pour être PLUS sélectif quand WR bas
+        # 16 wins out of 40 = 40% WR < 60% → risk_mult=0.90, thresh=2.5 (plus sélectif)
         for _ in range(16):
-            ol.record_trade("EURUSD", 1.0, "TREND_UP")
+            ol.record_trade("TESTX", 1.0, "TREND_UP")
         for _ in range(24):
-            ol.record_trade("EURUSD", -0.5, "RANGING")
-        params = ol.get_params("EURUSD")
-        assert params["risk_mult"] == 0.85  # ⬆️ 0.75→0.85 : moins de pénalité (anti-spirale)
-        assert params["thresh"] == 2.5  # 🔓 FIX: plus sélectif quand WR bas
+            ol.record_trade("TESTX", -0.5, "RANGING")
+        params = ol.get_params("TESTX")
+        # wr_eff=0.40 < 0.60 → risk_mult = max(0.70, min(0.90, 0.50+0.40)) = 0.90
+        assert params["risk_mult"] == 0.90  # 🔧 10 Juillet: WR-based progressive
+        assert params["thresh"] == 2.5
 
     def test_update_params_expectancy_negative_overrides_risk(self):
         ol = OnlineLearner(window=200)
-        # All losses, WR=0 → < 70%, expectancy negative
-        # ⬆️ 0.75→0.85 pour anti-spirale, puis expectancy<0 → min(risk_mult,0.85)=0.85
-        # Plancher absolu 0.50
+        # All losses, WR=0% → wr_eff=0 < 60% → base risk=0.70
+        # expectancy=-1.0 < 0 → min(0.70, 0.75) = 0.70
         for _ in range(40):
-            ol.record_trade("EURUSD", -1.0, "RANGING")
-        params = ol.get_params("EURUSD")
-        assert params["risk_mult"] == 0.85  # ⬆️ 0.75→0.85 : moins de pénalité
+            ol.record_trade("TESTX", -1.0, "RANGING")
+        params = ol.get_params("TESTX")
+        assert params["risk_mult"] == 0.70  # 🔧 10 Juillet: WR 0% = risk 0.70
 
     def test_not_enough_trades_no_update(self):
         ol = OnlineLearner(window=20)
         for _ in range(5):
-            ol.record_trade("EURUSD", 1.0, "TREND_UP")
-        params = ol.get_params("EURUSD")
+            ol.record_trade("TESTX", 1.0, "TREND_UP")
+        params = ol.get_params("TESTX")
         assert params["risk_mult"] == 1.0
         assert params["thresh"] == 3.0
 
     def test_record_trade_multiple_symbols_independent(self):
         ol = OnlineLearner(window=10)
         for _ in range(10):
-            ol.record_trade("EURUSD", 1.0, "TREND_UP")
+            ol.record_trade("TESTX", 1.0, "TREND_UP")
         ol.record_trade("GBPUSD", -1.0, "RANGING")
-        assert ol.get_summary("EURUSD")["trades"] == 10
+        assert ol.get_summary("TESTX")["trades"] == 10
         assert ol.get_summary("GBPUSD")["trades"] == 1
 
 

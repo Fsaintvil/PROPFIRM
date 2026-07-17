@@ -249,6 +249,16 @@ class TradeJournal:
         ]
         return [dict(zip(columns, r)) for r in rows]
 
+    def wal_checkpoint(self) -> None:
+        """🔧 FIX 16 Juillet 2026: Checkpoint WAL pour éviter l'accumulation de données orphelines.
+        Appel recommandé: tous les 1000 cycles (~4h).
+        """
+        try:
+            with _lock:
+                self._conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        except sqlite3.Error as e:
+            logger.debug(f"WAL checkpoint failed: {e}")
+
     def close(self) -> None:
         with _lock:
             self._conn.close()

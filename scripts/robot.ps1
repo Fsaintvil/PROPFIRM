@@ -184,6 +184,11 @@ if ($autoMt5) {
     }
 }
 
+# Sync clock before launch (🔧 FIX 9 Juillet 2026: décalage 5h observé)
+Write-Host "Syncing system clock..." -NoNewline
+& "$PSScriptRoot\sync_clock.ps1" | Out-Null
+Write-Host "OK"
+
 # Launch main.py
 Write-Host "Starting robot (main.py)..." -NoNewline
 Start-Process -WindowStyle Hidden -FilePath "python.exe" -ArgumentList "main.py" -WorkingDirectory $BASE

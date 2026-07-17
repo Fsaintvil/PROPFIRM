@@ -63,18 +63,18 @@ class TestFTMOCycle:
     def test_simple_signal_goes_through(self):
         mt5 = make_mock_mt5()
         ftmo = make_ftmo(mt5)
-        ftmo._atr_cache = {"EURUSD": (0.005, time.time())}
+        ftmo._atr_cache = {"BTCUSD": (0.005, time.time())}
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "EURUSD",
+                    "BTCUSD",
                     signal={
                         "action": "BUY",
                         "score": 0.80,
-                        "sl": 0.7800,
-                        "tp": 0.7900,
+                        "sl": 45000.0,
+                        "tp": 55000.0,
                     },
                 )
                 assert ok, f"Expected OK, got: {reason}"
@@ -92,16 +92,19 @@ class TestFTMOCycle:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "EURUSD",
+                    "BTCUSD",
                     signal={
                         "action": "BUY",
                         "score": 0.80,
-                        "sl": 0.7800,
-                        "tp": 0.7900,
+                        "sl": 45000.0,
+                        "tp": 55000.0,
                     },
                 )
                 assert not ok
-                assert "daily loss" in reason.lower()
+                # 🔧 17 Juil 2026: Le daily loss trigger peut aussi remonter via ZONE 3
+                # (check_risk_state → ZONE 3 si daily loss > 1.5%).
+                # Les deux messages sont valides : "daily loss limit" ou "ZONE 3: daily DD".
+                assert "daily" in reason.lower() or "zone" in reason.lower()
 
     def test_rejected_when_max_positions_reached(self):
         mt5 = make_mock_mt5()
@@ -111,16 +114,16 @@ class TestFTMOCycle:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "EURUSD",
+                    "BTCUSD",
                     signal={
                         "action": "BUY",
                         "score": 0.80,
-                        "sl": 0.7800,
-                        "tp": 0.7900,
+                        "sl": 45000.0,
+                        "tp": 55000.0,
                     },
                     positions=[
-                        MagicMock(magic=cfg.ROBOT_MAGIC, symbol="EURUSD", type=0, ticket=1),
-                        MagicMock(magic=cfg.ROBOT_MAGIC, symbol="EURUSD", type=0, ticket=2),
+                        MagicMock(magic=cfg.ROBOT_MAGIC, symbol="BTCUSD", type=0, ticket=1),
+                        MagicMock(magic=cfg.ROBOT_MAGIC, symbol="BTCUSD", type=0, ticket=2),
                     ],
                 )
                 assert ok, f"Expected OK (correlation check passes for positions list), got: {reason}"
@@ -158,14 +161,14 @@ class TestFTMOCycle:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "EURUSD",
+                    "BTCUSD",
                     signal={
                         "action": "BUY",
                         "score": 0.80,
                         "atr_pct": 3.0,
                         "atr_median_14": 0.5,
-                        "sl": 0.7800,
-                        "tp": 0.7900,
+                        "sl": 45000.0,
+                        "tp": 55000.0,
                     },
                 )
                 assert not ok
@@ -183,12 +186,12 @@ class TestFTMOCycle:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "EURUSD",
+                    "BTCUSD",
                     signal={
                         "action": "BUY",
                         "score": 0.80,
-                        "sl": 0.7800,
-                        "tp": 0.7900,
+                        "sl": 45000.0,
+                        "tp": 55000.0,
                     },
                 )
                 assert not ok

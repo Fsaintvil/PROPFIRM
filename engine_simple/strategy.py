@@ -109,7 +109,7 @@ SYMBOL_CONFIG = {
         # News filter
         "news_minutes_before": 10,
         "news_minutes_after": 10,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.80,  # 🔥 XAUUSD: gardé à 0.80 (surveillé, 55.4% WR, -$2,102)
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -162,7 +162,7 @@ SYMBOL_CONFIG = {
         # News filter
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.8,
         "risk_mult": 1.0,
@@ -211,7 +211,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         # 🔒 RENFORCÉ 1er Juillet 2026 — WR 28.6% live
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.75,
@@ -238,35 +238,10 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 10 Juil 2026: ↑ 0.80→0.85 — symbole réactivé, sélectif max
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
-    },
-    "GBPUSD": {
-        "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
-        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
-        "pullback_band_trending": 0.5,
-        "pullback_band_ranging": 0.3,
-        "preferred_hours": list(range(24)),
-        "news_minutes_before": 5,
-        "news_minutes_after": 5,
-        # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 0% live (5 trades, -$26)
-        # risk_mult=0.05 = 95% de réduction de risque, micro-lot 0.05 (×5)
-        # min_score=0.90 = seuls les signaux exceptionnels passent
-        "min_score": 0.90,  # très sélectif
-        "adx_thresh": 22,
-        "min_rr": 1.5,
-        "risk_mult": 0.05,  # micro-risque (5% du risque normal)
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
     },
@@ -285,56 +260,10 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 10 Juil 2026: ↓ 0.85→0.80 — trop restrictif, scores plafonnent à 0.61
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
-    },
-    "USDCAD": {
-        "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
-        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
-        "pullback_band_trending": 0.5,
-        "pullback_band_ranging": 0.3,
-        "preferred_hours": list(range(24)),
-        "news_minutes_before": 5,
-        "news_minutes_after": 5,
-        # 🔒 RENFORCÉ 1er Juillet 2026 — WR 45.5% live
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
-        "adx_thresh": 22,
-        "min_rr": 1.5,
-        "risk_mult": 1.0,
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
-    },
-    "AUDUSD": {
-        "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
-        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
-        "pullback_band_trending": 0.5,
-        "pullback_band_ranging": 0.3,
-        "preferred_hours": list(range(24)),
-        "news_minutes_before": 5,
-        "news_minutes_after": 5,
-        # 🔒 RENFORCÉ 1er Juillet 2026 — WR 26.1% live
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
-        "adx_thresh": 22,
-        "min_rr": 1.5,
-        "risk_mult": 0.50,
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
     },
@@ -353,7 +282,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.3,
         "risk_mult": 1.0,
@@ -375,7 +304,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -407,7 +336,7 @@ SYMBOL_CONFIG = {
         # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 29.4% live, -$139
         # risk_mult=0.05 = 95% de réduction de risque, micro-lot 0.05 (×5)
         # min_score=0.90 = seuls les signaux exceptionnels passent
-        "min_score": 0.90,  # très sélectif
+        "min_score": 0.60,  # très sélectif
         "adx_thresh": 20,
         "min_rr": 2.0,
         "risk_mult": 0.05,  # micro-risque (5% du risque normal)
@@ -440,7 +369,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         # 🔒 RENFORCÉ 1er Juillet 2026 — WR 30.8% live
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.75,
@@ -466,7 +395,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 10 Juil 2026: débloqué min_score=0.85 — 43 trades, PF=0.53, test progressif
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -493,7 +422,7 @@ SYMBOL_CONFIG = {
         # min_score=0.90 = seuls les signaux exceptionnels passent
         # Si les signaux redeviennent bons, l'OL détectera la guérison
         # 🔧 FIX_SUPREME_COUNCIL 2 Juillet 2026: ADX 22→25 pour réduire faux signaux
-        "min_score": 0.90,  # très sélectif
+        "min_score": 0.60,  # très sélectif
         "adx_thresh": 25,
         "min_rr": 2.0,
         "risk_mult": 0.05,  # micro-risque (5% du risque normal)
@@ -520,7 +449,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 10 Juil 2026: débloqué min_score=0.85 — 11 trades, -$1, test progressif
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 1.0,
@@ -547,7 +476,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8],  # Asian session
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.9,
@@ -599,7 +528,7 @@ SYMBOL_CONFIG = {
         ],  # 24/7 (↑ 30 Juin: débloquer Asie)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.70,  # 🔧 13 Juil 2026: ↓ 0.75→0.70 — débloque signaux TrendFollow (score stabilisé à 0.74, backtest 68.4% WR)
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 0.9,
@@ -626,7 +555,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 10 Juil 2026: débloqué min_score=0.85 — 4 trades seulement, test progressif
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -653,7 +582,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres seulement
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.5,
         "risk_mult": 0.8,
@@ -680,7 +609,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],  # Asie + Londres
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -706,33 +635,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 24/7
         "news_minutes_before": 0,
         "news_minutes_after": 0,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
-        "adx_thresh": 20,
-        "min_rr": 1.8,
-        "risk_mult": 0.8,
-        "cooldown_minutes": 20,
-        "auto_pause_losses": 3,
-    },
-    # ═══════════════════════════════════════════════════════════════════════
-    # LNKUSD H1 — Chainlink (AJOUTÉ 1er Juillet 2026)
-    # Crypto oracle, volatilité élevée, 24/7
-    # ═══════════════════════════════════════════════════════════════════════
-    "LNKUSD": {
-        "momentum_period": 20,
-        "sl_atr_trending": 2.5,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 2.0,
-        "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
-        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
-        "pullback_band_trending": 0.8,
-        "pullback_band_ranging": 0.5,
-        "preferred_hours": list(range(24)),
-        "news_minutes_before": 0,
-        "news_minutes_after": 0,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.8,
         "risk_mult": 0.8,
@@ -758,7 +661,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 0,
         "news_minutes_after": 0,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.8,
         "risk_mult": 0.8,
@@ -784,7 +687,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -810,7 +713,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.9,
@@ -836,7 +739,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 0.9,
@@ -862,7 +765,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],  # NY session
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.8,
         "risk_mult": 0.6,
@@ -895,7 +798,7 @@ DEFAULT_SYMBOL_CONFIG = {
     "news_minutes_before": 5,
     "news_minutes_after": 5,
     # ── Filtres & Score ───────────────────────────────────────────────
-    "min_score": 0.60,  # 🔧 FIX #6/7: Assoupli (était 0.80→0.70→0.60)
+    "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
     "conf": 0.85,  # seuil HIGH_CONF confidence
     "adx_thresh": 22,  # ADX minimum pour régime TREND
     "min_rr": 1.5,  # RR minimum exigé

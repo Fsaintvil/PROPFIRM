@@ -57,7 +57,7 @@ class PortfolioState:
 POSITION_GROUPS: dict[str, list[str]] = {
     "FOREX_MAJORS": ["EURUSD", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "USDJPY"],
     "FOREX_CROSSES": ["EURJPY", "GBPJPY", "EURGBP", "AUDJPY"],
-    "CRYPTO": ["BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"],
+    "CRYPTO": ["BTCUSD", "ETHUSD", "SOLUSD", "BNBUSD"],
     "INDICES": ["US500.cash", "US30.cash", "US100.cash", "JP225.cash"],
     "EUROPE_INDICES": ["GER40.cash", "UK100.cash"],
     "COMMODITIES": ["XAUUSD", "XAGUSD", "USOIL.cash", "UKOIL.cash", "NATGAS.cash"],

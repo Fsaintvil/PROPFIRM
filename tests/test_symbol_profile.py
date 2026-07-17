@@ -196,7 +196,6 @@ class TestPerSymbolParameters:
             "BTCUSD": 1.0,  # Crypto (prix en unités)
             "ETHUSD": 1.0,  # Crypto
             "SOLUSD": 1.0,  # Crypto
-            "LNKUSD": 1.0,  # Crypto
             "BNBUSD": 1.0,  # Crypto
             "US500.cash": 1.0,  # Index (prix en unités)
             "US30.cash": 1.0,  # Index

@@ -230,7 +230,7 @@ def get_pip_info(symbol):
         return 0.01, 1.0
     if symbol in ("USOIL.cash", "UKOIL.cash"):
         return 0.01, 1.0
-    if symbol in ("BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"):
+    if symbol in ("BTCUSD", "ETHUSD", "SOLUSD", "BNBUSD"):
         return 0.01, 1.0
     if symbol in ("NATGAS.cash", "GER40.cash", "UK100.cash"):
         return 0.01, 1.0
@@ -252,7 +252,7 @@ def get_contract_size(symbol):
         return 1
     if symbol in ("USOIL.cash", "UKOIL.cash", "NATGAS.cash"):
         return 100
-    if symbol in ("BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"):
+    if symbol in ("BTCUSD", "ETHUSD", "SOLUSD", "BNBUSD"):
         return 1
     return 100_000
 

@@ -16,12 +16,24 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as _TimeoutError
 
 import pandas as pd
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import MetaTrader5 as mt5
+
+
+def _mt5_call(func, timeout=60, *args, **kwargs):
+    """Execute an MT5 call with a timeout."""
+    with ThreadPoolExecutor(max_workers=1) as ex:
+        future = ex.submit(func, *args, **kwargs)
+        try:
+            return future.result(timeout=timeout)
+        except _TimeoutError:
+            raise TimeoutError(f"MT5 call timed out after {timeout}s: {func.__name__}")
+
 
 TF_MAP = {
     "M15": mt5.TIMEFRAME_M15,
@@ -103,7 +115,7 @@ def download_tf(symbol, tf_name, force=False, max_candles_override=None):
         max_candles = DEFAULT_MAX_CANDLES.get(tf_name, 10000)
 
     while offset < max_candles:
-        rates = mt5.copy_rates_from_pos(symbol, tf, offset, BATCH_SIZE)
+        rates = _mt5_call(mt5.copy_rates_from_pos, 60, symbol, tf, offset, BATCH_SIZE)
         if rates is None or len(rates) == 0:
             break
         all_rates.extend(rates)
@@ -172,7 +184,7 @@ def main():
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    if not mt5.initialize():
+    if not _mt5_call(mt5.initialize, 30):
         print(f"MT5 init failed: {mt5.last_error()}")
         sys.exit(1)
     print(f"MT5 connected: {mt5.terminal_info().name}")

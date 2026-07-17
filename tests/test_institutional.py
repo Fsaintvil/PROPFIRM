@@ -41,40 +41,44 @@ def test_audit_trail_log_decision():
 
 
 def test_audit_trail_log_signal():
-    audit = AuditTrail(log_dir=tempfile.mkdtemp())
-    audit.log_signal("EURUSD", "BUY", 0.75, 0.8, "TREND_UP", {"reason": "test"})
-    recent = audit.recent_decisions(1, "signal")
-    assert len(recent) == 1
-    assert recent[0]["context"]["symbol"] == "EURUSD"
-    assert recent[0]["context"]["action"] == "BUY"
-    audit.close()
+    with tempfile.TemporaryDirectory() as tmp:
+        audit = AuditTrail(log_dir=tmp)
+        audit.log_signal("EURUSD", "BUY", 0.75, 0.8, "TREND_UP", {"reason": "test"})
+        recent = audit.recent_decisions(1, "signal")
+        assert len(recent) == 1
+        assert recent[0]["context"]["symbol"] == "EURUSD"
+        assert recent[0]["context"]["action"] == "BUY"
+        audit.close()
 
 
 def test_audit_trail_recent_decisions():
-    audit = AuditTrail(log_dir=tempfile.mkdtemp())
-    for i in range(5):
-        audit.log_decision("test", {"i": i})
-    recent = audit.recent_decisions(3)
-    assert len(recent) == 3
-    audit.close()
+    with tempfile.TemporaryDirectory() as tmp:
+        audit = AuditTrail(log_dir=tmp)
+        for i in range(5):
+            audit.log_decision("test", {"i": i})
+        recent = audit.recent_decisions(3)
+        assert len(recent) == 3
+        audit.close()
 
 
 def test_audit_trail_log_error():
-    audit = AuditTrail(log_dir=tempfile.mkdtemp())
-    audit.log_error("test_module", "something broke", Exception("boom"))
-    recent = audit.recent_decisions(1, "error")
-    assert len(recent) == 1
-    assert recent[0]["context"]["source"] == "test_module"
-    audit.close()
+    with tempfile.TemporaryDirectory() as tmp:
+        audit = AuditTrail(log_dir=tmp)
+        audit.log_error("test_module", "something broke", Exception("boom"))
+        recent = audit.recent_decisions(1, "error")
+        assert len(recent) == 1
+        assert recent[0]["context"]["source"] == "test_module"
+        audit.close()
 
 
 def test_audit_trail_log_state_change():
-    audit = AuditTrail(log_dir=tempfile.mkdtemp())
-    audit.log_state_change("mode", "dry_run", "live")
-    recent = audit.recent_decisions(1, "state_change")
-    assert recent[0]["context"]["from"] == "dry_run"
-    assert recent[0]["context"]["to"] == "live"
-    audit.close()
+    with tempfile.TemporaryDirectory() as tmp:
+        audit = AuditTrail(log_dir=tmp)
+        audit.log_state_change("mode", "dry_run", "live")
+        recent = audit.recent_decisions(1, "state_change")
+        assert recent[0]["context"]["from"] == "dry_run"
+        assert recent[0]["context"]["to"] == "live"
+        audit.close()
 
 
 # ── PerSymbolRateLimiter ──

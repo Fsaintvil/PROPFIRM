@@ -1,4 +1,5 @@
 """Tests pour le module Monitoring (MetricsCollector, HealthServer, structured logging)"""
+
 import json
 import logging
 import os
@@ -89,16 +90,17 @@ def test_health_server_endpoints():
     server.start()
     # poll for server readiness (max 3s)
     import socket
+
     for _ in range(30):
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.settimeout(1)
-                s.connect(('localhost', 9091))
+                s.connect(("localhost", 9091))
             break
         except (ConnectionRefusedError, OSError):
             time.sleep(0.1)
     else:
-        raise RuntimeError('HealthServer did not start in 3s')
+        raise RuntimeError("HealthServer did not start in 3s")
 
     # Test health endpoint
     conn = HTTPConnection("localhost", 9091, timeout=5)
@@ -138,8 +140,7 @@ def test_health_server_endpoints():
 
 
 def test_setup_structured_logging():
-    tmp = tempfile.mkdtemp()
-    try:
+    with tempfile.TemporaryDirectory() as tmp:
         handler = setup_structured_logging(log_dir=tmp, app_name="test")
         root_logger = logging.getLogger()
         root_logger.setLevel(logging.DEBUG)
@@ -154,12 +155,3 @@ def test_setup_structured_logging():
         assert "hello world" in content
         assert "timestamp" in content
         assert "level" in content
-    finally:
-        import shutil
-        for _ in range(5):
-            try:
-                shutil.rmtree(tmp)
-                break
-            except PermissionError:
-                import time
-                time.sleep(0.1)

@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 SYMBOL_STRATEGY_MAP: dict[str, str] = {
     # ── PHASE 4: 12 symboles actifs (8 Juillet 2026) ─────────────────────
     "USDJPY": "MOM20x3",
-    "XAUUSD": "TrendFollow",  # ✅ Activé 8 Juillet 2026 après validation backtest
+    "XAUUSD": "MOM20x3",  # 🔧 FIX 13 Juillet 2026: TrendFollow→MOM20x3 — TF ne donne AUCUN signal (ADX H4 constamment < 22). MOM20x3 backtest +$240K après coûts sur H4, seul symbole vraiment rentable
     "JP225.cash": "MOM20x3",
     "EURUSD": "MOM20x3",  # 🔓 Réactivé 8 Juillet (ghost trades bug MT5, WR réelle 63.2%)
     "GBPJPY": "MOM20x3",
@@ -45,7 +45,7 @@ SYMBOL_STRATEGY_MAP: dict[str, str] = {
     "USDCAD": "MOM20x3",
     "NZDUSD": "MOM20x3",
     "USDCHF": "MOM20x3",
-    "BTCUSD": "TrendFollow",  # 🔥 PHASE 4: Crypto volatil, MOM20x3 sous-performe (48.6%) → TrendFollow
+    "BTCUSD": "MOM20x3",  # 🔧 FIX 13 Juillet 2026: TrendFollow→MOM20x3 — TF ne donne aucun signal (ADX<20 en range). MOM20x3 génère signaux forts (score=0.95 SELL) et backtest +$232K après coûts
     "USOIL.cash": "TrendFollow",  # 🔥 PHASE 4: Pétrole, tendances géopolitiques → TrendFollow
     # ── Symboles inactifs (conservés pour référence, sans doublon) ─────────
     "ETHUSD": "MOM20x3",
@@ -59,7 +59,6 @@ SYMBOL_STRATEGY_MAP: dict[str, str] = {
     "GER40.cash": "MOM20x3",
     "UK100.cash": "MOM20x3",
     "SOLUSD": "MOM20x3",
-    "LNKUSD": "MOM20x3",
     "BNBUSD": "MOM20x3",
     "UKOIL.cash": "MOM20x3",
     "NATGAS.cash": "MOM20x3",

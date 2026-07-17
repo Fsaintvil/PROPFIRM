@@ -48,6 +48,15 @@ class FeatureStore:
         self.conn.execute("DELETE FROM features WHERE ticket=?", (int(ticket),))
         self.conn.commit()
 
+    def wal_checkpoint(self) -> None:
+        """🔧 FIX 16 Juillet 2026: Checkpoint WAL pour éviter l'accumulation de données orphelines.
+        Appel recommandé: tous les 1000 cycles (~4h).
+        """
+        try:
+            self.conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        except sqlite3.Error as e:
+            logger.debug(f"WAL checkpoint failed: {e}")
+
     def close(self) -> None:
         self.conn.close()
 

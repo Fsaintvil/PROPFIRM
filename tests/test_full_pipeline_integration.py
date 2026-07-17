@@ -176,8 +176,8 @@ class TestFullSignalPipelineCycle:
 
         try:
             ok, reason = ftmo.can_trade(
-                "EURUSD",
-                signal={"action": "BUY", "score": 0.80, "sl": 1.0900, "tp": 1.1100},
+                "BTCUSD",
+                signal={"action": "BUY", "score": 0.80, "sl": 45000.0, "tp": 55000.0},
             )
             assert ok, f"FTMO a rejeté: {reason}"
         finally:
@@ -197,8 +197,8 @@ class TestFullSignalPipelineCycle:
 
         try:
             ok, reason = ftmo.can_trade(
-                "EURUSD",
-                signal={"action": "BUY", "score": 0.05, "sl": 1.0900, "tp": 1.1100},
+                "BTCUSD",
+                signal={"action": "BUY", "score": 0.05, "sl": 45000.0, "tp": 55000.0},
             )
             assert not ok, "Signal low-score devrait être rejeté"
         finally:
@@ -246,6 +246,10 @@ class TestMultiSymbolCorrelation:
         tick.time = time.time()
         mt5_mock.get_tick.return_value = tick
 
+        # Override allow_buys/allow_shorts for test symbols hard-blocked in YAML
+        test_symbol_limits = {
+            sym: dict(lim, allow_buys=True, allow_shorts=True) for sym, lim in cfg.SYMBOL_LIMITS.items()
+        }
         return FTMOProtector(
             mt5_mock,
             dict(
@@ -267,14 +271,14 @@ class TestMultiSymbolCorrelation:
                 TRADING_START_HOUR=0,
                 TRADING_END_HOUR=24,
                 DANGER_HOURS=[],
-                SYMBOL_LIMITS=cfg.SYMBOL_LIMITS,
+                SYMBOL_LIMITS=test_symbol_limits,
                 MAX_CORRELATED_EXPOSURE=0.15,
                 CIRCUIT_BREAKER_DD_PCT=0.08,
             ),
         )
 
     def test_correlation_allows_within_limit(self):
-        """Trade dans la même groupe/direction passe si sous la limite (max 3/direction)"""
+        """2 trades existants < max 3/direction/groupe → doit passer"""
         mt5 = MagicMock()
         ftmo = self._make_ftmo(mt5)
 
@@ -287,8 +291,8 @@ class TestMultiSymbolCorrelation:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 12, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "USDCHF",
-                    {"action": "BUY", "score": 0.80, "sl": 1.0900, "tp": 1.1100},
+                    "NZDUSD",
+                    {"action": "BUY", "score": 0.80, "sl": 0.5700, "tp": 0.5900},
                     positions=existing,
                 )
                 assert ok, f"2 trades existants < max 3/direction/groupe → devrait passer. Raison: {reason}"
@@ -308,8 +312,8 @@ class TestMultiSymbolCorrelation:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 12, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "USDCHF",
-                    {"action": "BUY", "score": 0.80, "sl": 1.0900, "tp": 1.1100},
+                    "NZDUSD",
+                    {"action": "BUY", "score": 0.80, "sl": 0.5700, "tp": 0.5900},
                     positions=existing,
                 )
                 assert not ok, f"3 trades existants BUY dans FOREX_MAJORS → devrait être BLOQUÉ. Raison: {reason}"
@@ -329,8 +333,8 @@ class TestMultiSymbolCorrelation:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 12, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "USDCHF",
-                    {"action": "BUY", "score": 0.80, "sl": 1.0900, "tp": 1.1100},
+                    "NZDUSD",
+                    {"action": "BUY", "score": 0.80, "sl": 0.5700, "tp": 0.5900},
                     positions=existing,
                 )
                 assert ok, f"Direction opposée devrait passer: {reason}"
@@ -559,8 +563,8 @@ class TestMT5DisconnectRecovery:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 12, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "EURUSD",
-                    {"action": "BUY", "score": 0.80, "sl": 1.0900, "tp": 1.1100},
+                    "BTCUSD",
+                    {"action": "BUY", "score": 0.80, "sl": 45000.0, "tp": 55000.0},
                 )
                 assert ok, f"Trade après reconnexion devrait passer: {reason}"
 
@@ -707,9 +711,9 @@ class TestPositionLimits:
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 12, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
-                # 1ère position EURUSD → OK
-                ok1, _ = ftmo.can_trade("EURUSD", {"action": "BUY", "score": 0.80, "sl": 1.09, "tp": 1.11})
-                assert ok1, "1er trade EURUSD devrait passer"
+                # 1ère position BTCUSD → OK
+                ok1, _ = ftmo.can_trade("BTCUSD", {"action": "BUY", "score": 0.80, "sl": 45000.0, "tp": 55000.0})
+                assert ok1, "1er trade BTCUSD devrait passer"
 
     def test_ftmo_calculate_lot(self):
         """FTMOProtector.calculate_lot doit retourner un lot valide"""

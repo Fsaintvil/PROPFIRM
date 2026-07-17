@@ -579,37 +579,6 @@ PROFILES: dict[str, SymbolInstitutionalProfile] = {
         spread_cost_factor=2.0,
         monthly_strength={},
     ),
-    "LNKUSD": SymbolInstitutionalProfile(
-        symbol="LNKUSD",
-        nickname="Chainlink",
-        description="LNK/USD — oracle crypto, forte volatilité",
-        avg_atr_pips=1.5,
-        atr_percentile_high=3.0,
-        atr_percentile_low=0.8,
-        typical_spread_pts=80.0,
-        spread_warning_pts=200.0,
-        pip_factor=1.0,
-        best_sessions=["all"],
-        avoid_sessions=[],
-        peak_hours_utc=[(0, 23)],
-        adx_trend_threshold=20.0,
-        rsi_overbought=75.0,
-        rsi_oversold=25.0,
-        bb_std_dev=2.5,
-        respects_levels=False,
-        trend_persistence="medium",
-        sl_atr_ranging=2.5,
-        sl_atr_trending=3.0,
-        tp_atr_ranging=5.0,
-        tp_atr_trending=7.0,
-        trailing_profile={},
-        news_sensitivity="medium",
-        intervention_risk=False,
-        gap_risk=True,
-        base_weight=1.0,
-        spread_cost_factor=2.0,
-        monthly_strength={},
-    ),
     "BNBUSD": SymbolInstitutionalProfile(
         symbol="BNBUSD",
         nickname="Binance Coin",
@@ -926,7 +895,7 @@ PROFILES: dict[str, SymbolInstitutionalProfile] = {
 # ── Groupes de corrélation statique (1er Juillet 2026 — 27 symboles) ──
 
 CORRELATION_GROUPS: dict[str, list[str]] = {
-    "CRYPTO": ["BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"],
+    "CRYPTO": ["BTCUSD", "ETHUSD", "SOLUSD", "BNBUSD"],
     "INDICES": ["US500.cash", "US30.cash", "US100.cash", "JP225.cash", "GER40.cash", "UK100.cash"],
     "SAFE_HAVEN": ["XAUUSD", "XAGUSD"],
     "FOREX_MAJORS": ["EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD", "NZDUSD", "USDCHF"],
@@ -980,7 +949,7 @@ CORRELATION_MATRIX: dict[str, dict[str, float]] = {
 POSITION_GROUPS: list[list[str]] = [
     ["EURUSD", "GBPUSD", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "USDJPY"],  # FOREX_MAJORS
     ["EURJPY", "GBPJPY", "EURGBP", "AUDJPY"],  # FOREX_CROSSES
-    ["BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"],  # CRYPTO
+    ["BTCUSD", "ETHUSD", "SOLUSD", "BNBUSD"],  # CRYPTO
     ["US500.cash", "US30.cash", "US100.cash", "JP225.cash", "GER40.cash", "UK100.cash"],  # INDICES
     ["XAUUSD", "XAGUSD", "USOIL.cash", "UKOIL.cash", "NATGAS.cash"],  # COMMODITIES
 ]

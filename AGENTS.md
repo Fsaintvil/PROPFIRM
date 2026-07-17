@@ -155,7 +155,6 @@ CONSISTENCY_MAX_PCT = 0.30
 │ BTCUSD    max_lot=0.01  risk=1.00  spread=150 adx=20  H1  ★ WR 75.9%│
 │ ETHUSD    max_lot=0.01  risk=1.00  spread=120 adx=20  H1  ⚠️ WR 27.6%│
 │ SOLUSD    max_lot=0.01  risk=1.00  spread=120 adx=20  H1  ★ WR 65.0%│
-│ LNKUSD    max_lot=0.01  risk=1.00  spread=120 adx=20  H1  ★ WR 65.0%│
 │ BNBUSD    max_lot=0.01  risk=1.00  spread=120 adx=20  H1  ★ WR 65.0%│
 ├─ INDICES ───────────────────────────────────────────────────────────┤
 │ US500.cash max_lot=0.01 risk=1.00  spread=50  adx=22  H1  ⚠️ PF 0.24│

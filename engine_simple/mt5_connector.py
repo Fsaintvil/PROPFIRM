@@ -24,16 +24,17 @@ class MT5Connector:
     ORDER_FILLING_IOC = 1
     ORDER_TIME_GTC = 0
 
-    # ⏱ Thread pool partagé pour les appels MT5 avec timeout
-    # Un seul worker suffit — MT5 est monothreadé en interne.
-    _executor = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="mt5_timeout")
-
     def __init__(self, login: int, password: str, server: str) -> None:
         self.login = login
         self.password = password
         self.server = server
         self.magic = cfg.ROBOT_MAGIC
         self.connected = False
+        # ⏱ Thread pool pour les appels MT5 avec timeout — par instance
+        # 🔧 FIX 16 Juillet 2026: Était un attribut de classe partagé.
+        # Si le pool était occupé (timeout bloqué), TOUTES les instances
+        # du robot étaient paralysées.
+        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="mt5_timeout")
 
     def _call_with_timeout(self, fn: Callable, timeout: int = 30, name: str = "mt5_call", default: Any = None) -> Any:
         """Exécute un appel MT5 dans un thread séparé avec timeout.
@@ -423,4 +424,14 @@ class MT5Connector:
             lambda: mt5.history_deals_get(from_time, to_time),
             timeout=30,
             name=f"history_deals_get({from_time}, {to_time})",
+        )
+
+    def get_history_by_position(self, ticket: int) -> Any:
+        """🔧 FIX 16 Juillet 2026: Timeout 15s pour history_deals_get(position=...).
+        L'appel direct sans timeout peut bloquer indéfiniment si MT5 est instable.
+        """
+        return self._call_with_timeout(
+            lambda: mt5.history_deals_get(position=ticket),
+            timeout=15,
+            name=f"history_deals_get(position={ticket})",
         )

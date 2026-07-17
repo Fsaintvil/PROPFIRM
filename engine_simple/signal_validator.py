@@ -97,8 +97,11 @@ class SignalValidator:
             wins = sum(1 for t in sym_trades if t.get("profit", 0) > 0)
             wr = wins / len(sym_trades)
             if wr < 0.50:
-                dyn_score = max(cfg_score, 0.60)
-                if dyn_score != cfg_score:
+                # 🔧 FIX 14 Juillet 2026: min_score dynamique qui monte quand WR baisse
+                # Ancien code: dyn_score = max(cfg_score, 0.60) → toujours = cfg_score → inopérant
+                # Nouveau: +0.5 pt par tranche de 10% sous 50% (ex: WR=30% → +0.10 de pénalité)
+                dyn_score = min(cfg_score + (0.50 - wr) * 0.5, 0.90)
+                if abs(dyn_score - cfg_score) > 0.01:
                     logger.info(
                         f"  [DYNAMIC SCORE] {symbol}: WR={wr:.0f}% ({wins}/{len(sym_trades)}) "
                         f"→ min_score {cfg_score:.2f} → {dyn_score:.2f}"

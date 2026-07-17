@@ -248,46 +248,49 @@ class OnlineLearner:
             self.save_state()
 
     def get_params(self, symbol: str, base_thresh: float = 3.0) -> dict:
+        # 🔧 FIX 10 Juillet 2026: Appliquer SYMBOL_MAX_RISK sur TOUS les retours
+        from engine_simple.ftmo_config import SYMBOL_MAX_RISK
+
         if symbol not in self.adapted_params:
             # ⚠️ R1: Fallback transparent — pas de paramètres appris pour ce symbole
-            # Le risk_mult=1.0 signifie "pas d'ajustement OL" → la config symbole est utilisée telle quelle.
-            # Cela arrive si le seed n'a pas encore été chargé ou si _update_params a supprimé
-            # les params (trop peu de trades valides). Normal en début de vie du robot.
             logger.debug(f"[OnlineLearner] {symbol}: fallback defaults (no adapted_params)")
-            return {"thresh": base_thresh, "risk_mult": 1.0, "sl_mult": 2.0, "tp_mult": 5.0}
-        return self.adapted_params[symbol]
+            params = {"thresh": base_thresh, "risk_mult": 1.0, "sl_mult": 2.0, "tp_mult": 5.0}
+        else:
+            params = dict(self.adapted_params[symbol])
+
+        # 🛡️ SYMBOL_MAX_RISK override — s'applique même au fallback
+        max_risk = SYMBOL_MAX_RISK.get(symbol)
+        if max_risk is not None:
+            params["risk_mult"] = min(params.get("risk_mult", 1.0), max_risk)
+        return params
 
     def _update_params(self, symbol: str) -> None:
         h = list(self.history.get(symbol, []))
         # 🔓 FIX 8 Juillet: min_trades réduit à window//10 pour que l'OL s'active
-        # plus tôt (20 trades au lieu de 40). L'ancien seuil empêchait l'OL
-        # d'agir sur les symboles avec < 40 trades, le rendant inutile.
-        # Le plancher à 20 évite les décisions sur un échantillon trop petit.
-        min_trades = max(20, self.window // 10)
+        # plus tôt (20 trades au lieu de 40).
+        min_trades = max(15, self.window // 10)  # 🔧 10 Juillet: 20→15 : démarre plus vite
         if len(h) < min_trades:
             return
-        # Filtrer les trades avec régime valide (IGNORE les trades UNKNOWN/?)
-        # Permissif: seed data utilise direction comme proxy de régime (BUY/SELL) + HIST pour trades historiques
-        # 🔧 R2: "IMPORT" ajouté — les trades réels enregistrés par position_tracker.py utilisent ce régime
+
+        # Filtrer les trades avec régime valide (5 régimes de marché uniquement)
+        # 🔧 FIX 14 Juillet 2026: Retiré RAN/BUY/SELL/DOW — ces régimes invalides
+        # (anciens bugs d'enregistrement) corrompaient l'apprentissage. Les 5 vrais
+        # régimes sont définis dans regime.py et validés par MarketRegime.
         valid_regimes = {
             "RANGING",
             "TREND_UP",
             "TREND_DOWN",
             "HIGH_VOL",
             "LOW_VOL",
-            "HIST",
-            "RAN",
-            "BUY",
-            "SELL",
         }
-        h_valid = [t for t in h if t.get("regime", "") in valid_regimes]
+        h_valid_all = [t for t in h if t.get("regime", "") in valid_regimes]
+        h_valid = [t for t in h_valid_all if abs(t.get("r", 0)) >= 0.1]
+        filtered_noise = len(h_valid_all) - len(h_valid)
 
-        # Si moins de 5 trades valides ou si la majorité des trades sont invalides,
-        # on garde le paramétrage par défaut (ne pas apprendre sur des données pourries)
         if len(h_valid) < 5 or (len(h) > 0 and len(h_valid) / len(h) < 0.3):
-            # Trop peu de trades fiables → adapted_params par défaut
             logger.info(
                 f"[OnlineLearner] {symbol}: {len(h_valid)}/{len(h)} régimes valides "
+                f"(dont {filtered_noise} bruit r<0.1 filtré)"
                 f"— skip apprentissage (données insuffisantes)"
             )
             if symbol in self.adapted_params:
@@ -295,54 +298,94 @@ class OnlineLearner:
             return
 
         rr = np.array([t["r"] for t in h_valid])
-        wr = np.mean(rr > 0)
-        expectancy = np.mean(rr)
+
+        # 📊 RÉCENCE PONDÉRÉE : les 50 derniers trades comptent 2× plus
+        # Empêche l'OL de garder un vieux "champion" qui perd depuis 50 trades
+        n_recent = min(50, len(h_valid))
+        recent_rr = rr[-n_recent:]
+        wr_full = float(np.mean(rr > 0))
+        wr_recent = float(np.mean(recent_rr > 0)) if n_recent >= 5 else wr_full
+        expectancy_full = float(np.mean(rr))
+        expectancy_recent = float(np.mean(recent_rr)) if n_recent >= 5 else expectancy_full
+        total_r_sum = float(np.sum(rr))
+        total_r_recent = float(np.sum(recent_rr)) if n_recent >= 5 else total_r_sum
+
         logger.info(
-            f"[OnlineLearner] {symbol}: {len(h_valid)} trades valides, WR={wr:.1%}, expectancy={expectancy:.2f}"
+            f"[OnlineLearner] {symbol}: {len(h_valid)} trades, "
+            f"WR plein={wr_full:.0%} récent={wr_recent:.0%}, "
+            f"expect={expectancy_full:.2f}/{expectancy_recent:.2f}, "
+            f"total_r={total_r_sum:.0f}/{total_r_recent:.0f}"
         )
+
+        # ⚖️ DÉCISION : combiner récent + plein avec poids 40/60
+        wr_eff = 0.4 * wr_recent + 0.6 * wr_full
+        exp_eff = 0.4 * expectancy_recent + 0.6 * expectancy_full
+
         thresh = 2.0
         risk_mult = 1.0
 
-        # 🔧 FIX 1er Juillet 2026: NE PAS pénaliser les symboles rentables
-        # Un symbole avec WR>55%, expectancy>0.5 ET >20 trades prouve son edge
-        # → on préserve risk_mult=1.0 (pas de réduction)
-        # Note: ne s'applique QUE si WR < 70% (sinon les branches >78%/+82% donnent déjà un bonus)
-        is_proven_winner = wr > 0.55 and wr < 0.70 and expectancy > 0.5 and len(h_valid) >= 20
+        # 🏆 CHAMPION : WR > 55%, expectancy > 0.5, PnL total > 0, + récent pas en chute libre
+        is_proven_winner = (
+            wr_full > 0.53
+            and wr_recent > 0.45  # 🆕 récent ne doit pas être catastrophique
+            and expectancy_full > 0.4
+            and total_r_sum > 0
+            and len(h_valid) >= 15
+        )
 
         if is_proven_winner:
             thresh = 2.0
-            risk_mult = 1.0  # ne pas réduire le risque des champions
-            logger.info(f"  → Champion préservé: WR={wr:.1%}, expectancy={expectancy:.2f}, risk_mult=1.0")
-        elif wr < 0.70:
-            # 🔓 FIX 8 Juillet: thresh 2.0 → 2.5 (PLUS sélectif quand WR bas)
-            # Avant: thresh=2.0 était PLUS BAS que le défaut 2.5 → générait PLUS de trades en perdant
-            # Après: thresh=2.5 = plus sélectif = moins de trades mais meilleure qualité
-            thresh = 2.5  # plus sélectif quand WR bas
-            risk_mult = 0.85  # ⬆️ 0.75→0.85 : moins de pénalité pour éviter la spirale mortelle
-        elif wr > 0.82:
-            thresh = 1.5  # ↓ 2.0→1.5 (très agressif quand WR excellent)
-            risk_mult = 1.15
-        elif wr > 0.78:
-            thresh = 1.8  # ↓ 2.3→1.8 (modérément agressif)
-            risk_mult = 1.05
+            risk_mult = 1.0  # risque plein pour les vrais champions
+            logger.info(
+                f"  → Champion: WR plein={wr_full:.0%} récent={wr_recent:.0%}, "
+                f"expect={expectancy_full:.2f}, total_r={total_r_sum:.0f}, risk_mult=1.0"
+            )
 
-        if expectancy < 0 and len(h) > 10 and not is_proven_winner:
-            risk_mult = min(risk_mult, 0.85)  # ⬆️ 0.75→0.85 (évite la spirale)
+        elif wr_eff < 0.60:
+            # 🔴 WR BAS : plus sélectif + risque réduit
+            thresh = 2.5
+            # Le risk diminue progressivement avec le WR effectif
+            risk_mult = max(0.70, min(0.90, 0.50 + wr_eff))
+            logger.info(f"  → WR_eff={wr_eff:.0%} < 60% : thresh=2.5, risk_mult={risk_mult:.2f}")
 
-        # 🔧 PF-based penalty: réduire le risque si le Profit Factor est bas
-        # Corrige le biais BTCUSD (risk_mult=1.0 malgré PF 0.87 et PnL négatif)
+        elif wr_eff > 0.78:
+            # 🟢 WR HAUT : plus agressif MAIS plafonné à 1.0 (recovery mode)
+            thresh = 1.8
+            risk_mult = 1.0  # cap à 1.0
+            logger.info(f"  → WR_eff={wr_eff:.0%} > 78% : thresh=1.8, risk_mult=1.0 (cap recovery)")
+
+        # ⛔ EXPECTANCY NÉGATIVE : pénalité supplémentaire
+        if exp_eff < 0 and not is_proven_winner:
+            risk_mult = min(risk_mult, 0.75)
+            logger.info(f"  → expectancy_eff={exp_eff:.2f} < 0: risk_mult baissé à {risk_mult:.2f}")
+
+        # 🔧 PF-based penalty
         if len(h_valid) >= 10:
             wins = rr[rr > 0]
             losses = rr[rr < 0]
             if len(wins) > 0 and len(losses) > 0:
-                pf = sum(wins) / max(abs(sum(losses)), 0.001)
+                pf = float(sum(wins)) / max(float(abs(sum(losses))), 0.001)
                 if pf < 0.8:
-                    risk_mult *= max(0.7, pf)  # ⬆️ plancher 0.6→0.7 : moins agressif
+                    risk_mult *= max(0.70, pf)
                     logger.info(f"  → PF={pf:.2f} < 0.8, risk_mult ajusté à {risk_mult:.2f}")
 
-        # 🚫 PLANCHER ABSOLU : risk_mult ne peut pas descendre en dessous de 0.50
+        # 🔴 FIX 10 Juillet 2026: Per-symbol max risk override (depuis ftmo_config.py)
+        # Centralisé dans ftmo_config.SYMBOL_MAX_RISK pour que get_params() l'applique aussi.
+        from engine_simple.ftmo_config import SYMBOL_MAX_RISK
+
+        max_risk_override = SYMBOL_MAX_RISK.get(symbol)
+        if max_risk_override is not None:
+            risk_mult = min(risk_mult, max_risk_override)
+            if max_risk_override < 0.60:
+                logger.info(f"  → Override {symbol}: risk_mult plafonné à {max_risk_override} (max_risk symbole)")
+
+        # 🚫 PLANCHER ABSOLU : risk_mult ne peut pas descendre en dessous de 0.60
         # Évite la spirale mortelle WR bas → risque 0 → pas de trades → pas de récupération
-        risk_mult = max(0.50, risk_mult)
+        # 🔧 OPTIMIZER 9 Juillet 2026: ↑ 0.50→0.60 — stop spirale descendante des symboles sous-performants
+        # Note: le plancher 0.60 NE S'APPLIQUE PAS aux symboles avec un override explicite
+        # (ex: XAUUSD qui doit rester à 0.30 max, ou les hard blocks à 0.0)
+        if SYMBOL_MAX_RISK.get(symbol) is None:
+            risk_mult = max(0.60, risk_mult)
         self.adapted_params[symbol] = {
             "thresh": thresh,
             "risk_mult": risk_mult,
@@ -721,10 +764,11 @@ class AdaptiveEngine:
         adapted["_sweep_level"] = sweep_level
 
         # 🔓 FIX 8 Juillet: cap élargi à 2.0 (était 1.5) pour donner plus
-        # de marge à l'OL quand WR>82%. Le plancher à 0.5 est conservé.
+        # de marge à l'OL quand WR>82%. Le plancher à 0.6 est conservé.
         # Les multiplications successives (OL × structure × régime × stats) peuvent
         # produire des risk_mult < 0.4 ou > 2.5, générant des lots absurdes.
-        adapted["risk_mult"] = max(0.5, min(adapted.get("risk_mult", 1.0), 2.0))
+        # 🔧 OPTIMIZER 9 Juillet 2026: ↑ 0.5→0.6 — stop spirale descendante
+        adapted["risk_mult"] = max(0.6, min(adapted.get("risk_mult", 1.0), 2.0))
 
         return adapted
 

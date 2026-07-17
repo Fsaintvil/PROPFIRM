@@ -2,6 +2,7 @@ import contextlib
 import json
 import logging
 import os
+import signal
 import sys
 import threading
 import time
@@ -173,6 +174,29 @@ def _clean_orphan_tmp_files(glob_pattern="*.tmp"):
                 f.unlink(missing_ok=True)
             except Exception as e:
                 logger.debug(f"[CLEAN] Orphelin runtime/{f.name} ignoré: {e}")
+
+
+# ── Signal handler for graceful shutdown ──────────────────────────────
+_shutdown_requested = False
+_robot_instance: "FTMO_SIMPLE | None" = None
+
+
+def _signal_handler(signum, frame):
+    """SIGTERM/SIGINT handler — graceful shutdown with position cleanup."""
+    global _shutdown_requested
+    if _shutdown_requested:
+        return  # déjà en cours d'arrêt
+    _shutdown_requested = True
+    sig_name = signal.Signals(signum).name
+    logger.warning(f"[SIGNAL] Reçu {sig_name} — arrêt propre en cours...")
+    robot = _robot_instance
+    if robot is not None:
+        try:
+            robot.stop()
+        except Exception as e:
+            logger.error(f"[SIGNAL] Erreur pendant stop(): {e}")
+    # Ne pas appeler sys.exit() — la boucle principale terminera proprement
+    # via running=False, et le finally dans main() libérera le lock.
 
 
 def _acquire_lock():
@@ -866,6 +890,26 @@ class FTMO_SIMPLE:
         # Compteur d'échecs consécutifs
         if not hasattr(self, "_hc_failures"):
             self._hc_failures = 0
+        if not hasattr(self, "_last_ftmo_refresh_reconnect"):
+            self._last_ftmo_refresh_reconnect = 0.0
+
+        # 🔧 FIX 10 Juillet 2026: Reconnexion préventive avant la fenêtre FTMO 23:01
+        # FTMO fait une réinitialisation de session quotidienne à 23:01 UTC
+        # qui dure ~40-55s. On reconnecte préventivement à 23:00:45 pour
+        # établir une session fraîche avant la coupure.
+        _now_utc = datetime.now(timezone.utc)
+        if _now_utc.hour == 23 and _now_utc.minute == 0 and _now_utc.second >= 45:
+            _elapsed = time.time() - self._last_ftmo_refresh_reconnect
+            if _elapsed > 120:
+                logger.info("[FTMO REFRESH] Fenêtre 23:00:45 — reconnexion préventive avant refresh FTMO")
+                try:
+                    if self.mt5.reconnect():
+                        self._last_ftmo_refresh_reconnect = time.time()
+                        self._hc_failures = 0
+                        logger.info("[FTMO REFRESH] Reconnexion préventive réussie")
+                        return True
+                except Exception as e:
+                    logger.warning(f"[FTMO REFRESH] Reconnexion préventive échouée: {e}")
 
         if self.mt5.health_check():
             self._hc_failures = 0  # Reset compteur
@@ -1412,6 +1456,23 @@ class FTMO_SIMPLE:
                 collected = gc.collect()
                 logger.debug(f"[MEM] GC collecte: {collected} objets libérés (cycle {self.cycle_count})")
 
+            # 🔧 FIX 16 Juillet 2026: WAL checkpoint tous les 1000 cycles (~4h)
+            # Évite l'accumulation de données orphelines dans les fichiers .db-wal
+            # qui peuvent atteindre 4+ MB (ratio WAL/DB = 11:1 observé pour rate_cache).
+            if self.cycle_count % 1000 == 0 and self.cycle_count > 0:
+                try:
+                    self._vol_cache.wal_checkpoint()
+                except Exception as e:
+                    logger.debug(f"[WAL] rate_cache checkpoint: {e}")
+                try:
+                    self.journal.wal_checkpoint()
+                except Exception as e:
+                    logger.debug(f"[WAL] journal checkpoint: {e}")
+                try:
+                    self.feature_store.wal_checkpoint()
+                except Exception as e:
+                    logger.debug(f"[WAL] feature_store checkpoint: {e}")
+
             elapsed = time.time() - cycle_start
             _min_sleep = int(os.environ.get("ROBOT_MIN_CYCLE_SLEEP", "5"))
             sleep_time = max(_min_sleep, cfg.CYCLE_SECONDS - elapsed)
@@ -1432,6 +1493,10 @@ class FTMO_SIMPLE:
         # self._stop_trading = False toujours (voir __init__)
 
         # Batch interval — signaux à chaque cycle (batch_interval_sec=1s)
+
+        # 🔧 FIX DUPLICATION 9 Juillet 2026: tracker per-symbol du dernier trade exécuté
+        if not hasattr(self, "_last_symbol_trade_time"):
+            self._last_symbol_trade_time = {}
 
         # PHASE 0.5: Batch interval — signaux à chaque cycle (batch_interval_sec=1s)
         # Le reste du cycle (position management, trailing, SL/TP) continue en 15s
@@ -1538,6 +1603,16 @@ class FTMO_SIMPLE:
                 if live_total >= cfg.MAX_POSITIONS:
                     logger.info(f"  [LIMIT] Max positions ({cfg.MAX_POSITIONS}) atteint ({live_total} en cours)")
                     break
+            # 🔧 FIX DUPLICATION 9 Juillet: per-symbol min interval check
+            last_trade = self._last_symbol_trade_time.get(symbol, 0)
+            since_last_trade = time.time() - last_trade
+            if since_last_trade < cfg.MIN_TRADE_INTERVAL_SEC:
+                logger.debug(
+                    f"  [COOLDOWN] {symbol}: {since_last_trade:.0f}s < {cfg.MIN_TRADE_INTERVAL_SEC}s "
+                    f"depuis dernier trade → skip"
+                )
+                continue
+
             can_trade, reason = self.ftmo.can_trade(symbol, signal, live_positions)
             if not can_trade:
                 logger.debug(f"  [FTMO FINAL] {symbol}: {reason}")
@@ -1591,7 +1666,6 @@ class FTMO_SIMPLE:
                     "UKOIL.cash": 1.10,
                     "NATGAS.cash": 1.05,
                     "SOLUSD": 1.10,
-                    "LNKUSD": 1.10,
                     "BNBUSD": 1.10,
                     "JP225.cash": 1.15,
                     "GER40.cash": 1.15,
@@ -1608,6 +1682,8 @@ class FTMO_SIMPLE:
             # FIX #9: Ne compter et rafraîchir QUE si l'ordre a vraiment été placé
             if result is not None and getattr(result, "retcode", None) == 10009:
                 executed += 1
+                # 🔧 FIX DUPLICATION 9 Juillet: enregistrer timestamp pour per-symbol cooldown
+                self._last_symbol_trade_time[symbol] = time.time()
                 # [TRADE] = trade RÉELlement exécuté (info, trace dans logs)
                 logger.info(
                     f"  [TRADE] >>> {symbol} {signal['action']} (score={score:.2f}, strat={signal.get('details', '?')})"
@@ -1788,9 +1864,19 @@ class FTMO_SIMPLE:
             f"ADX={v['adx_v']:.1f} ATR%={v['atr_pct']:.3f}% Spread={v['sp_pts']:.0f}pts [{zone}]"
         )
 
+    def _current_trades(self) -> list[dict]:
+        """Retourne uniquement les trades du challenge actuel (filtre les historiques)."""
+        return [t for t in self.ftmo._trade_history if not t.get("historical", False)]
+
     def _check_win_rate(self):
-        total = len(self.ftmo._trade_history)
-        if total < 100:
+        current = self._current_trades()
+        total_current = len(current)
+        total_all = len(self.ftmo._trade_history)
+        if total_current < 20:
+            logger.info(
+                f"  [WR CHECK] {total_all} trades dont {total_current} challenge — "
+                f"pas assez de trades challenge (<20) pour décider"
+            )
             return
         # Throttle: logs WR CHECK / PHASE 3 à 1x par minute max (toutes les 4 cycles)
         if not hasattr(self, "_last_wr_check_cycle"):
@@ -1798,18 +1884,16 @@ class FTMO_SIMPLE:
         if self.cycle_count - self._last_wr_check_cycle < 4:
             return
         self._last_wr_check_cycle = self.cycle_count
-        # Utiliser les trades récents (dernier 200) pour la détection de dérive,
-        # pas l'historique global qui peut masquer une dégradation récente
-        recent_window = 200
-        recent_trades = (
-            self.ftmo._trade_history[-recent_window:]
-            if len(self.ftmo._trade_history) >= recent_window
-            else self.ftmo._trade_history
-        )
+
+        # Fenêtre récente: derniers 200 trades CHALLENGE ou tous si moins
+        recent_window = min(200, total_current)
+        recent_trades = current[-recent_window:]
+
         recent_wr = sum(1 for t in recent_trades if t["profit"] > 0) / max(len(recent_trades), 1)
-        global_wr = sum(1 for t in self.ftmo._trade_history if t["profit"] > 0) / max(total, 1)
+        global_wr = sum(1 for t in current if t["profit"] > 0) / max(total_current, 1)
         logger.info(
-            f"  [WR CHECK] {total} trades, global WR={global_wr:.1%}, recent ({len(recent_trades)}) WR={recent_wr:.1%}"
+            f"  [WR CHECK] {total_all} trades ({total_current} challenge), "
+            f"challenge WR={global_wr:.1%}, recent ({len(recent_trades)}) WR={recent_wr:.1%}"
         )
 
         # PHASE 2.1: Check par symbole → degraded (lot minimum) si WR < 35% sur 20 trades
@@ -1819,20 +1903,13 @@ class FTMO_SIMPLE:
             if len(sym_trades) >= 20:
                 sym_wr = sum(1 for t in sym_trades if t["profit"] > 0) / len(sym_trades)
                 sym_pf = self._calc_pf(sym_trades)
-                # PHASE 3: Log détaillé par symbole
-                # 🔧 FIX H4: Capper l'affichage du PF à 5.0 pour éviter les PF aberrants
-                # (EURUSD PF=42.37, contamination données historiques)
                 _display_pf = min(sym_pf, 5.0)
                 logger.info(
                     f"  [PHASE 3] {symbol}: {len(sym_trades)} trades, WR={sym_wr:.1%}, PF={_display_pf:.2f}"
                     + (" (capé)" if sym_pf > 5.0 else "")
                 )
-                # Utiliser le PF réel (non capé) pour les décisions
-                # Si PF > 5.0, le gel période s'applique (lignes 1724+)
 
                 if sym_wr < 0.35:
-                    # Mode dégradé au lieu de disable complet : le symbole continue à trader
-                    # mais avec lot minimum (0.05 ×5) pour éviter de rater un retournement
                     if symbol not in degraded_symbols:
                         degraded_symbols[symbol] = self.cycle_count
                         self._state["degraded_symbols"] = degraded_symbols
@@ -1841,11 +1918,10 @@ class FTMO_SIMPLE:
                         )
                         self.notifier.send(f"DEGRADED: {symbol} WR={sym_wr:.1%} < 35% → lot min")
                 elif sym_wr >= 0.50 and symbol in degraded_symbols:
-                    # Rétablissement : WR repassé au-dessus de 50% → sortir du mode dégradé
                     del degraded_symbols[symbol]
                     self._state["degraded_symbols"] = degraded_symbols
                     logger.info(f"[DEGRADED] {symbol}: WR={sym_wr:.1%} ≥ 50% → retour mode normal")
-                    self.notifier.send(f"DEGRADED: {symbol} WR={sym_wr:.1%} ≥ 50% → mode normal")
+                    self.notifier.send(f"[DEGRADED] {symbol}: WR={sym_wr:.1%} ≥ 50% → mode normal")
                 elif sym_wr < 0.50:
                     logger.warning(f"[WR WATCH] {symbol}: WR={sym_wr:.1%} < 50% (à surveiller)")
 
@@ -1853,20 +1929,16 @@ class FTMO_SIMPLE:
             logger.warning(f"  [WR CHECK] Recent WR={recent_wr:.1%} < 55% — ajustement seuils")
             self._win_rate_checked = True
             for symbol in ACTIVE_SYMBOLS & set(cfg.SYMBOLS):
-                # 🏆 XAUUSD/EURUSD exemptés : WR individuel 73.9%/59.5% justifie un traitement spécial
                 if symbol in ("XAUUSD", "EURUSD"):
                     logger.info(f"  [WR CHECK] {symbol} exempté (WR individuel élevé)")
                     continue
                 p = dict(self.adaptive.learner.get_params(symbol))
                 p["thresh"] = max(1.5, p.get("thresh", 2.5) - 0.3)
                 p["risk_mult"] = min(1.0, p.get("risk_mult", 1.0) * 0.8)
-                # Persist the adjusted params
                 self.adaptive.learner.adapted_params[symbol] = p
             logger.info("  [WR CHECK] Seuils abaisses: thresh-0.3, risk_mult*0.8 (sauf XAUUSD/EURUSD)")
-        elif self._win_rate_checked and total > 200:
-            recent = (
-                self.ftmo._trade_history[-100:] if len(self.ftmo._trade_history) >= 100 else self.ftmo._trade_history
-            )
+        elif self._win_rate_checked and total_current > 100:
+            recent = current[-100:] if len(current) >= 100 else current
             recent_wr = sum(1 for t in recent if t["profit"] > 0) / max(len(recent), 1)
             if recent_wr >= 0.60:
                 logger.info(f"  [WR CHECK] Recent WR={recent_wr:.1%} >= 60% — restauration seuils")
@@ -2039,6 +2111,10 @@ class FTMO_SIMPLE:
                     )
 
         if adjustments:
+            # 🔧 FIX 16 Juillet 2026: Mettre à jour le compteur APRÈS ajustement.
+            # Sans cela, _phase3_last_adjustment reste à 0 et l'anti-oscillation
+            # (trades_since_last < 100) est bypassé à chaque cycle.
+            self._phase3_last_adjustment = len(self.ftmo._trade_history)
             now_utc = datetime.now(timezone.utc).isoformat()
             details = {}
             for sym, (old_p, new_p, reason, wr_val) in adjustments.items():
@@ -2056,53 +2132,100 @@ class FTMO_SIMPLE:
     # ── Phase 14c: LightGBM retraining — SUPPRIMÉ (module désactivé) ────────
 
     # ── Phase 14d: Nettoyage automatique des logs auxiliaires ───────────────
-    def _cleanup_old_logs(self, max_age_days=14):
-        """Supprime les fichiers de log auxiliaires plus vieux que max_age_days.
+    def _cleanup_old_logs(self, max_age_days=14, max_size_mb=100):
+        """Supprime les fichiers de log auxiliaires plus vieux que max_age_days
+        et tronque les fichiers runtime/robot_*.log qui dépassent max_size_mb.
         Le fichier principal simple_robot.log est géré par RotatingFileHandler.
+
+        🔧 FIX 16 Juillet 2026: Extension aux logs runtime/ + size-based truncation.
+        robot_stderr.log (28 MB) et robot_stdout.log (3.9 MB) n'avaient AUCUNE rotation.
         """
         import shutil
         import time as _time
 
         now = _time.time()
         max_age_sec = max_age_days * 86400
-        log_dir = Path("logs")
-        if not log_dir.exists():
-            return
-
-        # Fichiers protégés (gérés par RotatingFileHandler)
-        protected = {
-            "simple_robot.log",
-            "simple_robot.log.1",
-            "simple_robot.log.2",
-            "simple_robot.log.3",
-            "simple_robot.log.4",
-            "simple_robot.log.5",
-            "simple_robot.log.6",
-            "simple_robot.log.7",
-            "simple_robot.log.old",
-        }
-
         removed = 0
-        for f in log_dir.iterdir():
-            if not f.is_file():
-                continue
-            if f.name in protected:
-                continue
-            # Ne toucher qu'aux fichiers .log
-            if not f.name.endswith(".log"):
-                continue
-            try:
-                mtime = f.stat().st_mtime
-                age = now - mtime
-                if age > max_age_sec:
-                    f.unlink(missing_ok=True)
-                    removed += 1
-                    logger.debug(f"[LOG_CLEANUP] Supprimé: {f.name} (âge: {age / 86400:.1f}j)")
-            except (OSError, PermissionError):
-                pass
+
+        # ── 1. logs/ directory (age-based) ────────────────────────────
+        log_dir = Path("logs")
+        if log_dir.exists():
+            # Fichiers protégés (gérés par RotatingFileHandler)
+            protected = {
+                "simple_robot.log",
+                "simple_robot.log.1",
+                "simple_robot.log.2",
+                "simple_robot.log.3",
+                "simple_robot.log.4",
+                "simple_robot.log.5",
+                "simple_robot.log.6",
+                "simple_robot.log.7",
+                "simple_robot.log.old",
+            }
+
+            for f in log_dir.iterdir():
+                if not f.is_file():
+                    continue
+                if f.name in protected:
+                    continue
+                if not f.name.endswith(".log"):
+                    continue
+                try:
+                    mtime = f.stat().st_mtime
+                    age = now - mtime
+                    if age > max_age_sec:
+                        f.unlink(missing_ok=True)
+                        removed += 1
+                        logger.debug(f"[LOG_CLEANUP] Supprimé: {f.name} (âge: {age / 86400:.1f}j)")
+                except (OSError, PermissionError):
+                    pass
+
+        # ── 2. runtime/ directory (age-based + size-based truncation) ──
+        runtime_dir = Path("runtime")
+        if runtime_dir.exists():
+            max_size_bytes = max_size_mb * 1_048_576
+            for f in runtime_dir.iterdir():
+                if not f.is_file():
+                    continue
+                if not f.name.endswith(".log"):
+                    continue
+                # Protection: ne jamais supprimer le fichier actif si le robot tourne
+                # (le PID lock prouve que le processus est actif)
+                try:
+                    # Size-based truncation: si > max_size_mb, garder les dernières 10 MB
+                    fsize = f.stat().st_size
+                    if fsize > max_size_bytes:
+                        # Lire les 10 derniers MB et réécrire
+                        keep_bytes = 10 * 1_048_576
+                        with open(f, "rb") as fh:
+                            fh.seek(-min(fsize, keep_bytes), 2)
+                            tail = fh.read()
+                        with open(f, "wb") as fh:
+                            fh.write(b"--- [LOG_TRUNCATED at ")
+                            fh.write(_time.strftime("%Y-%m-%d %H:%M:%S UTC", _time.gmtime()).encode())
+                            fh.write(
+                                f"] truncated from {fsize / 1_048_576:.0f} MB to {keep_bytes / 1_048_576:.0f} MB ---\n".encode()
+                            )
+                            fh.write(tail)
+                        removed += 1
+                        logger.warning(
+                            f"[LOG_CLEANUP] TRONQUÉ: {f.name} ({fsize / 1_048_576:.0f} MB → {keep_bytes / 1_048_576:.0f} MB)"
+                        )
+                    else:
+                        # Age-based cleanup (fallback)
+                        mtime = f.stat().st_mtime
+                        age = now - mtime
+                        if age > max_age_sec:
+                            f.unlink(missing_ok=True)
+                            removed += 1
+                            logger.debug(f"[LOG_CLEANUP] Supprimé: {f.name} (âge: {age / 86400:.1f}j)")
+                except (OSError, PermissionError):
+                    pass
 
         if removed:
-            logger.info(f"[LOG_CLEANUP] {removed} fichier(s) de log supprimé(s) (>={max_age_days} jours)")
+            logger.info(
+                f"[LOG_CLEANUP] {removed} fichier(s) de log traités (age>{max_age_days}j ou size>{max_size_mb}MB)"
+            )
         else:
             logger.debug(f"[LOG_CLEANUP] Aucun fichier à nettoyer (âge max: {max_age_days}j)")
 
@@ -2111,9 +2234,17 @@ def main():
     Path("logs").mkdir(exist_ok=True)
     Path("runtime").mkdir(exist_ok=True)
     _clean_orphan_tmp_files()  # H-04: nettoie .tmp orphelins avant démarrage
+
+    # 🐛 FIX C3: Enregistrer les handlers SIGTERM/SIGINT pour arrêt propre
+    # Sans cela, taskkill /F laisse les positions ouvertes et le PID lock non libéré.
+    signal.signal(signal.SIGTERM, _signal_handler)
+    signal.signal(signal.SIGINT, _signal_handler)
+
     _acquire_lock()
     try:
+        global _robot_instance
         robot = FTMO_SIMPLE()
+        _robot_instance = robot
         robot.start()
     finally:
         _release_lock()

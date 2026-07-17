@@ -156,7 +156,7 @@ class ExecutionStats:
 
 
 class OrderValidator:
-    MIN_LOT = 0.05
+    MIN_LOT = 0.01  # 🔧 FIX 10 Juillet 2026: 0.05→0.01 (data collection mode, global_max_lot=0.02)
     MAX_LOT = 10.0
     MIN_RR = cfg.MIN_RR_RATIO  # de la config (1.95); ±5% jitter SL/TP est incorporé
 
@@ -390,14 +390,15 @@ class TradeExecutor:
         lot = self.ftmo.calculate_lot(symbol, entry, sl, quality=quality, signal_risk_mult=signal_risk_mult)
         if lot is not None and lot > 0:
             # 🔒 Safety clamp : ftmo_protector.calculate_lot() gère déjà le clamping
-            # Ce clamp est une sécurité ABSOLUE (catastrophe) — cap à 10.0
+            # Ce clamp est une sécurité ABSOLUE (catastrophe)
             try:
                 import config_simple as _cfg
 
-                _max = 10.0  # sécurité absolue — ne pas brider la progression WR
-                _min = 0.05  # minimum absolu (×5 Juillet 2026)
+                # 🔧 FIX 10 Juillet 2026: global_max_lot appliqué comme plafond absolu
+                _max = min(getattr(_cfg, "GLOBAL_MAX_LOT", 10.0), 10.0)
+                _min = 0.01  # minimum absolu (lots min pour data collection)
                 if lot > _max:
-                    logger.warning(f"[LOT SAFETY] {symbol}: lot={lot:.3f} > {_max} (safety clamp)")
+                    logger.warning(f"[LOT SAFETY] {symbol}: lot={lot:.3f} > {_max} (global_max_lot clamp)")
                     lot = _max
                 if lot < _min:
                     lot = _min
@@ -405,7 +406,7 @@ class TradeExecutor:
                 logger.debug(f"[LOT SAFETY] config_simple non disponible: {_e}")
             return lot
         # Fallback sécurisé : lot minimum en cas d'erreur
-        return 0.05
+        return 0.01
 
     REGIME_TO_SHORT = {
         "TREND_UP": "TRE",
@@ -451,7 +452,7 @@ class TradeExecutor:
         logger.debug(
             f"[ORDER REQ] {symbol} {action} lot={lot:.3f} price={price:.5f} "
             f"SL={sl:.5f} TP={tp:.5f} dev=20 fill=IOC digits={info.digits if info else '?'} "
-            f"point={info.point if info else '?'}"
+            f"point={info.point if info else '?'} comment={comment} regime={regime}"
         )
         result = self.mt5.order_send(req)
         if result and result.retcode == 10009:

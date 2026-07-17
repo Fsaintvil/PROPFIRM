@@ -99,8 +99,8 @@ class TestTradeExecutor:
         req = args[0]
         assert req["symbol"] == "XAUUSD"
         assert req["type"] == 0
-        # ×5 Juillet 2026: ftmo retourne 0.05, plus de clamp YAML bloqueur → volume=0.05
-        assert req["volume"] == 0.05
+        # 🔧 FIX 10 Juillet 2026: global_max_lot=0.02 plafonne à 0.02
+        assert req["volume"] == 0.02
 
     def test_execute_rr_too_low(self):
         mt5 = make_mock_mt5()
@@ -308,8 +308,9 @@ class TestATRTrailing:
         ftmo._check_step_trailing(pos)
         assert mt5.update_sl.called
         new_sl = mt5.update_sl.call_args[0][1]
-        # EURUSD RANGING fallback (TRAILING_BY_REGIME level 2, profit 4.0 ATR > 3.0 thresh): trail = 0.35
-        expected_sl = round(1.1200 - 0.35 * 0.005, 5)
+        # EURUSD RANGING fallback: TRAILING_BY_REGIME=[(1.20,0.40),(2.50,0.28),(4.00,0.18),(6.00,0.10)]
+        # profit 4.0 ATR > 4.00 → trail = 0.18
+        expected_sl = round(1.1200 - 0.18 * 0.005, 5)
         assert abs(new_sl - expected_sl) < 0.0001
 
     @patch("engine_simple.trailer.random.uniform", return_value=0.0)
@@ -352,12 +353,13 @@ class TestATRTrailing:
         result = MagicMock()
         result.retcode = 10009
         mt5.update_sl.return_value = result
-        pos = self._make_buy_pos(current=1.1110)  # profit = 0.011, 2.2 ATR > 2.0 first lock
+        pos = self._make_buy_pos(current=1.1110)  # profit = 0.011, 2.2 ATR > 1.5 first lock
         ftmo._check_step_trailing(pos)
         assert mt5.update_sl.called
         new_sl = mt5.update_sl.call_args[0][1]
-        # EURUSD HIGH_VOL fallback (TRAILING_BY_REGIME level 0, profit 2.2 ATR > 2.0 thresh): trail = 1.20
-        expected_sl = round(1.1110 - 1.20 * 0.005, 5)
+        # EURUSD HIGH_VOL fallback: TRAILING_BY_REGIME=[(1.50,1.00),(3.00,0.70),(5.00,0.45),(7.00,0.25)]
+        # profit 2.2 ATR > 1.50 but < 3.00 → trail = 1.00
+        expected_sl = round(1.1110 - 1.00 * 0.005, 5)
         assert abs(new_sl - expected_sl) < 0.0001
 
 

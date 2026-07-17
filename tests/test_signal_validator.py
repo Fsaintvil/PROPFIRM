@@ -122,13 +122,26 @@ class TestCheck:
     @patch("engine_simple.signal_validator.update_dyn_score")
     def test_update_dyn_score_called(self, mock_update, mock_params):
         mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
+        # 7/15 wins = 46.7% < 50% → dyn_score = 0.60 + (0.50-0.467)*0.5 = 0.6167
         trades = [{"profit": -100} for _ in range(8)] + [{"profit": 50} for _ in range(7)]
         v = make_validator(trade_history={"EURUSD": trades})
         sig = make_signal(score=0.80)
         v.check("EURUSD", sig, [])
-        # 7/15 wins = 46.7% < 50% → dyn_score = max(0.60, 0.60) = 0.60
-        # update_dyn_score doit être appelé
-        mock_update.assert_called_once_with("EURUSD", 0.60)
+        # 🔧 FIX 14 Juil: min_score monte progressivement quand WR baisse
+        # WR=46.7% → dyn_score = 0.60 + (0.50-0.467)*0.5 = 0.6167
+        mock_update.assert_called_once_with("EURUSD", 0.6166666666666667)
+
+    @patch("engine_simple.signal_validator.get_symbol_params")
+    @patch("engine_simple.signal_validator.update_dyn_score")
+    def test_update_dyn_score_low_wr_raises_more(self, mock_update, mock_params):
+        """WR très bas → min_score doit monter plus haut."""
+        mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
+        # 4/15 wins = 26.7% < 50% → dyn_score = 0.60 + (0.50-0.267)*0.5 = 0.7167
+        trades = [{"profit": -100} for _ in range(11)] + [{"profit": 50} for _ in range(4)]
+        v = make_validator(trade_history={"EURUSD": trades})
+        sig = make_signal(score=0.80)
+        v.check("EURUSD", sig, [])
+        mock_update.assert_called_once_with("EURUSD", 0.7166666666666667)
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_sl_tp_auto_calculated_when_missing(self, mock_params):

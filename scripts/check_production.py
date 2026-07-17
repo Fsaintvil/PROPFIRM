@@ -1,10 +1,23 @@
 """Vérification production : positions, PnL, trailing, gains sécurisés."""
+
 import json
 import sys
 import time
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as _TimeoutError
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+
+def _mt5_call(fn, timeout=30):
+    """Execute an MT5 call with a timeout."""
+    with ThreadPoolExecutor(max_workers=1) as ex:
+        future = ex.submit(fn)
+        try:
+            return future.result(timeout=timeout)
+        except _TimeoutError:
+            raise TimeoutError(f"MT5 call timed out after {timeout}s")
+
 
 # Try to import MT5 connector — check engine_simple/ first
 mc_mod = None
@@ -38,14 +51,13 @@ def load_json(path):
 # ── 1. MT5 Live ────────────────────────────────────────────────
 if mc:
     try:
-        mc.initialize()
-        acc = mc.account_info()
-        print(f"\n📊 MT5: Balance=${acc.balance:,.2f}  Equity=${acc.equity:,.2f}  "
-              f"Float={acc.profit:+,.2f}")
+        _mt5_call(mc.initialize, 30)
+        acc = _mt5_call(mc.account_info, 15)
+        print(f"\n📊 MT5: Balance=${acc.balance:,.2f}  Equity=${acc.equity:,.2f}  Float={acc.profit:+,.2f}")
         dd = (1 - acc.equity / acc.balance) * 100 if acc.balance else 0
         print(f"     DD depuis balance: {dd:.2f}%")
 
-        positions = mc.get_positions()
+        positions = _mt5_call(mc.get_positions, 15)
         if not positions:
             print("\n📭 Aucune position ouverte")
         else:
@@ -54,10 +66,12 @@ if mc:
             secured = 0
             for p in positions:
                 label = "🟢" if p.profit > 0 else ("🔴" if p.profit < 0 else "⚪")
-                print(f"  {label} #{p.ticket} {p.symbol} {p.type_str} "
-                      f"lot={p.volume:.2f} entry={p.price:.5f} "
-                      f"SL={p.sl:.5f} TP={p.tp:.5f} "
-                      f"PnL={p.profit:+,.2f}")
+                print(
+                    f"  {label} #{p.ticket} {p.symbol} {p.type_str} "
+                    f"lot={p.volume:.2f} entry={p.price:.5f} "
+                    f"SL={p.sl:.5f} TP={p.tp:.5f} "
+                    f"PnL={p.profit:+,.2f}"
+                )
                 if p.profit > 0:
                     profitable += 1
                     # Check if SL is above entry (long) or below entry (short) → secured
@@ -68,9 +82,12 @@ if mc:
             print(f"\n   🟢 Profitable: {profitable}/{len(positions)}")
             print(f"   🔒 Gains sécurisés (SL > entry): {secured}/{profitable}")
         mc.shutdown()
+    except TimeoutError as e:
+        print(f"\n⚠️  Timeout MT5: {e}")
     except Exception as e:
         print(f"\n⚠️  Erreur MT5: {e}")
         import traceback
+
         traceback.print_exc()
 else:
     print("⚠️  MT5 connector not available")
@@ -78,12 +95,12 @@ else:
 # ── 2. Robot State ─────────────────────────────────────────────
 state = load_json("runtime/robot_state.json")
 print(f"\n📁 RUNTIME STATE")
-print(f"   Challenge initial: ${state.get('challenge_initial_balance',0):,.2f}")
-print(f"   Peak equity:       ${state.get('peak_equity',0):,.2f}")
-print(f"   Consecutive losses: {state.get('consecutive_losses',0)}")
-print(f"   Trading days:       {len(state.get('trading_days_list',[]))}")
-print(f"   Daily PnL:          ${sum(state.get('daily_pnl_by_date',{}).values()):+,.2f}")
-print(f"   Challenge status:   {state.get('challenge_status','?')}")
+print(f"   Challenge initial: ${state.get('challenge_initial_balance', 0):,.2f}")
+print(f"   Peak equity:       ${state.get('peak_equity', 0):,.2f}")
+print(f"   Consecutive losses: {state.get('consecutive_losses', 0)}")
+print(f"   Trading days:       {len(state.get('trading_days_list', []))}")
+print(f"   Daily PnL:          ${sum(state.get('daily_pnl_by_date', {}).values()):+,.2f}")
+print(f"   Challenge status:   {state.get('challenge_status', '?')}")
 
 peaks = state.get("trailing_peaks", {})
 if peaks:
@@ -99,11 +116,10 @@ if trades:
     total_pnl = sum(t.get("pnl", 0) for t in trades)
     wins = sum(1 for t in trades if t.get("pnl", 0) > 0)
     print(f"\n📈 PERFORMANCE HISTORY ({len(trades)} trades)")
-    print(f"   WR: {wins}/{len(trades)} ({wins/len(trades)*100:.1f}%)")
+    print(f"   WR: {wins}/{len(trades)} ({wins / len(trades) * 100:.1f}%)")
     print(f"   Total PnL: ${total_pnl:+,.2f}")
     last = trades[-1]
-    print(f"   Dernier trade: {last.get('symbol','?')} {last.get('action','?')} "
-          f"PnL={last.get('pnl',0):+,.2f}")
+    print(f"   Dernier trade: {last.get('symbol', '?')} {last.get('action', '?')} PnL={last.get('pnl', 0):+,.2f}")
 else:
     print(f"\n📈 PERFORMANCE HISTORY: 0 trades (attente 1er trade)")
 

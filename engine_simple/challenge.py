@@ -177,6 +177,10 @@ class ChallengeTracker:
         """Vérifie la daily loss avec coordination et caching.
         Met à jour _daily_loss_violated pour synchronisation avec can_trade().
         """
+        # 🔧 FIX 17 Juillet 2026: Reset quotidien AVANT le check daily loss.
+        # Sans cela, un nouveau jour sans trade ouvert (seulement trades fermés)
+        # ne reset pas daily_start_equity, ce qui donne un faux daily loss 2.4%.
+        self._reset_daily()
         try:
             account = self.mt5.get_account_info()
             equity_val = getattr(account, "equity", None)
@@ -196,6 +200,31 @@ class ChallengeTracker:
             sym_daily_loss = sym_cfg.get("max_daily_loss_pct_override")
             if sym_daily_loss is not None:
                 daily_loss_limit = sym_daily_loss
+
+        # 🔧 FIX 17 Juillet 2026: AUTO-HEAL si daily_start_equity est périmé.
+        # Scénario: _reset_daily() n'a pas pu récupérer account.equity au reset
+        # du jour (MT5 temporairement indisponible), et daily_start_equity est
+        # resté au peak ($200k) au lieu de l'équité réelle (~$195k).
+        # Symptôme: daily_loss_pct >= limit mais _opened_today == 0
+        # (aucun trade ouvert aujourd'hui = la perte est du passif, pas d'aujourd'hui).
+        if daily_loss_pct >= daily_loss_limit and self._opened_today == 0 and daily_loss_pct > 0:
+            # Tentative d'auto-guérison: réessayer de récupérer l'account
+            try:
+                _retry_account = self.mt5.get_account_info()
+                if _retry_account:
+                    _retry_equity = getattr(_retry_account, "equity", None)
+                    if _retry_equity and isinstance(_retry_equity, (int, float)):
+                        _retry_change = _retry_equity - self.daily_start_equity
+                        _retry_pct = max(0, -_retry_change) / max(self.initial_balance, 1)
+                        if _retry_pct < daily_loss_pct:
+                            self.daily_start_equity = _retry_equity
+                            daily_loss_pct = _retry_pct
+                            logger.info(
+                                f"  [AUTO-HEAL] daily_start_equity corrigé: "
+                                f"${_retry_equity:.0f} (daily loss recalculé: {daily_loss_pct:.2%})"
+                            )
+            except Exception as _e:
+                logger.debug(f"  [AUTO-HEAL] échec: {_e}")
 
         self._daily_loss_violated = daily_loss_pct >= daily_loss_limit
         if self._daily_loss_violated:
@@ -335,9 +364,14 @@ class ChallengeTracker:
         )
 
     def _reset_daily(self) -> None:
-        """Reset les stats quotidiennes à minuit UTC."""
+        """Reset les stats quotidiennes à minuit UTC.
+        🔧 FIX 17 Juillet 2026: fallback conserve daily_start_equity au lieu de peak.
+        L'ancien code `max(self.peak_equity, self.initial_balance)` faisait sauter
+        daily_start_equity à $200k en cas d'indisponibilité MT5 passagère, créant
+        un faux daily loss de 2.4% qui bloquait TOUS les trades."""
         now = datetime.utcnow()
         if now.date() != self.daily_stats.get("day"):
+            old_dse = self.daily_start_equity  # Sauvegarder pour fallback
             self.daily_stats = {"trades": 0, "losses": 0, "pnl": 0, "day": now.date()}
             self._daily_trades_per_symbol = {}
             self._symbol_daily_pnl = {}  # Reset PnL quotidien par symbole
@@ -347,7 +381,8 @@ class ChallengeTracker:
             if account:
                 self.daily_start_equity = account.equity
             else:
-                self.daily_start_equity = max(self.peak_equity, self.initial_balance)
+                # 🔧 17 Juil 2026: Garder l'ancienne valeur plutôt que sauter à peak
+                self.daily_start_equity = old_dse if old_dse > 0 else self.initial_balance
 
     # ── Pruning ──────────────────────────────────────────────────────
 
@@ -381,6 +416,7 @@ class ChallengeTracker:
                     else datetime.fromtimestamp(t["time"]).isoformat()
                     if isinstance(t["time"], (int, float))
                     else str(t["time"]),
+                    "historical": t.get("historical", False),
                 }
                 for t in self._trade_history[-200:]  # last 200 trades
             ],
@@ -457,6 +493,7 @@ class ChallengeTracker:
                             "symbol": t.get("symbol", ""),
                             "profit": t.get("profit", 0),
                             "time": time_val,
+                            "historical": t.get("historical", True),
                         }
                     )
                 except (ValueError, TypeError):

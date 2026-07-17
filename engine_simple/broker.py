@@ -79,7 +79,7 @@ class Broker:
       - Health check proactif
     """
 
-    def __init__(self, mt5_connector: Any, audit: Any = None, max_connect_attempts: int = 5) -> None:
+    def __init__(self, mt5_connector: Any, audit: Any = None, max_connect_attempts: int = 10) -> None:
         self._mt5: Any = mt5_connector
         self.audit: Any = audit
         self.latency: LatencyTracker = LatencyTracker()

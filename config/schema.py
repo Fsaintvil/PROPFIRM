@@ -64,7 +64,6 @@ class TradingConfig(BaseModel):
             "BTCUSD",
             "ETHUSD",
             "SOLUSD",
-            "LNKUSD",
             "BNBUSD",
             "US500.cash",
             "US30.cash",
@@ -80,6 +79,9 @@ class TradingConfig(BaseModel):
     max_signals_per_cycle: int = Field(default=25, ge=1, le=25)
     max_orders_per_minute: int = Field(default=25, ge=1, le=25)
     lot_size: float = Field(default=0.01, ge=0.01, le=10)
+    global_max_lot: float = Field(
+        default=0.02, ge=0.01, le=10, description="Plafond absolu du lot tous symboles confondus"
+    )
     min_trade_interval_sec: int = Field(default=120, ge=5, le=3600)
     batch_interval_sec: int = Field(
         default=5, ge=1, le=3600, description="Intervalle entre batches de signaux (secondes)"

@@ -41,7 +41,6 @@ CONTRACT_MULTIPLIER = {
     "NZDUSD": 100000,
     "USDCHF": 100000,
     "US500.cash": 1,
-    "LNKUSD": 1,
 }
 
 

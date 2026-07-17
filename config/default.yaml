@@ -70,12 +70,12 @@ trading:
   batch_interval_sec: 5         # 5s
   trading_start_hour: 0
   trading_end_hour: 24          # 24/7 — sans arret
-  danger_hours: [1, 4, 7, 17, 21, 23]  # 🌙 AJOUTÉ 1er Juillet 2026: 01h(WR35%), 04h(19%), 07h(22%), 17h(28%), 21h(0%), 23h(12%) — Quant Auditor
+  danger_hours: [4, 7, 21]  # 🔧 OPTIMIZER 9 Juillet 2026: ↓ 6h→3h — seules 04h(19%), 07h(22%), 21h(0%) gardées. 01h,17h,23h débloquées pour +3h trading/jour
   history_lookback_days: 7
 
 # ── Signal ───────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.60               # 🔧 FIX #5: Retour à 0.60 (était 0.80) — recommandé par Optimizer + Quant Auditor
+  min_score: 0.75               # 🔴 URGENT 9 Juil 2026: ↑ 0.60→0.75 — filtre les mauvais trades (estimation: +$8,767/500 trades)
   daily_profit_limit_pct: 0.008  # 0.8% profit/jour max (FTMO consistency)
 
 # ── Risque FTMO ─────────────────────────────────────────────────────────
@@ -89,7 +89,7 @@ risk:
   max_trading_days: 0            # pas de limite max
 
   # --- Risque par trade (ultra-conservateur 2 Juillet 2026) ---
-  per_trade_pct: 0.008           # 🚀 PHASE 2: 0.80% par trade (était 0.20%) — x4 pour accélérer challenge
+  per_trade_pct: 0.004           # 🔴 URGENT 9 Juil 2026: ↓ 0.008→0.004 (×½) — WR 47%, risque trop élevé
   short_mult: 1.0                # même risque long/short
   max_risk_amount: 2000.0        # 🚀 PHASE 2: $2,000 max (était $400) — suit le risk_per_trade
 
@@ -106,6 +106,9 @@ risk:
 
   # --- Circuit breaker (ultra-conservateur 2 Juillet 2026) ---
   circuit_breaker_dd_pct: 0.06   # 🔧 FIX #5: 6% DD → arrêt d'urgence (était 8%)
+
+  # --- Volume max global ---
+  global_max_lot: 0.02           # 🔴 FIX 10 Juil 2026: plafond absolu — évite les pertes $500+
 
   # --- Recalibration ---
   recalibration_frequency: 50    # recalib ML tous les 50 trades
@@ -124,13 +127,13 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   XAUUSD:
     timeframe: "H4"
-    max_lot: 0.10                # 🔧 FIX 6 Juil 2026: 0.20→0.10 — lot excessif doublait le risque
+    max_lot: 0.01                # 🔴 HARD BLOCK 16 Juil 2026 — 89% des pertes challenge (-$2,655), WR 0%, lot progressif catastrophique
     min_lot: 0.01
-    risk_mult: 1.50             # 🔧 OPTIMIZER: ↑ 1.00→1.50 — WR 73.9% justifie un risque accru
+    risk_mult: 0.0               # 🔴 HARD BLOCK 16 Juil 2026 — stop immédiat, Quant Auditor: 60% des pertes totales
     max_spread_points: 60
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false             # 🔴 HARD BLOCK 16 Juil 2026
+    allow_shorts: false           # 🔴 HARD BLOCK 16 Juil 2026 — les 2 directions sont perdantes
     momentum_period: 18
     sl_atr_trending: 1.8
     tp_atr_trending: 5.0
@@ -189,13 +192,13 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   EURUSD:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 0.50  # 🔓 RÉACTIVÉ 8 Juillet 2026 — ghost trades écartés, WR 63.2% réel
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 0.30  # 🔓 DÉBLOQUÉ 16 Juillet 2026 — BUY-only, WR 44.8% live (58 trades), +$28.72 PnL
     max_spread_points: 40
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: true            # 🔓 BUY uniquement — backtest historique négatif mais live positif
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -247,13 +250,13 @@ symbol_limits:
     news_minutes_after: 5
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # USDJPY H1 — Dollar/Yen (forex majeur)
+  # USDJPY H1 — Dollar/Yen (forex majeur) — MEILLEUR SYMBOLE LIVE
   # ═══════════════════════════════════════════════════════════════════════════
   USDJPY:
     timeframe: "H1"
-    max_lot: 0.15               # 🚀 PHASE 2: ↑ 0.05→0.15 — WR 74.4%, +$89
+    max_lot: 0.20               # 🚀 16 Juillet: ↑ 0.15→0.20 — WR 61.0%, PF 1.75, +$67 (meilleur symbole)
     min_lot: 0.05
-    risk_mult: 1.50             # 🚀 PHASE 2: ↑ 1.00→1.50 — WR 74.4%, PF 3.89 justifie
+    risk_mult: 2.00             # 🚀 16 Juillet: ↑ 1.50→2.00 — WR 61.0% stable sur 59 trades
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -282,13 +285,13 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   USDCAD:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 0.50  # 🔓 PHASE 4: Réactivation 8 Juillet 2026 — risk_mult modéré, OL ajustera selon WR
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 0.0   # 🔴 HARD BLOCK 13 Juillet 2026 — backtest -$214K après coûts
     max_spread_points: 40
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -346,13 +349,13 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   NZDUSD:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 0.75  # 🔧 OPTIMIZER: ↓ 1.00→0.75 — WR 37.5%, 16 trades, PnL +$17
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 0.0   # 🔴 HARD BLOCK 13 Juillet 2026 — backtest -$240K après coûts
     max_spread_points: 40
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -374,17 +377,17 @@ symbol_limits:
 
   # ═══════════════════════════════════════════════════════════════════════════
   # USDCHF H1 — Dollar US/Franc Suisse (forex majeur)
-  # 🔴 HARD BLOCK 3 Juillet 2026 — WR 20%, PF 0.01, -$36
+  # 🔴 HARD BLOCK 10 Juil 2026 — WR 16.7%, PF 0.01, -$43
   # ═══════════════════════════════════════════════════════════════════════════
   USDCHF:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 0.50  # 🔓 PHASE 4: Réactivation 8 Juillet 2026 — risk_mult modéré (backtest 68.1% WR), OL ajustera
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 0.0   # 🔴 HARD BLOCK 10 Juil 2026 — WR 16.7%, -$43
     max_spread_points: 40
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -406,16 +409,17 @@ symbol_limits:
 
   # ═══════════════════════════════════════════════════════════════════════════
   # EURJPY H1 — Euro/Yen Japonais (forex cross)
+  # 🔴 HARD BLOCK 10 Juil 2026 — WR 0% (4 trades), PF 0.00, -$11
   # ═══════════════════════════════════════════════════════════════════════════
   EURJPY:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 1.00
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 0.0   # 🔴 HARD BLOCK 10 Juil 2026 — WR 0%
     max_spread_points: 60
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: false
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -471,11 +475,10 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   EURGBP:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 1.00
+    max_lot: 0.02
+    min_lot: 0.01
+    risk_mult: 0.50  # 🔓 DÉBLOQUÉ 14 Juillet 2026 — live WR 82.8% sur 29 trades (Signal Engine), mérite test
     max_spread_points: 40
-    max_spread_atr_ratio: 0.15  # 🐛 FIX #16: ATR très bas → 12.3% au lieu de 10%
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -503,9 +506,9 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   AUDJPY:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 1.00
+    max_lot: 0.03
+    min_lot: 0.01
+    risk_mult: 0.50  # 🔓 DÉBLOQUÉ 16 Juillet 2026 — live WR 55.6%, PF 4.40, +$11.34 sur 9 trades (100% SELL)
     max_spread_points: 60
     adx_thresh: 22
     allow_buys: true
@@ -565,9 +568,9 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   USOIL.cash:
     timeframe: "H1"
-    max_lot: 0.05
+    max_lot: 0.10               # 🚀 16 Juillet: ↑ 0.05→0.10 — WR 56.2%, PF 5.30, +$33 (meilleur PF)
     min_lot: 0.05
-    risk_mult: 1.00
+    risk_mult: 1.50             # 🚀 16 Juillet: ↑ 1.00→1.50 — PF 5.30 justifie amplement
     max_spread_points: 100
     max_spread_atr_ratio: 0.22  # USOIL spread volatile → 20% ATR (↑ 80→100 pour spread réel ~86)
     adx_thresh: 22
@@ -689,37 +692,6 @@ symbol_limits:
   # SOLUSD H1 — Solana (crypto)
   # ═══════════════════════════════════════════════════════════════════════════
   SOLUSD:
-    timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 1.00
-    max_spread_points: 120
-    adx_thresh: 20
-    allow_buys: true
-    allow_shorts: true
-    momentum_period: 20
-    sl_atr_trending: 2.0
-    tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
-    adx_slope_threshold: -5.0
-    adx_slope_threshold_strong: -8.0
-    threshold_trending: 2.5
-    threshold_ranging: 2.0
-    pullback_band_trending: 0.5
-    pullback_band_ranging: 0.3
-    cmf_threshold: 0.20
-    obv_div_penalty_high: 0.85
-    obv_div_penalty_low: 0.92
-    preferred_hours: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
-    weekend_trading: true
-    news_minutes_before: 0
-    news_minutes_after: 0
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # LNKUSD H1 — Chainlink (crypto)
-  # ═══════════════════════════════════════════════════════════════════════════
-  LNKUSD:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
@@ -979,7 +951,7 @@ market_regime:
 auto_stop:
   adx_low_threshold: 22          # ADX < 22 = RANGING
   adx_high_threshold: 18         # ADX >= 18 = TRENDING
-  ratio_stop: 0.50               # >50% des symboles en ranging → STOP
+  ratio_stop: 1.0                # 🔧 FIX #6: DÉSACTIVÉ (1.0 = jamais de pause auto)
   symbols_min_resume: 2          # >=2 symboles ADX>=22 → RESUME
   pause_min_duration: 1800       # 30 min de pause minimum
   adx_snapshot_ttl: 300          # snapshot ADX valide 5 min
@@ -1004,7 +976,7 @@ correlation:
       symbols: ["EURJPY", "GBPJPY", "EURGBP", "AUDJPY"]
       description: "4 paires forex crosses"
     CRYPTO:
-      symbols: ["BTCUSD", "ETHUSD", "SOLUSD", "LNKUSD", "BNBUSD"]
+      symbols: ["BTCUSD", "ETHUSD", "SOLUSD", "BNBUSD"]
       description: "5 cryptos (volatilité corrélée)"
     INDICES:
       symbols: ["US500.cash", "US30.cash", "US100.cash", "JP225.cash", "GER40.cash", "UK100.cash"]

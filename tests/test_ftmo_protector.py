@@ -633,10 +633,11 @@ class TestCircuitBreaker:
                 assert "Circuit breaker" in reason
 
     def test_shorts_allowed_low_dd(self):
+        """🔧 16 Juillet 2026: DD réduite à 0.5% (< 1.5% Zone 3) pour tester shorts OK."""
         p = make_protector()
         self._mock_symbol_info(p)
         p.initial_balance = 200000
-        p.mt5.get_account_info.return_value = MagicMock(equity=195000)  # DD=2.5%
+        p.mt5.get_account_info.return_value = MagicMock(equity=199000)  # DD=0.5% < 1.5%
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
@@ -653,6 +654,7 @@ class TestCircuitBreaker:
                 assert ok, f"Expected OK got: {reason}"
 
     def test_zone3_stop(self):
+        """🔧 16 Juillet 2026: Fix casse du assert (ZONE 3 vs Zone 3)."""
         p = make_protector()
         self._mock_symbol_info(p)
         p.initial_balance = 200000
@@ -667,21 +669,23 @@ class TestCircuitBreaker:
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = p.can_trade("EURUSD")
                 assert not ok
-                assert "Zone 3" in reason
+                assert "ZONE 3" in reason
 
-    def test_zone3_no_losses_does_not_stop(self):
+    def test_zone3_with_no_losses_also_stops(self):
+        """🔧 16 Juillet 2026: Fix C2 a supprimé le bypass `losses > 0`.
+        Zone 3 bloque maintenant sur DD pure, même sans pertes réalisées."""
         p = make_protector()
         self._mock_symbol_info(p)
         p.initial_balance = 200000
         p.daily_start_equity = 204000
         p.mt5.get_account_info.return_value = MagicMock(equity=200000)
-        p.daily_stats["pnl"] = -4000  # 2%
+        p.daily_stats["pnl"] = -4000  # 2% >= 1.5%
         p.daily_stats["losses"] = 0
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
-                ok, _ = p.can_trade(
+                ok, reason = p.can_trade(
                     "EURUSD",
                     signal={
                         "action": "BUY",
@@ -690,7 +694,8 @@ class TestCircuitBreaker:
                         "tp": 1.1200,
                     },
                 )
-                assert ok, "zone 3 with no losses should allow trades"
+                assert not ok, f"Zone 3 should stop even with 0 realized losses: {reason}"
+                assert "ZONE 3" in reason
 
     def test_consistency_violated_blocks_near_target(self):
         p = make_protector()
@@ -728,15 +733,15 @@ class TestConsistencyCap:
         p.mt5.get_tick.return_value = tick
 
     def test_blocks_when_today_exceeds_consistency(self):
-        """🔓 DÉSACTIVÉ 8 Juillet 2026: consistency cap ne bloque plus (retour True, None).
-        Le test vérifie que la cap est bien ignorée, même quand today dépasse 30%."""
+        """🔧 RÉACTIVÉ 16 Juillet 2026: consistency cap préventif bloque quand
+        today dépasse 30% du total positif. Guard: positive_days >= 2.
+        3 jours positifs → ratio 57.1% > 30% → BLOCKÉ."""
         p = make_protector()
         self._mock_symbol_info(p)
         p.initial_balance = 200000
 
-        # 3 jours: jour1=$1000, jour2=$500, jour3 (today)=$2000
-        # total positif = 1000+500+2000 = $3500
-        # today_pnl = $2000, ratio = 2000/3500 = 57.1% > 30% → mais ne bloque plus
+        # 3 jours positifs: jour1=$1000, jour2=$500, jour3 (today)=$2000
+        # positive_days=3 ≥ 2 ✓, total_positif=3500, today=2000, ratio=57.1%
         p.daily_pnl_by_date = {
             date(2026, 7, 3): 1000.0,
             date(2026, 7, 4): 500.0,
@@ -756,7 +761,8 @@ class TestConsistencyCap:
                         "tp": 1.1200,
                     },
                 )
-                assert ok, f"Consistency cap disabled but still blocking: {reason}"
+                assert not ok, f"Consistency cap should block: {reason}"
+                assert "Consistency cap" in reason, f"Wrong reason: {reason}"
 
     def test_allows_when_today_is_under_limit(self):
         """Si le PnL du jour est sous 30% du total, les trades sont autorisés."""

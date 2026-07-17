@@ -74,17 +74,41 @@ class SignalPipeline:
         # Cache des AdaptiveParameters par symbole
         self._adaptive_params: dict = {}
         # Cache get_rates() par (symbole, timeframe, count) — évite appels MT5 redondants
+        # 🔧 FIX 16 Juillet 2026: Limite à 200 entrées + purge_expired périodique
+        # Sans limite, le cache pouvait accumuler des centaines d'entrées (27 symboles × 3 TF × 3 counts = 243+)
         self._rates_cache: dict[tuple[str, str, int], tuple[float, object]] = {}
         self.RATES_CACHE_TTL = 10  # secondes
+        self._rates_cache_max_size = 200
+        self._last_rates_purge = 0.0
+        self._rates_purge_interval = 300  # secondes (5min)
 
     def _get_cached_rates(self, symbol: str, tf: str, count: int = 100):
         """get_rates() avec cache TTL pour éviter les appels MT5 redondants.
 
         Cache par (symbol, tf) avec invalidation après RATES_CACHE_TTL secondes.
         Les appels avec count différent sont traités séparément (clé inclut count).
+
+        🔧 FIX 16 Juillet 2026: Purge périodique + limite de taille (200 entrées max)
+        pour éviter l'accumulation mémoire (27 symboles × 3 TF × 3 counts = 243+ clés).
         """
         key = (symbol, tf, count)
         now = time.time()
+
+        # Purge périodique des entrées expirées (toutes les 5 min)
+        if now - self._last_rates_purge > self._rates_purge_interval:
+            expired_keys = [k for k, v in self._rates_cache.items() if (now - v[0]) >= self.RATES_CACHE_TTL * 2]
+            for k in expired_keys:
+                del self._rates_cache[k]
+            self._last_rates_purge = now
+
+        # LRU-like eviction si le cache dépasse la taille max
+        if len(self._rates_cache) >= self._rates_cache_max_size:
+            # Supprimer les 25% les plus vieux (basé sur timestamp d'insertion)
+            sorted_keys = sorted(self._rates_cache.keys(), key=lambda k: self._rates_cache[k][0])
+            evict_count = max(1, len(self._rates_cache) // 4)
+            for k in sorted_keys[:evict_count]:
+                del self._rates_cache[k]
+
         cached = self._rates_cache.get(key)
         if cached and (now - cached[0]) < self.RATES_CACHE_TTL:
             return cached[1]
@@ -639,24 +663,44 @@ class SignalPipeline:
         return True
 
     # ── Phase 5: Direction = Régime Rule ──────────────────────────────────
+    # 🔧 FIX 16 Juillet 2026: Pénalité SELL par régime
+    # Les SELL ont 37.2% WR global et causent 77% des pertes.
+    # Seuls les SELL en TREND_DOWN sont autorisés sans pénalité.
+    # Les SELL en RANGING/HIGH_VOL/LOW_VOL reçoivent une pénalité progressive.
+    SELL_PENALTY_BY_REGIME = {
+        "TREND_DOWN": 1.00,  # ✅ SELL avec la tendance → pas de pénalité
+        "HIGH_VOL": 0.90,  # 🟡 Haute volatilité → pénalité 10%
+        "RANGING": 0.75,  # 🟡 Range → pénalité 25% (sells en range perdants)
+        "LOW_VOL": 0.65,  # 🔴 Basse volatilité → pénalité 35%
+        "TREND_UP": 0.0,  # 🔴 BLOCKÉ (contre-tendance)
+    }
 
     def _phase5_regime_rule(self, signal: dict) -> bool:
-        """Évite les trades à contre-tendance (18 Juin 2026).
-        Override pour signaux très forts (score≥0.90) avec risque réduit de 50%."""
+        """Évite les trades à contre-tendance. Applique pénalité SELL par régime.
+
+        Depuis le FIX du 16 Juillet 2026 : les SELL hors TREND_DOWN sont
+        systématiquement pénalisés car 37.2% WR global (77% des pertes).
+        """
         regime = signal.get("_regime", "RANGING")
         action = signal.get("action")
         symbol = signal.get("symbol", "?")
-        score = signal.get("score", 0)
+
+        # Vérification contre-tendance (inchangé)
         if (action == "BUY" and regime == "TREND_DOWN") or (action == "SELL" and regime == "TREND_UP"):
-            # 🔥 OVERRIDE pour signaux TRÈS FORTS (score ≥ 0.90)
-            if score >= 0.90:
-                logger.info(
-                    f"  [RÈGLE DIR] OVERRIDE: {action} {symbol} en {regime} (score={score:.2f}≥0.90) — risque -50%"
-                )
-                signal["risk_mult"] = signal.get("risk_mult", 1.0) * 0.50
-                return True
             logger.debug(f"  [RÈGLE DIR] {symbol}: {action} en {regime} → contre-tendance, skip")
             return False
+
+        # 🔧 FIX 16 Juillet: Pénalité SELL par régime
+        if action == "SELL":
+            sell_mult = self.SELL_PENALTY_BY_REGIME.get(regime, 0.80)
+            if sell_mult < 1.0:
+                old_score = signal.get("score", 0.6)
+                new_score = max(0.30, old_score * sell_mult)
+                signal["score"] = new_score
+                signal["sell_penalty"] = sell_mult
+                logger.debug(
+                    f"  [SELL PENALTY] {symbol}: {regime} → score ×{sell_mult:.2f} ({old_score:.2f} → {new_score:.2f})"
+                )
         return True
 
     # ── Phase 6: Strategy Selector ─────────────────────────────────────────

@@ -15,9 +15,9 @@ class TestGetStrategyFor:
         """Un symbole non listé retourne MOM20x3."""
         assert get_strategy_for("UNKNOWN_SYMBOL") == "MOM20x3"
 
-    def test_xauusd_is_trend_follow(self):
-        """XAUUSD a été activé en TrendFollow."""
-        assert get_strategy_for("XAUUSD") == "TrendFollow"
+    def test_xauusd_is_mom20x3(self):
+        """XAUUSD a été repassé en MOM20x3 (FIX 13 Juillet 2026)."""
+        assert get_strategy_for("XAUUSD") == "MOM20x3"
 
     def test_eurusd_is_mom20x3(self):
         """EURUSD reste sur MOM20x3."""

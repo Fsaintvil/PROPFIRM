@@ -123,6 +123,18 @@ class RateCache:
         except sqlite3.Error as e:
             logger.debug(f"Purge failed: {e}")
 
+    def wal_checkpoint(self) -> None:
+        """🔧 FIX 16 Juillet 2026: Checkpoint WAL pour éviter l'accumulation de données orphelines.
+        Le WAL (Write-Ahead Log) peut croître indéfiniment sans checkpoint régulier,
+        causant des fichiers .db-wal de plusieurs MB de données mortes.
+        Appel recommandé: tous les 1000 cycles (~4h).
+        """
+        try:
+            with self._get_conn() as c:
+                c.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        except sqlite3.Error as e:
+            logger.debug(f"WAL checkpoint failed: {e}")
+
     def clear(self) -> None:
         try:
             with self._get_conn() as c:

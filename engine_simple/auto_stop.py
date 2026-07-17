@@ -217,7 +217,17 @@ def check_adx(mt5_connector: Any = None) -> tuple[float, int, dict[str, Any]]:
             class _MiniConnector:
                 @staticmethod
                 def get_rates(sym: str, tf: str, count: int) -> Any:
-                    return mt5.copy_rates_from_pos(sym, eval(f"mt5.TIMEFRAME_{tf}"), 0, count)
+                    # 🔧 FIX 16 Juillet 2026: Timeout 15s pour copy_rates_from_pos
+                    # L'appel direct peut bloquer indéfiniment si MT5 est instable.
+                    import concurrent.futures as _cf
+
+                    with _cf.ThreadPoolExecutor(max_workers=1) as _ex:
+                        try:
+                            _f = _ex.submit(mt5.copy_rates_from_pos, sym, eval(f"mt5.TIMEFRAME_{tf}"), 0, count)
+                            return _f.result(timeout=15)
+                        except (_cf.TimeoutError, Exception) as _e:
+                            logger.debug(f"[AUTO_STOP] get_rates timeout/error for {sym}: {_e}")
+                            return None
 
             connector = _MiniConnector()
             own_connector = True
@@ -317,7 +327,11 @@ def decision(force_check: bool = False, mt5_connector: Any = None) -> tuple[str,
 
     # Pas en pause → vérifier si on doit stopper
     # Vérifier le cache ADX
+    # 🐛 FIX 10 Juillet 2026: adx_snapshot_ts peut être None (corruption JSON null)
+    # → remplacer par 0 pour éviter 'unsupported operand type(s) for -: float and NoneType'
     snapshot_ts = state.get("adx_snapshot_ts", 0)
+    if snapshot_ts is None:
+        snapshot_ts = 0
     if force_check or (now - snapshot_ts > ADX_SNAPSHOT_TTL):
         ratio, total, details = check_adx(mt5_connector=mt5_connector)
         state["adx_snapshot"] = details
