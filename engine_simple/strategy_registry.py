@@ -46,7 +46,7 @@ SYMBOL_STRATEGY_MAP: dict[str, str] = {
     "NZDUSD": "MOM20x3",
     "USDCHF": "MOM20x3",
     "BTCUSD": "MOM20x3",  # 🔧 FIX 13 Juillet 2026: TrendFollow→MOM20x3 — TF ne donne aucun signal (ADX<20 en range). MOM20x3 génère signaux forts (score=0.95 SELL) et backtest +$232K après coûts
-    "USOIL.cash": "TrendFollow",  # 🔥 PHASE 4: Pétrole, tendances géopolitiques → TrendFollow
+    "USOIL.cash": "MOM20x3",  # 🔧 FIX 27 Juillet 2026: TrendFollow→MOM20x3 — TF donnait confidence trop basse (0.73), MOM20x3 donne signaux forts (score=0.94, ADX=50.3) mais était bloqué par Conservation Mode
     # ── Symboles inactifs (conservés pour référence, sans doublon) ─────────
     "ETHUSD": "MOM20x3",
     "XAGUSD": "MOM20x3",

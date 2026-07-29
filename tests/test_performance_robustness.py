@@ -293,7 +293,7 @@ class TestMemoryStability:
 
     def test_metrics_collector_no_leak(self):
         """MetricsCollector ne doit pas fuiter sur des milliers d'appels"""
-        from engine_simple.monitoring import MetricsCollector
+        from engine_simple.dashboard import MetricsCollector
 
         mc = MetricsCollector()
         for i in range(5000):
@@ -496,7 +496,7 @@ class TestThreadSafety:
 
     def test_metrics_collector_thread_safe(self):
         """MetricsCollector doit supporter les accès concurrents"""
-        from engine_simple.monitoring import MetricsCollector
+        from engine_simple.dashboard import MetricsCollector
 
         mc = MetricsCollector()
         errors = []
@@ -521,7 +521,7 @@ class TestThreadSafety:
 
     def test_metrics_collector_histogram_thread_safe(self):
         """MetricsCollector.histogram() doit être thread-safe"""
-        from engine_simple.monitoring import MetricsCollector
+        from engine_simple.dashboard import MetricsCollector
 
         mc = MetricsCollector()
         errors = []
@@ -545,7 +545,7 @@ class TestThreadSafety:
 
     def test_gauge_thread_safe(self):
         """MetricsCollector.gauge() doit être thread-safe"""
-        from engine_simple.monitoring import MetricsCollector
+        from engine_simple.dashboard import MetricsCollector
 
         mc = MetricsCollector()
         errors = []

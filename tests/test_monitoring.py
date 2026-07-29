@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ["LOG_LEVEL"] = "CRITICAL"
 
-from engine_simple.monitoring import (
+from engine_simple.dashboard import (
     HealthServer,
     MetricsCollector,
     setup_structured_logging,

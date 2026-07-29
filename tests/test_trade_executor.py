@@ -146,7 +146,7 @@ class TestOrderValidator:
     def test_sl_tp_invalid(self):
         err = OrderValidator.validate("EURUSD", "BUY", 0.1, 1.1000, 1.1000, 1.1000, None)
         assert err is not None
-        assert "invalide" in err.lower() or "refus" in err.lower() or "nul" in err.lower()
+        assert "identique au prix" in err.lower() or "pas de protection" in err.lower() or "bloqué" in err.lower()
 
     def test_rr_below_min(self):
         # RR = (1.1260-1.1000) / (1.1000-1.0900) = 0.026/0.01 = 2.6 → OK (>MIN_RR_RATIO=2.5)
@@ -181,7 +181,7 @@ class TestTradeExecutor:
     def test_init(self):
         ex = self.make_executor()
         assert ex.rate_limiter is not None
-        assert ex.rate_limiter.max_per_minute == 6  # Mode agressif: 6 trades/min/symbole (26 Juin 2026)
+        assert ex.rate_limiter.max_per_minute == 2  # Sécurisé: 2 trades/min/symbole (FIX 21 Juillet 2026)
 
     def test_get_signal_value_dict(self):
         ex = self.make_executor()

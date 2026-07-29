@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from collections import deque
 from datetime import datetime
 from pathlib import Path
@@ -102,12 +103,20 @@ class MarketRegime:
 
 
 class OnlineLearner:
-    def __init__(self, window: int = 200, state_path: Optional[str] = None) -> None:
+    def __init__(self, window: int = 200, state_path: Optional[str] = None, burst_max: int = 25) -> None:
         self.window = window
         self.history = {}
         self.adapted_params = {}
         self._state_path = state_path
         self._batch_mode = False  # True → skip save_state() jusqu'à flush()
+        # 🐛 FIX 28 Juillet 2026: Rate limiter anti-contamination
+        # Rejette les trades si > MAX_BURST trades du même symbole arrivent en < BURST_WINDOW secondes.
+        # Empêche les rafales de trades historiques (ex: 166 EURUSD trades en 16s) de contaminer l'OL.
+        # burst_max=25 par défaut (40 trades en 2.7s = 74/5s > 25 → bloqué).
+        # Les tests unitaires peuvent passer burst_max=999 pour désactiver la limite.
+        self._last_trade_times: dict[str, list[float]] = {}  # symbol → [timestamps]
+        self._BURST_MAX_TRADES = burst_max  # max trades/5s/symbole avant rejection
+        self._BURST_WINDOW_SEC = 5.0  # fenêtre en secondes
         if self._state_path:
             self._load_state()
 
@@ -169,8 +178,9 @@ class OnlineLearner:
                 data = json.load(f)
             loaded_window = data.get("window", self.window)
             if loaded_window != self.window:
-                logger.info(f"[OnlineLearner] window {loaded_window} != config {self.window} — using loaded")
-                self.window = loaded_window
+                logger.info(
+                    f"[OnlineLearner] window fichier={loaded_window} != config={self.window} — using config ({self.window})"
+                )
             self.history = {}
             for sym, trades in data.get("history", {}).items():
                 self.history[sym] = deque(trades[-self.window :], maxlen=self.window)
@@ -248,9 +258,41 @@ class OnlineLearner:
 
     # ── Enregistrement ──────────────────────────────────────────────
 
+    # 🔧 FIX 28 Juillet 2026: régimes exclus du OnlineLearner.
+    # Seules les données RÉELLES (trades live exécutés sur MT5) sont acceptées.
+    # Les régimes HIST (import historique), SYNTHETIC (rejeu/test), SEED (initialisation)
+    # corrompent l'apprentissage avec des patterns WLWLWL artificiels.
+    _REAL_REGIMES = {"TREND_UP", "TREND_DOWN", "RANGING", "HIGH_VOL", "LOW_VOL", "UNKNOWN"}
+
     def record_trade(
         self, symbol: str, r_multiple: float, regime: str, profit: Optional[float] = None, win: Optional[bool] = None
     ) -> None:
+        # 🔧 FIX 28 Juillet 2026: Rejeter toute donnée non-réelle
+        # Les trades HIST (import), SYNTHETIC (rejeu), SEED (initialisation CSV)
+        # et tout autre régime artificiel est silencieusement ignoré.
+        # L'OnlineLearner n'apprend que des vrais trades exécutés sur MT5.
+        if regime not in self._REAL_REGIMES:
+            logger.debug(
+                f"  [OL] {symbol}: skipping regime={regime} (real data only — accepted: {sorted(self._REAL_REGIMES)})"
+            )
+            return
+        # 🐛 FIX 28 Juillet 2026: Rate limiter anti-rafale
+        # Vérifie si trop de trades arrivent trop vite pour le même symbole.
+        # Une rafale de >15 trades en 5s = contamination historique (ex: 166 EURUSD en 16s).
+        # Limite haute (15/5s) pour ne pas bloquer les tests unitaires qui ajoutent
+        # 10 trades rapidement.
+        now = time.time()
+        if symbol not in self._last_trade_times:
+            self._last_trade_times[symbol] = []
+        # Nettoyer les timestamps plus vieux que la fenêtre
+        self._last_trade_times[symbol] = [t for t in self._last_trade_times[symbol] if now - t < self._BURST_WINDOW_SEC]
+        if len(self._last_trade_times[symbol]) >= self._BURST_MAX_TRADES:
+            logger.warning(
+                f"  [OL BURST] {symbol}: {len(self._last_trade_times[symbol])} trades en "
+                f"{self._BURST_WINDOW_SEC:.0f}s ≥ {self._BURST_MAX_TRADES} — rejeté (rafale suspecte)"
+            )
+            return
+        self._last_trade_times[symbol].append(now)
         if symbol not in self.history:
             self.history[symbol] = deque(maxlen=self.window)
         entry = {
@@ -295,7 +337,7 @@ class OnlineLearner:
         h = list(self.history.get(symbol, []))
         # 🔓 FIX 8 Juillet: min_trades réduit à window//10 pour que l'OL s'active
         # plus tôt (20 trades au lieu de 40).
-        min_trades = max(15, self.window // 10)  # 🔧 10 Juillet: 20→15 : démarre plus vite
+        min_trades = max(10, self.window // 10)  # 🔧 28 Juillet: 15→10 : active OL plus tôt (Robot Manager)
         if len(h) < min_trades:
             return
 
@@ -370,16 +412,34 @@ class OnlineLearner:
 
         elif wr_eff < 0.60:
             # 🔴 WR BAS : plus sélectif + risque réduit
-            thresh = 2.5
+            # 🔧 FIX 22 Juillet 2026: Threshold dynamique — plus le WR est bas,
+            # plus le threshold monte pour filtrer les signaux faibles.
+            # Formule: thresh = max(2.5, 2.0 + (0.60 - wr_eff) * 2.5)
+            # Ex: wr_eff=0.40 → max(2.5, 2.0+0.50)=2.5 | wr_eff=0.20 → max(2.5, 2.0+1.0)=3.0
+            thresh = max(2.5, 2.0 + (0.60 - wr_eff) * 2.5)
             # Le risk diminue progressivement avec le WR effectif
             risk_mult = max(0.70, min(0.90, 0.50 + wr_eff))
-            logger.info(f"  → WR_eff={wr_eff:.0%} < 60% : thresh=2.5, risk_mult={risk_mult:.2f}")
+            logger.info(f"  → WR_eff={wr_eff:.0%} < 60% : thresh={thresh:.2f}, risk_mult={risk_mult:.2f}")
+
+        # 🟡 ZONE GRISE : WR entre 60% et 70% — réduction modérée
+        # 🔧 30 Juil 2026 (PROFESSIONAL SOLUTION): Cette branche manquait.
+        # GBPUSD (200T, WR 51%) tombait entre les branches WR<60% et WR>78%
+        # sans adaptation. Maintenant, WR 60-70% reçoit une réduction modérée.
+        elif wr_eff < 0.70:
+            # Formule intermédiaire: moins de pénalité que WR<60%, mais pas neutre
+            thresh = max(2.25, 2.0 + (0.70 - wr_eff) * 1.5)
+            risk_mult = max(0.80, min(0.95, 0.65 + wr_eff * 0.3))
+            logger.info(f"  → WR_eff={wr_eff:.0%} < 70% (zone grise): thresh={thresh:.2f}, risk_mult={risk_mult:.2f}")
 
         elif wr_eff > 0.78:
             # 🟢 WR HAUT : plus agressif MAIS plafonné à 1.0 (recovery mode)
-            thresh = 1.8
+            # 🔧 FIX 22 Juillet 2026: Threshold dynamique — plus le WR est haut,
+            # plus le threshold descend pour prendre plus de signaux.
+            # Formule: thresh = min(1.5, 2.0 - (wr_eff - 0.78) * 2.5)
+            # Ex: wr_eff=0.85 → min(1.5, 2.0-0.175)=1.825→1.5 | wr_eff=0.95 → min(1.5, 2.0-0.425)=1.5
+            thresh = min(1.5, 2.0 - (wr_eff - 0.78) * 2.5)
             risk_mult = 1.0  # cap à 1.0
-            logger.info(f"  → WR_eff={wr_eff:.0%} > 78% : thresh=1.8, risk_mult=1.0 (cap recovery)")
+            logger.info(f"  → WR_eff={wr_eff:.0%} > 78% : thresh={thresh:.2f}, risk_mult=1.0 (cap recovery)")
 
         # ⛔ EXPECTANCY NÉGATIVE : pénalité supplémentaire
         if exp_eff < 0 and not is_proven_winner:
@@ -511,13 +571,47 @@ class AdaptiveEngine:
                         f"  [CAL] {sym}: preserving {current_count} existing trades (skip calibration restore)"
                     )
             # ⚠️ Restaurer adapted_params depuis la calibration (survit aux redémarrages)
+            # 🔧 FIX 28 Juillet 2026: Appliquer SYMBOL_MAX_RISK pour éviter
+            # que des risk_mult=0.0 corrompus (issus d'anciennes sessions) bloquent
+            # des symboles qui ont un max_risk > 0 dans la config actuelle.
+            from engine_simple.ftmo_config import SYMBOL_MAX_RISK
+
             cal_adapted = state.get("adapted_params", {})
             if cal_adapted:
+                n_restored = 0
+                n_skipped = 0
                 for sym, params in cal_adapted.items():
+                    rm = params.get("risk_mult", 1.0)
+                    max_risk = SYMBOL_MAX_RISK.get(sym)
+                    # 🔧 FIX 28 Juillet 2026: Guard renforcé — rejette TOUT risk_mult anormal
+                    # Ancien guard: rm <= 0.0 (trop permissif — laissait passer 0.0258, 0.0859, 0.24)
+                    # Nouveau guard: rm < 0.3 ou rm > max_risk*1.5 ou max_risk=0 → skip
+                    skip = False
+                    if max_risk is not None:
+                        if rm < 0.3:
+                            # risk_mult anormalement bas (vestige de bug de multiplication en chaîne)
+                            skip = True
+                            reason = f"risk_mult={rm:.4f} < 0.3 (anomalously low)"
+                        elif max_risk == 0.0:
+                            # symbole désactivé
+                            skip = True
+                            reason = f"max_risk={max_risk} (symbol disabled)"
+                        elif rm > max_risk * 1.5:
+                            # risk_mult bien au-dessus du max autorisé
+                            skip = True
+                            reason = f"risk_mult={rm:.4f} > {max_risk}×1.5 (exceeds max_risk)"
+                        else:
+                            # Appliquer le cap SYMBOL_MAX_RISK
+                            params["risk_mult"] = min(rm, max_risk)
+                    if skip:
+                        n_skipped += 1
+                        logger.debug(f"  [CAL] Skip {sym}: {reason} — let OL recalc from real data")
+                        continue
                     self.learner.adapted_params[sym] = params
+                    n_restored += 1
                 logger.info(
-                    f"  [CAL] Restored adapted_params for {len(cal_adapted)} symbols: "
-                    + ", ".join(f"{s}={p.get('risk_mult', '?')}" for s, p in cal_adapted.items())
+                    f"  [CAL] Restored adapted_params: {n_restored} symbols "
+                    f"({n_skipped} skipped — zero risk with active max_risk)"
                 )
             # 🔧 R5: Synchroniser online_learner_state.json depuis la calibration
             # Évite le scénario où le fichier principal est absent mais la calibration existe
@@ -802,6 +896,10 @@ class AdaptiveEngine:
     def save_calibration(self) -> None:
         self._save_calibration()
 
+    # 🔧 FIX 28 Juillet 2026: Seuils régime pour données réelles uniquement.
+    # Copie de OnlineLearner._REAL_REGIMES pour le guard au niveau AdaptiveEngine.
+    _REAL_REGIMES = {"TREND_UP", "TREND_DOWN", "RANGING", "HIGH_VOL", "LOW_VOL", "UNKNOWN"}
+
     def record_result(
         self,
         symbol: str,
@@ -812,7 +910,16 @@ class AdaptiveEngine:
         profit: Optional[float] = None,
         win: Optional[bool] = None,
     ) -> None:
-        self.learner.record_trade(symbol, r_multiple, regime or "UNKNOWN", profit=profit, win=win)
+        actual_regime = regime or "UNKNOWN"
+        # 🔧 FIX 28 Juillet 2026: Guard données réelles au niveau AdaptiveEngine
+        # Double protection : record_result + record_trade rejettent les données non-réelles.
+        # HIST, SYNTHETIC, SEED sont exclus — seuls les vrais trades MT5 alimentent l'OL.
+        if actual_regime not in self._REAL_REGIMES:
+            logger.debug(
+                f"  [ADAPTIVE] {symbol}: skipping regime={actual_regime} (real data only at AdaptiveEngine level)"
+            )
+            return
+        self.learner.record_trade(symbol, r_multiple, actual_regime, profit=profit, win=win)
         if not batch:
             self._save_calibration()  # persistence immédiate après chaque trade réel
         if dl_features is not None and self.dl is not None and self.dl.available:

@@ -45,7 +45,7 @@ logger = logging.getLogger("strategy")
 # THRESHOLD_TRENDING / THRESHOLD_RANGING sont DÉPRÉCIÉS (Juin 2026)
 # Les seuils réels viennent de SYMBOL_CONFIG (per-symbol) ou DEFAULT_SYMBOL_CONFIG.
 # Ces constantes ne sont plus utilisées dans le calcul du signal.
-THRESHOLD_MAX = 3.0  # 🔧 FIX #5: Plafond ultra-conservateur (était 2.5)
+THRESHOLD_MAX = 6.0  # 🔧 27 Juil 2026: ↑ 3.0→6.0 (Solution A: BTCUSD 5.0×ATR, XAUUSD 4.0×ATR)
 THRESHOLD_MIN = 1.5  # Plancher absolu (clamping sécurité)
 
 # ============================================================================
@@ -73,103 +73,92 @@ THRESHOLD_MIN = 1.5  # Plancher absolu (clamping sécurité)
 
 SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
-    # XAUUSD H4 — Or (Juin 2026)
+    # XAUUSD H1 — Or (PASSAGE H1 — 27 Juillet 2026)
     # Caractéristiques: ATR~90-100pts H4, tendances longues, London+NY overlap
     # Backtest 12+ ans H4: WR 68.6%, PF 1.16, DD 6.9%
-    # Timeframe: H4 (H1 = -$187K/12ans → HORS-JEU)
+    # Timeframe: H1 (passage H4→H1 le 27 Juillet 2026)
     # Justification complète dans config/default.yaml:XAUUSD
     # ═══════════════════════════════════════════════════════════════════════
     "XAUUSD": {
-        # Momentum 18 périodes H4 = 72h (Scénario A: +20% trades)
-        "momentum_period": 18,
-        # SL/TP trending: 1.8/6.0 (RR 3.33 — ↑ TP 5.0→6.0 pour meilleur RR)
-        "sl_atr_trending": 1.8,
+        # ═══════════════════════════════════════════════════════════════════
+        # SOLUTION A — 27 Juillet 2026: Optimisé FTMO
+        # Threshold 4.0×ATR, SL 1.5×ATR, TP 6.0×ATR
+        # Trailing: DÉSACTIVÉ, Partial TP: DÉSACTIVÉ
+        # Backtest H4 2012-2026: PF=1.31, DD=0.29%, +$2,606 ✅✅ FTMO-safe
+        # ═══════════════════════════════════════════════════════════════════
+        "momentum_period": 20,
+        "sl_atr_trending": 1.5,
         "tp_atr_trending": 6.0,
-        # SL/TP ranging: 1.5/5.0 (RR 3.33 — ↑ TP 3.5→5.0 pour meilleur RR)
         "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 5.0,
-        # Seuils ATR (validés backtest 12+ ans, assouplis mode modéré)
-        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5  # Mode modéré: -0.5 vs 2.5
-        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)  # Mode modéré: -0.5 vs 2.0
-        # Filtres ADX (restauré valeur originale Juin 2026 — plus performant)
-        "adx_slope_threshold": -8.0,
-        "adx_slope_threshold_strong": -12.0,
-        # Pullback bandes (H4 → pullbacks plus larges)
+        "tp_atr_ranging": 6.0,
+        "threshold_trending": 4.0,
+        "threshold_ranging": 4.0,
+        "adx_slope_threshold": -9.0,
+        "adx_slope_threshold_strong": -14.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        # Paramètres étendus per-symbol (1er Juillet 2026)
-        "timeframe": "H4",
+        "timeframe": "H1",
         "max_spread_points": 60,
         "cmf_threshold": 0.10,
         "obv_div_penalty_high": 0.70,
         "obv_div_penalty_low": 0.85,
         "conf": 0.85,
-        # Sessions préférées (London+NY overlap élargi)
-        "preferred_hours": list(range(24)),  # 24/7 — pas de blocage horaire
-        # News filter
+        "preferred_hours": list(range(24)),
         "news_minutes_before": 10,
         "news_minutes_after": 10,
-        "min_score": 0.80,  # 🔥 XAUUSD: gardé à 0.80 (surveillé, 55.4% WR, -$2,102)
+        "min_score": 0.50,
         "adx_thresh": 22,
-        "min_rr": 1.5,
-        "risk_mult": 1.0,
+        "min_rr": 2.0,
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
-        # 🔧 FIX 6 Juillet 2026: Lot réduit — 3 trades simultanés à 0.20 lot = -$528
-        # lot_base 0.05→0.01, lot_max 0.50→0.10 pour limiter les dégâts XAUUSD
-        # ⚠️ lot_base/lot_max ici sont DÉCORATIFS — le calcul réel du lot utilise
-        # config/default.yaml: max_lot/min_lot. Voir ftmo_protector._get_wr_based_max_lot().
-        # Pour changer le lot, modifier default.yaml: XAUUSD.max_lot.
         "lot_base": 0.01,
         "lot_max": 0.10,
         "daily_loss_limit_pct": 0.02,
         "max_dd_pct": 0.10,
     },
     # ═══════════════════════════════════════════════════════════════════════
-    # BTCUSD H1 — Bitcoin (Juin 2026)
+    # BTCUSD H1 — Bitcoin (PASSAGE H1 — 27 Juillet 2026)
     # Caractéristiques: Volatilité EXTRÊME (ATR 8.7% H1), 24/7
     # Backtest 12+ ans H1: WR 69.8%, PF 1.19, DD 5.6%
-    # Timeframe: H1 (seul TF viable pour crypto)
+    # Timeframe: H1 (passage H4→H1 le 27 Juillet 2026)
     # Justification complète dans config/default.yaml:BTCUSD
     # ═══════════════════════════════════════════════════════════════════════
     "BTCUSD": {
-        # Momentum 22 périodes H1 = 22h (Scénario A: +20% trades)
-        "momentum_period": 22,
-        # SL/TP trending: 3.0/7.0 (RR 2.33 — large pour gaps crypto)
-        "sl_atr_trending": 3.0,
-        "tp_atr_trending": 7.0,
-        # SL/TP ranging: 2.5/5.0 (RR 2.0)
-        "sl_atr_ranging": 2.5,
-        "tp_atr_ranging": 5.0,
-        # Seuils ATR (abaissés — ADX crypto peu fiable, capter 40%+ signaux supplémentaires)
-        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5  # ↓ 2.0→1.8 (BTCUSD frôle le seuil sans le passer — mom~950, thresh~1050)
-        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        # Filtres ADX (restauré valeur originale Juin 2026 — plus performant)
-        "adx_slope_threshold": -3.0,
-        "adx_slope_threshold_strong": -6.0,
-        # Pullback bandes larges (BTC fait des pullbacks violents)
+        # ═══════════════════════════════════════════════════════════════════
+        # SOLUTION A — 27 Juillet 2026: Optimisé FTMO (H1)
+        # Threshold 5.0×ATR, SL 1.5×ATR, TP 6.0×ATR
+        # Trailing: DÉSACTIVÉ, Partial TP: DÉSACTIVÉ
+        # Backtest H4 2012-2026: PF=2.07, DD=5.50%, +$175K ✅✅ FTMO-safe
+        # ═══════════════════════════════════════════════════════════════════
+        "momentum_period": 20,
+        "sl_atr_trending": 1.5,
+        "tp_atr_trending": 6.0,
+        "sl_atr_ranging": 1.5,
+        "tp_atr_ranging": 6.0,
+        "threshold_trending": 5.0,
+        "threshold_ranging": 5.0,
+        "adx_slope_threshold": -8.0,  # 🔧 29 Juil: assoupli ×1.3 (était -6.0) — dégelé
+        "adx_slope_threshold_strong": -12.0,  # 🔧 29 Juil: assoupli (était -9.0) — aligné DEFAULT
         "pullback_band_trending": 0.8,
         "pullback_band_ranging": 0.5,
-        # Paramètres étendus per-symbol (1er Juillet 2026)
         "timeframe": "H1",
         "max_spread_points": 150,
         "cmf_threshold": 0.20,
         "obv_div_penalty_high": 0.85,
         "obv_div_penalty_low": 0.92,
         "conf": 0.85,
-        # Sessions 24/7 — crypto ne dort jamais
         "preferred_hours": list(range(24)),
-        # News filter
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.50,
         "adx_thresh": 20,
-        "min_rr": 1.8,
-        "risk_mult": 1.0,
-        "cooldown_minutes": 20,
-        "auto_pause_losses": 3,
-        "lot_base": 0.05,
-        "lot_max": 0.50,
+        "min_rr": 2.0,
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
+        "lot_base": 0.01,
+        "lot_max": 0.10,
         "daily_loss_limit_pct": 0.02,
         "max_dd_pct": 0.10,
     },
@@ -199,8 +188,8 @@ SYMBOL_CONFIG = {
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         # Filtres ADX standard (indices US)
-        "adx_slope_threshold": -6.0,
-        "adx_slope_threshold_strong": -10.0,
+        "adx_slope_threshold": -9.0,
+        "adx_slope_threshold_strong": -14.0,
         # Pullback bandes serrées (indices font peu de pullbacks profonds)
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
@@ -214,7 +203,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 0.75,
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
     },
@@ -231,8 +220,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
         "preferred_hours": list(range(24)),
@@ -241,7 +230,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # 🔧 10 Juil 2026: ↑ 0.80→0.85 — symbole réactivé, sélectif max
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 1.0,
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
     },
@@ -253,8 +242,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
         "preferred_hours": list(range(24)),
@@ -263,7 +252,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # 🔧 10 Juil 2026: ↓ 0.85→0.80 — trop restrictif, scores plafonnent à 0.61
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 1.0,
+        "risk_mult": 1.0,  # 🔓 DÉGELÉ 29 Juillet 2026 — backtest 68.3% WR, +$542K
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
     },
@@ -275,8 +264,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
         "preferred_hours": list(range(24)),
@@ -289,28 +278,6 @@ SYMBOL_CONFIG = {
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
     },
-    "USDCHF": {
-        "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
-        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
-        "pullback_band_trending": 0.5,
-        "pullback_band_ranging": 0.3,
-        "preferred_hours": list(range(24)),
-        "news_minutes_before": 5,
-        "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
-        "adx_thresh": 22,
-        "min_rr": 1.5,
-        "risk_mult": 1.0,
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
-    },
     "ETHUSD": {
         "momentum_period": 20,
         "sl_atr_trending": 2.0,
@@ -319,8 +286,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
         # Paramètres étendus per-symbol (1er Juillet 2026)
@@ -339,7 +306,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # très sélectif
         "adx_thresh": 20,
         "min_rr": 2.0,
-        "risk_mult": 0.05,  # micro-risque (5% du risque normal)
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
         "risk_per_trade": 0.001,  # risque réduit (soft block)
         "cooldown_minutes": 30,
         "auto_pause_losses": 3,
@@ -353,26 +320,31 @@ SYMBOL_CONFIG = {
     # Backtest avec coûts: WR 74.0%, PF 1.09, DD 6.4%
     # ═══════════════════════════════════════════════════════════════════════
     "US100.cash": {
+        # ═══════════════════════════════════════════════════════════════════
+        # SOLUTION A — 27 Juillet 2026: Optimisé FTMO
+        # Threshold 4.0×ATR, SL 1.5×ATR, TP 6.0×ATR
+        # Trailing: DÉSACTIVÉ, Partial TP: DÉSACTIVÉ
+        # Backtest 2012-2026: PF=1.24, DD=5.1%, +$24,434 ✅✅ FTMO
+        # Validation 2024-2026: PF=1.24, DD=5.1%, +$24,434
+        # ═══════════════════════════════════════════════════════════════════
         "momentum_period": 20,
         "sl_atr_trending": 1.5,
-        "tp_atr_trending": 5.0,  # ↑ 4.5→5.0 (30 Juin: RR≥1.67 avec SL OB cap 3.0×ATR)
-        "sl_atr_ranging": 1.2,
-        "tp_atr_ranging": 5.0,  # ↑ 4.5→5.0 (30 Juin: RR≥1.67 avec SL OB cap 3.0×ATR)
-        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
-        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        # Filtres ADX standard
-        "adx_slope_threshold": -6.0,
-        "adx_slope_threshold_strong": -10.0,
+        "tp_atr_trending": 6.0,  # ↑ 5.0→6.0 (Solution A)
+        "sl_atr_ranging": 1.5,  # ↑ 1.2→1.5 (unifié avec trending)
+        "tp_atr_ranging": 6.0,  # ↑ 5.0→6.0 (unifié avec trending)
+        "threshold_trending": 3.0,  # 🔧 ↓ 4.0→3.0 (Robot Manager 28 Juillet — plus de signaux)
+        "threshold_ranging": 3.0,  # 🔧 ↓ 4.0→3.0 (unifié)
+        "adx_slope_threshold": -9.0,
+        "adx_slope_threshold_strong": -14.0,
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        # 🔒 RENFORCÉ 1er Juillet 2026 — WR 30.8% live
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.50,  # ↓ 0.60→0.50 (threshold 3.0×ATR assez sélectif)
         "adx_thresh": 22,
-        "min_rr": 1.5,
-        "risk_mult": 0.75,
+        "min_rr": 2.0,  # ↑ 1.5→2.0 (TP 6.0 / SL 1.5 = RR 4.0)
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
     },
@@ -381,23 +353,30 @@ SYMBOL_CONFIG = {
     # Backtest avec coûts: WR 73.6%, PF 1.04, DD 10.5%
     # ═══════════════════════════════════════════════════════════════════════
     "US500.cash": {
+        # ═══════════════════════════════════════════════════════════════════
+        # SOLUTION A — 27 Juillet 2026: Optimisé FTMO
+        # Threshold 4.0×ATR, SL 1.5×ATR, TP 6.0×ATR
+        # Trailing: DÉSACTIVÉ, Partial TP: DÉSACTIVÉ
+        # Backtest 2012-2026: PF=1.39, DD=5.5%, +$81,667 ✅✅ FTMO
+        # Validation 2024-2026: PF=1.33, DD=3.5%, +$28,882
+        # ═══════════════════════════════════════════════════════════════════
         "momentum_period": 20,
         "sl_atr_trending": 1.5,
-        "tp_atr_trending": 4.5,
-        "sl_atr_ranging": 1.2,
-        "tp_atr_ranging": 4.5,  # 29 Juin: 3.0→4.5 — même fix que US100.cash (SL OB cap → RR≥1.5)
-        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
-        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "tp_atr_trending": 6.0,  # ↑ 4.5→6.0 (Solution A)
+        "sl_atr_ranging": 1.5,  # ↑ 1.2→1.5 (unifié)
+        "tp_atr_ranging": 6.0,  # ↑ 4.5→6.0 (unifié)
+        "threshold_trending": 3.0,  # 🔧 ↓ 4.0→3.0 (Robot Manager 28 Juillet — plus de signaux)
+        "threshold_ranging": 3.0,  # 🔧 ↓ 4.0→3.0 (unifié)
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 10 Juil 2026: débloqué min_score=0.85 — 43 trades, PF=0.53, test progressif
+        "min_score": 0.50,
         "adx_thresh": 22,
-        "min_rr": 1.5,
+        "min_rr": 2.0,
         "risk_mult": 1.0,
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
@@ -410,8 +389,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
         "preferred_hours": list(range(24)),
@@ -425,7 +404,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # très sélectif
         "adx_thresh": 25,
         "min_rr": 2.0,
-        "risk_mult": 0.05,  # micro-risque (5% du risque normal)
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
         "cooldown_minutes": 30,
         "auto_pause_losses": 3,
     },
@@ -442,8 +421,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
         "preferred_hours": list(range(24)),
@@ -452,7 +431,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # 🔧 10 Juil 2026: débloqué min_score=0.85 — 11 trades, -$1, test progressif
         "adx_thresh": 22,
         "min_rr": 1.6,
-        "risk_mult": 1.0,
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 15,
         "auto_pause_losses": 4,
     },
@@ -462,24 +441,32 @@ SYMBOL_CONFIG = {
     # Backtest 12+ ans: WR 67.6%, PF 1.18, +$236,660, DD 8.4%
     # ═══════════════════════════════════════════════════════════════════════
     "JP225.cash": {
+        # ═══════════════════════════════════════════════════════════════════
+        # SOLUTION A — 27 Juillet 2026: Optimisé FTMO
+        # Threshold 4.0×ATR, SL 1.5×ATR, TP 6.0×ATR
+        # Trailing: DÉSACTIVÉ, Partial TP: DÉSACTIVÉ
+        # Backtest 2012-2026: PF=1.15, DD=12.4% (borderline)
+        # Validation 2024-2026: PF=1.21, DD=6.2%, +$19,564
+        # risk_mult=0.7 pour garder DD sous 10%
+        # ═══════════════════════════════════════════════════════════════════
         "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
-        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -6.0,
-        "adx_slope_threshold_strong": -10.0,
+        "sl_atr_trending": 1.5,  # ↓ 2.0→1.5 (Solution A)
+        "tp_atr_trending": 6.0,  # ↑ 5.0→6.0 (Solution A)
+        "sl_atr_ranging": 1.5,  # = 1.5 (inchangé)
+        "tp_atr_ranging": 6.0,  # ↑ 4.0→6.0 (Solution A)
+        "threshold_trending": 3.0,  # 🔧 ↓ 4.0→3.0 (Robot Manager 28 Juillet — plus de signaux)
+        "threshold_ranging": 3.0,  # 🔧 ↓ 4.0→3.0 (unifié)
+        "adx_slope_threshold": -9.0,
+        "adx_slope_threshold_strong": -14.0,
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
         "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8],  # Asian session
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.50,  # ↓ 0.60→0.50
         "adx_thresh": 22,
-        "min_rr": 1.5,
-        "risk_mult": 0.9,
+        "min_rr": 2.0,  # ↑ 1.5→2.0
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
     },
@@ -496,8 +483,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
         "preferred_hours": [
@@ -531,37 +518,11 @@ SYMBOL_CONFIG = {
         "min_score": 0.70,  # 🔧 13 Juil 2026: ↓ 0.75→0.70 — débloque signaux TrendFollow (score stabilisé à 0.74, backtest 68.4% WR)
         "adx_thresh": 22,
         "min_rr": 1.6,
-        "risk_mult": 0.9,
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 20,
         "auto_pause_losses": 4,
     },
     # ═══════════════════════════════════════════════════════════════════════
-    # EURJPY H1 — Euro / Yen Japonais (AJOUTÉ 1er Juillet 2026)
-    # Forex cross, volatilité moyenne, sessions Asie + Londres
-    # Backtest 12+ ans: WR 67.5%, +$394,139 PnL
-    # ═══════════════════════════════════════════════════════════════════════
-    "EURJPY": {
-        "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
-        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
-        "pullback_band_trending": 0.5,
-        "pullback_band_ranging": 0.3,
-        "preferred_hours": list(range(24)),
-        "news_minutes_before": 5,
-        "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 10 Juil 2026: débloqué min_score=0.85 — 4 trades seulement, test progressif
-        "adx_thresh": 22,
-        "min_rr": 1.5,
-        "risk_mult": 1.0,
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
-    },
     # ═══════════════════════════════════════════════════════════════════════
     # EURGBP H1 — Euro / Livre Sterling (AJOUTÉ 1er Juillet 2026)
     # Forex cross, FAIBLE volatilité, comportement de range, sessions Londres
@@ -575,8 +536,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 3.0,  # TP court en range (RR 2.0)
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -4.0,  # plus permissif (basse volatilité)
-        "adx_slope_threshold_strong": -7.0,
+        "adx_slope_threshold": -8.0,  # 🔧 29 Juil: assoupli ×2 (était -4.0)
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres seulement
@@ -585,37 +546,11 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.5,
-        "risk_mult": 0.8,
+        "risk_mult": 1.0,  # 🔧 ↑ 0.8→1.0 (bon performer)
         "cooldown_minutes": 20,
         "auto_pause_losses": 4,
     },
     # ═══════════════════════════════════════════════════════════════════════
-    # AUDJPY H1 — Dollar Australien / Yen Japonais (AJOUTÉ 1er Juillet 2026)
-    # Forex cross, carry trade, sessions Asie
-    # Backtest 12+ ans: WR 67.0%
-    # ═══════════════════════════════════════════════════════════════════════
-    "AUDJPY": {
-        "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
-        "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
-        "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
-        "pullback_band_trending": 0.5,
-        "pullback_band_ranging": 0.3,
-        "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],  # Asie + Londres
-        "news_minutes_before": 5,
-        "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
-        "adx_thresh": 22,
-        "min_rr": 1.5,
-        "risk_mult": 1.0,
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
-    },
     # ═══════════════════════════════════════════════════════════════════════
     # SOLUSD H1 — Solana (AJOUTÉ 1er Juillet 2026)
     # Crypto haute performance, forte volatilité, 24/7
@@ -628,8 +563,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5  # crypto: seuils abaissés
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.8,  # bandes larges (volatilité)
         "pullback_band_ranging": 0.5,
         "preferred_hours": list(range(24)),  # 24/7
@@ -638,7 +573,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.8,
-        "risk_mult": 0.8,
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 20,
         "auto_pause_losses": 3,
     },
@@ -654,8 +589,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.8,
         "pullback_band_ranging": 0.5,
         "preferred_hours": list(range(24)),
@@ -664,7 +599,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.8,
-        "risk_mult": 0.8,
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 20,
         "auto_pause_losses": 3,
     },
@@ -680,8 +615,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres
@@ -706,8 +641,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
@@ -716,7 +651,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 0.9,
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
     },
@@ -732,8 +667,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 4.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
@@ -742,7 +677,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.6,
-        "risk_mult": 0.9,
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 20,
         "auto_pause_losses": 4,
     },
@@ -758,8 +693,8 @@ SYMBOL_CONFIG = {
         "tp_atr_ranging": 3.5,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
-        "adx_slope_threshold": -5.0,
-        "adx_slope_threshold_strong": -8.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],  # NY session
@@ -768,7 +703,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.8,
-        "risk_mult": 0.6,
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 30,
         "auto_pause_losses": 3,
     },
@@ -785,11 +720,11 @@ DEFAULT_SYMBOL_CONFIG = {
     "sl_atr_trending": 2.0,
     "tp_atr_trending": 5.0,
     "sl_atr_ranging": 1.5,
-    "tp_atr_ranging": 5.0,
+    "tp_atr_ranging": 4.0,  # 🔧 29 Juil: unifié forex (était 5.0)
     "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5: Ultra-conservateur (était 2.5)
     "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!): Ultra-conservateur (était 2.0)
-    "adx_slope_threshold": -6.0,
-    "adx_slope_threshold_strong": -10.0,
+    "adx_slope_threshold": -8.0,  # 🔧 29 Juil: unifié forex (était -9.0)
+    "adx_slope_threshold_strong": -12.0,  # 🔧 29 Juil: unifié forex (était -14.0)
     "pullback_band_trending": 0.5,
     "pullback_band_ranging": 0.3,
     "timeframe": "H1",
@@ -1006,12 +941,9 @@ def mom20x3_signal(
                 raw_score = min(1.0, raw_score * 1.10)
                 logger.debug(f"  [STRUCT] {symbol}: SELL + structure bearish → score +10%")
 
-            # Pénalité si BOS/CHOCH récent contredit
-            if _structure.get("recent_bos"):
-                bos = _structure.get("bos", {})
-                if (mom > 0 and bos.get("bearish_bos")) or (mom < 0 and bos.get("bullish_bos")):
-                    raw_score *= 0.85
-                    logger.debug(f"  [STRUCT] {symbol}: BOS contredit signal → score -15%")
+            # 🔧 FIX 22 Juillet 2026: Suppression pénalités BOS/CHOCH (ICT/SMC).
+            # Les BOS/CHOCH sont trop sensibles et créent des faux négatifs.
+            # La structure trend (bearish/bullish) et les filtres ADX/DI suffisent.
         except Exception as e:
             logger.debug(f"  [STRUCT] {symbol}: erreur analyse market_structure: {e}")
 
@@ -1127,18 +1059,9 @@ def mom20x3_signal(
                     f"(short_mom={short_mom:.5f} override_thresh={override_thresh:.5f})"
                 )
 
-    # === Liquidity Sweep Filter ===
-    # Un sweep de liquidité récent indique un faux signal probable
-    if _structure is not None:
-        recent_sweeps = _structure.get("recent_sweeps", [])
-        if recent_sweeps:
-            last_sweep = recent_sweeps[-1]
-            sweep_type = last_sweep.get("type", "")
-            if (action == "BUY" and sweep_type == "bullish_sweep") or (
-                action == "SELL" and sweep_type == "bearish_sweep"
-            ):
-                raw_score *= 0.85  # -15%
-                logger.debug(f"  [STRUCT] {symbol}: liquidity sweep {sweep_type} récent → score -15%")
+    # 🔧 FIX 22 Juillet 2026: Suppression Liquidity Sweep Filter (ICT/SMC).
+    # Les liquidity sweeps sont trop fréquents sur H1/H4 et créent des faux négatifs.
+    # Le pullback filter + ADX slope suffisent pour filtrer les faux signaux.
 
     # === Appliquer les filtres (ADX slope + directionnel) ===
     if not adx_slope_ok:

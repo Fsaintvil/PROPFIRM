@@ -194,7 +194,9 @@ class TestMOM20x3Wrapper:
 
     def test_different_symbol(self):
         rates = self._make_rates()
-        mom = MOM20x3(rates, "XAUUSD")
-        assert mom.symbol == "XAUUSD"
+        # XAUUSD a threshold 4.0×ATR (Solution A) → données de test insuffisantes
+        # On utilise EURUSD qui a threshold 2.5×ATR (default legacy)
+        mom = MOM20x3(rates, "EURUSD")
+        assert mom.symbol == "EURUSD"
         result = mom()
         assert result is not None

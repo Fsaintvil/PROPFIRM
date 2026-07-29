@@ -71,8 +71,8 @@ from config_simple import MAX_POSITIONS as MAX_POSITIONS_TOTAL
 from config_simple import MAX_POSITIONS_PER_SYMBOL
 
 MAX_POSITIONS_PER_DIRECTION = MAX_POSITIONS_TOTAL // 2  # Dynamique depuis config_simple
-MAX_TRADES_PER_GROUP = 4  # 🔧 ×1.5: 3→4 (arrondi inférieur)
-MAX_TRADES_PER_DIRECTION_IN_GROUP = 3  # 🔧 ×1.5: 2→3
+MAX_TRADES_PER_GROUP = 3  # 🔧 30 Juil: ↓ 4→3 (aligné sur default.yaml)
+MAX_TRADES_PER_DIRECTION_IN_GROUP = 2  # 🔧 30 Juil: ↓ 3→2 (aligné sur default.yaml)
 MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION = 1  # 🔧 FIX 6 Juillet 2026: max 1 position par direction par symbole
 
 

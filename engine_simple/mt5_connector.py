@@ -177,12 +177,13 @@ class MT5Connector:
 
     def get_positions(self) -> list[Any]:
         # 🔧 FIX 6 Juillet 2026: Timeout 15s pour éviter freeze
-        # 🐛 FIX 6 Juillet 2026 (2): MT5 Python API retourne des tuples,
-        # pas des listes. Le isinstance(all_pos, list) rejetait TOUTES
-        # les positions → robot aveugle (0 positions visibles).
+        # 🐛 FIX 20 Juillet 2026: ↑ 15s→30s (match order_send timeout)
+        #   Le single-thread executor serialise order_send devant positions_get.
+        #   Avec timeout 15s, positions_get timeout pendant que order_send bloque,
+        #   retourne [] → robot pense 0 positions → doublons.
         all_pos = self._call_with_timeout(
             lambda: mt5.positions_get() or [],
-            timeout=15,
+            timeout=30,
             name="positions_get",
             default=[],
         )

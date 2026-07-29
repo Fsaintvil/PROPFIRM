@@ -150,10 +150,10 @@ class TestPositionTracker:
         mock_pos.magic = cfg.ROBOT_MAGIC
         mock_pos.ticket = 100
         mock_pos.type = 0  # BUY
-        mock_pos.symbol = "XAUUSD"
+        mock_pos.symbol = "USOIL.cash"
         mock_pos.volume = 0.1
-        mock_pos.price_open = 2350.0
-        mock_pos.sl = 2348.0
+        mock_pos.price_open = 78.50
+        mock_pos.sl = 77.50
         mock_pos.comment = "ADAPT_TREND"
         mt5.ORDER_TYPE_BUY = 0
         mt5.calc_profit.return_value = 100.0
@@ -164,9 +164,9 @@ class TestPositionTracker:
 
         assert 100 in tracker._position_meta
         meta = tracker._position_meta[100]
-        assert meta["symbol"] == "XAUUSD"
-        assert meta["entry"] == 2350.0
-        assert meta["sl"] == 2348.0
+        assert meta["symbol"] == "USOIL.cash"
+        assert meta["entry"] == 78.50
+        assert meta["sl"] == 77.50
         assert meta["lot"] == 0.1
         assert meta["regime"] == "TREND"
         assert meta["r1_usd"] == 100.0
@@ -177,10 +177,10 @@ class TestPositionTracker:
         mock_pos.magic = cfg.ROBOT_MAGIC
         mock_pos.ticket = 101
         mock_pos.type = 1  # SELL
-        mock_pos.symbol = "BTCUSD"
+        mock_pos.symbol = "EURGBP"
         mock_pos.volume = 0.05
-        mock_pos.price_open = 68000.0
-        mock_pos.sl = 67950.0
+        mock_pos.price_open = 0.8600
+        mock_pos.sl = 0.8700
         mock_pos.comment = ""
         mt5.ORDER_TYPE_BUY = 0
         mt5.ORDER_TYPE_SELL = 1
@@ -201,10 +201,10 @@ class TestPositionTracker:
         mock_pos.magic = cfg.ROBOT_MAGIC
         mock_pos.ticket = 102
         mock_pos.type = 0
-        mock_pos.symbol = "XAUUSD"
+        mock_pos.symbol = "USOIL.cash"
         mock_pos.volume = 0.1
-        mock_pos.price_open = 2350.0
-        mock_pos.sl = 2348.0
+        mock_pos.price_open = 78.50
+        mock_pos.sl = 77.50
         mock_pos.comment = "ADAPT_RAN"
         mt5.ORDER_TYPE_BUY = 0
         mt5.calc_profit.return_value = 100.0
@@ -298,9 +298,9 @@ class TestPositionTracker:
 
         # Setup meta
         tracker._position_meta[1] = {
-            "symbol": "XAUUSD",
-            "entry": 2350.0,
-            "sl": 2348.0,
+            "symbol": "US500.cash",
+            "entry": 5000.0,
+            "sl": 4990.0,
             "lot": 0.1,
             "regime": "RANGING",
             "r1_usd": 100.0,
@@ -310,12 +310,12 @@ class TestPositionTracker:
         # Setup closing deal — time APRÈS _start_time (trade live = pas historique)
         deal = MagicMock()
         deal.position_id = 1
-        deal.symbol = "XAUUSD"
+        deal.symbol = "USOIL.cash"
         deal.magic = cfg.ROBOT_MAGIC
         deal.profit = 150.0
         deal.type = 1  # SELL (closing a BUY)
         deal.volume = 0.1
-        deal.price = 2370.0
+        deal.price = 79.50
         deal.time = int(time.time()) + 3600  # futur (après start)
         mt5.get_history.return_value = [deal]
 
@@ -323,8 +323,8 @@ class TestPositionTracker:
 
         # Verify recording — pas historical car trade live (time > _start_time)
         assert 1 in tracker._recorded_deals
-        assert "1_XAUUSD" in tracker._recorded_position_ids
-        ftmo.record_trade_result.assert_called_with("XAUUSD", 150.0, historical=False, trade_time=ANY)
+        assert "1_USOIL.cash" in tracker._recorded_position_ids
+        ftmo.record_trade_result.assert_called_with("USOIL.cash", 150.0, historical=False, trade_time=ANY)
         journal.record.assert_called_once()
         adaptive.record_result.assert_called_once()
         audit.log_decision.assert_called_once()
@@ -337,12 +337,12 @@ class TestPositionTracker:
 
         deal = MagicMock()
         deal.position_id = 1
-        deal.symbol = "XAUUSD"
+        deal.symbol = "US500.cash"
         deal.magic = cfg.ROBOT_MAGIC
         deal.profit = 50.0
         deal.type = 1
         deal.volume = 0.1
-        deal.price = 2370.0
+        deal.price = 5010.0
         deal.time = int(time.time())
         mt5.get_history.return_value = [deal]
 
@@ -355,16 +355,16 @@ class TestPositionTracker:
         tracker, _, _, _, pos_cache, mt5, _ = self.make_tracker()
         tracker._previous_tickets = {1}
         pos_cache.get.return_value = []
-        tracker._recorded_position_ids["1_XAUUSD"] = None
+        tracker._recorded_position_ids["1_USOIL.cash"] = None
 
         deal = MagicMock()
         deal.position_id = 1
-        deal.symbol = "XAUUSD"
+        deal.symbol = "USOIL.cash"
         deal.magic = cfg.ROBOT_MAGIC
         deal.profit = 50.0
         deal.type = 1
         deal.volume = 0.1
-        deal.price = 2370.0
+        deal.price = 5010.0
         deal.time = int(time.time())
         mt5.get_history.return_value = [deal]
 

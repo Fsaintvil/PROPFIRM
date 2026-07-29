@@ -190,31 +190,35 @@ class TestOnlineLearner:
         assert params["thresh"] == 4.0
 
     def test_update_params_wr_above_82(self):
-        ol = OnlineLearner(window=40)
+        ol = OnlineLearner(window=40, burst_max=999)
         # 36 wins out of 40 = 90% WR > 78% mais expectancy faible (0.08 < 0.4)
-        # → pas champion, entre dans wr_eff>0.78: risk_mult=1.0, thresh=1.8
+        # → pas champion, entre dans wr_eff>0.78: risk_mult=1.0
+        # 🔧 FIX 22 Juillet 2026: thresh dynamique min(1.5, 2.0 - (wr_eff-0.78)*2.5)
+        # wr_eff=0.4*0.90+0.6*0.90=0.90 → min(1.5, 2.0-0.30)=1.5
         for _ in range(36):
             ol.record_trade("TESTX", 0.2, "TREND_UP")  # petits gains
         for _ in range(4):
             ol.record_trade("TESTX", -1.0, "RANGING")
         params = ol.get_params("TESTX")
         assert params["risk_mult"] == 1.0  # 🔧 10 Juillet: cap recovery à 1.0
-        assert params["thresh"] == 1.8  # plus agressif
+        assert params["thresh"] == pytest.approx(1.5, abs=0.01)  # plus agressif (cap 1.5)
 
     def test_update_params_wr_78_to_82(self):
-        ol = OnlineLearner(window=40)
+        ol = OnlineLearner(window=40, burst_max=999)
         # 32 wins out of 40 = 80% WR > 78% mais expectancy faible (0.04 < 0.4)
-        # → pas champion, entre dans wr_eff>0.78: risk_mult=1.0, thresh=1.8
+        # → pas champion, entre dans wr_eff>0.78: risk_mult=1.0
+        # 🔧 FIX 22 Juillet 2026: thresh dynamique min(1.5, 2.0 - (wr_eff-0.78)*2.5)
+        # wr_eff=0.4*0.80+0.6*0.80=0.80 → min(1.5, 2.0-0.05)=1.5
         for _ in range(32):
             ol.record_trade("TESTX", 0.3, "TREND_UP")  # petits gains
         for _ in range(8):
             ol.record_trade("TESTX", -1.0, "RANGING")
         params = ol.get_params("TESTX")
         assert params["risk_mult"] == 1.0  # 🔧 10 Juillet: cap recovery à 1.0
-        assert params["thresh"] == 1.8
+        assert params["thresh"] == pytest.approx(1.5, abs=0.01)  # cap à 1.5 (FIX 22 Juillet)
 
     def test_update_params_wr_70_to_78_neutral(self):
-        ol = OnlineLearner(window=200)
+        ol = OnlineLearner(window=200, burst_max=999)
         # 30 wins out of 40 = 75% WR → in (70, 78] range → neutral
         # 🐛 FIX #10: min_trades passé de max(15,window//10) à max(30,window//5)
         # Donc window=200 → min_trades=40. On enregistre 40 trades.
@@ -227,7 +231,7 @@ class TestOnlineLearner:
         assert params["thresh"] == 2.0  # ↓ 2.5→2.0 (OL recalibré pour + de trades)
 
     def test_update_params_wr_below_70(self):
-        ol = OnlineLearner(window=40)
+        ol = OnlineLearner(window=40, burst_max=999)
         # 16 wins out of 40 = 40% WR < 60% → risk_mult=0.90, thresh=2.5 (plus sélectif)
         for _ in range(16):
             ol.record_trade("TESTX", 1.0, "TREND_UP")
@@ -239,7 +243,7 @@ class TestOnlineLearner:
         assert params["thresh"] == 2.5
 
     def test_update_params_expectancy_negative_overrides_risk(self):
-        ol = OnlineLearner(window=200)
+        ol = OnlineLearner(window=200, burst_max=999)
         # All losses, WR=0% → wr_eff=0 < 60% → base risk=0.70
         # expectancy=-1.0 < 0 → min(0.70, 0.75) = 0.70
         for _ in range(40):

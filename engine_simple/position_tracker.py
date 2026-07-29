@@ -110,7 +110,10 @@ def _log_real_trade(closing: Any, meta: dict[str, Any]) -> None:
     if not features or len(features) < 5:
         return
 
-    pos_dir = "SELL" if closing.type == 1 else "BUY"
+    # 🔧 FIX 29 Juillet 2026: closing.type est le type du DEAL de fermeture
+    # DEAL_TYPE_BUY (0) = rachat pour fermer une position SELL → direction réelle = SELL
+    # DEAL_TYPE_SELL (1) = vente pour fermer une position BUY → direction réelle = BUY
+    pos_dir = "BUY" if closing.type == 1 else "SELL"
     r1_usd = meta.get("r1_usd", 1)
     r_multiple = round(closing.profit / r1_usd, 2) if r1_usd > 0 else 0
     # Features vectorisées — LightGBM désactivé, fallback vide
@@ -254,7 +257,13 @@ class PositionTracker:
                 if pos_key in self._recorded_position_ids:
                     continue
                 self._recorded_position_ids[pos_key] = None
-                self._recorded_deals[d.ticket] = None
+                # 🐛 FIX 28 Juillet 2026: Stocker position_id au lieu du deal ticket.
+                # check_closed() ligne 387 vérifie les POSITION tickets dans _recorded_deals.
+                # Si on stocke des DEAL tickets (d.ticket), la vérification échoue TOUJOURS
+                # car les numéros de deal et de position sont différents.
+                # Conséquence: les trades déjà importés ne sont JAMAIS dédoublonnés,
+                # et une rafale de trades historiques (166 en 16s) peut contaminer l'OL.
+                self._recorded_deals[d.position_id] = None
                 # Passer le vrai timestamp MT5 pour que challenge.py puisse filtrer
                 # les trades de plus de 48h (évite de polluer WR avec des trades anciens)
                 trade_dt = getattr(d, "time", None)
@@ -268,12 +277,11 @@ class PositionTracker:
                 # ⛔ EURUSD exclu de l'OL : les trades historiques datent de l'ancienne config
                 # allow_shorts=false (WR=3.3%), qui contaminerait l'apprentissage en ligne.
                 # L'OL apprendra EURUSD uniquement via les trades live (config actuelle).
-                hist_r = 1.0 if d.profit > 0 else -1.0
-                if d.symbol not in _SYMBOLS_SKIP_OL_IMPORT:
-                    try:
-                        self.adaptive.record_result(d.symbol, hist_r, regime="HIST", batch=True)
-                    except Exception as e:
-                        logger.debug(f"[TRACKER] OnlineLearner import skip: {e}")
+                # 🔧 FIX 28 Juillet 2026: Les trades HIST ne sont PLUS importés dans l'OnlineLearner.
+                # Raison: les données historiques (régime HIST) corrompent l'apprentissage avec
+                # des patterns qui ne reflètent pas la configuration actuelle (allow_shorts, lots, etc.).
+                # L'OL n'apprend que des vrais trades LIVE exécutés par le robot avec la config réelle.
+                # La sauvegarde FTMO challenge est maintenue ci-dessus (record_trade_result).
                 recorded += 1
             if recorded > 0:
                 logger.info(
@@ -384,6 +392,22 @@ class PositionTracker:
             logger.info(
                 f"  [TRACKER] Closed tickets detected: {closed}, previous={self._previous_tickets}, current={current}"
             )
+            # 🔒 CIRCUIT BREAKER 29 Juillet 2026: Si trop de positions ferment en un cycle,
+            # c'est probablement un glitch MT5 (get_positions timeout → retourne [])
+            # plutôt que de vraies fermetures. On saute l'enregistrement OL pour ces trades
+            # pour éviter la contamination (ex: 40 trades d'un coup pour EURUSD).
+            # Limite: 5 positions/cycle (même avec MAX_POSITIONS=18, le robot ne peut pas
+            # en fermer plus de ~4 simultanément via trailing/TP).
+            if len(closed) > 5:
+                logger.warning(
+                    f"  [TRACKER] ⚠️ CIRCUIT BREAKER: {len(closed)} positions fermées en 1 cycle "
+                    f"(max attendu=5) — probable glitch MT5, skip OL recording"
+                )
+                # Marquer comme traitées (pour éviter les logs répétés) mais NE PAS
+                # enregistrer dans l'OL ni le performance monitor.
+                for t in closed:
+                    self._recorded_deals[t] = None
+                return
         for ticket in closed:
             if ticket in self._recorded_deals:
                 logger.debug(f"  [TRACKER] ticket {ticket} already recorded")
@@ -471,8 +495,9 @@ class PositionTracker:
                 from engine_simple.performance_monitor import record_trade
 
                 regime = meta.get("regime", "UNKNOWN")
-                # MT5: POSITION_TYPE_BUY=0, POSITION_TYPE_SELL=1
-                pos_dir = "BUY" if closing.type == 0 else "SELL"
+                # MT5: le DEAL type est l'inverse de la position réelle
+                # DEAL_TYPE_BUY(0)=rachat de SELL → réel=SELL; DEAL_TYPE_SELL(1)=vente de BUY → réel=BUY
+                pos_dir = "BUY" if closing.type == 1 else "SELL"
                 record_trade(closing.symbol, closing.profit, regime, pos_dir)
             except Exception as e:
                 logger.warning(f"[TRACK] record_trade failed: {e}")  # ne jamais bloquer le cycle
@@ -495,8 +520,9 @@ class PositionTracker:
             except Exception as e:
                 logger.debug(f"  [LEARN] {closing.symbol}: erreur update: {e}")
 
-            # MT5: POSITION_TYPE_BUY=0, POSITION_TYPE_SELL=1
-            pos_dir = "SELL" if closing.type == 1 else "BUY"
+            # 🔧 FIX 29 Juillet 2026: DEAL type ≠ position direction
+            # DEAL_TYPE_BUY(0)=rachat de SELL → réel=SELL; DEAL_TYPE_SELL(1)=vente de BUY → réel=BUY
+            pos_dir = "BUY" if closing.type == 1 else "SELL"
             try:
                 self.journal.record(
                     dict(
@@ -524,9 +550,24 @@ class PositionTracker:
             r1 = meta.get("r1_usd", 1)
             r_mul = round(closing.profit / r1, 2) if r1 > 0 else 0
             dl_features = meta.get("dl_features")
-            self.adaptive.record_result(
-                closing.symbol, r_mul, regime, dl_features, profit=closing.profit, win=closing.profit > 0
-            )
+            # 🔧 FIX 28 Juillet 2026: Guard anti-contamination historique
+            # is_historical = True quand le trade a été fermé avant le démarrage du robot.
+            # Sans ce guard, un cache MT5 vide (timeout) transforme TOUTES les positions
+            # en "fermées", et les trades historiques (≤48h mais pré-start) alimentent l'OL
+            # avec des centaines de faux trades en une seconde.
+            if not is_historical:
+                self.adaptive.record_result(
+                    closing.symbol, r_mul, regime, dl_features, profit=closing.profit, win=closing.profit > 0
+                )
+            else:
+                logger.debug(
+                    f"  [TRACKER] {closing.symbol}: skip adaptive.record_result "
+                    f"(historical trade, profit={closing.profit:.2f})"
+                )
+            # 🔧 FIX 28 Juillet 2026: Ne PAS alimenter l'OnlineLearner avec des trades historiques.
+            # is_historical = True quand le trade a été fermé AVANT le démarrage du robot.
+            # Sans ce guard, une rafale de trades historiques (ex: 166 trades en 16s) corrompt
+            # l'apprentissage avec des patterns WLWLWL artificiels.
             self._perf(closing.symbol).record(closing.profit, r_mul)
             if self.audit:
                 self.audit.log_decision(

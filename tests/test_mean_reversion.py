@@ -129,7 +129,12 @@ def _make_pipeline(mock_mt5=None, mock_config=None, **overrides):
         "symbol_timeframes": mock_config.SYMBOL_TIMEFRAMES,
     }
     defaults.update(overrides)
-    return SignalPipeline(**defaults)
+    pipeline = SignalPipeline(**defaults)
+    # Le filtre _check_m15_confirmation nécessite des données MT5 réelles (bougie M15 fermée).
+    # Dans les tests unitaires, les données mockées ont close≈open → M15 toujours SELL.
+    # On mocke la méthode pour qu'elle retourne True (confirmé).
+    pipeline._check_m15_confirmation = MagicMock(return_value=True)
+    return pipeline
 
 
 # ── Tests _generate_mr_signal ────────────────────────────────────────

@@ -62,6 +62,9 @@ try:
     CYCLE_SECONDS: int = _cfg.robot.cycle_seconds
     SYMBOL_LIMITS: dict[str, dict] = {sym: lim.model_dump(exclude_none=True) for sym, lim in _cfg.symbol_limits.items()}
     SYMBOL_TIMEFRAMES: dict[str, str] = {sym: limits.get("timeframe", "H1") for sym, limits in SYMBOL_LIMITS.items()}
+    SYMBOL_EXECUTION_TIMEFRAMES: dict[str, str] = {
+        sym: limits.get("execution_timeframe", "M15") for sym, limits in SYMBOL_LIMITS.items()
+    }
     # ML Pipeline config
     ML_EXPERIMENT_TRACKING: bool = _cfg.ml.experiment_tracking
     ML_TRACKING_URI: str = _cfg.ml.tracking_uri
@@ -323,6 +326,9 @@ def _re_export():
     HISTORY_LOOKBACK_DAYS = _cfg.trading.history_lookback_days
     SYMBOL_LIMITS = {sym: lim.model_dump(exclude_none=True) for sym, lim in _cfg.symbol_limits.items()}
     SYMBOL_TIMEFRAMES = {sym: limits.get("timeframe", "H1") for sym, limits in SYMBOL_LIMITS.items()}
+    SYMBOL_EXECUTION_TIMEFRAMES = {
+        sym: limits.get("execution_timeframe", "M15") for sym, limits in SYMBOL_LIMITS.items()
+    }
     __version__ = _cfg.robot.version
     NEWS_MINUTES_BEFORE = _cfg.news.minutes_before
     NEWS_MINUTES_AFTER = _cfg.news.minutes_after

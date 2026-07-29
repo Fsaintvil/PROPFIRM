@@ -516,6 +516,22 @@ class TestCalculateLot:
         # risk=200000*0.004=800, sl_profit=-200/0.1=>2000perlot, lot=800/2000*0.1=0.04 → clamp min_lot=0.05
         assert 0.05 <= lot <= 1.0
 
+    def test_risk_mult_zero_returns_zero_lot(self):
+        """🐛 FIX 28 Juillet 2026: risk_mult=0.0 doit retourner lot=0 (gel absolu)."""
+        p = self._make_protector()
+        # risk_mult=0.0 = symbole gelé, pas de trade
+        lot = p.calculate_lot("XAUUSD", 2000.0, 1990.0, signal_risk_mult=0.0)
+        assert lot == 0.0, f"risk_mult=0.0 devrait retourner 0.0, got {lot}"
+        # risk_mult=None = pas de signal → fallback config statique (lot normal)
+        lot2 = p.calculate_lot("XAUUSD", 2000.0, 1990.0, signal_risk_mult=None)
+        assert lot2 > 0.0, f"risk_mult=None devrait retourner lot>0, got {lot2}"
+        # risk_mult=0.5 = risque réduit mais pas nul
+        lot3 = p.calculate_lot("XAUUSD", 2000.0, 1990.0, signal_risk_mult=0.5)
+        assert lot3 > 0.0, f"risk_mult=0.5 devrait retourner lot>0, got {lot3}"
+        # risk_mult négatif = aussi gelé
+        lot4 = p.calculate_lot("XAUUSD", 2000.0, 1990.0, signal_risk_mult=-0.1)
+        assert lot4 == 0.0, f"risk_mult négatif devrait retourner 0.0, got {lot4}"
+
     def test_short_half_risk(self):
         p = self._make_protector()
         lot_buy = p.calculate_lot("EURUSD", 1.1, 1.095, direction=0)
@@ -845,3 +861,32 @@ class TestConsistencyCap:
                     },
                 )
                 assert ok, f"Expected allowed (single day), got: {reason}"
+
+    def test_passes_when_total_positive_is_tiny(self):
+        """🔧 FIX 22 Juillet 2026: Avec un PnL total positif < $100, le consistency cap
+        ne bloque pas (évite le deadlock)."""
+        p = make_protector()
+        self._mock_symbol_info(p)
+        p.initial_balance = 200000
+
+        # 2 jours positifs mais total positif = $7 seulement (cas réel)
+        p.daily_pnl_by_date = {
+            date(2026, 7, 21): 0.66,
+            date(2026, 7, 22): 6.34,  # today, 86.4% du total
+        }
+        p._trade_history = [{"profit": 1.0}] * 50  # assez de trades
+        p.mt5.get_account_info.return_value = MagicMock(equity=200007)
+        p.mt5.get_positions.return_value = []
+        with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
+            mock_dt.utcnow.return_value = datetime(2026, 7, 22, 14, 0)
+            with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
+                ok, reason = p.can_trade(
+                    "EURUSD",
+                    signal={
+                        "action": "BUY",
+                        "score": 0.80,
+                        "sl": 1.0900,
+                        "tp": 1.1200,
+                    },
+                )
+                assert ok, f"Expected allowed (tiny total positive), got: {reason}"

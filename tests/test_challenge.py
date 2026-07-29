@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from engine_simple.challenge import ChallengeTracker
+from engine_simple.ftmo_protector import ChallengeTracker
 
 
 # ============================================================================
@@ -484,7 +484,7 @@ class TestResetDaily:
     def test_resets_when_new_day(self):
         t = make_position_tracker()
         t.daily_stats = {"trades": 5, "losses": 2, "pnl": 300, "day": date(2026, 6, 1)}
-        with patch("engine_simple.challenge.datetime") as mock_dt:
+        with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 0, 0)
             mock_dt.utcnow.side_effect = lambda: datetime(2026, 7, 5, 0, 0)
             t._reset_daily()

@@ -23,7 +23,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ["LOG_LEVEL"] = "CRITICAL"
-os.environ["SYMBOLS"] = "XAUUSD,BTCUSD,EURUSD,GBPUSD,USDJPY"
+os.environ["SYMBOLS"] = "XAUUSD,EURUSD,GBPUSD,USDJPY"
 
 import config_simple as cfg
 from tests.mock_mt5 import MockMT5Server
@@ -176,8 +176,8 @@ class TestFullSignalPipelineCycle:
 
         try:
             ok, reason = ftmo.can_trade(
-                "BTCUSD",
-                signal={"action": "BUY", "score": 0.80, "sl": 45000.0, "tp": 55000.0},
+                "EURUSD",
+                signal={"action": "BUY", "score": 0.80, "sl": 1.09, "tp": 1.12},
             )
             assert ok, f"FTMO a rejeté: {reason}"
         finally:
@@ -197,8 +197,8 @@ class TestFullSignalPipelineCycle:
 
         try:
             ok, reason = ftmo.can_trade(
-                "BTCUSD",
-                signal={"action": "BUY", "score": 0.05, "sl": 45000.0, "tp": 55000.0},
+                "EURUSD",
+                signal={"action": "BUY", "score": 0.05, "sl": 1.09, "tp": 1.12},
             )
             assert not ok, "Signal low-score devrait être rejeté"
         finally:
@@ -278,13 +278,12 @@ class TestMultiSymbolCorrelation:
         )
 
     def test_correlation_allows_within_limit(self):
-        """2 trades existants < max 3/direction/groupe → doit passer"""
+        """1 trade existant < max 2/direction/groupe → devrait passer"""
         mt5 = MagicMock()
         ftmo = self._make_ftmo(mt5)
 
         existing = [
             MagicMock(magic=999001, symbol="EURUSD", type=0, ticket=1),
-            MagicMock(magic=999001, symbol="GBPUSD", type=0, ticket=2),
         ]
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
@@ -295,7 +294,7 @@ class TestMultiSymbolCorrelation:
                     {"action": "BUY", "score": 0.80, "sl": 0.5700, "tp": 0.5900},
                     positions=existing,
                 )
-                assert ok, f"2 trades existants < max 3/direction/groupe → devrait passer. Raison: {reason}"
+                assert ok, f"1 trade existant < max 2/direction/groupe → devrait passer. Raison: {reason}"
 
     def test_correlation_blocks_same_group_direction(self):
         """3e trade dans la même direction du même groupe est bloqué"""
@@ -340,13 +339,12 @@ class TestMultiSymbolCorrelation:
                 assert ok, f"Direction opposée devrait passer: {reason}"
 
     def test_correlation_no_block_crypto(self):
-        """Documentation: pas de blocage corrélation crypto actuellement"""
+        """1 trade crypto < max 2/direction/groupe → devrait passer"""
         mt5 = MagicMock()
         ftmo = self._make_ftmo(mt5)
 
         existing = [
             MagicMock(magic=999001, symbol="BTCUSD", type=0, ticket=1),
-            MagicMock(magic=999001, symbol="ETHUSD", type=0, ticket=2),
         ]
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
@@ -357,7 +355,7 @@ class TestMultiSymbolCorrelation:
                     {"action": "BUY", "score": 0.80, "sl": 1.0900, "tp": 1.1100},
                     positions=existing,
                 )
-                assert ok, "Documentation: pas de blocage corrélation crypto. Raison: " + (reason or "N/A")
+                assert ok, "1 trade crypto < max 2/direction/groupe → devrait passer. Raison: " + (reason or "N/A")
 
     def test_correlation_allows_different_groups(self):
         """Trades dans différents groupes passent (comportement actuel)"""
@@ -563,8 +561,8 @@ class TestMT5DisconnectRecovery:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 12, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
-                    "BTCUSD",
-                    {"action": "BUY", "score": 0.80, "sl": 45000.0, "tp": 55000.0},
+                    "EURUSD",
+                    {"action": "BUY", "score": 0.80, "sl": 1.09, "tp": 1.12},
                 )
                 assert ok, f"Trade après reconnexion devrait passer: {reason}"
 
@@ -711,9 +709,9 @@ class TestPositionLimits:
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 12, 0)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
-                # 1ère position BTCUSD → OK
-                ok1, _ = ftmo.can_trade("BTCUSD", {"action": "BUY", "score": 0.80, "sl": 45000.0, "tp": 55000.0})
-                assert ok1, "1er trade BTCUSD devrait passer"
+                # 1ère position EURUSD → OK
+                ok1, _ = ftmo.can_trade("EURUSD", {"action": "BUY", "score": 0.80, "sl": 1.09, "tp": 1.12})
+                assert ok1, "1er trade EURUSD devrait passer"
 
     def test_ftmo_calculate_lot(self):
         """FTMOProtector.calculate_lot doit retourner un lot valide"""
@@ -767,7 +765,7 @@ class TestMonitoringIntegration:
 
     def test_metrics_inc_and_snapshot(self):
         """MetricsCollector doit enregistrer et retourner des métriques"""
-        from engine_simple.monitoring import MetricsCollector
+        from engine_simple.dashboard import MetricsCollector
 
         mc = MetricsCollector()
         mc.inc("trades_total", tags={"symbol": "EURUSD", "result": "win"}, value=1)
@@ -782,7 +780,7 @@ class TestMonitoringIntegration:
 
     def test_metrics_by_symbol(self):
         """MetricsCollector doit tagger par symbole (clés triées alphabétiquement)"""
-        from engine_simple.monitoring import MetricsCollector
+        from engine_simple.dashboard import MetricsCollector
 
         mc = MetricsCollector()
         mc.inc("trades", tags={"symbol": "EURUSD", "result": "win"})
@@ -798,7 +796,7 @@ class TestMonitoringIntegration:
 
     def test_health_server_serves_metrics(self):
         """HealthServer doit exposer les métriques en prometheus text"""
-        from engine_simple.monitoring import HealthServer, MetricsCollector
+        from engine_simple.dashboard import HealthServer, MetricsCollector
 
         mc = MetricsCollector()
         mc.inc("trades_total", value=42)
@@ -811,7 +809,7 @@ class TestMonitoringIntegration:
 
     def test_health_server_health_status(self):
         """HealthServer doit exposer /health"""
-        from engine_simple.monitoring import HealthServer, MetricsCollector
+        from engine_simple.dashboard import HealthServer, MetricsCollector
 
         mc = MetricsCollector()
         server = HealthServer(port=0, metrics=mc)
@@ -825,7 +823,7 @@ class TestMonitoringIntegration:
 
     def test_prometheus_format(self):
         """MetricsCollector.prometheus_text() doit être au format Prometheus"""
-        from engine_simple.monitoring import MetricsCollector
+        from engine_simple.dashboard import MetricsCollector
 
         mc = MetricsCollector()
         mc.inc("trades_total", value=10)

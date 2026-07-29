@@ -1,14 +1,25 @@
 #!/usr/bin/env python3
-"""Seed les 3 symboles actifs dans l'OnlineLearner avec trades réalistes.
+"""⚠️ DÉSACTIVÉ — 28 Juillet 2026: Le robot n'utilise que des données RÉELLES.
 
+Ce script génère des trades synthétiques à partir de WR de backtest.
+Plus utilisé depuis le FIX 28 Juillet 2026 — l'OnlineLearner rejette
+toute donnée non-réelle (régime HIST, SYNTHETIC, SEED).
+
+Si tu as besoin de réamorcer l'OL, attend simplement que les trades
+live remplissent la fenêtre de 200 trades par symbole."""
+
+# 🚫 BLOCAGE: Exit immédiat pour éviter toute exécution accidentelle
+import sys
+
+print("❌ seed_active_symbols.py est DÉSACTIVÉ — le robot utilise uniquement des données réelles")
+print("   L'OnlineLearner se remplit automatiquement avec les trades live")
+sys.exit(0)
+
+"""Ancienne documentation (historique uniquement):
+Seed les 3 symboles actifs dans l'OnlineLearner avec trades réalistes.
 Utilise les WR de backtest 2026 (conservatives) et R-multiples réalistes
 (RR~2.5 pour winners, R=-1 pour losers).
 19 Juin 2026: 3 symboles (XAUUSD H4, BTCUSD H1, EURUSD H1)
-
-Usage:
-    python scripts/seed_active_symbols.py           # Génère et applique le seed
-    python scripts/seed_active_symbols.py --dry-run  # Simulation sans écrire
-    python scripts/seed_active_symbols.py --csv-only # Met à jour le CSV seulement
 """
 
 import csv

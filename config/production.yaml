@@ -6,24 +6,42 @@
 # Toutes les valeurs sont synchronisées avec default.yaml (ultra-conservateur).
 # ============================================================================
 
-# ── Corrélation — Réactivée (protection pertes corrélées) ──
+# ── Corrélation — Conservée
 correlation:
   enabled: true
 
-# ── Trading — Synchronisé default.yaml (2 Juillet 2026) FIX #7 ─────
+# ── Trading — PROFESSIONAL SOLUTION (30 Juillet 2026) — 4 symboles focus
 trading:
-  max_positions: 18             # 🔧 ×1.5: 12→18 (sync portfolio_controller)
-  max_positions_per_symbol: 6   # 🔧 ×1.5: 4→6
-  max_trades_per_day: 75        # 🔧 ×1.5: 50→75
+  max_positions: 6              # 🔧 30 Juil: ↓ 16→6 (ultra-conservateur, WR 35%)
+  max_positions_per_symbol: 1   # 🔧 30 Juil: ↓ 2→1 (1 max par symbole)
+  max_trades_per_day: 12        # 🔧 30 Juil: ↓ 24→12 (réduction 50%)
 
-# ── Risk — FTMO-safe (ultra-conservateur 10 Juillet 2026) ────────
+# ── Risk — PROFESSIONAL SOLUTION 30 Juillet 2026 ──────────────
 risk:
-  per_trade_pct: 0.002          # 🛡️ 10 Juil 2026: ↓ 0.004→0.002 (×½) — WR 30-52% live, protection FTMO
+  per_trade_pct: 0.002          # 🔧 30 Juil: ↓ 0.008→0.002 (0.20% — WR 35%, expectancy négative)
   max_daily_loss_pct: 0.02      # FTMO: 2% daily loss
   max_dd_pct: 0.10              # FTMO: 10% max drawdown
-  min_rr_ratio: 1.8             # Min RR inchangé
-  cooldown_minutes: 30          # Cooldown inchangé
-  auto_pause_losses: 3          # 🛡️ 10 Juil 2026: ↓ 5→3 pertes — pause plus rapide sur losing streak
-  max_risk_amount: 500.0        # 🛡️ 10 Juil 2026: ↓ $2000→$500 — suit per_trade_pct
-  circuit_breaker_dd_pct: 0.08  # Circuit breaker inchangé
-  global_max_lot: 0.01          # 🛡️ 10 Juil 2026: ↓ 0.02→0.01 — plafond minimal
+  min_rr_ratio: 2.0             # conservé (TP 6.0/SL 1.5 = RR 4.0 naturel)
+  cooldown_minutes: 30          # 🔧 30 Juil: ↑ 15→30 (plus de temps entre pertes)
+  auto_pause_losses: 2          # 🔧 30 Juil: ↓ 3→2 (pause plus tôt)
+  max_risk_amount: 1000.0       # 🔧 30 Juil: ↓ $4000→$1000 (suit per_trade_pct 0.002)
+  circuit_breaker_dd_pct: 0.04  # 🔧 30 Juil: ↓ 0.06→0.04 (stop à 4% au lieu de 6%)
+  global_max_lot: 0.05          # 🔧 30 Juil: ↓ 0.10→0.05 (lots plus petits)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🛡️ FOMC PREP — 28-29 Juillet 2026
+# ═══════════════════════════════════════════════════════════════════════════════
+# DÉSACTIVÉ. Activer la veille du FOMC en décommentant le bloc ci-dessous.
+# ⚠️ ATTENTION: Les clés dupliquées YAML (trading:/risk:) écrasent les valeurs
+#    plus hautes dans le fichier. Ne PAS décommenter sans supprimer les clés
+#    dupliquées au-dessus (L.14-29).
+# trading:
+#   max_positions: 5
+#   max_positions_per_symbol: 2
+#   max_trades_per_day: 12
+# risk:
+#   per_trade_pct: 0.002
+#   global_max_lot: 0.03
+#   cooldown_minutes: 30
+#   auto_pause_losses: 2
+# ═══════════════════════════════════════════════════════════════════════════════

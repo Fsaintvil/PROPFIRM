@@ -163,10 +163,10 @@ class SymbolLimit(BaseModel):
     circuit_breaker_dd_pct_override: float | None = Field(default=None, ge=0.02, le=0.15)
     # Nouveaux champs calibration production (Juin 2026)
     threshold_trending: float | None = Field(
-        default=None, ge=1.0, le=4.0, description="Seuil momentum en trending (×ATR). Ex: 2.5 = XAUUSD H4"
+        default=None, ge=1.0, le=6.0, description="Seuil momentum en trending (×ATR). Ex: 5.0 = BTCUSD H4 Solution A"
     )
     threshold_ranging: float | None = Field(
-        default=None, ge=1.0, le=4.0, description="Seuil momentum en ranging (×ATR). Ex: 1.5 = BTCUSD H1"
+        default=None, ge=1.0, le=6.0, description="Seuil momentum en ranging (×ATR). Ex: 5.0 = BTCUSD H4 Solution A"
     )
     pullback_band_trending: float | None = Field(
         default=None, ge=0.1, le=2.0, description="Bande pullback en trending (×ATR). Ex: 0.5 = XAUUSD H4"

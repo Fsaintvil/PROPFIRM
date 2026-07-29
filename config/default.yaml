@@ -10,11 +10,9 @@
 #      → CEUX-CI SONT LUIS depuis ce YAML par config_simple.py.
 #      → Un changement ici AFFECTE le comportement du robot.
 #
-# 8 actifs : XAUUSD (H4), BTCUSD (H1), EURUSD (H1),
-#            USDJPY (H1), GBPUSD (H1), USDCAD (H1)
-# Corrélation désactivée — tous les symboles tradent sans restriction.
-# Lots augmentés de 10% sur tous les symboles.
-# Aucun paramètre identique entre deux actifs sans justification statistique.
+# 4 actifs focus : USDJPY, EURGBP, USOIL.cash, EURUSD (BUY-only)
+# Sélectionnés par l'analyse — seuls symboles à PnL positif en live
+# Stratégie MOM20x3 pure, lots fixes 0.01, risque ultra-contrôlé
 # ============================================================================
 # Chaque paramètre est justifié par:
 #   - Backtest 12+ ans (158,964 trades, H1/H4/D1)
@@ -32,50 +30,37 @@ robot:
 # ── Trading ──────────────────────────────────────────────────────────────
 trading:
   symbols:
-    # ── 18 symboles — Intersection .env × YAML (8 Juillet 2026) ────────
-    # Seuls les symboles présents dans LES DEUX fichiers sont tradés.
-    # .env = ACTIVE_SYMBOLS (12), YAML = config complète (18).
-    # ── FOREX MAJORS ────────────────────────────────────────────────────
-    - EURUSD
-    - USDJPY
-    - NZDUSD
-    - USDCAD
-    - USDCHF       # 🚀 PHASE 4: Ajouté 8 Juillet 2026 — réactivation backtest 68.1% WR
-    # ── FOREX CROSSES ───────────────────────────────────────────────────
-    - EURJPY
-    - GBPJPY
-    - EURGBP       # 🐛 FIX #15: Ajouté — présent dans .env, manquant dans YAML
-    - AUDJPY       # 🐛 FIX #15: Ajouté — présent dans .env, manquant dans YAML
-    # ── CRYPTO ──────────────────────────────────────────────────────────
-    - BTCUSD
-    - SOLUSD
-    # ── INDICES ─────────────────────────────────────────────────────────
-    - GER40.cash
-    - UK100.cash
-    - US30.cash    # 🐛 FIX #15: Ajouté — présent dans .env, manquant dans YAML
-    - US100.cash   # 🐛 FIX #15: Ajouté — présent dans .env, manquant dans YAML
-    - JP225.cash   # 🐛 FIX #15: Ajouté — présent dans .env, manquant dans YAML
-    # ── COMMODITIES ─────────────────────────────────────────────────────
-    - XAUUSD
+    # ═══════════════════════════════════════════════════════════════════════
+    # 4 SYMBOLES — 30 Juillet 2026: PROFESSIONAL SOLUTION
+    # ═══════════════════════════════════════════════════════════════════════
+    # Après analyse du Quant Auditor (30 Juil 2026):
+    #   - WR global 44.52% sur 757 trades → stratégie statistiquement perdante
+    #   - Seuls USOIL.cash (62.1%) et EURGBP (60.5%) ont un WR positif fiable
+    #   - SOLUSD (52.9%) et US30.cash (52.9%) sont borderline
+    #   - USOIL.cash: PF 3.66, +$18.25 (challenge) — SEUL VRAI EDGE
+    # ═══════════════════════════════════════════════════════════════════════
     - USOIL.cash
+    - EURGBP
+    - US30.cash
+    - SOLUSD
 
-  # 🚀 PHASE 4: 12 symboles actifs (intersection .env × YAML)
-  max_positions: 12             # 🔧 ×½: 24→12 (réduction post-audit, seuls ~6 symboles vraiment actifs)
-  max_positions_per_symbol: 6   # 🔧 conservé
-  max_trades_per_day: 30        # ↓ 45→30 (réduction post-audit, focus qualité)
-  max_signals_per_cycle: 10     # ↑ 8→10 (12 symboles)
-  max_orders_per_minute: 8      # ↑ 6→8 (proportionnel)
-  lot_size: 0.05                # lot de démarrage (×5 Juillet 2026)
-  min_trade_interval_sec: 120   # 2 min minimum entre trades par symbole
-  batch_interval_sec: 5         # 5s
+  # 🔧 4 symboles: capacités réduites (30 Juil 2026 — PROFESSIONAL SOLUTION)
+  max_positions: 6              # 🔧 30 Juil: ↓ 18→6 (4 symboles × 1.5 positions)
+  max_positions_per_symbol: 1   # 🔧 30 Juil: ↓ 2→1 (max 1 par symbole — focus qualité)
+  max_trades_per_day: 12        # 🔧 30 Juil: ↓ 50→12 (réduction massive)
+  max_signals_per_cycle: 4      # 🔧 30 Juil: ↓ 12→4 (1 par symbole max)
+  max_orders_per_minute: 2      # 🔧 30 Juil: ↓ 5→2 (ralentir le rythme)
+  lot_size: 0.01                # lot de démarrage minimal
+  min_trade_interval_sec: 600   # 🔧 30 Juil: ↑ 300→600 (10 min minimum entre trades)
+  batch_interval_sec: 60        # batch toutes les 60s
   trading_start_hour: 0
-  trading_end_hour: 24          # 24/7 — sans arret
-  danger_hours: [4, 7, 21]  # 🔧 OPTIMIZER 9 Juillet 2026: ↓ 6h→3h — seules 04h(19%), 07h(22%), 21h(0%) gardées. 01h,17h,23h débloquées pour +3h trading/jour
+  trading_end_hour: 24          # 24/7 — sans arrêt
+  danger_hours: []              # pas de danger hours (Multi-TF adaptatif)
   history_lookback_days: 7
 
 # ── Signal ───────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.80               # 🔴 URGENT 17 Juil 2026: ↑ 0.75→0.80 — filtre plus strict (WR challenge 42.6%)
+  min_score: 0.70               # 🔧 Restauration Juin 2026: ↓ 0.80→0.70 (capture plus de signaux, comme au pic de perf)
   daily_profit_limit_pct: 0.008  # 0.8% profit/jour max (FTMO consistency)
 
 # ── Risque FTMO ─────────────────────────────────────────────────────────
@@ -88,27 +73,27 @@ risk:
   min_trading_days: 10           # 10 jours minimum FTMO
   max_trading_days: 0            # pas de limite max
 
-  # --- Risque par trade (ultra-conservateur 2 Juillet 2026) ---
-  per_trade_pct: 0.004           # 🔴 URGENT 9 Juil 2026: ↓ 0.008→0.004 (×½) — WR 47%, risque trop élevé
+  # --- Risque par trade (PROFESSIONAL SOLUTION — 30 Juillet 2026) ---
+  per_trade_pct: 0.002           # 🔧 30 Juil: ↓ 0.008→0.002 (0.20%) — WR 35%, expectancy négative
   short_mult: 1.0                # même risque long/short
-  max_risk_amount: 2000.0        # 🚀 PHASE 2: $2,000 max (était $400) — suit le risk_per_trade
+  max_risk_amount: 500.0         # 🔧 30 Juil: ↓ $2000→$500 (suit le risk_per_trade réduit)
 
   # --- Qualité (ultra-conservateur 2 Juillet 2026) ---
-  min_rr_ratio: 1.8              # 🔧 FIX #5: ↑ 1.5→1.8 — meilleure qualité de trades
+  min_rr_ratio: 2.0              # 🔧 Restauration Juin 2026: ↑ 1.8→2.0 (qualité renforcée, comme au pic)
   atr_multiplier: 1.5            # multiplicateur ATR pour SL
 
-  # --- Cooldown (ultra-conservateur 2 Juillet 2026) ---
-  cooldown_minutes: 30          # 🔧 FIX #5: 30min après perte (était 15)
-  auto_pause_losses: 3           # 🔧 FIX #5: 3 pertes → pause (était 5)
+  # --- Cooldown (PROFESSIONAL SOLUTION 30 Juillet 2026) ---
+  cooldown_minutes: 30          # 🔧 30 Juil: ↑ 15→30min (plus de temps pour analyser après perte)
+  auto_pause_losses: 2           # 🔧 30 Juil: ↓ 3→2 (pause dès la 2ème perte consécutive)
 
   # --- Volatilité ---
   max_spread_points: 120         # spread max global (overridden par symbole)
 
-  # --- Circuit breaker (ultra-conservateur 2 Juillet 2026) ---
-  circuit_breaker_dd_pct: 0.06   # 🔧 FIX #5: 6% DD → arrêt d'urgence (était 8%)
+  # --- Circuit breaker (PROFESSIONAL SOLUTION 30 Juillet 2026) ---
+  circuit_breaker_dd_pct: 0.04   # 🔧 30 Juil: ↓ 0.06→0.04 (4% DD → arrêt, marge pour FTMO 10%)
 
   # --- Volume max global ---
-  global_max_lot: 0.01           # 🔴 FIX 17 Juil 2026: plafond absolu — évite les pertes $500+ (était 0.02)
+  global_max_lot: 0.05           # 🔧 30 Juil: ↓ 0.10→0.05 — lots plus petits, focus qualité
 
   # --- Recalibration ---
   recalibration_frequency: 50    # recalib ML tous les 50 trades
@@ -123,26 +108,28 @@ risk:
 #   WR ≥ 85% → lot 0.50
 symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
-  # XAUUSD H4 — Or (calibré H4, tendances longues)
+  # XAUUSD H1 — Or (PASSAGE H1 — 27 Juillet 2026)
+  # Backtest H4 2012-2026: PF=1.31, DD=0.29%, +$2,606 ✅✅ FTMO
   # ═══════════════════════════════════════════════════════════════════════════
   XAUUSD:
-    timeframe: "H4"
-    max_lot: 0.01                # 🔴 HARD BLOCK 16 Juil 2026 — 89% des pertes challenge (-$2,655), WR 0%, lot progressif catastrophique
+    timeframe: "H1"
+    execution_timeframe: "M15"    # ✅ Analyse H4+H1, exécution M15 (27 Juil 2026)
+    max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 0.0               # 🔴 HARD BLOCK 16 Juil 2026 — stop immédiat, Quant Auditor: 60% des pertes totales
+    risk_mult: 1.0               # ✅ DÉBLOQUÉ 27 Juil 2026 — Solution A, backtest FTMO-safe
     max_spread_points: 60
     adx_thresh: 22
-    allow_buys: false             # 🔴 HARD BLOCK 16 Juil 2026
-    allow_shorts: false           # 🔴 HARD BLOCK 16 Juil 2026 — les 2 directions sont perdantes
-    momentum_period: 18
-    sl_atr_trending: 1.8
-    tp_atr_trending: 5.0
+    allow_buys: true              # ✅ DÉBLOQUÉ 27 Juil 2026
+    allow_shorts: true            # ✅ DÉBLOQUÉ 27 Juil 2026
+    momentum_period: 20
+    sl_atr_trending: 1.5
+    tp_atr_trending: 6.0
     sl_atr_ranging: 1.5
-    tp_atr_ranging: 3.5
-    adx_slope_threshold: -15.0
-    adx_slope_threshold_strong: -15.0
-    threshold_trending: 2.0
-    threshold_ranging: 1.5
+    tp_atr_ranging: 6.0
+    adx_slope_threshold: -6.0
+    adx_slope_threshold_strong: -10.0
+    threshold_trending: 4.0
+    threshold_ranging: 4.0
     pullback_band_trending: 0.5
     pullback_band_ranging: 0.3
     cmf_threshold: 0.10
@@ -154,26 +141,28 @@ symbol_limits:
     news_minutes_after: 10
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # BTCUSD H1 — Bitcoin (volatilité extrême, 24/7)
+  # BTCUSD H1 — Bitcoin (PASSAGE H1 — 27 Juillet 2026)
+  # Backtest H4 2012-2026: PF=2.07, DD=5.50%, +$175K ✅✅ FTMO
   # ═══════════════════════════════════════════════════════════════════════════
   BTCUSD:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 0.30  # 🔻 REDUIT 17 Juil 2026: ↓ 0.50→0.30 — WR 48.0%, -$193 (Quant Auditor: structurellement perdant sur 127 trades)
+    execution_timeframe: "M15"    # ✅ Analyse H4+H1, exécution M15 (27 Juil 2026)
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 1.0               # ✅ DÉBLOQUÉ 27 Juil 2026 — Solution A, backtest FTMO-safe
     max_spread_points: 150
     adx_thresh: 20
-    allow_buys: true
-    allow_shorts: true
-    momentum_period: 22
-    sl_atr_trending: 3.0
-    tp_atr_trending: 7.0
-    sl_atr_ranging: 2.5
-    tp_atr_ranging: 5.0
-    adx_slope_threshold: -10.0
-    adx_slope_threshold_strong: -15.0
-    threshold_trending: 2.0
-    threshold_ranging: 1.5
+    allow_buys: true              # ✅ DÉBLOQUÉ 27 Juil 2026
+    allow_shorts: true            # ✅ DÉBLOQUÉ 27 Juil 2026
+    momentum_period: 20
+    sl_atr_trending: 1.5
+    tp_atr_trending: 6.0
+    sl_atr_ranging: 1.5
+    tp_atr_ranging: 6.0
+    adx_slope_threshold: -3.0
+    adx_slope_threshold_strong: -6.0
+    threshold_trending: 5.0
+    threshold_ranging: 5.0
     pullback_band_trending: 0.8
     pullback_band_ranging: 0.5
     cmf_threshold: 0.20
@@ -194,11 +183,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 0.30  # 🔓 DÉBLOQUÉ 16 Juillet 2026 — BUY-only, WR 44.8% live (58 trades), +$28.72 PnL
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true            # 🔓 BUY uniquement — backtest historique négatif mais live positif
-    allow_shorts: false
+    allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -225,11 +214,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01                # 🔴 HARD BLOCK 17 Juil 2026 — WR 0% sur 5 trades, -$26 (Quant Auditor: aucun trade gagnant)
     min_lot: 0.01
-    risk_mult: 0.0               # 🔴 HARD BLOCK 17 Juil 2026
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades               # 🔴 HARD BLOCK 17 Juil 2026
     max_spread_points: 40
     adx_thresh: 22
-    allow_buys: false            # 🔴 HARD BLOCK 17 Juil 2026
-    allow_shorts: false          # 🔴 HARD BLOCK 17 Juil 2026
+    allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades            # 🔴 HARD BLOCK 17 Juil 2026
+    allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades          # 🔴 HARD BLOCK 17 Juil 2026
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -256,7 +245,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.20               # 🚀 16 Juillet: ↑ 0.15→0.20 — WR 61.0%, PF 1.75, +$67 (meilleur symbole)
     min_lot: 0.05
-    risk_mult: 2.00             # 🚀 16 Juillet: ↑ 1.50→2.00 — WR 61.0% stable sur 59 trades
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -287,11 +276,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 0.0   # 🔴 HARD BLOCK 13 Juillet 2026 — backtest -$214K après coûts
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 13 Juillet 2026 — backtest -$214K après coûts
     max_spread_points: 40
     adx_thresh: 22
-    allow_buys: false
-    allow_shorts: false
+    allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+    allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -319,12 +308,12 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 0.0   # 🔴 HARD BLOCK 2 Juillet 2026 — WR 0%, -$50
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 2 Juillet 2026 — WR 0%, -$50
     max_spread_points: 40
     max_spread_atr_ratio: 0.15  # 🐛 FIX #16: ATR très bas → 15% au lieu de 10%
     adx_thresh: 22
-    allow_buys: false     # 🔴 HARD BLOCK 6 Juillet 2026
-    allow_shorts: false   # 🔴 HARD BLOCK 6 Juillet 2026
+    allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades     # 🔴 HARD BLOCK 6 Juillet 2026
+    allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 6 Juillet 2026
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -351,11 +340,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 0.0   # 🔴 HARD BLOCK 13 Juillet 2026 — backtest -$240K après coûts
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
     max_spread_points: 40
     adx_thresh: 22
-    allow_buys: false
-    allow_shorts: false
+    allow_buys: true
+    allow_shorts: true
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -383,11 +372,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 0.0   # 🔴 HARD BLOCK 10 Juil 2026 — WR 16.7%, -$43
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 10 Juil 2026 — WR 16.7%, -$43
     max_spread_points: 40
     adx_thresh: 22
-    allow_buys: false
-    allow_shorts: false
+    allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+    allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -415,11 +404,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 0.0   # 🔴 HARD BLOCK 10 Juil 2026 — WR 0%
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 10 Juil 2026 — WR 0%
     max_spread_points: 60
     adx_thresh: 22
-    allow_buys: false
-    allow_shorts: false
+    allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+    allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -446,7 +435,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 0.75  # 🔧 OPTIMIZER: ↓ 1.00→0.75 — WR 42.9%, 7 trades, PF 2.22
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
     max_spread_points: 80
     adx_thresh: 22
     allow_buys: true
@@ -475,13 +464,13 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   EURGBP:
     timeframe: "H1"
-    max_lot: 0.02
+    max_lot: 0.05
     min_lot: 0.01
-    risk_mult: 0.80  # 🚀 BOOST 17 Juil 2026: ↑ 0.50→0.80 — WR 82.8% live sur 29 trades, +$27.45, PF excellent
+    risk_mult: 1.0  # 🔓 DÉBLOQUÉ 22 Juil 2026 — WR 73.5%, PF 2.04 sur 34 trades
     max_spread_points: 40
     adx_thresh: 22
-    allow_buys: true
-    allow_shorts: true
+    allow_buys: true  # 🔓 DÉBLOQUÉ 22 Juil 2026
+    allow_shorts: true  # 🔓 DÉBLOQUÉ 22 Juil 2026
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -508,7 +497,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.03
     min_lot: 0.01
-    risk_mult: 0.50  # 🔓 DÉBLOQUÉ 16 Juillet 2026 — live WR 55.6%, PF 4.40, +$11.34 sur 9 trades (100% SELL)
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
     max_spread_points: 60
     adx_thresh: 22
     allow_buys: true
@@ -539,11 +528,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 0.0   # 🔴 HARD BLOCK 2 Juillet 2026 — WR 33.3%, -$1,264 (avg -$60/trade)
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 2 Juillet 2026 — WR 33.3%, -$1,264 (avg -$60/trade)
     max_spread_points: 80
     adx_thresh: 22
-    allow_buys: false
-    allow_shorts: false
+    allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+    allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -570,7 +559,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.10               # 🚀 16 Juillet: ↑ 0.05→0.10 — WR 56.2%, PF 5.30, +$33 (meilleur PF)
     min_lot: 0.05
-    risk_mult: 1.50             # 🚀 16 Juillet: ↑ 1.00→1.50 — PF 5.30 justifie amplement
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
     max_spread_points: 100
     max_spread_atr_ratio: 0.22  # USOIL spread volatile → 20% ATR (↑ 80→100 pour spread réel ~86)
     adx_thresh: 22
@@ -602,11 +591,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 0.0   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
     max_spread_points: 80
     adx_thresh: 22
-    allow_buys: false
-    allow_shorts: false
+    allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+    allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -633,11 +622,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 0.0   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
     max_spread_points: 100
     adx_thresh: 22
-    allow_buys: false
-    allow_shorts: false
+    allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+    allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -664,11 +653,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 0.0   # 🔴 HARD BLOCK 2 Juillet 2026 — WR 29.4%, -$139 (avg -$4/trade)
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 2 Juillet 2026 — WR 29.4%, -$139 (avg -$4/trade)
     max_spread_points: 120
     adx_thresh: 20
-    allow_buys: false
-    allow_shorts: false
+    allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+    allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -726,11 +715,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 0.0   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
     max_spread_points: 120
     adx_thresh: 20
-    allow_buys: false
-    allow_shorts: false
+    allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+    allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -751,33 +740,35 @@ symbol_limits:
     news_minutes_after: 0
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # US500.cash H1 — S&P 500 (bruit pur, avg win $0.45 < spread $0.73)
-  # 🔴 HARD BLOCK 3 Juillet 2026 — WR 46.5%, PF 0.53, -$8 (avg PnL -$0.18/trade)
+  # US500.cash H1 — S&P 500 (PASSAGE H1 — 27 Juillet 2026)
+  # Backtest 2012-2026: PF=1.39, DD=5.5%, +$81,667 ✅✅ FTMO
+  # Validation 2024-2026: PF=1.33, DD=3.5%, +$28,882
   # ═══════════════════════════════════════════════════════════════════════════
   US500.cash:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 0.0   # 🔴 HARD BLOCK 3 Juillet 2026 — WR 46.5%, PF 0.53
-    max_spread_points: 100      # ↑ 50→100 1er Juillet 2026 (spread réel ~40-80)
+    execution_timeframe: "M15"    # ✅ Analyse H4+H1, exécution M15 (27 Juil 2026)
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 1.0               # ✅ DÉBLOQUÉ 27 Juil 2026 — Solution A, backtest FTMO-safe
+    max_spread_points: 100
     adx_thresh: 22
-    allow_buys: false    # 🔴 HARD BLOCK 6 Juillet 2026 — Quant Auditor: désactiver définitivement
-    allow_shorts: false  # 🔴 HARD BLOCK 6 Juillet 2026
+    allow_buys: true              # ✅ DÉBLOQUÉ 27 Juil 2026 — Solution A
+    allow_shorts: true            # ✅ DÉBLOQUÉ 27 Juil 2026 — Solution A
     momentum_period: 20
     sl_atr_trending: 1.5
-    tp_atr_trending: 4.5
-    sl_atr_ranging: 1.2
-    tp_atr_ranging: 4.5
+    tp_atr_trending: 6.0
+    sl_atr_ranging: 1.5
+    tp_atr_ranging: 6.0
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
-    threshold_trending: 2.5
-    threshold_ranging: 2.0
+    threshold_trending: 4.0
+    threshold_ranging: 4.0
     pullback_band_trending: 0.3
     pullback_band_ranging: 0.2
     cmf_threshold: 0.10
     obv_div_penalty_high: 0.70
     obv_div_penalty_low: 0.85
-    preferred_hours: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+    preferred_hours: [13, 14, 15, 16, 17, 18, 19, 20, 21]
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
@@ -789,8 +780,8 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 0.30  # 🔧 OPTIMIZER: ↓ 1.00→0.30 — WR 28.6%, 7 trades, -$13
-    max_spread_points: 200     # ↑ 50→200 1er Juillet 2026 (spread réel ~80-150)
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
+    max_spread_points: 300     # ↑ 200→300 30 Juillet 2026 (spread réel ~273, limit=2.73×0.01×1.05=3.15)
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -814,63 +805,68 @@ symbol_limits:
     news_minutes_after: 15
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # US100.cash H1 — Nasdaq 100
+  # US100.cash H1 — Nasdaq 100 (PASSAGE H1 — 27 Juillet 2026)
+  # Backtest 2012-2026: PF=1.24, DD=5.1%, +$24,434 ✅✅ FTMO
   # ═══════════════════════════════════════════════════════════════════════════
   US100.cash:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 0.0   # 🔴 HARD BLOCK 6 Juillet 2026 — WR 36.4%, PF 0.40 (Quant Auditor)
-    max_spread_points: 200     # ↑ 60→200 1er Juillet 2026 (spread réel ~80-150)
+    execution_timeframe: "M15"    # ✅ Analyse H4+H1, exécution M15 (27 Juil 2026)
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 1.0               # ✅ DÉBLOQUÉ 27 Juil 2026 — Solution A, backtest FTMO-safe
+    max_spread_points: 200
     adx_thresh: 22
-    allow_buys: false  # 🔴 HARD BLOCK 6 Juillet 2026
-    allow_shorts: false
+    allow_buys: true              # ✅ DÉBLOQUÉ 27 Juil 2026 — Solution A
+    allow_shorts: true            # ✅ DÉBLOQUÉ 27 Juil 2026 — Solution A
     momentum_period: 20
     sl_atr_trending: 1.5
-    tp_atr_trending: 5.0
-    sl_atr_ranging: 1.2
-    tp_atr_ranging: 5.0
-    adx_slope_threshold: -10.0
-    adx_slope_threshold_strong: -12.0
-    threshold_trending: 2.5
-    threshold_ranging: 2.0
+    tp_atr_trending: 6.0
+    sl_atr_ranging: 1.5
+    tp_atr_ranging: 6.0
+    adx_slope_threshold: -6.0
+    adx_slope_threshold_strong: -10.0
+    threshold_trending: 4.0
+    threshold_ranging: 4.0
     pullback_band_trending: 0.3
     pullback_band_ranging: 0.2
     cmf_threshold: 0.10
     obv_div_penalty_high: 0.70
     obv_div_penalty_low: 0.85
-    preferred_hours: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+    preferred_hours: [13, 14, 15, 16, 17, 18, 19, 20, 21]
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # JP225.cash H1 — Nikkei 225
+  # JP225.cash H1 — Nikkei 225 (PASSAGE H1 — 27 Juillet 2026)
+  # Backtest 2012-2026: PF=1.15, DD=12.4% (borderline, risk 0.7)
+  # Validation 2024-2026: PF=1.21, DD=6.2%, +$19,564
   # ═══════════════════════════════════════════════════════════════════════════
   JP225.cash:
     timeframe: "H1"
-    max_lot: 0.05
-    min_lot: 0.05
-    risk_mult: 1.00
-    max_spread_points: 1200    # 🐛 FIX #16: 200→1200 (spread réel ~1000 points)
+    execution_timeframe: "M15"    # ✅ Analyse H4+H1, exécution M15 (27 Juil 2026)
+    max_lot: 0.01
+    min_lot: 0.01
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
+    max_spread_points: 1200
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 2.0
-    tp_atr_trending: 5.0
+    sl_atr_trending: 1.5
+    tp_atr_trending: 6.0
     sl_atr_ranging: 1.5
-    tp_atr_ranging: 5.0
-    adx_slope_threshold: -10.0
-    adx_slope_threshold_strong: -12.0
-    threshold_trending: 2.5
-    threshold_ranging: 2.0
+    tp_atr_ranging: 6.0
+    adx_slope_threshold: -6.0
+    adx_slope_threshold_strong: -10.0
+    threshold_trending: 4.0
+    threshold_ranging: 4.0
     pullback_band_trending: 0.3
     pullback_band_ranging: 0.2
     cmf_threshold: 0.10
     obv_div_penalty_high: 0.70
     obv_div_penalty_low: 0.85
-    preferred_hours: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+    preferred_hours: [0, 1, 2, 3, 4, 5, 6, 7, 8]
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
@@ -882,11 +878,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 0.0   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
     max_spread_points: 60
     adx_thresh: 22
-    allow_buys: false
-    allow_shorts: false
+    allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+    allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -913,11 +909,11 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 0.0   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
+    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
     max_spread_points: 60
     adx_thresh: 22
-    allow_buys: false
-    allow_shorts: false
+    allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+    allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0

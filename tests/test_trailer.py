@@ -173,15 +173,15 @@ class TestCheckPartialTP:
         trailer._check_partial_tp(pos)
         mock_mt5.order_send.assert_not_called()
 
-    def test_skips_below_60_progress(self, trailer, mock_mt5):
-        """Progress < 60% → skip."""
-        pos = _make_position(current=1.11000, entry=1.10500, tp=1.11500)
+    def test_skips_below_40_progress(self, trailer, mock_mt5):
+        """Progress < 40% → skip (seuil abaissé Juil 2026)."""
+        pos = _make_position(current=1.10800, entry=1.10500, tp=1.11500)
         trailer._check_partial_tp(pos)
         mock_mt5.order_send.assert_not_called()
 
-    def test_partial_close_at_60_progress(self, trailer, mock_mt5):
-        """Progress ≥ 60% → ordre de fermeture partielle."""
-        pos = _make_position(current=1.11150, entry=1.10500, tp=1.11500, sl=1.10200, volume=0.10)
+    def test_partial_close_at_40_progress(self, trailer, mock_mt5):
+        """Progress ≥ 40% → ordre de fermeture partielle (seuil Juil 2026)."""
+        pos = _make_position(current=1.10950, entry=1.10500, tp=1.11500, sl=1.10200, volume=0.10)
         trailer._check_partial_tp(pos)
         mock_mt5.order_send.assert_called_once()
         args = mock_mt5.order_send.call_args[0][0]
@@ -191,8 +191,8 @@ class TestCheckPartialTP:
         assert "1001" in trailer.partial_closed
 
     def test_sets_breakeven_after_partial(self, trailer, mock_mt5):
-        """Après partial TP, le SL doit être relevé au BE."""
-        pos = _make_position(current=1.11150, entry=1.10500, tp=1.11500, sl=1.10200, volume=0.10)
+        """Après partial TP (40%), le SL doit être relevé au BE."""
+        pos = _make_position(current=1.10950, entry=1.10500, tp=1.11500, sl=1.10200, volume=0.10)
         # Mock ATR pour calcul BE
         trailer._atr_cache["EURUSD"] = (0.0020, time.time())
         trailer._check_partial_tp(pos)
@@ -206,8 +206,8 @@ class TestCheckPartialTP:
         mock_mt5.order_send.assert_not_called()
 
     def test_handles_sell_direction(self, trailer, mock_mt5):
-        """SELL direction: progress > 60% → ordre partiel."""
-        pos = _make_position(direction=1, entry=1.10500, current=1.09800, tp=1.09500, sl=1.10800, volume=0.10)
+        """SELL direction: progress > 40% → ordre partiel."""
+        pos = _make_position(direction=1, entry=1.10500, current=1.09750, tp=1.09500, sl=1.10800, volume=0.10)
         trailer._check_partial_tp(pos)
         assert "1001" in trailer.partial_closed
 
@@ -271,27 +271,27 @@ class TestCheckStepTrailing:
         mock_mt5.update_sl.assert_not_called()
 
     def test_first_trailing_level_buy(self, trailer, mock_mt5):
-        """Profit > 1.5 ATR → trailing SL au 1er niveau RANGING EURUSD (0.50×ATR)."""
+        """Profit > 1.2 ATR → trailing SL au 1er niveau RANGING (0.55×ATR)."""
         trailer._atr_cache["EURUSD"] = (0.0020, time.time())
-        # RANGING: niveaux EURUSD = [(1.5, 0.5), (3.0, 0.35), (5.0, 0.2), (8.0, 0.1)]
-        # profit_atr≈2.0 → trail_dist=0.50 → SL = 1.10900 - 0.50*0.0020 = 1.10800
+        # RANGING (30 Juil 2026): niveaux = [(1.2, 0.55), (2.5, 0.30), (4.0, 0.18), (5.5, 0.10)]
+        # profit_atr≈2.0 → trail_dist=0.55 → SL = 1.10900 - 0.55*0.0020 = 1.10790
         with patch("engine_simple.trailer.random.uniform", return_value=0.0):
             pos = _make_position(current=1.10900, entry=1.10500, sl=1.10200)
             trailer._check_step_trailing(pos)
         mock_mt5.update_sl.assert_called_once()
         args = mock_mt5.update_sl.call_args[0]
-        assert args[1] == pytest.approx(1.10800, abs=0.0003), f"SL={args[1]}"
+        assert args[1] == pytest.approx(1.10790, abs=0.0003), f"SL={args[1]}"
 
     def test_trailing_sell_direction(self, trailer, mock_mt5):
-        """SELL: trailing SL baissier."""
+        """SELL: trailing SL baissier (RANGING 0.55×ATR)."""
         trailer._atr_cache["EURUSD"] = (0.0020, time.time())
         with patch("engine_simple.trailer.random.uniform", return_value=0.0):
             pos = _make_position(direction=1, current=1.10000, entry=1.10500, sl=1.10800)
             trailer._check_step_trailing(pos)
         mock_mt5.update_sl.assert_called_once()
         args = mock_mt5.update_sl.call_args[0]
-        # SL doit descendre: peak=1.10000 + 0.50*0.0020 = 1.10100
-        assert args[1] == pytest.approx(1.10100, abs=0.0003), f"SL={args[1]}"
+        # SL doit descendre: peak=1.10000 + 0.55*0.0020 = 1.10110
+        assert args[1] == pytest.approx(1.10110, abs=0.0003), f"SL={args[1]}"
 
     def test_higher_trailing_level(self, trailer, mock_mt5):
         """Profit > 3.0 ATR → trailing SL au 3e niveau RANGING (0.20×ATR)."""
@@ -412,16 +412,24 @@ class TestForceBreakeven:
 
 class TestCalcSLTP:
     def test_buy_sl_tp_with_atr(self, trailer, mock_mt5):
-        """BUY: SL = entry - 2×ATR, TP = entry + 5×ATR."""
+        """BUY: SL = entry - 1.8×ATR, TP = entry + 5.0×ATR (avec min_dist 1.5×ATR)."""
         sl, tp = trailer.calc_sl_tp("EURUSD", 1.10500, 0, atr_val=0.0020)
-        assert sl == pytest.approx(1.10100, abs=0.0003)  # 1.10500 - 2*0.0020
-        assert tp == pytest.approx(1.11300, abs=0.0005)  # 1.10500 + 4*0.0020
+        # sl_dist = max(1.8*0.0020, 1.5*0.0020) = max(0.0036, 0.0030) = 0.0036
+        # tp_dist = 0.0036 * 5.0/1.8 = 0.0100
+        # SL = 1.10500 - 0.0036 = 1.10140
+        # TP = 1.10500 + 0.0100 = 1.11500
+        assert sl == pytest.approx(1.10140, abs=0.0003)
+        assert tp == pytest.approx(1.11500, abs=0.0005)
 
     def test_sell_sl_tp_with_atr(self, trailer, mock_mt5):
-        """SELL: SL = entry + 2×ATR, TP = entry - 5×ATR."""
+        """SELL: SL = entry + 1.8×ATR, TP = entry - 5.0×ATR (avec min_dist 1.5×ATR)."""
         sl, tp = trailer.calc_sl_tp("EURUSD", 1.10500, 1, atr_val=0.0020)
-        assert sl == pytest.approx(1.10900, abs=0.0003)  # 1.10500 + 2*0.0020
-        assert tp == pytest.approx(1.09700, abs=0.0005)  # 1.10500 - 4*0.0020
+        # sl_dist = max(1.8*0.0020, 1.5*0.0020) = 0.0036
+        # tp_dist = 0.0036 * 5.0/1.8 = 0.0100
+        # SL = 1.10500 + 0.0036 = 1.10860
+        # TP = 1.10500 - 0.0100 = 1.09500
+        assert sl == pytest.approx(1.10860, abs=0.0003)
+        assert tp == pytest.approx(1.09500, abs=0.0005)
 
     def test_fallback_without_atr(self, trailer, mock_mt5):
         """Sans ATR → fallback pips."""

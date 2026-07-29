@@ -134,8 +134,11 @@ class SignalValidator:
         if sl is None or tp is None or sl == 0 or tp == 0:
             try:
                 atr = signal.get("atr")
-                sl_atr = signal.get("sl_atr", 2.0)
-                tp_atr = signal.get("tp_atr", 4.0)
+                # 🔧 FIX 24 Juillet 2026 — W/L ratio 0.87 → viser 1.2-1.5
+                # SL réduit 2.0→1.8×ATR pour limiter les pertes
+                # TP augmenté 4.0→5.0×ATR pour laisser les gains courir
+                sl_atr = signal.get("sl_atr", 1.8)
+                tp_atr = signal.get("tp_atr", 5.0)
                 if entry is None or entry == 0:
                     tick = self.mt5.get_tick(symbol)
                     if tick:
@@ -208,7 +211,12 @@ class SignalValidator:
         return None
 
     def _adjust_sl_for_ob(self, symbol, ob, action, sl, entry, current_atr, max_sl_atr, signal):
-        """Ajuste le SL si un order block non mitigé est proche."""
+        """Ajuste le SL si un order block non mitigé est proche.
+
+        🔧 FIX 23 Juillet 2026: L'OB ne doit JAMAIS rendre le SL plus serré que la stratégie.
+        L'OB peut seulement ÉLARGIR le SL (le placer plus loin de l'entrée) pour éviter
+        d'être sweepé. Si l'OB est trop proche de l'entrée, on garde le SL stratégique.
+        """
         if not ob.get("is_mitigated"):
             ob_high = ob.get("high", 0)
             ob_low = ob.get("low", 0)
@@ -221,17 +229,30 @@ class SignalValidator:
                         min_sl = entry - current_atr * max_sl_atr
                         logger.debug(f"  [SL OB] {symbol}: SL OB {new_sl:.5f} > {max_sl_atr}×ATR → cap à {min_sl:.5f}")
                         new_sl = min_sl
+                    # 🔧 FIX 23 Juillet 2026: OB ne doit pas serrer le SL
+                    # Si new_sl est plus PROCHE de l'entrée que le SL stratégique,
+                    # on garde le SL stratégique (OB trop proche → pas d'ajustement)
+                    if new_sl > sl:  # BUY: SL plus haut = plus proche de l'entrée
+                        logger.debug(f"  [SL OB] {symbol}: OB trop proche de l'entrée → garde SL stratégique {sl:.5f}")
+                        new_sl = sl
                     if new_sl > 0:
                         min_sl_dist = current_atr * 0.3 if current_atr > 0 else 0.0005
                         if new_sl > entry - min_sl_dist:
                             new_sl = entry - min_sl_dist
                             logger.debug(f"  [SL OB] {symbol}: SL BUY reculé à {new_sl:.5f} (garde entrée)")
-                        logger.debug(f"  [SL OB] {symbol}: SL ajusté {sl:.5f} → {new_sl:.5f} (sous OB haussier)")
+                        if new_sl != sl:
+                            logger.debug(f"  [SL OB] {symbol}: SL ajusté {sl:.5f} → {new_sl:.5f} (sous OB haussier)")
                         signal["sl"] = new_sl
 
             elif action == "SELL" and ob_type == "bearish" and ob_high > 0:
                 if sl > ob_low and sl < ob_high * 1.01:
                     new_sl = ob_high + (ob_high - ob_low) * 0.1
+                    # 🔧 FIX 23 Juillet 2026: OB ne doit pas serrer le SL
+                    # Si new_sl est plus PROCHE de l'entrée que le SL stratégique,
+                    # on garde le SL stratégique (OB trop proche → pas d'ajustement)
+                    if new_sl < sl:  # SELL: SL plus bas = plus proche de l'entrée
+                        logger.debug(f"  [SL OB] {symbol}: OB trop proche de l'entrée → garde SL stratégique {sl:.5f}")
+                        new_sl = sl
                     min_sl_dist = current_atr * 0.3 if current_atr > 0 else 0.0005
                     if new_sl < entry + min_sl_dist:
                         new_sl = entry + min_sl_dist
@@ -241,5 +262,6 @@ class SignalValidator:
                         logger.debug(f"  [SL OB] {symbol}: SL OB {new_sl:.5f} > {max_sl_atr}×ATR → cap à {max_sl:.5f}")
                         new_sl = max_sl
                     if new_sl > 0:
-                        logger.debug(f"  [SL OB] {symbol}: SL ajusté {sl:.5f} → {new_sl:.5f} (dessus OB baissier)")
+                        if new_sl != sl:
+                            logger.debug(f"  [SL OB] {symbol}: SL ajusté {sl:.5f} → {new_sl:.5f} (dessus OB baissier)")
                         signal["sl"] = new_sl

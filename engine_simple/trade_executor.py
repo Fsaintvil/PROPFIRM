@@ -15,13 +15,13 @@ import config_simple as cfg
 logger = logging.getLogger("executor")
 
 # Intervalle minimum entre deux trades sur le MÊME symbole (secondes)
-# 5s = très permissif, permet plusieurs trades par cycle si le signal est fort.
-# ⚠️ La protection FTMO (DD 10%, daily loss) est la vraie barrière, pas le rate limiter.
-MIN_SYMBOL_INTERVAL_S = 5  # 5s (↓ 30→5 le 26 Juin: laisser passer tous les signaux valides)
+# 🔧 FIX 21 Juillet 2026: ↑ 5→30s — les doublons massifs (9 trades XAUUSD en 30s,
+# 8 trades XAGUSD en 90s) ont causé -$604 de pertes évitables.
+# Chaque doublon triple les pertes sans augmenter les gains (même SL/TP).
+MIN_SYMBOL_INTERVAL_S = 30  # 30s entre deux trades sur le même symbole
 
 # Intervalle minimum entre deux trades HIGH CONFIDENCE (>90%) sur le même symbole
-# 300s = 5 min — le tradeur veut un rythme soutenu mais pas du scalping
-HIGH_CONFIDENCE_INTERVAL_S = 120  # 2 min (↓ 300→120 le 29 Juin: débloquer les signaux haute confiance)
+HIGH_CONFIDENCE_INTERVAL_S = 300  # 5 min (↑ 120→300 le 21 Juillet: anti-doublon haute confiance aussi)
 
 
 class PerSymbolRateLimiter:
@@ -168,9 +168,13 @@ class OrderValidator:
         if sl is None or tp is None:
             return "SL ou TP non défini — REFUSÉ"
         if sl == 0 or tp == 0:
-            return "SL ou TP = 0 — REFUSÉ"
+            return "SL ou TP = 0 — REFUSÉ (FTMO VIOLATION: trade sans stop loss)"
         if price == 0:
             return "Price = 0 — REFUSÉ"
+        # 🔧 FIX 21 Juillet 2026: SL trop proche du prix = pas de protection réelle
+        # Certains trades avaient SL=entry_price±0 (rows 115-117, 126-128 du log)
+        if abs(sl - price) / max(abs(price), 0.0001) < 0.0001:
+            return f"SL identique au prix ({sl} ≈ {price}) — PAS DE PROTECTION, BLOQUÉ"
 
         if lot < OrderValidator.MIN_LOT:
             return f"Lot {lot} < min {OrderValidator.MIN_LOT}"
@@ -212,11 +216,12 @@ class TradeExecutor:
         self.signals = signals
         self.adaptive = adaptive
         self.audit = audit
-        # Rate limiter par symbole: max 6 trades/min/symbole + 5s intervalle
-        # 26 Juin: ↑ 2→6 trades/min pour laisser passer tous les signaux valides
+        # Rate limiter par symbole: max 1 trade/30s/symbole
+        # 🔧 FIX 21 Juillet 2026: ↓ 6→2 trades/min — les doublons massifs causaient
+        # des pertes ×3 sur le même signal. 2/min = 1/30s = pas de doublon intra-cycle.
         self.rate_limiter = PerSymbolRateLimiter(
-            max_per_minute=6, window_seconds=60
-        )  # Mode agressif: 6 trades/min/symbole (était 2)
+            max_per_minute=2, window_seconds=60
+        )  # Mode sécurisé: 2 trades/min/symbole max
         # Rate limiter HIGH CONFIDENCE : 1 trade/5min/symbole, aucune limite de positions
         self.high_conf_rate_limiter = PerSymbolRateLimiter(
             max_per_minute=1, window_seconds=HIGH_CONFIDENCE_INTERVAL_S, min_interval_s=HIGH_CONFIDENCE_INTERVAL_S
@@ -228,6 +233,11 @@ class TradeExecutor:
         # pendant MARKET_CLOSED_COOLDOWN_S secondes avant de réessayer.
         self._market_closed_cooldowns: dict[str, float] = {}
         self.MARKET_CLOSED_COOLDOWN_S = 120  # 2 min de pause après marché fermé
+        # 🔧 FIX 28 Juillet 2026: Signal fingerprint — dernière ligne anti-doublon
+        # Clé: (symbol, action, price_rounded) → timestamp du dernier envoi
+        # Vérifié juste avant _place_order() pour bloquer un même signal relancé
+        # dans les 60s (même fingerprint = même trade).
+        self._recent_trades: dict[tuple, float] = {}
 
     def _get_signal_value(self, signal, key, default=None):
         if isinstance(signal, dict):
@@ -244,6 +254,7 @@ class TradeExecutor:
         max_per_symbol = self._get_signal_value(signal, "max_per_symbol", 1)
         all_positions = self.mt5.get_positions()
         existing = [p for p in all_positions if p.symbol == symbol] if all_positions else []
+        # Limite de positions par direction — uniquement pour signaux normaux (pas high_confidence)
         if existing and not high_confidence:
             sig_type = 0 if action == "BUY" else 1  # POSITION_TYPE_BUY=0, SELL=1
             same_dir_count = sum(1 for p in existing if p.type == sig_type)
@@ -254,18 +265,27 @@ class TradeExecutor:
                 )
                 return None
 
-            # 🔧 18 Juin 2026: Vérifier entrée à prix identique (vrai doublon)
-            # Des positions au même prix ±0.01% ouvertes à <60s d'intervalle sont des doublons
-            # 🔧 FIX C3 19 Juin: seuil resserré 0.01%→0.005% pour catch les entrées quasi-identiques
-            price = self._get_signal_value(signal, "entry_price")
-            if price is not None and price > 0:
-                for pos in existing:
-                    if pos.type == sig_type:
-                        price_diff_pct = abs(pos.price_open - price) / max(price, 0.0001) * 100
-                        if price_diff_pct < 0.005:  # moins de 0.005% d'écart = même niveau
+        # 🔧 FIX 28 Juillet 2026: Price-dedup pour TOUS les signaux (y compris high_confidence)
+        # Vérifie si une position existe avec un prix d'entrée quasi-identique (<0.03%, age<120s).
+        # Les doublons XAUUSD (9 trades en 30s) avaient des prix à ±0.01-0.02%.
+        # 0.03% couvre toutes les entrées quasi-identiques.
+        price = self._get_signal_value(signal, "entry_price")
+        if price is not None and price > 0 and existing:
+            sig_type = 0 if action == "BUY" else 1
+            import time as _time
+
+            _now = _time.time()
+            for pos in existing:
+                if pos.type == sig_type:
+                    price_diff_pct = abs(pos.price_open - price) / max(price, 0.0001) * 100
+                    if price_diff_pct < 0.03:  # 0.03% d'écart max
+                        # Vérifier aussi l'age de la position (ouverte < 120s = doublon probable)
+                        pos_age = _now - getattr(pos, "time", 0)
+                        if pos_age < 120:
                             logger.warning(
                                 f"[DOUBLON] {symbol}: entrée {price:.5f} identique "
-                                f"à pos #{pos.ticket} ({pos.price_open:.5f}, diff={price_diff_pct:.3f}%) → skip"
+                                f"à pos #{pos.ticket} ({pos.price_open:.5f}, diff={price_diff_pct:.3f}%, "
+                                f"age={pos_age:.0f}s) → skip (high_confidence={high_confidence})"
                             )
                             return None
 
@@ -352,11 +372,31 @@ class TradeExecutor:
                 logger.warning(f"[RATE LIMIT] {symbol}: fréquence max atteinte, skip")
                 return None
 
+        # 🔧 FIX 28 Juillet 2026: Signal fingerprint — dernière ligne anti-doublon
+        # Vérifie si le même (symbol, action, price_arrondi) a déjà été exécuté dans les 60s
+        fingerprint = (symbol, action, round(price, 5))
+        _now = time.time()
+        last_fp_time = self._recent_trades.get(fingerprint)
+        if last_fp_time is not None and (_now - last_fp_time) < 60:
+            logger.warning(
+                f"[FINGERPRINT] {symbol} {action}: même signal déjà exécuté il y a "
+                f"{_now - last_fp_time:.0f}s (price={price:.5f}) — skip"
+            )
+            return None
+        # Nettoyage périodique des fingerprints vieux de > 300s (5 min)
+        if len(self._recent_trades) > 100:
+            stale = [k for k, ts in self._recent_trades.items() if _now - ts > 300]
+            for k in stale:
+                del self._recent_trades[k]
+
         # try/finally pour libérer les rate limiters en cas d'exception
         result = None
         try:
             regime = self._get_signal_value(signal, "regime") or self._get_signal_value(signal, "_regime") or "RANGING"
             result = self._place_order(symbol, action, lot, price, sl, tp, regime)
+            # Enregistrer le fingerprint si l'ordre a réussi
+            if result is not None and getattr(result, "retcode", None) == 10009:
+                self._recent_trades[fingerprint] = time.time()
             # Stocker sl_atr/tp_atr/atr dans le meta pour le logging post-trade
             if (
                 result is not None
@@ -388,25 +428,29 @@ class TradeExecutor:
 
     def _calc_lot(self, symbol, entry, sl, quality=1.0, signal_risk_mult=None):
         lot = self.ftmo.calculate_lot(symbol, entry, sl, quality=quality, signal_risk_mult=signal_risk_mult)
-        if lot is not None and lot > 0:
-            # 🔒 Safety clamp : ftmo_protector.calculate_lot() gère déjà le clamping
-            # Ce clamp est une sécurité ABSOLUE (catastrophe)
-            try:
-                import config_simple as _cfg
+        # 🐛 FIX 28 Juillet 2026: lot=0.0 = gel intentionnel (risk_mult=0.0)
+        # Ne pas remplacer par 0.01 — `calculate_lot` retourne 0.0 uniquement
+        # quand le symbole est gelé via risk_mult=0.0.
+        if lot is None:
+            return 0.01  # Fallback sécurisé : lot minimum en cas d'erreur
+        if lot <= 0:
+            logger.info(f"  [GEL] {symbol}: calculate_lot retourné {lot} → trade refusé (symbole gelé)")
+            return 0.0
+        # lot > 0: clamping sécurité
+        try:
+            import config_simple as _cfg
 
-                # 🔧 FIX 10 Juillet 2026: global_max_lot appliqué comme plafond absolu
-                _max = min(getattr(_cfg, "GLOBAL_MAX_LOT", 10.0), 10.0)
-                _min = 0.01  # minimum absolu (lots min pour data collection)
-                if lot > _max:
-                    logger.warning(f"[LOT SAFETY] {symbol}: lot={lot:.3f} > {_max} (global_max_lot clamp)")
-                    lot = _max
-                if lot < _min:
-                    lot = _min
-            except (ImportError, AttributeError, Exception) as _e:
-                logger.debug(f"[LOT SAFETY] config_simple non disponible: {_e}")
-            return lot
-        # Fallback sécurisé : lot minimum en cas d'erreur
-        return 0.01
+            # 🔧 FIX 10 Juillet 2026: global_max_lot appliqué comme plafond absolu
+            _max = min(getattr(_cfg, "GLOBAL_MAX_LOT", 10.0), 10.0)
+            _min = 0.01  # minimum absolu (lots min pour data collection)
+            if lot > _max:
+                logger.warning(f"[LOT SAFETY] {symbol}: lot={lot:.3f} > {_max} (global_max_lot clamp)")
+                lot = _max
+            if lot < _min:
+                lot = _min
+        except (ImportError, AttributeError, Exception) as _e:
+            logger.debug(f"[LOT SAFETY] config_simple non disponible: {_e}")
+        return lot
 
     REGIME_TO_SHORT = {
         "TREND_UP": "TRE",

@@ -59,6 +59,7 @@ class SignalPipeline:
         config,
         symbol_limits,
         symbol_timeframes,
+        symbol_execution_timeframes=None,
     ):
         self.mt5 = mt5
         self.ftmo = ftmo
@@ -71,6 +72,7 @@ class SignalPipeline:
         self.cfg = config
         self.symbol_limits = symbol_limits
         self.symbol_timeframes = symbol_timeframes
+        self.symbol_execution_timeframes = symbol_execution_timeframes or {}
         # Cache des AdaptiveParameters par symbole
         self._adaptive_params: dict = {}
         # Cache get_rates() par (symbole, timeframe, count) — évite appels MT5 redondants
@@ -178,6 +180,11 @@ class SignalPipeline:
             signal["_degraded"] = True
             logger.debug(f"  [DEGRADED] {symbol}: mode dégradé actif → lot minimum")
 
+        # Phase 1d: H4 Direction Filter (multi-TF professionnel)
+        # Vérifie l'alignement du signal H1 avec la tendance H4.
+        if not self._phase1d_h4_direction_filter(symbol, signal):
+            return None
+
         # Phase 2: ADX threshold
         if not self._phase2_adx_filter(symbol, signal, cycle_count, log_throttle):
             return None
@@ -216,54 +223,76 @@ class SignalPipeline:
         # Phase 12: Adaptive Params
         self._phase12_adaptive_params(symbol, signal)
 
-        # Dynamic position limits based on confidence (simplifié 1er Juillet 2026)
-        sig_conf = signal.get("confidence", 0.0)
-        sig_action = signal.get("action")
-        HIGH_CONF_CONFIDENCE = 0.85  # seuil unique haute confiance
-
-        if sig_conf >= HIGH_CONF_CONFIDENCE:
-            # 🔥 HIGH CONFIDENCE : positions supplémentaires autorisées
-            # mais corrélation et limites totales protégées par portfolio_controller
-            signal["high_confidence"] = True
-            max_per_symbol = 3  # max 3 positions/symbole en haute confiance
-            signal["max_per_symbol"] = max_per_symbol
-            logger.debug(f"  [HIGH CONF] {symbol} {sig_action} conf={sig_conf:.2f} — cap={max_per_symbol}/symbole")
+        # 🔧 FIX 22 Juillet 2026: Bypass central unique — remplace les 3 anciens bypass
+        # Un signal très fort (score ≥ 0.90 + raw_mom ≥ 0.85) passe à travers
+        # les limites de position. Le bypass est UNIQUE et centralisé, contrairement
+        # aux 3 anciens bypass dispersés (ADX, VP, MTF) qui créaient une passoire.
+        signal_score = signal.get("score", 0.0)
+        raw_mom = signal.get("_raw_mom_score", 0.0)
+        if signal_score >= 0.90 and raw_mom >= 0.85:
+            signal["_central_bypass"] = True
+            logger.debug(f"  [BYPASS] {symbol}: central bypass (score={signal_score:.2f}, raw_mom={raw_mom:.2f})")
         else:
-            # sig_conf < 0.85 (else branch du if >= 0.85)
-            if sig_conf > 0.70:
-                max_per_symbol = 2
-            else:
-                max_per_symbol = 1
-            hard_limit = config_limits.get(symbol, 4)
-            max_per_symbol = min(max_per_symbol, hard_limit)
-            signal["max_per_symbol"] = max_per_symbol
+            signal["_central_bypass"] = False
 
-            # Vérifier la limite dans la direction du signal
-            sig_dir = 0 if sig_action == "BUY" else 1 if sig_action == "SELL" else None
-            if sig_dir is not None:
-                dir_count = sym_dir_counts.get((symbol, sig_dir), 0)
-                if dir_count >= max_per_symbol:
+        # Dynamic position limits based on confidence (simplifié 1er Juillet 2026)
+        # 🔧 FIX 22 Juillet 2026: central bypass override — très fort signal contourne les limites
+        if signal.get("_central_bypass", False):
+            signal["high_confidence"] = True
+            signal["max_per_symbol"] = 4
+            logger.debug(
+                f"  [BYPASS] {symbol} {signal.get('action', '?')}: central bypass actif "
+                f"— limite contournée (max=4/symbole)"
+            )
+        else:
+            sig_conf = signal.get("confidence", 0.0)
+            sig_action = signal.get("action")
+            HIGH_CONF_CONFIDENCE = 0.85  # seuil unique haute confiance
+
+            if sig_conf >= HIGH_CONF_CONFIDENCE:
+                # 🔥 HIGH CONFIDENCE : positions supplémentaires autorisées
+                # mais corrélation et limites totales protégées par portfolio_controller
+                signal["high_confidence"] = True
+                max_per_symbol = 3  # max 3 positions/symbole en haute confiance
+                signal["max_per_symbol"] = max_per_symbol
+                logger.debug(f"  [HIGH CONF] {symbol} {sig_action} conf={sig_conf:.2f} — cap={max_per_symbol}/symbole")
+            else:
+                # sig_conf < 0.85 (else branch du if >= 0.85)
+                if sig_conf > 0.70:
+                    max_per_symbol = 2
+                else:
+                    max_per_symbol = 1
+                hard_limit = config_limits.get(symbol, 4)
+                max_per_symbol = min(max_per_symbol, hard_limit)
+                signal["max_per_symbol"] = max_per_symbol
+
+                # Vérifier la limite dans la direction du signal
+                sig_dir = 0 if sig_action == "BUY" else 1 if sig_action == "SELL" else None
+                if sig_dir is not None:
+                    dir_count = sym_dir_counts.get((symbol, sig_dir), 0)
+                    if dir_count >= max_per_symbol:
+                        _last = log_throttle.get("limit", {}).get(symbol, 0)
+                        if cycle_count - _last >= 30:
+                            log_throttle.setdefault("limit", {})[symbol] = cycle_count
+                            logger.debug(
+                                f"  [LIMIT] {symbol}: déjà {dir_count} position(s) {sig_action} "
+                                f"(max={max_per_symbol}, conf={sig_conf:.2f})"
+                            )
+                        return None
+
+                # Vérifier la limite totale par symbole
+                hard_limit = config_limits.get(symbol, 4)
+                max_pos_total = min(max_per_symbol * 2, hard_limit * 2, self.cfg.MAX_POSITIONS)
+                total_count = sym_total_counts.get(symbol, 0)
+                if total_count >= max_pos_total:
                     _last = log_throttle.get("limit", {}).get(symbol, 0)
                     if cycle_count - _last >= 30:
                         log_throttle.setdefault("limit", {})[symbol] = cycle_count
                         logger.debug(
-                            f"  [LIMIT] {symbol}: déjà {dir_count} position(s) {sig_action} "
-                            f"(max={max_per_symbol}, conf={sig_conf:.2f})"
+                            f"  [LIMIT] {symbol}: déjà {total_count} position(s) totales "
+                            f"(max={max_pos_total}, conf={sig_conf:.2f})"
                         )
                     return None
-
-            # Vérifier la limite totale par symbole
-            max_pos_total = min(max_per_symbol * 2, hard_limit * 2, self.cfg.MAX_POSITIONS)
-            total_count = sym_total_counts.get(symbol, 0)
-            if total_count >= max_pos_total:
-                _last = log_throttle.get("limit", {}).get(symbol, 0)
-                if cycle_count - _last >= 30:
-                    log_throttle.setdefault("limit", {})[symbol] = cycle_count
-                    logger.debug(
-                        f"  [LIMIT] {symbol}: déjà {total_count} position(s) totales "
-                        f"(max={max_pos_total}, conf={sig_conf:.2f})"
-                    )
-                return None
 
         # 🐛 FIX 26 Juin 2026: utiliser signal["score"] (modifié par les phases)
         # au lieu du score capturé à l'entrée (ligne 147) qui n'était jamais mis à jour.
@@ -280,6 +309,18 @@ class SignalPipeline:
             f"risk_mult={signal.get('risk_mult', 1.0):.2f}"
         )
 
+        # Phase finale: M15 Confirmation (exécution de précision)
+        # La dernière bougie M15 fermée doit confirmer la direction du signal.
+        # Si pas de confirmation → attendre le prochain cycle (15s).
+        if not self._check_m15_confirmation(symbol, signal):
+            return None
+
+        # 🔧 RÉTRACTÉ 28 Juillet 2026: Le fingerprint via last_signals était trop agressif.
+        # Il bloquait 100% des signaux car les prix ne changent pas assez entre cycles de 15s.
+        # Les 3 barrières anti-doublon existantes suffisent :
+        #   1. portfolio_controller: MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION = 1
+        #   2. trade_executor._recent_trades: fingerprint + timestamp
+        #   3. sym_total_counts: mise à jour après chaque trade
         score = signal.get("score", score)
         return SignalResult(symbol=symbol, signal=signal, score=score)
 
@@ -516,6 +557,176 @@ class SignalPipeline:
 
         return signal
 
+    # ── Phase 1d: H4 Direction Filter (Multi-TF professionnel) ────────────
+    # Vérifie l'alignement du signal H1 avec la direction H4.
+    # Si H4 est en tendance forte (ADX≥22) et le signal H1 va à contre-courant,
+    # le score est pénalisé sévèrement ou le signal est rejeté.
+    # Ajouté 27 Juillet 2026 — architecture H4→H1→M15.
+
+    def _phase1d_h4_direction_filter(self, symbol: str, signal: dict) -> bool:
+        """Filtre les signaux H1 qui vont à contre-courant de la tendance H4.
+
+        Returns:
+            False si le signal doit être rejeté (conflit majeur avec H4)
+        """
+        try:
+            h4_rates = self._get_cached_rates(symbol, "H4", count=100)
+            if h4_rates is None or len(h4_rates) < 30:
+                return True  # pas assez de données H4 → laisser passer
+
+            h4_close = np.array([r[4] for r in h4_rates], dtype=float)
+            from engine_simple.indicators import ema, adx as ind_adx
+
+            # ADX H4 pour détecter la force de la tendance
+            h4_high = np.array([r[2] for r in h4_rates], dtype=float)
+            h4_low = np.array([r[3] for r in h4_rates], dtype=float)
+            h4_adx_val, h4_pdi, h4_mdi = ind_adx(h4_high, h4_low, h4_close, period=14)
+            h4_adx = float(h4_adx_val)
+
+            # EMA50 H4 pour déterminer la direction
+            h4_ema50 = ema(h4_close, 50)
+            if len(h4_ema50) < 2 or np.isnan(h4_ema50[-1]):
+                return True
+
+            h4_price = float(h4_close[-1])
+            h4_ema = float(h4_ema50[-1])
+            h4_slope = (float(h4_ema50[-1]) - float(h4_ema50[-5])) / float(h4_ema50[-5]) if len(h4_ema50) >= 5 else 0
+
+            # Déterminer la direction H4
+            if h4_price > h4_ema * 1.002 and h4_slope > 0.0005:
+                h4_direction = "BUY"
+                h4_strength = "strong" if h4_adx >= 22 else "moderate"
+            elif h4_price < h4_ema * 0.998 and h4_slope < -0.0005:
+                h4_direction = "SELL"
+                h4_strength = "strong" if h4_adx >= 22 else "moderate"
+            else:
+                h4_direction = "NEUTRAL"
+                h4_strength = "weak"
+
+            signal_action = signal.get("action", "")
+            signal_score = signal.get("score", 0.6)
+
+            logger.debug(
+                f"  [H4_DIR] {symbol}: H4={h4_direction}({h4_strength}, ADX={h4_adx:.0f}, "
+                f"slope={h4_slope:.4f}) | H1 signal={signal_action} score={signal_score:.2f}"
+            )
+
+            # Si H4 est neutre → pas de pénalité (laisser passer le signal H1)
+            if h4_direction == "NEUTRAL":
+                signal["_h4_dir"] = "NEUTRAL"
+                signal["_h4_conf"] = 1.0
+                return True
+
+            # Conflit: signal H1 va contre H4
+            if signal_action != h4_direction:
+                if h4_strength == "strong":
+                    # Tendance H4 forte → REJETER le signal contre-tendance
+                    logger.debug(
+                        f"  [H4_DIR] {symbol}: REJETÉ — {signal_action} contre tendance H4 {h4_direction} (forte)"
+                    )
+                    return False
+                else:
+                    # Tendance H4 modérée → pénaliser le score
+                    signal["score"] = max(0.30, signal_score * 0.75)
+                    signal["_h4_penalty"] = 0.75
+                    signal["_h4_dir"] = h4_direction
+                    signal["_h4_conf"] = 0.75
+                    logger.debug(
+                        f"  [H4_DIR] {symbol}: PÉNALITÉ — {signal_action} contre H4 {h4_direction}, "
+                        f"score {signal_score:.2f}→{signal['score']:.2f}"
+                    )
+                    return True
+            else:
+                # Aligné → bonus (score ×1.05, cap à 0.95)
+                signal["score"] = min(0.95, signal_score * 1.05)
+                signal["_h4_dir"] = h4_direction
+                signal["_h4_conf"] = 1.05
+                signal["_h4_aligned"] = True
+                logger.debug(f"  [H4_DIR] {symbol}: ALIGNÉ {signal_action} avec H4 {h4_direction} (bonus)")
+                return True
+
+        except Exception as e:
+            logger.debug(f"  [H4_DIR] {symbol}: erreur: {e}")
+            return True  # erreur → laisser passer (failsafe)
+
+    # ── M15 Confirmation (exécution de précision) ─────────────────────────
+    # Vérifie que la dernière bougie M15 FERMÉE confirme la direction du signal.
+    # Évite d'entrer sur une bougie M15 qui va dans le sens opposé.
+
+    def _check_m15_confirmation(self, symbol: str, signal: dict) -> bool:
+        """Vérifie la confirmation M15 avant exécution (assoupli 29 Juil 2026).
+
+        La dernière bougie M15 complètement fermée NE doit PAS être FORTEMENT
+        opposée à la direction du signal. Une petite opposition (mèche/bougie
+        neutre) est tolérée — le signal H1 a plus de poids qu'une bougie M15
+        de faible conviction.
+
+        Returns:
+            False si M15 est fortement opposé → reporter au prochain cycle
+        """
+        try:
+            exec_tf = self.symbol_execution_timeframes.get(symbol, "M15")
+            m15_rates = self._get_cached_rates(symbol, exec_tf, count=5)
+            if m15_rates is None or len(m15_rates) < 3:
+                return True  # pas assez de données → laisser passer (failsafe)
+
+            # Dernière bougie COMPLÈTEMENT fermée (avant-dernière, l'avant-dernière est fermée)
+            # m15_rates[0] = plus vieille, m15_rates[-1] = plus récente (en cours)
+            # Format MT5: (time, open, high, low, close, tick_volume, spread, real_volume)
+            closed = m15_rates[-2]  # avant-dernière = dernière fermée
+            open_p = float(closed[1])
+            high_p = float(closed[2])
+            low_p = float(closed[3])
+            close_p = float(closed[4])
+
+            action = signal.get("action", "")
+            m15_direction = "BUY" if close_p > open_p else "SELL"
+
+            # Ratio corps/range de la bougie M15 — mesure la conviction
+            candle_range = high_p - low_p
+            body_size = abs(close_p - open_p)
+            body_ratio = body_size / candle_range if candle_range > 0 else 0.0
+
+            logger.debug(
+                f"  [M15] {symbol}: signal={action}, M15_candle={m15_direction} "
+                f"(O={open_p:.4f} H={high_p:.4f} L={low_p:.4f} C={close_p:.4f}, "
+                f"body_ratio={body_ratio:.2f})"
+            )
+
+            if action == m15_direction:
+                # ✅ M15 aligné → confirmé (entrée avec le momentum M15)
+                signal["_m15_confirmed"] = True
+                signal["_m15_entry_price"] = close_p
+                signal["_m15_candle_dir"] = m15_direction
+                signal["entry_price"] = close_p  # override pour l'exécution
+                logger.debug(f"  [M15] {symbol}: ✅ CONFIRMÉ (aligné) — entry_price={close_p:.4f}")
+                return True
+
+            elif body_ratio < 0.40:
+                # ✅ M15 opposé MAIS corps faible (<40%) → considéré comme neutre/bruit
+                # Le signal H1 a plus de poids qu'une bougie M15 sans conviction
+                signal["_m15_confirmed"] = True
+                signal["_m15_entry_price"] = close_p
+                signal["_m15_candle_dir"] = m15_direction
+                signal["entry_price"] = close_p
+                logger.debug(
+                    f"  [M15] {symbol}: ✅ CONFIRMÉ (opposé mais corps {body_ratio:.0%} < 40%) "
+                    f"— considéré neutre, entry_price={close_p:.4f}"
+                )
+                return True
+
+            else:
+                # ❌ M15 fortement opposé (corps >= 40%) → vraie contradiction
+                logger.debug(
+                    f"  [M15] {symbol}: PAS DE CONFIRMATION — M15 fortement {m15_direction} "
+                    f"(body_ratio={body_ratio:.0%}) → attendre prochaine bougie"
+                )
+                return False
+
+        except Exception as e:
+            logger.debug(f"  [M15] {symbol}: erreur: {e}")
+            return True  # erreur → laisser passer (failsafe)
+
     # ── Mean Reversion (RANGING markets) ──────────────────────────────────
 
     def _generate_mr_signal(self, symbol: str) -> dict | None:
@@ -620,26 +831,22 @@ class SignalPipeline:
         if signal.get("_strategy") == "MR":
             logger.debug(f"  [ADX] {symbol}: bypass MR (RSI={signal.get('rsi', 0):.1f})")
             return True
-        """Vérifie le seuil ADX avec bypass possible pour scores élevés."""
+        """Vérifie le seuil ADX. Plus de bypass — le bypass centralisé gère les exceptions."""
         signal_adx = signal.get("adx", 0)
         sym_cfg = self.symbol_limits.get(symbol, {})
         signal_score = signal.get("score", 0.6)
 
-        ADX_BYPASS_MIN = 10  # Juil 2026: réduit 12→10 pour US100/US500/NZDUSD (ADX 10-11, scores ≥0.80)
-        if signal_score >= 0.80 and signal_adx >= ADX_BYPASS_MIN:
-            logger.debug(f"  [ADX] {symbol}: bypass (score={signal_score:.2f} >= 0.80, ADX={signal_adx:.1f})")
-            return True
-        elif signal_score >= 0.80 and signal_adx < ADX_BYPASS_MIN:
-            logger.info(f"  [ADX] {symbol}: bypass REFUSÉ (ADX={signal_adx:.1f} < {ADX_BYPASS_MIN})")
+        # 🔧 FIX 22 Juillet 2026: Révision Pipeline — bypass ADX supprimé
+        # Ancien: les signaux score>=0.80 bypassaient ADX, créant un trou dans le filtre.
+        # Maintenant: TOUS les signaux passent par ADX. Le bypass central (process(), ligne 218)
+        # permet aux très bons signaux (score_final>=0.90 ET raw_mom>=0.85) de sauter TOUS les filtres.
+        regime = "RANGING" if signal_adx < 22 else signal.get("_regime", "RANGING")
+        adx_thresh = sym_cfg.get("adx_thresh", 20)
+        if regime in ("RANGING", "LOW_VOL"):
+            adx_thresh = min(adx_thresh, 12)
+        if signal_adx < adx_thresh:
+            logger.info(f"  [ADX] {symbol}: ADX={signal_adx:.1f} < {adx_thresh} → skip")
             return False
-        else:
-            regime = "RANGING" if signal_adx < 22 else signal.get("_regime", "RANGING")
-            adx_thresh = sym_cfg.get("adx_thresh", 20)
-            if regime in ("RANGING", "LOW_VOL"):
-                adx_thresh = min(adx_thresh, 12)
-            if signal_adx < adx_thresh:
-                logger.info(f"  [ADX] {symbol}: ADX={signal_adx:.1f} < {adx_thresh} → skip")
-                return False
         return True
 
     # ── Phase 3: Session Filter — RETIRÉ 26 Juin 2026 ────────────────────
@@ -663,15 +870,17 @@ class SignalPipeline:
         return True
 
     # ── Phase 5: Direction = Régime Rule ──────────────────────────────────
-    # 🔧 FIX 16 Juillet 2026: Pénalité SELL par régime
-    # Les SELL ont 37.2% WR global et causent 77% des pertes.
-    # Seuls les SELL en TREND_DOWN sont autorisés sans pénalité.
-    # Les SELL en RANGING/HIGH_VOL/LOW_VOL reçoivent une pénalité progressive.
+    # 🔧 FIX 22 Juillet 2026: Révision Pipeline — Pénalités SELL rééquilibrées
+    # Les pénalités étaient trop agressives (RANGING=0.85, LOW_VOL=0.75) et
+    # combinées avec OBV+VP+MTF, un SELL perdait 50% de score avant exécution.
+    # Nouveaux seuils: plancher à 0.90 sauf contre-tendance. Bonus ADX si ADX>25
+    # et -DI > +DI×1.5 (le momentum baissier est fort).
+    # Note: Les SELL en TREND_DOWN ne sont jamais pénalisés.
     SELL_PENALTY_BY_REGIME = {
         "TREND_DOWN": 1.00,  # ✅ SELL avec la tendance → pas de pénalité
-        "HIGH_VOL": 0.90,  # 🟡 Haute volatilité → pénalité 10%
-        "RANGING": 0.75,  # 🟡 Range → pénalité 25% (sells en range perdants)
-        "LOW_VOL": 0.65,  # 🔴 Basse volatilité → pénalité 35%
+        "HIGH_VOL": 0.95,  # 🟡 Haute volatilité → pénalité 5% (était 10%)
+        "RANGING": 0.90,  # 🟢 Range → pénalité 10% (était 15%)
+        "LOW_VOL": 0.85,  # 🟡 Basse volatilité → pénalité 15% (était 25%)
         "TREND_UP": 0.0,  # 🔴 BLOCKÉ (contre-tendance)
     }
 
@@ -763,7 +972,28 @@ class SignalPipeline:
 
             # ── RVOL ──
             rvol = relative_volume(volumes, period=50)
-            if rvol < 0.5:
+            # 🔧 30 Juil 2026: Diagnostic RVOL — log des valeurs de volume
+            if len(volumes) > 0:
+                logger.debug(
+                    f"  [VOL] {symbol}: rvol={rvol:.2f}, volumes[:5]={volumes[:5].tolist()}, "
+                    f"vol_mean={float(np.mean(volumes[-50:])):.1f}"
+                )
+            # 🔧 30 Juil 2026: Détection début de bougie — si la bougie courante
+            # a moins de 30% du volume moyen des 2 bougies complètes précédentes,
+            # le RVOL n'est pas encore significatif (début de cycle H1).
+            skip_rvol = False
+            if len(volumes) >= 3:
+                prev_vol = float(np.mean(volumes[-3:-1]))
+                if prev_vol > 0 and volumes[-1] < prev_vol * 0.30:
+                    skip_rvol = True
+                    logger.debug(
+                        f"  [VOL] {symbol}: bougie jeune (vol_courant={volumes[-1]:.0f} < "
+                        f"30% × vol_moyen_complet={prev_vol:.0f}) — RVOL ignoré"
+                    )
+            if skip_rvol:
+                signal["rvol_adj"] = 1.0
+                signal["rvol_note"] = "early_candle"
+            elif rvol < 0.5:
                 signal["score"] = max(0.3, signal["score"] * 0.92)
                 signal["rvol_adj"] = 0.92
                 signal["rvol_note"] = "FAIBLE"
@@ -886,15 +1116,10 @@ class SignalPipeline:
             signal["vp_boost"] = "bypass_MR"
             return True
 
-        # 🐛 FIX #12 (3 Juillet): Bypasser VP pour signaux MOM20x3 très forts
-        # Quand raw_mom_score >= 0.85, le momentum est assez fort pour casser
-        # les résistances VAH/VAL. Pénaliser ×0.90 pour résistance de volume
-        # alors que le momentum est à 0.95 est contre-productif.
-        raw_mom = signal.get("_raw_mom_score", 0)
-        if raw_mom >= 0.85:
-            logger.debug(f"  [VP] {symbol}: bypass (raw_mom={raw_mom:.2f} ≥ 0.85)")
-            signal["vp_boost"] = "bypass_strong_momentum"
-            return True
+        # 🔧 FIX 22 Juillet 2026: Révision Pipeline — bypass VP supprimé
+        # Ancien: les signaux raw_mom>=0.75 bypassaient VP.
+        # Maintenant: le bypass central (process() ligne 218) gère UNIFORMÉMENT
+        # tous les bypass. VP s'applique à TOUS les signaux sauf MR.
 
         try:
             tf_vp = self.symbol_timeframes.get(symbol, "H1")
@@ -933,14 +1158,10 @@ class SignalPipeline:
         # MeanReversion bypass: pas de confirmation MTF (RSI est le signal)
         if signal.get("_strategy") == "MR":
             return True
-        # 🐛 FIX #12 (3 Juillet): Bypasser MTF pour signaux MOM20x3 très forts
-        # raw_mom >= 0.85 = le momentum est assez fort sur la TF primaire.
-        # La TF supérieure peut être en retard de phase, ce qui créerait un
-        # faux conflit (score ×0.82 inutile).
-        raw_mom = signal.get("_raw_mom_score", 0)
-        if raw_mom >= 0.85:
-            logger.debug(f"  [MTF] {symbol}: bypass (raw_mom={raw_mom:.2f} ≥ 0.85)")
-            return True
+        # 🔧 FIX 22 Juillet 2026: Révision Pipeline — bypass MTF supprimé
+        # Ancien: les signaux raw_mom>=0.75 bypassaient MTF.
+        # Maintenant: le bypass central (process() ligne 218) gère UNIFORMÉMENT
+        # tous les bypass. MTF s'applique à TOUS les signaux sauf MR.
         try:
             tf_signal = self.symbol_timeframes.get(symbol, "H1")
             higher_tfs = {"H1": "H4", "H4": "D1", "D1": "W1"}

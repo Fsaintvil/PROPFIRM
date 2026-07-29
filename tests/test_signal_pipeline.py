@@ -164,7 +164,7 @@ def pipeline(
     mock_config,
 ):
     """Crée une instance de SignalPipeline avec tous les mocks."""
-    return SignalPipeline(
+    p = SignalPipeline(
         mt5=mock_mt5,
         ftmo=mock_ftmo,
         adaptive=mock_adaptive,
@@ -177,6 +177,11 @@ def pipeline(
         symbol_limits=mock_config.SYMBOL_LIMITS,
         symbol_timeframes=mock_config.SYMBOL_TIMEFRAMES,
     )
+    # Le filtre _check_m15_confirmation nécessite des données MT5 réelles (bougie M15 fermée).
+    # Dans les tests unitaires, les données mockées ont close≈open → M15 toujours SELL.
+    # On mocke la méthode pour qu'elle retourne True (confirmé) et simule les champs requis.
+    p._check_m15_confirmation = MagicMock(return_value=True)
+    return p
 
 
 # ── Pipeline Init ────────────────────────────────────────────────────────
@@ -343,7 +348,7 @@ class TestPipelineProcess:
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_process_sets_max_per_symbol_by_confidence(self, mock_mom, pipeline):
-        """conf=0.95 > 0.90 → max_per_symbol=4"""
+        """conf=0.95, score=0.95 → central bypass (max_per_symbol=4)"""
         mock_mom.return_value = _make_mock_mom20x3(
             {
                 "action": "BUY",
@@ -368,8 +373,8 @@ class TestPipelineProcess:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.95 >= 0.85 (HIGH_CONF_CONFIDENCE) → max_per_symbol=3
-        assert result.signal["max_per_symbol"] == 3
+        # 🔧 FIX 22 Juillet 2026: score=0.95 + raw_mom=0.95 → central bypass → max=4
+        assert result.signal["max_per_symbol"] == 4
 
     def test_process_handles_exception_gracefully(self, pipeline, mock_risk_manager):
         """Une exception dans pre_trade doit remonter (non catchée)."""
@@ -394,21 +399,27 @@ class TestPhase1MOM20x3:
     """Tests de la génération de signal MOM20x3."""
 
     def test_returns_none_on_insufficient_rates(self, pipeline, mock_mt5):
+        pipeline._rates_cache.clear()
+        # Forcer le mock à retourner 10 barres (side_effect effacé)
+        mock_mt5.get_rates.side_effect = None
         mock_mt5.get_rates.return_value = [(i, 1.0, 1.01, 0.99, 1.0, 100, 5, 100) for i in range(10)]
-        result = pipeline._phase1_mom20x3("XAUUSD")
+        # Utiliser un symbole hors SYMBOL_CONFIG pour éviter les seuils élevés
+        result = pipeline._phase1_mom20x3("TESTXXX")
         assert result is None
 
     def test_enriches_signal_with_metadata(self, pipeline, mock_mt5, mock_adaptive):
+        # Vider le cache pour éviter les données périmées des tests précédents
+        pipeline._rates_cache.clear()
         # Prix avec choc haussier brutal pour générer un signal MOM20x3
-        # Flat à 1.1 pendant 60 bars, puis +15% en 10 bars, puis uptrend lent
+        # Flat à 1.1 pendant 60 bars, puis +25% en 15 bars pour seuil 2.5×ATR
         bars = []
-        for i in range(70):
+        for i in range(65):
             bars.append((i, 1.099, 1.101, 1.099, 1.10, 1000, 10, 1000))
-        for i in range(70, 80):
-            price = 1.10 + (i - 69) * 0.02  # monte rapidement 1.10→1.28
+        for i in range(65, 80):
+            price = 1.10 + (i - 64) * 0.025  # monte rapidement 1.10→1.475
             bars.append((i, price - 0.001, price + 0.002, price - 0.003, price, 1000, 10, 1000))
         for i in range(80, 100):
-            price = 1.28 + (i - 79) * 0.001  # continue lentement 1.28→1.30
+            price = 1.475 + (i - 79) * 0.001  # continue lentement
             bars.append((i, price - 0.001, price + 0.002, price - 0.002, price, 1000, 10, 1000))
         # Override side_effect (return_value ne suffit pas, side_effect prioritaire)
         mock_mt5.get_rates.side_effect = None
@@ -438,8 +449,8 @@ class TestPhase1MOM20x3:
         mock_adaptive.learner.get_params.return_value = {"thresh": 2.5, "risk_mult": 0.75}
         signal = pipeline._phase1_mom20x3("BTCUSD")
         assert signal is not None
-        # BTCUSD base=1.0 (strategy.py) × OL=0.75 = 0.75
-        # (strategy.py SYMBOL_CONFIG est la source de vérité)
+        # 🔧 29 Juillet 2026: BTCUSD débloqué (risk_mult=1.0 dans strategy.py)
+        # Le OL risk_mult=0.75 est multiplié par la base 1.0 → 0.75
         assert abs(signal["risk_mult"] - 0.75) < 0.01
 
 
@@ -529,7 +540,7 @@ class TestDynamicPositionLimits:
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_high_confidence_gets_max_positions(self, mock_mom, pipeline):
-        """conf > 0.90 → max_per_symbol = 4"""
+        """conf=0.95, score=0.95 → central bypass (max_per_symbol=4)"""
         mock_mom.return_value = _make_mock_mom20x3(
             {
                 "action": "BUY",
@@ -554,12 +565,12 @@ class TestDynamicPositionLimits:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.95 >= 0.85 (HIGH_CONF_CONFIDENCE) → max_per_symbol=3
-        assert result.signal["max_per_symbol"] == 3
+        # 🔧 FIX 22 Juillet 2026: score=0.95 + raw_mom=0.95 → central bypass → max=4
+        assert result.signal["max_per_symbol"] == 4
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_limit_respects_hard_cap(self, mock_mom, pipeline):
-        """max_per_symbol plafonné au hard_limit de config_limits."""
+        """max_per_symbol — central bypass ignore le hard cap."""
         mock_mom.return_value = _make_mock_mom20x3(
             {
                 "action": "BUY",
@@ -579,13 +590,13 @@ class TestDynamicPositionLimits:
             degraded_symbols={},
             sym_dir_counts={},
             sym_total_counts={},
-            config_limits={"USDJPY": 2},  # hard cap = 2
+            config_limits={"USDJPY": 2},  # hard cap = 2 (mais bypass le contourne)
             last_signals={},
             log_throttle={},
         )
         assert result is not None
-        # conf=0.95 >= 0.85 (HIGH_CONF_CONFIDENCE) → cap=3 (hard limit ignoré)
-        assert result.signal["max_per_symbol"] == 3
+        # 🔧 FIX 22 Juillet 2026: score=0.95 + raw_mom=0.95 → central bypass → max=4 (ignore hard cap)
+        assert result.signal["max_per_symbol"] == 4
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_low_confidence_gets_one_position(self, mock_mom, pipeline):
@@ -649,7 +660,7 @@ class TestDynamicPositionLimits:
 
     @patch("engine_simple.strategy.MOM20x3")
     def test_good_confidence_gets_three_positions(self, mock_mom, pipeline):
-        """conf >= 0.85 (HIGH_CONF_CONFIDENCE) → max_per_symbol = 3"""
+        """conf=0.85, score=0.90 → central bypass (max_per_symbol=4)"""
         mock_mom.return_value = _make_mock_mom20x3(
             {
                 "action": "BUY",
@@ -674,5 +685,5 @@ class TestDynamicPositionLimits:
             log_throttle={},
         )
         assert result is not None
-        # conf=0.85 >= 0.85 (HIGH_CONF_CONFIDENCE) → max_per_symbol=3 (1er Juillet 2026)
-        assert result.signal["max_per_symbol"] == 3
+        # 🔧 FIX 22 Juillet 2026: score=0.90 + raw_mom=0.90 → central bypass → max=4
+        assert result.signal["max_per_symbol"] == 4

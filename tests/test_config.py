@@ -27,17 +27,15 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # 17 symboles (3 Juillet 2026) — portefeuille étendu (5 ajoutés pour synchro .env)
-    assert len(cfg.trading.symbols) == 18  # 🚀 PHASE 4: 18 symboles (8 Juillet 2026 — +USDCHF)
-    assert "XAUUSD" in cfg.trading.symbols
-    assert "BTCUSD" in cfg.trading.symbols
-    assert "EURUSD" in cfg.trading.symbols  # réactivé 29 Juin (high confidence gate)
-    assert "USDJPY" in cfg.trading.symbols  # réactivé 24 Juin
-    assert "NZDUSD" in cfg.trading.symbols  # WR 60% live
-    assert "BTCUSD" in cfg.trading.symbols  # WR 52.7% live
-    assert cfg.risk.per_trade_pct == 0.004  # 🛡️ 9 Juil: ↓ 0.80%→0.40% (protection FTMO)
+    # 4 symboles actifs (30 Juillet 2026 — PROFESSIONAL SOLUTION)
+    assert len(cfg.trading.symbols) == 4  # 🔧 30 Juil: 4 symboles focus
+    assert "USOIL.cash" in cfg.trading.symbols
+    assert "EURGBP" in cfg.trading.symbols
+    assert "US30.cash" in cfg.trading.symbols
+    assert "SOLUSD" in cfg.trading.symbols
+    assert cfg.risk.per_trade_pct == 0.002  # 🔧 30 Juil: PROFESSIONAL SOLUTION → 0.20%
     assert cfg.risk.max_dd_pct == 0.10
-    assert cfg.risk.min_rr_ratio == 1.8  # 🔧 FIX #5: Ultra-conservateur (était 1.5)
+    assert cfg.risk.min_rr_ratio == 2.0  # conservé
 
 
 def test_load_production_config():
@@ -50,8 +48,8 @@ def test_as_flat_dict():
     cfg = load_config("default")
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
-    assert flat["RISK_PER_TRADE_PCT"] == 0.004  # 🛡️ 9 Juil: ↓ 0.80%→0.40% (protection FTMO)
-    assert flat["TRADING_MAX_POSITIONS"] == 12  # 🔧 17 Juil: ↓ 24→12 (post-audit, seuls ~6 symboles vraiment actifs)
+    assert flat["RISK_PER_TRADE_PCT"] == 0.002  # 🔧 30 Juil: PROFESSIONAL SOLUTION → 0.20%
+    assert flat["TRADING_MAX_POSITIONS"] == 6  # 🔧 30 Juil: 4 symboles → 6 positions max
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -63,20 +61,20 @@ def test_symbol_limits_defaults():
         cfg.symbol_limits["XAUUSD"].max_lot == 0.01
     )  # 🔴 HARD BLOCK 16 Juil 2026: ↓ 0.03→0.01 (stop XAUUSD, 89% pertes)
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
-    assert cfg.symbol_limits["XAUUSD"].risk_mult == 0.0  # 🔴 HARD BLOCK 16 Juil 2026: 0.60→0.0 (stop XAUUSD)
+    assert cfg.symbol_limits["XAUUSD"].risk_mult == 1.0  # ✅ DÉBLOQUÉ 27 Juil 2026: Solution A
 
 
 def test_symbol_limits_new_portfolio():
-    """Le nouveau portefeuille 3 symboles production."""
+    """Le nouveau portefeuille 5 symboles focus."""
     from config.schema import load_config
 
     cfg = load_config("default")
     btc = cfg.symbol_limits.get("BTCUSD", {})
-    assert btc.risk_mult == 0.3  # 🔻 17 Juil: ↓ 0.50→0.30 (WR 48%, -$193, Quant Auditor)
-    assert btc.allow_buys is True
-    assert btc.allow_shorts is True
-    assert btc.max_lot == 0.05  # ×5 Juillet 2026
-    assert btc.min_score is None  # per-symbol retiré — global 0.30 s'applique
+    assert btc.risk_mult == 1.0  # ✅ DÉBLOQUÉ 27 Juil 2026: Solution A
+    assert btc.allow_buys is True  # ✅ DÉBLOQUÉ 27 Juil 2026
+    assert btc.allow_shorts is True  # ✅ DÉBLOQUÉ 27 Juil 2026
+    assert btc.max_lot == 0.01  # lot minimal
+    assert btc.min_score is None  # per-symbol retiré — global 0.70 s'applique
 
 
 def test_env_interpolation():
@@ -130,10 +128,10 @@ def test_config_simple_compat():
     import config_simple as cfg
 
     assert cfg.ROBOT_MAGIC == 999001
-    assert cfg.RISK_PER_TRADE == 0.002  # 🛡️ 10 Juil: ↓ 0.004→0.002 (production override per_trade_pct)
-    assert cfg.MAX_ORDERS_PER_MINUTE == 8  # 🚀 PHASE 4: ↑ 6→8 (12 symboles actifs)
+    assert cfg.RISK_PER_TRADE == 0.002  # 🔧 30 Juil: PROFESSIONAL SOLUTION → 0.20%
+    assert cfg.MAX_ORDERS_PER_MINUTE == 2  # 🔧 30 Juil: 4 symboles → 2 ordres/min (PROFESSIONAL SOLUTION)
     assert cfg.__version__ == "4.1.0"
-    assert cfg.MIN_SIGNAL_SCORE == 0.80  # 🛡️ 17 Juil: ↑ 0.75→0.80 (filtrage renforcé, WR challenge 42.6%)
+    assert cfg.MIN_SIGNAL_SCORE == 0.70  # inchangé
 
 
 def test_config_reload():

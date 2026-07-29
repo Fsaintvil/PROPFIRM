@@ -33,6 +33,7 @@ from engine_simple.ftmo_config import (
     TRAILING_BY_REGIME,
     get_trailing_for_symbol,
     get_be_buffer_for_symbol,
+    is_trailing_disabled,
 )
 from engine_simple.structure_analyzer import structure_exit_signal
 from engine_simple.symbol_profile import SymbolInstitutionalProfile, get_profile as _get_symbol_profile
@@ -113,6 +114,9 @@ class Trailer:
     # ── Partial TP ────────────────────────────────────────────────────
 
     def _check_partial_tp(self, position: Any) -> None:
+        # SOLUTION A: Pas de partial TP pour les symboles sans trailing
+        if is_trailing_disabled(position.symbol):
+            return
         ticket = str(position.ticket)
         if ticket in self.partial_closed:
             return
@@ -128,7 +132,10 @@ class Trailer:
             if position.price_current >= entry:
                 return
             progress = (entry - position.price_current) / max(entry - position.tp, 0.00001)
-        if progress < 0.60:
+        # 🔧 29 Juil 2026: 0.70→0.40 — déclencher partial TP plus tôt pour sécuriser
+        # les gains avant que le marché ne retrace. Avec TP=5.0×ATR, partial à 40% = 2.0×ATR.
+        # Équité baissait de +$5 à +$1 en 12min car le partial était trop loin (3.5×ATR).
+        if progress < 0.40:
             return
         close_vol = position.volume / 2
         if close_vol < 0.01:
@@ -262,7 +269,10 @@ class Trailer:
     # ── ATR Trailing ──────────────────────────────────────────────────
 
     def _check_step_trailing(self, position: Any) -> None:
-        """ATR-based trailing SL — niveaux progressifs adaptés au régime."""
+        """ATR-based trailing SL — désactivé pour les symboles Solution A."""
+        # SOLUTION A: Pas de trailing pour les symboles cibles
+        if is_trailing_disabled(position.symbol):
+            return
         ticket = str(position.ticket)
         atr_val = self._get_atr(position.symbol)
         if atr_val is None or atr_val <= 0:
@@ -521,8 +531,8 @@ class Trailer:
         entry: float,
         direction: int,
         atr_val: Optional[float] = None,
-        sl_mult: float = 2.0,
-        tp_mult: float = 4.0,
+        sl_mult: float = 1.8,  # 🔧 24 Juil: 2.0→1.8 (W/L ratio)
+        tp_mult: float = 5.0,  # 🔧 24 Juil: 4.0→5.0 (W/L ratio)
     ) -> tuple[Optional[float], Optional[float]]:
         info = self.mt5.get_symbol_info(symbol)
         if info is None:
