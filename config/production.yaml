@@ -10,23 +10,24 @@
 correlation:
   enabled: true
 
-# ── Trading — PROFESSIONAL SOLUTION (30 Juillet 2026) — 4 symboles focus
+# ── Trading — 31 Juillet 2026 — MODE 5 SYMBOLES POSITIFS
+# (synchronisé avec default.yaml — audit performance 31 Juil: PF 0.54 global)
 trading:
-  max_positions: 6              # 🔧 30 Juil: ↓ 16→6 (ultra-conservateur, WR 35%)
-  max_positions_per_symbol: 1   # 🔧 30 Juil: ↓ 2→1 (1 max par symbole)
-  max_trades_per_day: 12        # 🔧 30 Juil: ↓ 24→12 (réduction 50%)
+  max_positions: 5              # 5 symboles × 1 position max
+  max_positions_per_symbol: 2   # max 2 par symbole
+  max_trades_per_day: 40        # 5 symboles × ~8 trades/jour max
+  global_max_lot: 0.10          # plafond absolu
 
-# ── Risk — PROFESSIONAL SOLUTION 30 Juillet 2026 ──────────────
+# ── Risk — RECALIBRATION 31 Juillet 2026 ──────────────────
 risk:
-  per_trade_pct: 0.002          # 🔧 30 Juil: ↓ 0.008→0.002 (0.20% — WR 35%, expectancy négative)
+  per_trade_pct: 0.005          # 🔧 31 Juil: ↑ 0.002→0.005 (0.50% — risque calibré pour gagner)
   max_daily_loss_pct: 0.02      # FTMO: 2% daily loss
   max_dd_pct: 0.10              # FTMO: 10% max drawdown
   min_rr_ratio: 2.0             # conservé (TP 6.0/SL 1.5 = RR 4.0 naturel)
-  cooldown_minutes: 30          # 🔧 30 Juil: ↑ 15→30 (plus de temps entre pertes)
-  auto_pause_losses: 2          # 🔧 30 Juil: ↓ 3→2 (pause plus tôt)
-  max_risk_amount: 1000.0       # 🔧 30 Juil: ↓ $4000→$1000 (suit per_trade_pct 0.002)
-  circuit_breaker_dd_pct: 0.04  # 🔧 30 Juil: ↓ 0.06→0.04 (stop à 4% au lieu de 6%)
-  global_max_lot: 0.05          # 🔧 30 Juil: ↓ 0.10→0.05 (lots plus petits)
+  cooldown_minutes: 15          # 🔧 31 Juil: ↓ 30→15 (pas besoin d'attendre 30min si WR s'améliore)
+  auto_pause_losses: 5          # 🔧 31 Juil: ↑ 2→5 (STOP→réduction progressive du lot avant pause)
+  max_risk_amount: 250.0         # 🔧 31 Juil (Quant Auditor R4): $2500→$250 hard-cap/trade. XAU SL≈$54@1.5ATR → lot ≤0.05 max. 6 trades 0.20 = -$2,272 = 55% de la perte totale.
+  circuit_breaker_dd_pct: 0.06  # 🔧 31 Juil: ↑ 0.04→0.06 (6% au lieu de 4%, marge pour FTMO 10%)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🛡️ FOMC PREP — 28-29 Juillet 2026

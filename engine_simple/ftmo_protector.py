@@ -959,12 +959,14 @@ class FTMOProtector:
             )
             return False, f"ZONE 3: daily DD {daily_loss:.1%} >= {zone3:.1%}, STOP total"
 
-        # Per-symbol auto-pause après N pertes consécutives
+        # Per-symbol auto-pause progressif après pertes consécutives
+        # 🔧 RECALIBRATION 31 Juillet 2026: STOP → réduction progressive
+        #   - 3 pertes: soft cooldown 5min, lot réduit (via _adaptive_lot_mult)
+        #   - 5 pertes: cooldown 15min, lot fortement réduit
+        #   - 10 pertes: hard stop 60min (circuit breaker final)
         from engine_simple.strategy import get_symbol_full_config as _get_sym_full_cfg
 
         sym_full_cfg = _get_sym_full_cfg(symbol)
-        # 🔧 FIX 10 Juillet 2026: Config globale (production.yaml) DOIT primer sur SYMBOL_CONFIG
-        # Avant: sym_full_cfg.get() écrase la valeur de production.yaml
         global_auto_pause = self.config.get("auto_pause_losses", self.config.get("AUTO_PAUSE_LOSSES"))
         sym_auto_pause = (
             global_auto_pause if global_auto_pause is not None else sym_full_cfg.get("auto_pause_losses", 5)
@@ -973,35 +975,66 @@ class FTMOProtector:
         sym_cooldown_minutes = (
             global_cooldown if global_cooldown is not None else sym_full_cfg.get("cooldown_minutes", 15)
         )
-        if self.consecutive_losses >= sym_auto_pause:
-            now = datetime.utcnow()
-            # 🔧 FIX 6 Juillet 2026: Cooldown progressif — durée × 2 à chaque palier
-            # Évite 21+ pertes consécutives non stoppées
-            cooldown_levels = [5, 10, 15, 20]
-            cooldown_durations = [sym_cooldown_minutes, 60, 120, 240]
-            actual_cooldown = sym_cooldown_minutes  # fallback par défaut
-            for level, dur in zip(cooldown_levels, cooldown_durations):
-                if self.consecutive_losses >= level:
-                    actual_cooldown = dur
+        # 🔧 31 Juillet 2026: Palier progressif — court cooldown à 3 pertes, stop dur à 10+
+        consec = self.consecutive_losses
+        now = datetime.utcnow()
+
+        # Stage 1: 3 pertes → soft cooldown (5min, juste pour ralentir)
+        if consec >= 3 and consec < sym_auto_pause:
+            soft_cooldown = min(5, sym_cooldown_minutes)
             if self.global_cooldown_until is None:
-                self.global_cooldown_until = now + timedelta(minutes=actual_cooldown)
+                self.global_cooldown_until = now + timedelta(minutes=soft_cooldown)
+                logger.info(
+                    f"SOFT PAUSE ({symbol}): {consec} pertes, cooldown {soft_cooldown}min (réduction lot active)"
+                )
+                return False, f"Soft cooldown: {soft_cooldown}min ({consec} pertes consécutives)"
+            if now < self.global_cooldown_until:
+                remaining = int((self.global_cooldown_until - now).total_seconds() // 60)
+                return False, f"Soft cooldown: {remaining}min restantes"
+            logger.info(f"Soft cooldown expired — resetting consecutive_losses from {consec} to 0")
+            self.consecutive_losses = 0
+            self.challenge.consecutive_losses = 0
+            self._symbol_consecutive_losses.clear()
+            self.global_cooldown_until = None
+
+        # Stage 2: 5+ pertes → cooldown sérieux + réduction lot max
+        elif consec >= sym_auto_pause and consec < 10:
+            cooldown_duration = sym_cooldown_minutes
+            if self.global_cooldown_until is None:
+                self.global_cooldown_until = now + timedelta(minutes=cooldown_duration)
                 logger.warning(
-                    f"AUTO PAUSE ({symbol}): {self.consecutive_losses} consecutive losses >= {sym_auto_pause}, "
-                    f"cooldown {actual_cooldown}min jusqu'à {self.global_cooldown_until}"
+                    f"AUTO PAUSE ({symbol}): {consec} pertes >= {sym_auto_pause}, "
+                    f"cooldown {cooldown_duration}min (lot réduit 50%)"
                 )
                 return (
                     False,
-                    f"Global cooldown: {actual_cooldown}min (after {self.consecutive_losses} consecutive losses)",
+                    f"Cooldown: {cooldown_duration}min ({consec} pertes consécutives, lot réduit)",
                 )
             if now < self.global_cooldown_until:
                 remaining = int((self.global_cooldown_until - now).total_seconds() // 60)
-                return False, f"Global cooldown: {remaining}min (after {self.consecutive_losses} consecutive losses)"
-            # 🔧 FIX 6 Juillet 2026: Reset à 0 au lieu de réduire —
-            # L'ancien comportement (new_count = max(0, consec - sym_auto_pause))
-            # permettait à 21 pertes de s'accumuler sur plusieurs cycles de cooldown.
-            logger.info(f"Global cooldown expired — resetting consecutive_losses from {self.consecutive_losses} to 0")
+                return False, f"Cooldown: {remaining}min restantes ({consec} pertes)"
+            logger.info(f"Auto pause expired — resetting consecutive_losses from {consec} to 0")
             self.consecutive_losses = 0
-            self.challenge.consecutive_losses = 0  # 🐛 FIX 20 Juillet 2026: Sync challenge tracker
+            self.challenge.consecutive_losses = 0
+            self._symbol_consecutive_losses.clear()
+            self.global_cooldown_until = None
+
+        # Stage 3: 10+ pertes → HARD STOP (urgence, long cooldown)
+        elif consec >= 10:
+            hard_cooldown = max(60, sym_cooldown_minutes * 4)
+            if self.global_cooldown_until is None:
+                self.global_cooldown_until = now + timedelta(minutes=hard_cooldown)
+                logger.critical(
+                    f"HARD STOP ({symbol}): {consec} pertes consécutives! "
+                    f"Cooldown {hard_cooldown}min — vérifier le marché"
+                )
+                return False, f"HARD STOP: {hard_cooldown}min ({consec} pertes consécutives)"
+            if now < self.global_cooldown_until:
+                remaining = int((self.global_cooldown_until - now).total_seconds() // 60)
+                return False, f"HARD STOP: {remaining}min restantes"
+            logger.info(f"Hard STOP expired — resetting consecutive_losses from {consec} to 0")
+            self.consecutive_losses = 0
+            self.challenge.consecutive_losses = 0
             self._symbol_consecutive_losses.clear()
             self.global_cooldown_until = None
 
@@ -1417,15 +1450,20 @@ class FTMOProtector:
             elif dd > 0.03:
                 mult *= 0.90  # DD > 3% → -10%
 
-        # 3. Pertes consécutives (utilise auto_pause_losses de la config)
-        # 🔧 FIX 10 Juillet 2026: snake_case (YAML) pas UPPER_CASE (env-style)
-        auto_pause = self.config.get("auto_pause_losses", self.config.get("AUTO_PAUSE_LOSSES", 5))
-        if self.consecutive_losses >= auto_pause:
-            mult *= 0.50  # Pause imminente → risque réduit de moitié
-        elif self.consecutive_losses >= max(3, auto_pause - 2):
-            mult *= 0.65  # Proche du seuil → risque réduit
-        elif self.consecutive_losses >= 2:
-            mult *= 0.75  # 2 pertes → pré-alerte, risque réduit
+        # 3. Pertes consécutives — réduction progressive (RECALIBRATION 31 Juillet 2026)
+        # 🔧 31 Juillet 2026: Plus de paliers pour réduire le lot en douceur
+        # avant d'atteindre le cooldown. Évite le STOP brutal.
+        consec = self.consecutive_losses
+        if consec >= 7:
+            mult *= 0.25  # 7+ pertes → risque quasi nul, cooldown imminent
+        elif consec >= 5:
+            mult *= 0.40  # 5 pertes → pause imminente, lot fortement réduit
+        elif consec >= 4:
+            mult *= 0.60  # 4 pertes → réduction sérieuse
+        elif consec >= 3:
+            mult *= 0.70  # 3 pertes → alerte renforcée
+        elif consec >= 2:
+            mult *= 0.80  # 2 pertes → pré-alerte, réduction légère
 
         # 4. Challenge progress (confiance croissante)
         report = self.get_progress_report()
@@ -1736,6 +1774,10 @@ class FTMOProtector:
         # entre la lecture et l'envoi (ex: partial TP puis trailing dans le même cycle)
         subs = [
             ("time_stop", self.trailer._check_time_stop),
+            # 🔧 30 Juillet 2026: BE progressif AVANT partial TP et trailing.
+            # Sécurise un profit minimal (entry ou entry+0.15×ATR) dès 0.50×ATR,
+            # avant même que le trailing N1 (1.20×ATR) ne s'active.
+            ("progressive_be", self.trailer._check_progressive_be),
             ("partial_tp", self.trailer._check_partial_tp),
             ("step_trail", self.trailer._check_step_trailing),
             ("structure", self.trailer._check_structure_exit),

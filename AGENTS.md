@@ -1,7 +1,10 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 31 Juillet 2026** : min_score 0.70 enforce (signal_validator), **XAGUSD désactivé** (trou noir,
+> ~$1,470 cumulés), circuit breaker progressif (lot ×0.25 à 7 pertes, HARD STOP à 10), **fix watchdog** (chemin
+> heartbeat ABSOLU — protection anti-freeze GIL restaurée), recalibration risk_per_trade 0.005, 25 symboles actifs.
 > **Mise à jour 1er Juillet 2026** : Activation 27 symboles, lot progressif WR-based, corrélation active.
-> Réparations post-régression (min_score 0.60 rétabli), correction des 10 pertes consécutives,
+> Réparations post-régression, correction des 10 pertes consécutives,
 > **réactivation de TOUS les 22 agents** du council, création des skills **python-pro** et **data-analysis**.
 > ⚠️ **Ne pas réactiver le pipeline ML avant 500+ trades propres par symbole.**
 
@@ -78,19 +81,28 @@ Indicateurs volume (Phase 7b/8) filtrent les signaux MOM20x3 :
 | RANGING | ADX<18 | 1.5×ATR | 4.0×ATR | 100% |
 | LOW_VOL | ATR%<20% | 1.5×ATR | 4.0×ATR | 100% |
 
-### Trailing stop (ATR-based)
-- profit >1.0×ATR → SL = peak − 0.50×ATR (RANGING)
-- profit >2.0×ATR → SL = peak − 0.35×ATR
-- profit >3.0×ATR → SL = peak − 0.20×ATR
-- profit >5.0×ATR → SL = peak − 0.10×ATR
+### Trailing stop (ATR-based) — Config 30 Juillet 2026 (v2)
+Niveaux par régime (lock = profit en ×ATR pour activer, trail = distance SL/peak en ×ATR) :
+| Régime | 1er lock | N1 trail | N1.5 lock | N1.5 trail | N2 lock | N2 trail | N3 lock | N3 trail | N4 lock | N4 trail |
+|--------|:--------:|:--------:|:---------:|:----------:|:-------:|:--------:|:-------:|:--------:|:-------:|:--------:|
+| RANGING | 1.20×ATR | 0.55×ATR | 1.80×ATR | 0.42×ATR | 2.50×ATR | 0.30×ATR | 4.00×ATR | 0.18×ATR | 5.50×ATR | 0.10×ATR |
+| TREND_UP/DOWN | 1.20×ATR | 0.80×ATR | 1.80×ATR | 0.60×ATR | 2.50×ATR | 0.45×ATR | 4.00×ATR | 0.25×ATR | 6.00×ATR | 0.12×ATR |
+| HIGH_VOL | 1.20×ATR | 0.90×ATR | 1.80×ATR | 0.72×ATR | 2.50×ATR | 0.55×ATR | 4.00×ATR | 0.32×ATR | 6.00×ATR | 0.18×ATR |
+| LOW_VOL | 1.20×ATR | 0.50×ATR | 1.80×ATR | 0.40×ATR | 2.20×ATR | 0.30×ATR | 3.20×ATR | 0.18×ATR | 4.50×ATR | 0.10×ATR |
 
-Niveaux par régime :
-| Régime | 1er lock | N1 | N2 | N3 | N4 |
-|--------|:--------:|:--:|:--:|:--:|:--:|
-| RANGING | 1.0×ATR | 0.50 | 0.35 | 0.20 | 0.10 |
-| TREND_UP/DOWN | 1.0×ATR | 0.80 | 0.50 | 0.30 | 0.15 |
-| HIGH_VOL | 1.0×ATR | 1.00 | 0.70 | 0.50 | 0.25 |
-| LOW_VOL | 1.0×ATR | 0.40 | 0.25 | 0.15 | 0.08 |
+Note : ces valeurs incluent un jitter aléatoire ±10% pour éviter le hunting.
+Exemple : USOIL.cash TREND_UP, ATR=0.91, profit=2.29×ATR (>1.80) → N1.5: SL = peak − 0.60×ATR
+Pour atteindre N2 (2.50×ATR), le trade doit gagner encore ~$0.19.
+
+### Breakeven progressif (30 Juillet 2026)
+Séquence de sécurisation des profits AVANT que le trailing N1 (1.20×ATR) ne s'active :
+```
+profit > 0.50×ATR → SL = entry (breakeven pur, zéro perte garantie)
+profit > 0.80×ATR → SL = entry ± 0.15×ATR (petit gain garanti)
+```
+Fonctionne avec la garde `sl_improves` : ne s'applique QUE si le nouveau SL est meilleur
+que l'actuel (ne réduit jamais la protection déjà en place).
+Appelé dans la séquence : time_stop → **progressive_be** → partial_tp → step_trail → structure
 
 ## Seuils de signal (strategy.py)
 - ADX ≥ 22 (trending): thresh = 2.5×ATR

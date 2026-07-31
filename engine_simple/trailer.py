@@ -123,19 +123,36 @@ class Trailer:
         entry = position.price_open
         if position.sl is None or position.tp is None or position.sl == position.tp:
             return
-        # Only count progress moving TOWARD TP
+        # 🔧 FIX 30 Juillet 2026: Utiliser le PEAK (pas price_current) pour le calcul
+        # du progress. Avant: un pic à 2.29×ATR puis retracement à 1.50×ATR faisait
+        # rater le partial TP car le progress calculé avec price_current était < 40%.
+        # Maintenant: utilise trailing_peaks (ou price_current en fallback si pas
+        # encore initialisé par _check_step_trailing).
+        ticket_str = str(position.ticket)
+        trailing_peak = self.trailing_peaks.get(ticket_str)
         if position.type == 0:  # BUY
-            if position.price_current <= entry:
+            progress_price = max(
+                trailing_peak if trailing_peak is not None else position.price_current, position.price_current
+            )
+            if progress_price <= entry:
                 return
-            progress = (position.price_current - entry) / max(position.tp - entry, 0.00001)
+            progress = (progress_price - entry) / max(position.tp - entry, 0.00001)
         else:  # SELL
-            if position.price_current >= entry:
+            progress_price = min(
+                trailing_peak if trailing_peak is not None else position.price_current, position.price_current
+            )
+            if progress_price >= entry:
                 return
-            progress = (entry - position.price_current) / max(entry - position.tp, 0.00001)
+            progress = (entry - progress_price) / max(entry - position.tp, 0.00001)
         # 🔧 29 Juil 2026: 0.70→0.40 — déclencher partial TP plus tôt pour sécuriser
         # les gains avant que le marché ne retrace. Avec TP=5.0×ATR, partial à 40% = 2.0×ATR.
         # Équité baissait de +$5 à +$1 en 12min car le partial était trop loin (3.5×ATR).
-        if progress < 0.40:
+        # 🔧 31 Juil 2026 (Quant Auditor — R3): 0.40→0.65 — la config 40% fermait la moitié
+        # du trade dès 1.6R (début du move), coupant la course vers le TP. À 65% (=3.25R
+        # sur TP 5×ATR), la moitié close est déjà en zone rentable ET la moitié restante a
+        # une vraie chance d'atteindre le TP 4-6×ATR. Le backtest 158K trades (PF>1.1)
+        # n'avait PAS de partial TP à 40% — cette valeur n'a jamais été validée.
+        if progress < 0.65:
             return
         close_vol = position.volume / 2
         if close_vol < 0.01:
@@ -447,6 +464,65 @@ class Trailer:
                 except AttributeError:
                     pass
                 logger.info(f"  [FORCE BE] {position.symbol} SL {old_sl}→{be_sl} (retracement {position.profit:.2f})")
+
+    # ── Progressive breakeven (avant N1) ──────────────────────────────
+
+    def _check_progressive_be(self, position: Any) -> None:
+        """Progressive breakeven: sécurise un profit minimal AVANT le trailing N1.
+
+        - profit > 1.30×ATR → SL = entry + 0.15×ATR (petit gain garanti)
+        - profit > 1.00×ATR → SL = entry (breakeven pur, zéro perte)
+
+        🔧 FIX 31 Juillet 2026 (Quant Auditor): les seuils précédents (0.80/0.50×ATR)
+        coupaient 62% des gagnants à <0.5R avant même le lock N1 (1.20×ATR).
+        En repoussant à 1.00/1.30×ATR, les trades faibles ont une chance d'atteindre
+        la zone N1 au lieu d'être stoppés net sur le bruit.
+
+        Ne s'applique QUE si le SL actuel est moins bon (sl_improves).
+        Permet de garantir qu'un trade qui atteint +1.00×ATR puis retrace
+        ne repars pas à zéro.
+        """
+        # SOLUTION A: Pas de BE progressif pour les symboles sans trailing
+        if is_trailing_disabled(position.symbol):
+            return
+        atr_val = self._get_atr(position.symbol)
+        if atr_val is None or atr_val <= 0:
+            return
+        entry = position.price_open
+        is_buy = position.type == 0
+
+        if is_buy:
+            profit_atr = (position.price_current - entry) / atr_val
+        else:
+            profit_atr = (entry - position.price_current) / atr_val
+
+        if profit_atr <= 1.00:
+            return
+
+        if profit_atr > 1.30:
+            target_sl = entry + 0.15 * atr_val if is_buy else entry - 0.15 * atr_val
+        else:
+            target_sl = entry
+
+        info = self.mt5.get_symbol_info(position.symbol)
+        if info is None:
+            return
+        target_sl = round(target_sl, info.digits)
+
+        sl_improves = (position.sl is None) or (
+            (is_buy and target_sl > position.sl) or (not is_buy and target_sl < position.sl)
+        )
+        if not sl_improves:
+            return
+
+        old_sl = position.sl
+        r = self.mt5.update_sl(position, target_sl)
+        if r and r.retcode == 10009:
+            try:
+                position.sl = target_sl
+            except AttributeError:
+                pass
+            logger.info(f"  [PROG BE] {position.symbol} SL {old_sl}→{target_sl} (profit_atr={profit_atr:.2f})")
 
     # ── Structure exit ────────────────────────────────────────────────
 

@@ -10,9 +10,9 @@
 #      → CEUX-CI SONT LUIS depuis ce YAML par config_simple.py.
 #      → Un changement ici AFFECTE le comportement du robot.
 #
-# 4 actifs focus : USDJPY, EURGBP, USOIL.cash, EURUSD (BUY-only)
-# Sélectionnés par l'analyse — seuls symboles à PnL positif en live
-# Stratégie MOM20x3 pure, lots fixes 0.01, risque ultra-contrôlé
+# 8 actifs focus : USOIL.cash, EURGBP, US30.cash, SOLUSD, EURUSD, USDJPY, BTCUSD, XAUUSD
+# Sélectionnés par l'analyse — top performers challenge + backtest + diversification
+# Stratégie MOM20x3 pure, lots progressifs WR-based, risque calibré pour gagner
 # ============================================================================
 # Chaque paramètre est justifié par:
 #   - Backtest 12+ ans (158,964 trades, H1/H4/D1)
@@ -31,27 +31,29 @@ robot:
 trading:
   symbols:
     # ═══════════════════════════════════════════════════════════════════════
-    # 4 SYMBOLES — 30 Juillet 2026: PROFESSIONAL SOLUTION
+    # MODE 5 SYMBOLES POSITIFS — 31 Juillet 2026 (Robot Manager)
     # ═══════════════════════════════════════════════════════════════════════
-    # Après analyse du Quant Auditor (30 Juil 2026):
-    #   - WR global 44.52% sur 757 trades → stratégie statistiquement perdante
-    #   - Seuls USOIL.cash (62.1%) et EURGBP (60.5%) ont un WR positif fiable
-    #   - SOLUSD (52.9%) et US30.cash (52.9%) sont borderline
-    #   - USOIL.cash: PF 3.66, +$18.25 (challenge) — SEUL VRAI EDGE
-    # ═══════════════════════════════════════════════════════════════════════
+    # AUDIT PERFORMANCE 31 Juil 2026: PF 0.54 global, expectancy -$5.25/trade.
+    # Seuls les symboles avec PnL positif live sont gardés:
+    #   USDJPY +$62 (WR 56%) | USOIL +$31 (WR 54%) | EURGBP +$20 (WR 60%)
+    #   EURUSD +$19 (WR 39%) | NZDUSD +$4 (WR 34%)
+    # XAUUSD DÉSACTIVÉ (-$2,139) | XAGUSD désactivé (-$1,484) | NATGAS bloqué
+    # Backup: config/default.yaml.bak_20260731_133154
+    - USDJPY
     - USOIL.cash
     - EURGBP
-    - US30.cash
-    - SOLUSD
+    - EURUSD
+    - NZDUSD
 
-  # 🔧 4 symboles: capacités réduites (30 Juil 2026 — PROFESSIONAL SOLUTION)
-  max_positions: 6              # 🔧 30 Juil: ↓ 18→6 (4 symboles × 1.5 positions)
-  max_positions_per_symbol: 1   # 🔧 30 Juil: ↓ 2→1 (max 1 par symbole — focus qualité)
-  max_trades_per_day: 12        # 🔧 30 Juil: ↓ 50→12 (réduction massive)
-  max_signals_per_cycle: 4      # 🔧 30 Juil: ↓ 12→4 (1 par symbole max)
-  max_orders_per_minute: 2      # 🔧 30 Juil: ↓ 5→2 (ralentir le rythme)
+  # 🔧 MODE 5 SYMBOLES (31 Juil 2026): capacités réduites en conséquence
+  max_positions: 5              # 5 symboles × 1 position max
+  max_positions_per_symbol: 2   # max 2 par symbole (1 BUY + 1 SELL)
+  max_trades_per_day: 40        # 5 symboles × ~8 trades/jour max
+  max_signals_per_cycle: 8      # 5 symboles
+  max_orders_per_minute: 8      # débit suffisant pour 5 symboles
   lot_size: 0.01                # lot de démarrage minimal
-  min_trade_interval_sec: 600   # 🔧 30 Juil: ↑ 300→600 (10 min minimum entre trades)
+  global_max_lot: 0.10          # plafond absolu (5×0.10 = 0.5 lots max, très safe pour 200K)
+  min_trade_interval_sec: 120   # 2 minutes minimum entre trades
   batch_interval_sec: 60        # batch toutes les 60s
   trading_start_hour: 0
   trading_end_hour: 24          # 24/7 — sans arrêt
@@ -73,27 +75,26 @@ risk:
   min_trading_days: 10           # 10 jours minimum FTMO
   max_trading_days: 0            # pas de limite max
 
-  # --- Risque par trade (PROFESSIONAL SOLUTION — 30 Juillet 2026) ---
-  per_trade_pct: 0.002           # 🔧 30 Juil: ↓ 0.008→0.002 (0.20%) — WR 35%, expectancy négative
+  # --- Risque par trade (RECALIBRATION — 31 Juillet 2026) ---
+  per_trade_pct: 0.005           # 🔧 31 Juil: ↑ 0.002→0.005 (0.50%) — risque calibré pour gagner
   short_mult: 1.0                # même risque long/short
-  max_risk_amount: 500.0         # 🔧 30 Juil: ↓ $2000→$500 (suit le risk_per_trade réduit)
+  max_risk_amount: 250.0         # 🔧 31 Juil (Quant Auditor R4): $2500→$250 hard-cap/trade. XAU SL≈$54@1.5ATR → lot ≤0.05 max (6 trades 0.20 = -$2,272 = 55% de la perte totale)
 
-  # --- Qualité (ultra-conservateur 2 Juillet 2026) ---
-  min_rr_ratio: 2.0              # 🔧 Restauration Juin 2026: ↑ 1.8→2.0 (qualité renforcée, comme au pic)
+  # --- Qualité ---
+  min_rr_ratio: 2.0              # conservé (TP 6.0/SL 1.5 = RR 4.0 naturel)
   atr_multiplier: 1.5            # multiplicateur ATR pour SL
 
-  # --- Cooldown (PROFESSIONAL SOLUTION 30 Juillet 2026) ---
-  cooldown_minutes: 30          # 🔧 30 Juil: ↑ 15→30min (plus de temps pour analyser après perte)
-  auto_pause_losses: 2           # 🔧 30 Juil: ↓ 3→2 (pause dès la 2ème perte consécutive)
+  # --- Cooldown (RECALIBRATION 31 Juillet 2026) ---
+  cooldown_minutes: 15           # 🔧 31 Juil: ↓ 30→15 (pas besoin d'attendre 30min)
+  auto_pause_losses: 5           # 🔧 31 Juil: ↑ 2→5 (STOP→réduction progressive du lot avant pause)
 
   # --- Volatilité ---
   max_spread_points: 120         # spread max global (overridden par symbole)
 
-  # --- Circuit breaker (PROFESSIONAL SOLUTION 30 Juillet 2026) ---
-  circuit_breaker_dd_pct: 0.04   # 🔧 30 Juil: ↓ 0.06→0.04 (4% DD → arrêt, marge pour FTMO 10%)
+  # --- Circuit breaker (RECALIBRATION 31 Juillet 2026) ---
+  circuit_breaker_dd_pct: 0.06   # 🔧 31 Juil: ↑ 0.04→0.06 (6% DD, marge pour FTMO 10%)
 
   # --- Volume max global ---
-  global_max_lot: 0.05           # 🔧 30 Juil: ↓ 0.10→0.05 — lots plus petits, focus qualité
 
   # --- Recalibration ---
   recalibration_frequency: 50    # recalib ML tous les 50 trades
@@ -879,7 +880,7 @@ symbol_limits:
     max_lot: 0.01
     min_lot: 0.01
     risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
-    max_spread_points: 60
+    max_spread_points: 400      # 🐛 FIX 31 Juillet 2026: 60→400 (spread réel p50=139pts, p99=379pts — la limite à 60 bloquait TOUS les signaux 0.88-0.95)
     adx_thresh: 22
     allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
     allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
@@ -910,7 +911,8 @@ symbol_limits:
     max_lot: 0.01
     min_lot: 0.01
     risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 17 Juil 2026 — pas de trades live, risque inconnu
-    max_spread_points: 60
+    max_spread_points: 600      # 🐛 FIX 31 Juillet 2026: 60→600 (spread réel p50=125pts, p99=561pts — la limite à 60 bloquait tous les signaux)
+    max_spread_atr_ratio: 0.25  # 🐛 FIX 31 Juillet 2026: 0.15→0.25 (ATR=27.6, spread p99=5.61 → ratio 20.3% dépassait le 15% défaut)
     adx_thresh: 22
     allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
     allow_shorts: true            # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades

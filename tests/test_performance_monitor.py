@@ -2,6 +2,7 @@
 
 Covers: initialisation, record_trade, rolling windows, alerts,
 challenge tracking, report generation, recommendations, singleton."""
+
 import json
 import os
 import sys
@@ -30,6 +31,7 @@ FAKE_TODAY = "2026-06-07"
 
 # ── Fixture ───────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def perf_monitor(request):
     """Fixture: PerformanceMonitor with temp files + fixed datetime.
@@ -37,6 +39,7 @@ def perf_monitor(request):
     tmp = Path(request.config.cache.mkdir("perf_mon_tmp"))
     # Use a unique subdir per test to avoid collisions
     import uuid
+
     tmp = tmp / str(uuid.uuid4())
     tmp.mkdir(parents=True, exist_ok=True)
     hist_file = tmp / "performance_history.json"
@@ -73,8 +76,8 @@ def rpt_file(perf_monitor):
 
 # ── Helper ─────────────────────────────────────────────────────────
 
-def _record_trades(pm, wins, losses, profit_win=10.0, profit_loss=-10.0,
-                   symbol="USDCAD", regime="RANGING"):
+
+def _record_trades(pm, wins, losses, profit_win=10.0, profit_loss=-10.0, symbol="USDCAD", regime="RANGING"):
     """Record a batch of wins and losses."""
     for _ in range(wins):
         pm.record_trade(symbol, profit_win, regime, "BUY")
@@ -85,6 +88,7 @@ def _record_trades(pm, wins, losses, profit_win=10.0, profit_loss=-10.0,
 # ══════════════════════════════════════════════════════════════════════
 # 1. INITIALISATION
 # ══════════════════════════════════════════════════════════════════════
+
 
 class TestInit:
     def test_no_history_file_creates_default(self, perf_monitor):
@@ -112,9 +116,30 @@ class TestInit:
     def test_contaminated_trades_resets(self):
         """Trades without timestamp → contamination → reset."""
         data = {
-            "daily": {"2026-06-07": {"trades": 1, "wins": 1, "losses": 0, "pnl": 10.0, "gross_profit": 10.0, "gross_loss": 0.0, "symbols": {}}},
+            "daily": {
+                "2026-06-07": {
+                    "trades": 1,
+                    "wins": 1,
+                    "losses": 0,
+                    "pnl": 10.0,
+                    "gross_profit": 10.0,
+                    "gross_loss": 0.0,
+                    "symbols": {},
+                }
+            },
             "rolling": {},
-            "symbols": {"USDCAD": {"trades": 1, "wins": 1, "losses": 0, "pnl": 10.0, "gross_profit": 10.0, "gross_loss": 0.0, "regime_stats": {}, "direction_stats": {}}},
+            "symbols": {
+                "USDCAD": {
+                    "trades": 1,
+                    "wins": 1,
+                    "losses": 0,
+                    "pnl": 10.0,
+                    "gross_profit": 10.0,
+                    "gross_loss": 0.0,
+                    "regime_stats": {},
+                    "direction_stats": {},
+                }
+            },
             "alerts": [],
             "challenge": {},
             "recent_trades": [
@@ -131,9 +156,33 @@ class TestInit:
 
     def test_valid_history_loaded(self):
         data = {
-            "daily": {"2026-06-06": {"trades": 5, "wins": 3, "losses": 2, "pnl": 50.0, "gross_profit": 100.0, "gross_loss": 50.0, "symbols": {}}},
+            "daily": {
+                "2026-06-06": {
+                    "trades": 5,
+                    "wins": 3,
+                    "losses": 2,
+                    "pnl": 50.0,
+                    "gross_profit": 100.0,
+                    "gross_loss": 50.0,
+                    "symbols": {},
+                }
+            },
             "rolling": {"last_20": {"trades": 5, "wins": 3, "losses": 2, "pnl": 50.0, "wr": 60.0, "avg": 10.0}},
-            "symbols": {"USDCAD": {"trades": 5, "wins": 3, "losses": 2, "pnl": 50.0, "gross_profit": 100.0, "gross_loss": 50.0, "regime_stats": {}, "direction_stats": {"BUY": {"wins": 0, "losses": 0, "pnl": 0.0}, "SELL": {"wins": 0, "losses": 0, "pnl": 0.0}}}},
+            "symbols": {
+                "USDCAD": {
+                    "trades": 5,
+                    "wins": 3,
+                    "losses": 2,
+                    "pnl": 50.0,
+                    "gross_profit": 100.0,
+                    "gross_loss": 50.0,
+                    "regime_stats": {},
+                    "direction_stats": {
+                        "BUY": {"wins": 0, "losses": 0, "pnl": 0.0},
+                        "SELL": {"wins": 0, "losses": 0, "pnl": 0.0},
+                    },
+                }
+            },
             "alerts": [],
             "challenge": {"start_balance": 100000},
             "recent_trades": [{"profit": 10, "symbol": "USDCAD", "ts": "2026-06-06T12:00:00"}],
@@ -170,6 +219,7 @@ class TestInit:
 # 2. RECORD TRADE
 # ══════════════════════════════════════════════════════════════════════
 
+
 class TestRecordTrade:
     def test_record_win(self, perf_monitor):
         pm, _, _ = perf_monitor
@@ -199,7 +249,7 @@ class TestRecordTrade:
         pm.record_trade("USDCAD", 0.0, "RANGING", "BUY")
         d = pm.history["daily"][FAKE_TODAY]
         assert d["trades"] == 1
-        assert d["wins"] == 0   # 0 is not > 0
+        assert d["wins"] == 0  # 0 is not > 0
         assert d["losses"] == 0  # 0 is not < 0 either
         assert d["pnl"] == 0.0
 
@@ -310,6 +360,7 @@ class TestRecordTrade:
 # 3. ROLLING WINDOWS
 # ══════════════════════════════════════════════════════════════════════
 
+
 class TestRollingWindows:
     def test_all_windows_present_with_enough_trades(self, perf_monitor):
         pm, _, _ = perf_monitor
@@ -358,6 +409,7 @@ class TestRollingWindows:
 # 4. CHALLENGE
 # ══════════════════════════════════════════════════════════════════════
 
+
 class TestChallenge:
     def test_record_challenge_updates_fields(self, perf_monitor):
         pm, _, _ = perf_monitor
@@ -389,18 +441,21 @@ class TestChallenge:
 
     def test_record_challenge_handles_string_amounts(self, perf_monitor):
         pm, _, _ = perf_monitor
-        pm.record_challenge({
-            "profit_progress": "8.5%",
-            "profit_remaining": "$18,500",
-            "balance": 195000.0,
-            "status": "ACTIVE",
-        })
+        pm.record_challenge(
+            {
+                "profit_progress": "8.5%",
+                "profit_remaining": "$18,500",
+                "balance": 195000.0,
+                "status": "ACTIVE",
+            }
+        )
         assert pm.history["challenge"]["profit_progress_pct"] == 8.5
 
 
 # ══════════════════════════════════════════════════════════════════════
 # 5. ALERTS
 # ══════════════════════════════════════════════════════════════════════
+
 
 class TestAlerts:
     def test_no_alerts_when_fresh(self, perf_monitor):
@@ -480,6 +535,7 @@ class TestAlerts:
 # 6. REPORT GENERATION
 # ══════════════════════════════════════════════════════════════════════
 
+
 class TestReport:
     def test_generate_report_structure(self, perf_monitor):
         pm, _, _ = perf_monitor
@@ -534,6 +590,7 @@ class TestReport:
 # 7. SUMMARY TEXT
 # ══════════════════════════════════════════════════════════════════════
 
+
 class TestSummaryText:
     def test_summary_text_returns_string(self, perf_monitor):
         pm, _, _ = perf_monitor
@@ -552,6 +609,7 @@ class TestSummaryText:
 # ══════════════════════════════════════════════════════════════════════
 # 8. GET DAILY PNL
 # ══════════════════════════════════════════════════════════════════════
+
 
 class TestGetDailyPnl:
     def test_get_today_pnl(self, perf_monitor):
@@ -583,6 +641,7 @@ class TestGetDailyPnl:
 # 9. TREND ANALYSIS
 # ══════════════════════════════════════════════════════════════════════
 
+
 class TestTrendAnalysis:
     def test_trend_stable_when_insufficient_data(self, perf_monitor):
         pm, _, _ = perf_monitor
@@ -611,6 +670,7 @@ class TestTrendAnalysis:
 # ══════════════════════════════════════════════════════════════════════
 # 10. RECOMMENDATIONS
 # ══════════════════════════════════════════════════════════════════════
+
 
 class TestRecommendations:
     def test_high_priority_for_symbol_pf_below_0_8(self, perf_monitor):
@@ -655,8 +715,7 @@ class TestRecommendations:
                 mock_dt.utcnow.return_value = d
                 pm.record_trade("USDCAD", 100.0, "RANGING", "BUY")
         report = pm.generate_report()
-        pace_recs = [r for r in report["recommendations"]
-                     if "Rythme" in r["action"] or "augmenter" in r["action"]]
+        pace_recs = [r for r in report["recommendations"] if "Rythme" in r["action"] or "augmenter" in r["action"]]
         assert len(pace_recs) >= 1
 
 
@@ -664,16 +723,20 @@ class TestRecommendations:
 # 11. MODULE-LEVEL FUNCTIONS (SINGLETON)
 # ══════════════════════════════════════════════════════════════════════
 
+
 class TestSingleton:
     def _reset_singleton(self):
         import engine_simple.performance_monitor as pm_mod
+
         pm_mod._monitor = None
 
     def test_get_monitor_returns_same_instance(self):
         self._reset_singleton()
-        with tempfile_for_test() as tmp, \
-             patch("engine_simple.performance_monitor.HISTORY_FILE", tmp / "perf.json"), \
-             patch("engine_simple.performance_monitor.REPORT_FILE", tmp / "rpt.json"):
+        with (
+            tempfile_for_test() as tmp,
+            patch("engine_simple.performance_monitor.HISTORY_FILE", tmp / "perf.json"),
+            patch("engine_simple.performance_monitor.REPORT_FILE", tmp / "rpt.json"),
+        ):
             m1 = get_monitor()
             m2 = get_monitor()
             assert m1 is m2
@@ -681,9 +744,11 @@ class TestSingleton:
 
     def test_record_trade_function(self):
         self._reset_singleton()
-        with tempfile_for_test() as tmp, \
-             patch("engine_simple.performance_monitor.HISTORY_FILE", tmp / "perf.json"), \
-             patch("engine_simple.performance_monitor.REPORT_FILE", tmp / "rpt.json"):
+        with (
+            tempfile_for_test() as tmp,
+            patch("engine_simple.performance_monitor.HISTORY_FILE", tmp / "perf.json"),
+            patch("engine_simple.performance_monitor.REPORT_FILE", tmp / "rpt.json"),
+        ):
             record_trade("EURUSD", 100.0, "TREND_DOWN", "SELL")
             pm = get_monitor()
             assert pm.history["symbols"]["EURUSD"]["pnl"] == 100.0
@@ -691,14 +756,18 @@ class TestSingleton:
 
     def test_update_challenge_function(self):
         self._reset_singleton()
-        with tempfile_for_test() as tmp, \
-             patch("engine_simple.performance_monitor.HISTORY_FILE", tmp / "perf.json"), \
-             patch("engine_simple.performance_monitor.REPORT_FILE", tmp / "rpt.json"):
-            update_challenge({
-                "balance": 200000.0,
-                "status": "ACTIVE",
-                "profit_progress": "5%",
-            })
+        with (
+            tempfile_for_test() as tmp,
+            patch("engine_simple.performance_monitor.HISTORY_FILE", tmp / "perf.json"),
+            patch("engine_simple.performance_monitor.REPORT_FILE", tmp / "rpt.json"),
+        ):
+            update_challenge(
+                {
+                    "balance": 200000.0,
+                    "status": "ACTIVE",
+                    "profit_progress": "5%",
+                }
+            )
             pm = get_monitor()
             assert pm.history["challenge"]["balance"] == 200000.0
         self._reset_singleton()
@@ -708,21 +777,22 @@ class TestSingleton:
 # 12. EDGE CASES
 # ══════════════════════════════════════════════════════════════════════
 
+
 class TestEdgeCases:
     def test_record_trade_function_survives_exception(self):
         """record_trade wraps in try/except — should not crash."""
         import engine_simple.performance_monitor as pm_mod
+
         pm_mod._monitor = None
-        with patch("engine_simple.performance_monitor.get_monitor",
-                   side_effect=ValueError("test")):
+        with patch("engine_simple.performance_monitor.get_monitor", side_effect=ValueError("test")):
             record_trade("USDCAD", 100.0, "RANGING", "BUY")  # should not raise
         pm_mod._monitor = None
 
     def test_update_challenge_function_survives_exception(self):
         import engine_simple.performance_monitor as pm_mod
+
         pm_mod._monitor = None
-        with patch("engine_simple.performance_monitor.get_monitor",
-                   side_effect=ValueError("test")):
+        with patch("engine_simple.performance_monitor.get_monitor", side_effect=ValueError("test")):
             update_challenge({"balance": 100.0})  # should not raise
         pm_mod._monitor = None
 
@@ -760,9 +830,14 @@ class TestEdgeCases:
     def test_symbol_summary_skips_zero_trade_symbols(self, perf_monitor):
         pm, _, _ = perf_monitor
         pm.history["symbols"]["UNUSED"] = {
-            "trades": 0, "wins": 0, "losses": 0, "pnl": 0.0,
-            "gross_profit": 0.0, "gross_loss": 0.0,
-            "regime_stats": {}, "direction_stats": {
+            "trades": 0,
+            "wins": 0,
+            "losses": 0,
+            "pnl": 0.0,
+            "gross_profit": 0.0,
+            "gross_loss": 0.0,
+            "regime_stats": {},
+            "direction_stats": {
                 "BUY": {"wins": 0, "losses": 0, "pnl": 0.0},
                 "SELL": {"wins": 0, "losses": 0, "pnl": 0.0},
             },
@@ -782,6 +857,7 @@ class TestEdgeCases:
 # ══════════════════════════════════════════════════════════════════════
 # 13. SAVE / LOAD INTEGRITY
 # ══════════════════════════════════════════════════════════════════════
+
 
 class TestPersistence:
     def test_save_and_reload_preserves_data(self):
@@ -823,6 +899,7 @@ class TestPersistence:
 # 14. CHALLENGE SUMMARY
 # ══════════════════════════════════════════════════════════════════════
 
+
 class TestChallengeSummary:
     def test_challenge_summary_on_track(self, perf_monitor):
         pm, _, _ = perf_monitor
@@ -838,6 +915,26 @@ class TestChallengeSummary:
                 mock_dt.utcnow.return_value = d
                 pm.record_trade("USDCAD", 200.0, "RANGING", "BUY")
         s = pm._challenge_summary()
+        # 🐛 FIX 31 Juillet 2026: $200/j × 25j = $5K < $18K restants (besoin $720/j)
+        # → PAS on_track. L'ancien test codait le bug (on_track=true).
+        assert s["on_track"] is False
+        assert s["estimated_days_to_target"] == "90"
+
+    def test_challenge_summary_on_track_fast_pace(self, perf_monitor):
+        pm, _, _ = perf_monitor
+        pm.history["challenge"]["trading_days"] = 5
+        pm.history["challenge"]["profit_progress_pct"] = 10.0
+        pm.history["challenge"]["status"] = "ACTIVE"
+        pm.history["challenge"]["profit_remaining"] = 18000.0
+        pm.history["challenge"]["days_remaining"] = 25
+        with patch("engine_simple.performance_monitor.datetime") as mock_dt:
+            mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+            for i in range(5):
+                d = datetime(2026, 6, 2) + timedelta(days=i)
+                mock_dt.utcnow.return_value = d
+                pm.record_trade("USDCAD", 1000.0, "RANGING", "BUY")
+        s = pm._challenge_summary()
+        # $1000/j × 25j = $25K > $18K → on_track = True
         assert s["on_track"] is True
 
     def test_challenge_summary_off_track(self, perf_monitor):
@@ -870,6 +967,7 @@ class TestChallengeSummary:
 # 15. ALERTS — RECOMMENDATIONS CROSS-CHECK
 # ══════════════════════════════════════════════════════════════════════
 
+
 class TestAlertRecommendationCross:
     def test_declining_trend_generates_recommendation(self, perf_monitor):
         pm, _, _ = perf_monitor
@@ -878,8 +976,7 @@ class TestAlertRecommendationCross:
         _record_trades(pm, wins=15, losses=15, profit_win=1.0, profit_loss=-1.0)
         _record_trades(pm, wins=4, losses=16, profit_win=1.0, profit_loss=-1.0)
         report = pm.generate_report()
-        trend_recs = [r for r in report["recommendations"]
-                      if "WR en baisse" in r["action"] or "baisse" in r["action"]]
+        trend_recs = [r for r in report["recommendations"] if "WR en baisse" in r["action"] or "baisse" in r["action"]]
         assert len(trend_recs) >= 1
 
     def test_no_recommendations_when_performing_well(self, perf_monitor):

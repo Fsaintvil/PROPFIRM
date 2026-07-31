@@ -1,4 +1,7 @@
 .env
+*.env.bak*
+config/*.bak_*
+_diag.ps1
 logs/
 runtime/
 historical_data/

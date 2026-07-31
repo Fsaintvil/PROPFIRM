@@ -27,14 +27,22 @@ profit > 3.0×ATR → SL = peak - 0.20×ATR
 profit > 5.0×ATR → SL = peak - 0.10×ATR
 ```
 
-### 2. Régimes → Niveaux trailing
-| Régime     | 1er lock | N1    | N2    | N3    | N4    |
-|------------|----------|-------|-------|-------|-------|
-| RANGING    | 1.0×ATR  | 0.50  | 0.35  | 0.20  | 0.10  |
-| TREND_UP   | 1.0×ATR  | 0.80  | 0.50  | 0.30  | 0.15  |
-| TREND_DOWN | 1.0×ATR  | 0.80  | 0.50  | 0.30  | 0.15  |
-| HIGH_VOL   | 1.0×ATR  | 1.00  | 0.70  | 0.50  | 0.25  |
-| LOW_VOL    | 1.0×ATR  | 0.40  | 0.25  | 0.15  | 0.08  |
+### 2. Régimes → Niveaux trailing (Config 30 Juillet 2026 v2 — avec N1.5)
+Format : (lock_en_×ATR, trail_distance_en_×ATR)
+| Régime     | N1 lock | N1 trail | N1.5 lock | N1.5 trail | N2 lock | N2 trail | N3 lock | N3 trail | N4 lock | N4 trail |
+|------------|:-------:|:--------:|:---------:|:----------:|:-------:|:--------:|:-------:|:--------:|:-------:|:--------:|
+| RANGING    | 1.20    | 0.55     | 1.80      | 0.42       | 2.50    | 0.30     | 4.00    | 0.18     | 5.50    | 0.10     |
+| TREND_UP   | 1.20    | 0.80     | 1.80      | 0.60       | 2.50    | 0.45     | 4.00    | 0.25     | 6.00    | 0.12     |
+| TREND_DOWN | 1.20    | 0.80     | 1.80      | 0.60       | 2.50    | 0.45     | 4.00    | 0.25     | 6.00    | 0.12     |
+| HIGH_VOL   | 1.20    | 0.90     | 1.80      | 0.72       | 2.50    | 0.55     | 4.00    | 0.32     | 6.00    | 0.18     |
+| LOW_VOL    | 1.20    | 0.50     | 1.80      | 0.40       | 2.20    | 0.30     | 3.20    | 0.18     | 4.50    | 0.10     |
+
+### 2b. Breakeven progressif (30 Juillet 2026)
+Sécurisation AVANT le trailing N1 (1.20×ATR) :
+```
+profit > 0.50×ATR → SL = entry (breakeven pur, zéro perte garantie)
+profit > 0.80×ATR → SL = entry ± 0.15×ATR (petit gain garanti)
+```
 
 ### 3. Règles de risque
 | Règle | Valeur | Code |

@@ -237,30 +237,30 @@ class TestCanOpenNormal:
     def test_correlation_group_total_limit(self):
         pc = PortfolioController()
         # Remplir le groupe FOREX_MAJORS avec MAX_TRADES_PER_GROUP positions
-        # Alterner les directions (BUY/SELL/BUY/SELL) pour éviter de déclencher
-        # la limite par direction (MAX_POSITIONS_PER_DIRECTION=4) avant la limite groupe
+        # Alterner les directions (BUY/SELL/BUY) pour éviter de déclencher
+        # la limite par direction (MAX_POSITIONS_PER_DIRECTION=2 en mode 5 symboles)
         majors = ["EURUSD", "GBPUSD", "USDCHF", "USDCAD"]
-        dirs = ["BUY", "SELL", "BUY", "SELL"]
+        dirs = ["BUY", "SELL", "BUY"]
         group_positions = [
             MAKE_POSITION(sym, d, 0.1, 1.10)
             for sym, d in zip(majors[:MAX_TRADES_PER_GROUP], dirs[:MAX_TRADES_PER_GROUP])
         ]
-        # Essayer d'ouvrir une 5e dans le même groupe
-        can, reason = pc.can_open_position("AUDUSD", "BUY", group_positions)
+        # Essayer d'ouvrir une 4e dans le même groupe (SELL: direction libre)
+        can, reason = pc.can_open_position("AUDUSD", "SELL", group_positions)
         assert can is False
         assert "Groupe FOREX_MAJORS" in reason
 
     def test_correlation_group_direction_limit(self):
         pc = PortfolioController()
-        # 3 positions BUY dans FOREX_MAJORS
-        # Avec MAX_POSITIONS_TOTAL=6, MAX_POSITIONS_PER_DIRECTION=3,
-        # 3 BUY positions remplissent la limite de direction globale
-        majors = ["EURUSD", "GBPUSD", "USDCHF"]
+        # 2 positions BUY dans FOREX_MAJORS → une 3e BUY est bloquée.
+        # En mode 5 symboles (31 Juil 2026), MAX_POSITIONS_PER_DIRECTION=2
+        # et MAX_TRADES_PER_DIRECTION_IN_GROUP=2 coïncident: la limite
+        # globale par direction prime (vérifiée AVANT la limite groupe).
+        majors = ["EURUSD", "GBPUSD"]
         group_positions = [MAKE_POSITION(sym, "BUY", 0.1, 1.10) for sym in majors]
-        # Essayer une 4e BUY → bloqué par MAX_POSITIONS_PER_DIRECTION
+        # Essayer une 3e BUY dans FOREX_MAJORS → bloqué par direction (2 max)
         can, reason = pc.can_open_position("AUDUSD", "BUY", group_positions)
         assert can is False
-        # La limite direction (3) est atteinte avant la corrélation
         assert "Max positions BUY" in reason
 
     def test_allow_opposite_direction_in_group(self):
@@ -308,10 +308,15 @@ class TestCanOpenNormal:
         assert can is True
 
     def test_ok_within_limits(self):
-        """Plein de positions mais encore de la place."""
+        """Plein de positions mais encore de la place (mode 5 symboles)."""
         pc = PortfolioController()
-        # MAX_POSITIONS_TOTAL=6, créer 4 positions → place pour 2 de plus
-        positions = [MAKE_POSITION(f"SYM{i}", "BUY" if i % 2 == 0 else "SELL", 0.1, 1.0) for i in range(4)]
+        # MAX_POSITIONS_TOTAL=5, MAX_POSITIONS_PER_DIRECTION=2 (31 Juil 2026)
+        # Créer 3 positions dont 1 seule BUY → place pour un BUY de plus
+        positions = [
+            MAKE_POSITION("SYM0", "BUY", 0.1, 1.0),
+            MAKE_POSITION("SYM1", "SELL", 0.1, 1.0),
+            MAKE_POSITION("SYM2", "SELL", 0.1, 1.0),
+        ]
         can, reason = pc.can_open_position("EURUSD", "BUY", positions)
         assert can is True
 

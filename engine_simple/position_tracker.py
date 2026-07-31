@@ -523,6 +523,15 @@ class PositionTracker:
             # 🔧 FIX 29 Juillet 2026: DEAL type ≠ position direction
             # DEAL_TYPE_BUY(0)=rachat de SELL → réel=SELL; DEAL_TYPE_SELL(1)=vente de BUY → réel=BUY
             pos_dir = "BUY" if closing.type == 1 else "SELL"
+            # 🐛 FIX 31 Juillet 2026: Calculer la VRAIE raison de sortie au lieu de "closed" codé en dur.
+            # La raison est essentielle pour auditer SL/TP/trailing/BE/time_stop (optimisation aveugle sinon).
+            exit_reason = self._extract_exit_reason(closing)
+            # durée réelle du trade: opened_at (epoch) → timestamp de fermeture MT5
+            try:
+                opened_ts = float(meta.get("opened_at", 0) or 0)
+                duration_min = int(max(0, (deal_ts - opened_ts) / 60.0)) if opened_ts > 0 else 0
+            except (TypeError, ValueError):
+                duration_min = 0
             try:
                 self.journal.record(
                     dict(
@@ -536,7 +545,8 @@ class PositionTracker:
                         profit=closing.profit,
                         time_open=str(datetime.fromtimestamp(meta.get("opened_at", closing.time))),
                         time_close=str(datetime.utcnow()),
-                        reason="closed",
+                        reason=exit_reason,
+                        duration_min=duration_min,
                         # 🐛 FIX 4 Juillet 2026: ATR multiples pour analyse post-trade
                         sl_atr=meta.get("sl_atr", ""),
                         tp_atr=meta.get("tp_atr", ""),
@@ -594,6 +604,57 @@ class PositionTracker:
                     pred_outcomes[mname] = (action == pos_dir) if pos_correct else (action != pos_dir)
                 self.adaptive.record_meta_result(closing.symbol, regime, pred_outcomes)
         self._previous_tickets = current
+
+    # MT5 DEAL_REASON codes (définition Python MT5)
+    _DEAL_REASON = {
+        0: "client",  # DEAL_REASON_CLIENT
+        1: "expert",  # DEAL_REASON_EXPERT (ordre envoyé par le robot)
+        2: "dealer",  # DEAL_REASON_DEALER
+        3: "sl",  # DEAL_REASON_SL
+        4: "tp",  # DEAL_REASON_TP
+        5: "stop_out",  # DEAL_REASON_SO
+        6: "rollover",  # DEAL_REASON_ROLLOVER
+        7: "external",  # DEAL_REASON_EXTERNAL
+    }
+
+    def _extract_exit_reason(self, closing: Any) -> str:
+        """🐛 FIX 31 Juillet 2026: Détermine la VRAIE raison de sortie d'un trade fermé.
+
+        Sources, par ordre de priorité:
+        1. Commentaire MT5 du deal (le robot y met "TIME_STOP", "KILL_SWITCH", etc.)
+        2. Code DEAL_REASON (3=SL, 4=TP, 5=stop out, ...)
+        3. Fallback "closed" (raison inconnue)
+
+        Avant ce fix, `reason` était TOUJOURS "closed" et duration_h=0,
+        rendant impossible l'audit SL/TP/trailing/BE/time_stop sur trades_log.csv.
+        """
+        # 1. Commentaire MT5 (positions fermées PAR le robot: time_stop, kill_switch, structure...)
+        comment = getattr(closing, "comment", None)
+        if comment:
+            c = str(comment).upper()
+            if "TIME_STOP" in c:
+                return "time_stop"
+            if "KILL" in c or "EMERGENCY" in c:
+                return "kill_switch"
+            if "STRUCT" in c:
+                return "structure"
+            if "SL" in c:
+                return "sl"
+            if "TP" in c:
+                return "tp"
+            if "PARTIAL" in c:
+                return "partial_tp"
+            # Commentaire standard MT5 pour ordre du robot — on continue vers reason code
+        # 2. Code DEAL_REASON (positions fermées par le serveur: SL/TP/stop out)
+        reason_code = getattr(closing, "reason", None)
+        try:
+            code = int(reason_code)
+        except (TypeError, ValueError):
+            code = -1
+        if code in self._DEAL_REASON:
+            return self._DEAL_REASON[code]
+        # 3. Fallback
+        return "closed"
 
     def add_meta(self, ticket: int, data: dict[str, Any]) -> None:
         if ticket in self._position_meta:

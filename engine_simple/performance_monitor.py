@@ -645,9 +645,18 @@ class PerformanceMonitor:
             target_remaining = float(target_remaining) if target_remaining else 20000
 
         estimated_days = "∞"
+        est_days_float = None
         if avg_daily_pnl > 0:
             est = target_remaining / avg_daily_pnl
             estimated_days = f"{est:.0f}" if est < 365 else ">1 an"
+            est_days_float = est
+
+        # 🐛 FIX 31 Juillet 2026: `on_track` était déconnecté de la réalité —
+        # il affichait true même quand estimated_days_to_target = ">1 an"
+        # (car `pp >= 0 or td <= 5` était presque toujours vrai).
+        # Désormais: on_track uniquement si on peut atteindre le target
+        # dans le temps restant du challenge.
+        on_track = est_days_float is not None and est_days_float <= max(dr, 0)
 
         return {
             "status": c.get("status", "UNKNOWN"),
@@ -658,7 +667,7 @@ class PerformanceMonitor:
             "drawdown": dd,
             "avg_daily_pnl": round(avg_daily_pnl, 2),
             "estimated_days_to_target": estimated_days,
-            "on_track": avg_daily_pnl > 0 and (pp >= 0 or td <= 5),
+            "on_track": on_track,
         }
 
     def _rolling_summary(self) -> dict[str, Any]:

@@ -84,11 +84,20 @@ TRAILING_BY_REGIME = {
     # Avec WR 35% et Partial TP à 40%, il faut verrouiller les gains PLUS tôt.
     # Premier lock 1.20×ATR au lieu de 1.50×ATR — protège +33% de gain dès le départ.
     # Niveaux plus agressifs: trail_distance réduite pour tous les paliers.
-    "TREND_UP": [(1.20, 0.80), (2.50, 0.45), (4.00, 0.25), (6.00, 0.12)],
-    "TREND_DOWN": [(1.20, 0.80), (2.50, 0.45), (4.00, 0.25), (6.00, 0.12)],
-    "RANGING": [(1.20, 0.55), (2.50, 0.30), (4.00, 0.18), (5.50, 0.10)],
-    "HIGH_VOL": [(1.20, 0.90), (2.50, 0.55), (4.00, 0.32), (6.00, 0.18)],
-    "LOW_VOL": [(1.20, 0.50), (2.20, 0.30), (3.20, 0.18), (4.50, 0.10)],
+    # 🔧 30 Juil 2026 (v2): Ajout palier N1.5 à 1.80×ATR — le gap N1(1.20)→N2(2.50)
+    # de 1.30×ATR laissait le même trail lâche (0.80×ATR) trop longtemps. N1.5 resserre
+    # à 0.60×ATR dès 1.80×ATR de profit, protégeant 33% de gain supplémentaire.
+    # 🔧 31 Juil 2026 (Quant Auditor — R2): TRAILING RELÂCHÉ — revert vers la config
+    # du 21-22 Juillet validée en backtest. La config serrée du 30/07 a été calibrée
+    # sur WR 35% corrompue (direction inversée dans le CSV). Preuve: 62.4% des gagnants
+    # sortent à <0.5R, 95% n'atteignent jamais le TP, payout 1.41 < breakeven 1.55.
+    # N1 lock 1.20→1.80×ATR, trails 0.55-0.90→0.80-1.20×ATR: laisse les gagnants respirer
+    # jusqu'au partial TP (65% du TP) avant de verrouiller.
+    "TREND_UP": [(1.80, 1.00), (2.50, 0.70), (3.50, 0.50), (5.00, 0.30), (6.00, 0.20)],
+    "TREND_DOWN": [(1.80, 1.00), (2.50, 0.70), (3.50, 0.50), (5.00, 0.30), (6.00, 0.20)],
+    "RANGING": [(1.80, 0.80), (2.50, 0.55), (3.50, 0.40), (5.00, 0.25), (5.50, 0.15)],
+    "HIGH_VOL": [(1.80, 1.20), (2.50, 0.90), (3.50, 0.65), (5.00, 0.40), (6.00, 0.25)],
+    "LOW_VOL": [(1.80, 0.70), (2.50, 0.50), (3.20, 0.35), (4.50, 0.20), (5.50, 0.12)],
 }
 
 
@@ -108,18 +117,18 @@ def get_trailing_for_symbol(symbol: str, regime: str) -> list:
 
 BE_BUFFER_BY_SYMBOL = {
     "XAUUSD": {
-        "TREND_UP": 0.55,  # or: buffer serré en trending
-        "TREND_DOWN": 0.55,
-        "RANGING": 0.75,  # ranging: plus large
-        "HIGH_VOL": 0.90,  # haute vol: très large
-        "LOW_VOL": 0.45,  # basse vol: serré
+        "TREND_UP": 0.35,  # or: buffer serré en trending
+        "TREND_DOWN": 0.35,
+        "RANGING": 0.50,  # ranging: modéré
+        "HIGH_VOL": 0.60,  # haute vol: large
+        "LOW_VOL": 0.25,  # basse vol: très serré
     },
     "BTCUSD": {
-        "TREND_UP": 0.70,  # crypto: buffer large
-        "TREND_DOWN": 0.70,
-        "RANGING": 0.85,  # ranging: très large
-        "HIGH_VOL": 1.10,  # haute vol: extrêmement large
-        "LOW_VOL": 0.50,  # basse vol: standard
+        "TREND_UP": 0.45,  # crypto: buffer modéré
+        "TREND_DOWN": 0.45,
+        "RANGING": 0.60,  # ranging: modéré
+        "HIGH_VOL": 0.80,  # haute vol: large
+        "LOW_VOL": 0.35,  # basse vol: serré
     },
     # "US500.cash": {  # DÉSACTIVÉ — PF 0.39 toxique (25 Juin 2026)
     #     "TREND_UP": 0.60,  # indice: standard
@@ -131,12 +140,16 @@ BE_BUFFER_BY_SYMBOL = {
 }
 
 # Fallback par défaut
+# 🔧 30 Juillet 2026: Buffers BE réduits — 0.60→0.35×ATR pour trending
+# Raison: buffer 0.60×ATR laissait $0.55 de profit non sécurisé sur USOIL après
+# partial TP. Avec le nouveau N1.5 à 1.80×ATR et le BE progressif, le trailing
+# protège déjà le trade — le buffer BE peut être plus serré.
 BE_BUFFER_BY_REGIME = {
-    "TREND_UP": 0.60,
-    "TREND_DOWN": 0.60,
-    "RANGING": 0.80,
-    "HIGH_VOL": 1.00,
-    "LOW_VOL": 0.50,
+    "TREND_UP": 0.35,
+    "TREND_DOWN": 0.35,
+    "RANGING": 0.50,
+    "HIGH_VOL": 0.60,
+    "LOW_VOL": 0.30,
 }
 
 

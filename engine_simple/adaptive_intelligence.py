@@ -22,6 +22,43 @@ from engine_simple.structure_analyzer import multi_tf_alignment
 logger = logging.getLogger("adaptive")
 
 
+def _is_burst_history(hist: list, min_trades: int = 15, burst_ratio: float = 0.5) -> bool:
+    """🐛 FIX 31 Juillet 2026: Détecte une history contaminée par replay/burst.
+
+    Signature de contamination: une rafale de trades du même symbole avec
+    des intervalles < 1s (ex: 200 trades EURUSD en 10 min, 96% des gaps < 1s).
+    Ce sont des trades "rejoués" par un cache MT5 vide (timeout) — PAS des
+    trades réels. Les vrais trades espacent d'au moins plusieurs secondes.
+
+    Args:
+        hist: liste des trades {r, regime, time?, profit?, win?}
+        min_trades: seuil minimum de trades pour déclencher l'analyse
+        burst_ratio: ratio de gaps < 1s au-delà duquel on considère contaminé
+
+    Returns:
+        True si l'history est contaminée (à rejeter)
+    """
+    if len(hist) < min_trades:
+        return False
+    timestamps = []
+    for h in hist:
+        t = h.get("time")
+        if isinstance(t, str):
+            try:
+                timestamps.append(datetime.fromisoformat(t))
+            except (ValueError, TypeError):
+                continue
+    # Pas assez de timestamps exploitables → on ne peut pas juger → laisser passer
+    if len(timestamps) < min_trades:
+        return False
+    timestamps.sort()
+    gaps = [(timestamps[i + 1] - timestamps[i]).total_seconds() for i in range(len(timestamps) - 1)]
+    if not gaps:
+        return False
+    sub_1s = sum(1 for g in gaps if g < 1.0)
+    return (sub_1s / len(gaps)) >= burst_ratio
+
+
 class MarketRegime:
     """Enhanced regime detection — délègue à regime.py + enrichit avec structure/volume."""
 
@@ -183,8 +220,26 @@ class OnlineLearner:
                 )
             self.history = {}
             for sym, trades in data.get("history", {}).items():
+                # 🐛 FIX 31 Juillet 2026: Rejeter les histories contaminées par burst.
+                # Avant ce guard, _load_state restaurait DIRECTEMENT les 200 trades
+                # synthétiques (96% gaps < 1s) en contournant le rate limiter de
+                # record_trade. Les adapted_params de ces symboles étaient ensuite
+                # réappliqués en live (ex: EURUSD risk_mult=0.538 sur bruit).
+                if _is_burst_history(list(trades)):
+                    logger.warning(
+                        f"[OnlineLearner] {sym}: history contaminée détectée "
+                        f"({len(trades)} trades, burst gaps < 1s) — PURGE au chargement"
+                    )
+                    continue
                 self.history[sym] = deque(trades[-self.window :], maxlen=self.window)
-            self.adapted_params = data.get("adapted_params", {})
+            # 🐛 FIX 31 Juillet 2026: Purger les adapted_params des symboles contaminés
+            # (leurs params sont dérivés des 200 trades synthétiques → non fiables)
+            cal_adapted = data.get("adapted_params", {})
+            for sym in list(cal_adapted.keys()):
+                if sym not in self.history:
+                    logger.warning(f"[OnlineLearner] {sym}: adapted_params purgés (history absente/contaminée)")
+                    del cal_adapted[sym]
+            self.adapted_params = cal_adapted
             n_trades = sum(len(h) for h in self.history.values())
             logger.info(f"[OnlineLearner] État restauré: {len(self.history)} symboles, {n_trades} trades")
         except Exception as e:
@@ -556,6 +611,15 @@ class AdaptiveEngine:
             # Si l'OL a déjà des trades réels, on les préserve.
             # Voir: main.py:333 (calibration_path séparé de OnlineLearner.STATE_FILENAME)
             for sym, hist_list in ol.items():
+                # 🐛 FIX 31 Juillet 2026: Rejeter les histories contaminées par burst
+                # (même garde que _load_state). Sans ça, la calibration restaurée
+                # réinjectait les 200 trades synthétiques en contournant le rate limiter.
+                if _is_burst_history(list(hist_list)):
+                    logger.warning(
+                        f"  [CAL] {sym}: history contaminée détectée "
+                        f"({len(hist_list)} trades, burst gaps < 1s) — PURGE au chargement"
+                    )
+                    continue
                 current_count = len(self.learner.history.get(sym, []))
                 if current_count < 5:
                     logger.info(
@@ -587,6 +651,7 @@ class AdaptiveEngine:
                     # Ancien guard: rm <= 0.0 (trop permissif — laissait passer 0.0258, 0.0859, 0.24)
                     # Nouveau guard: rm < 0.3 ou rm > max_risk*1.5 ou max_risk=0 → skip
                     skip = False
+                    reason = "OK"  # 🔧 FIX 31 Juillet: évite "reason possibly unbound"
                     if max_risk is not None:
                         if rm < 0.3:
                             # risk_mult anormalement bas (vestige de bug de multiplication en chaîne)
@@ -603,6 +668,13 @@ class AdaptiveEngine:
                         else:
                             # Appliquer le cap SYMBOL_MAX_RISK
                             params["risk_mult"] = min(rm, max_risk)
+                    # 🐛 FIX 31 Juillet 2026: Ne jamais restaurer les adapted_params
+                    # d'un symbole dont l'history est contaminée/absente — les params
+                    # sont dérivés des trades synthétiques → non fiables en live.
+                    contaminated = sym not in self.learner.history
+                    if not skip and contaminated:
+                        skip = True
+                        reason = "history contaminée/absente (params dérivés du bruit)"
                     if skip:
                         n_skipped += 1
                         logger.debug(f"  [CAL] Skip {sym}: {reason} — let OL recalc from real data")

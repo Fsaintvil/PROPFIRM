@@ -99,8 +99,8 @@ class TestTradeExecutor:
         req = args[0]
         assert req["symbol"] == "XAUUSD"
         assert req["type"] == 0
-        # 🔧 FIX 10 Juillet 2026: global_max_lot=0.02 plafonne à 0.02
-        assert req["volume"] == 0.02
+        # ftmo.calculate_lot retourne 0.05, global_max_lot=0.10 ne plafonne plus
+        assert req["volume"] == 0.05
 
     def test_execute_rr_too_low(self):
         mt5 = make_mock_mt5()
@@ -289,9 +289,9 @@ class TestATRTrailing:
         ftmo._check_step_trailing(pos)
         assert mt5.update_sl.called
         new_sl = mt5.update_sl.call_args[0][1]
-        # EURUSD RANGING fallback (30 Juil): TRAILING_BY_REGIME=[(1.20,0.55),(2.50,0.30),(4.00,0.18),(5.50,0.10)]
-        # profit 4.0 ATR > 4.00 (float precision: 0.02/0.005=4.0000000000000036) → trail = 0.18
-        expected_sl = round(1.1200 - 0.18 * 0.005, 5)
+        # EURUSD RANGING fallback (31 Juil — Quant Auditor R2): [(1.80,0.80),(2.50,0.55),(3.50,0.40),(5.00,0.25),(5.50,0.15)]
+        # profit 4.0 ATR > 3.50 → trail = 0.40
+        expected_sl = round(1.1200 - 0.40 * 0.005, 5)
         assert abs(new_sl - expected_sl) < 0.0001
 
     @patch("engine_simple.trailer.random.uniform", return_value=0.0)
@@ -304,7 +304,7 @@ class TestATRTrailing:
         result = MagicMock()
         result.retcode = 10009
         mt5.update_sl.return_value = result
-        pos = self._make_sell_pos(current=1.0920)  # profit = 0.008, 1.6 ATR > 0.80
+        pos = self._make_sell_pos(current=1.0900)  # profit = 0.010, 2.0 ATR > 1.80 (N1 lock 31 Juil)
         original_sl = pos.sl
         ftmo._check_step_trailing(pos)
         assert mt5.update_sl.called
@@ -334,13 +334,13 @@ class TestATRTrailing:
         result = MagicMock()
         result.retcode = 10009
         mt5.update_sl.return_value = result
-        pos = self._make_buy_pos(current=1.1110)  # profit = 0.011, 2.2 ATR > 1.5 first lock
+        pos = self._make_buy_pos(current=1.1110)  # profit = 0.011, 2.2 ATR > 1.80 first lock
         ftmo._check_step_trailing(pos)
         assert mt5.update_sl.called
         new_sl = mt5.update_sl.call_args[0][1]
-        # EURUSD HIGH_VOL fallback (30 Juil): TRAILING_BY_REGIME=[(1.20,0.90),(2.50,0.55),(4.00,0.32),(6.00,0.18)]
-        # profit 2.2 ATR > 1.20 but < 2.50 → trail = 0.90
-        expected_sl = round(1.1110 - 0.90 * 0.005, 5)
+        # EURUSD HIGH_VOL fallback (31 Juil — Quant Auditor R2): [(1.80,1.20),(2.50,0.90),(3.50,0.65),(5.00,0.40),(6.00,0.25)]
+        # profit 2.2 ATR > 1.80 → N1 trail = 1.20
+        expected_sl = round(1.1110 - 1.20 * 0.005, 5)
         assert abs(new_sl - expected_sl) < 0.0001
 
 

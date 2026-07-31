@@ -94,7 +94,9 @@ class TradeJournal:
                 "sl_atr": trade.get("sl_atr", ""),
                 "tp_atr": trade.get("tp_atr", ""),
                 "pnl": trade.get("profit", 0.0),
-                "reason": "closed",
+                # 🐛 FIX 31 Juillet 2026: utiliser la vraie raison (position_tracker la calcule
+                # maintenant depuis le commentaire MT5 + DEAL_REASON). Avant: "closed" codé en dur.
+                "reason": trade.get("reason", "closed"),
                 "duration_h": round(trade.get("duration_min", 0) / 60, 2),
                 "atr_h1": trade.get("atr", 0.0),
             }

@@ -27,13 +27,15 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # 4 symboles actifs (30 Juillet 2026 — PROFESSIONAL SOLUTION)
-    assert len(cfg.trading.symbols) == 4  # 🔧 30 Juil: 4 symboles focus
+    # 5 symboles actifs (31 Juillet 2026 — MODE 5 SYMBOLES POSITIFS, audit PF 0.54)
+    assert len(cfg.trading.symbols) == 5  # USDJPY, USOIL.cash, EURGBP, EURUSD, NZDUSD
+    assert "USDJPY" in cfg.trading.symbols
     assert "USOIL.cash" in cfg.trading.symbols
     assert "EURGBP" in cfg.trading.symbols
-    assert "US30.cash" in cfg.trading.symbols
-    assert "SOLUSD" in cfg.trading.symbols
-    assert cfg.risk.per_trade_pct == 0.002  # 🔧 30 Juil: PROFESSIONAL SOLUTION → 0.20%
+    assert "EURUSD" in cfg.trading.symbols
+    assert "NZDUSD" in cfg.trading.symbols
+    assert "XAUUSD" not in cfg.trading.symbols  # DÉSACTIVÉ (-$2,139 cumulés)
+    assert cfg.risk.per_trade_pct == 0.005  # 🔧 31 Juil: RECALIBRATION → 0.50%
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 2.0  # conservé
 
@@ -48,8 +50,8 @@ def test_as_flat_dict():
     cfg = load_config("default")
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
-    assert flat["RISK_PER_TRADE_PCT"] == 0.002  # 🔧 30 Juil: PROFESSIONAL SOLUTION → 0.20%
-    assert flat["TRADING_MAX_POSITIONS"] == 6  # 🔧 30 Juil: 4 symboles → 6 positions max
+    assert flat["RISK_PER_TRADE_PCT"] == 0.005  # 🔧 31 Juil: RECALIBRATION → 0.50%
+    assert flat["TRADING_MAX_POSITIONS"] == 5  # 31 Juil: MODE 5 SYMBOLES → 5 positions max
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -128,8 +130,8 @@ def test_config_simple_compat():
     import config_simple as cfg
 
     assert cfg.ROBOT_MAGIC == 999001
-    assert cfg.RISK_PER_TRADE == 0.002  # 🔧 30 Juil: PROFESSIONAL SOLUTION → 0.20%
-    assert cfg.MAX_ORDERS_PER_MINUTE == 2  # 🔧 30 Juil: 4 symboles → 2 ordres/min (PROFESSIONAL SOLUTION)
+    assert cfg.RISK_PER_TRADE == 0.005  # 🔧 31 Juil: RECALIBRATION → 0.50%
+    assert cfg.MAX_ORDERS_PER_MINUTE == 8  # 31 Juil: MODE 5 SYMBOLES → 8 ordres/min
     assert cfg.__version__ == "4.1.0"
     assert cfg.MIN_SIGNAL_SCORE == 0.70  # inchangé
 

@@ -88,7 +88,21 @@ class SignalValidator:
 
         # ── 2. Signal quality gate (dynamic min_score) ─────────────────
         sym_params = get_symbol_params(symbol)
-        cfg_score = sym_params.get("cfg_score", 0.60)
+        # 🔧 31 Juillet 2026: Utilise MIN_SIGNAL_SCORE global (0.70) comme baseline.
+        # Le per-symbol cfg_score ne peut qu'AUGMENTER ce seuil, jamais le baisser.
+        # Empêche les signaux de score < 0.70 de passer.
+        from config_simple import MIN_SIGNAL_SCORE
+
+        # 🔧 FIX 31 Juillet 2026: Exception ciblée par symbole au plancher global.
+        # SOLUSD: backtest sain (WR 65%) mais scores plafonnent à 0.69 (< 0.70).
+        # Le seuil 0.60 est déjà configuré dans strategy.py pour SOLUSD — on
+        # autorise ici explicitement ce symbole sous le plancher global 0.70.
+        # TOUS les autres symboles gardent le plancher strict de 0.70.
+        MIN_SCORE_EXCEPTIONS = {
+            "SOLUSD": 0.60,  # débloqué 31 Juillet 2026 — edge validé (WR 65%)
+        }
+        global_floor = MIN_SCORE_EXCEPTIONS.get(symbol, MIN_SIGNAL_SCORE)
+        cfg_score = max(sym_params.get("cfg_score", global_floor), global_floor)
 
         # Dynamic min_score basé sur WR réel (50 derniers trades)
         sym_trades = self._symbol_trade_history.get(symbol, [])

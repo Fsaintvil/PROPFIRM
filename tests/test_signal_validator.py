@@ -93,11 +93,11 @@ class TestCheck:
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_score_boundary_accepted(self, mock_params):
-        mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
+        mock_params.return_value = {"cfg_score": 0.70, "min_rr": 1.5}
         v = make_validator()
-        sig = make_signal(score=0.5995)
+        sig = make_signal(score=0.6995)
         ok, reason = v.check("EURUSD", sig, [])
-        assert ok is True  # floating point tolerance
+        assert ok is True  # floating point tolerance (score ≈ cfg_score)
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_mr_strategy_lowers_threshold(self, mock_params):
@@ -121,27 +121,26 @@ class TestCheck:
     @patch("engine_simple.signal_validator.get_symbol_params")
     @patch("engine_simple.signal_validator.update_dyn_score")
     def test_update_dyn_score_called(self, mock_update, mock_params):
-        mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
-        # 7/15 wins = 46.7% < 50% → dyn_score = 0.60 + (0.50-0.467)*0.5 = 0.6167
+        mock_params.return_value = {"cfg_score": 0.70, "min_rr": 1.5}
+        # 7/15 wins = 46.7% < 50% → dyn_score = 0.70 + (0.50-0.467)*0.5 = 0.7167
         trades = [{"profit": -100} for _ in range(8)] + [{"profit": 50} for _ in range(7)]
         v = make_validator(trade_history={"EURUSD": trades})
         sig = make_signal(score=0.80)
         v.check("EURUSD", sig, [])
-        # 🔧 FIX 14 Juil: min_score monte progressivement quand WR baisse
-        # WR=46.7% → dyn_score = 0.60 + (0.50-0.467)*0.5 = 0.6167
-        mock_update.assert_called_once_with("EURUSD", 0.6166666666666667)
+        # 🔧 31 Juil: cfg_score=0.70, WR=46.7% → dyn_score = 0.70 + (0.50-0.467)*0.5 = 0.7167
+        mock_update.assert_called_once_with("EURUSD", 0.7166666666666666)
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     @patch("engine_simple.signal_validator.update_dyn_score")
     def test_update_dyn_score_low_wr_raises_more(self, mock_update, mock_params):
         """WR très bas → min_score doit monter plus haut."""
-        mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
-        # 4/15 wins = 26.7% < 50% → dyn_score = 0.60 + (0.50-0.267)*0.5 = 0.7167
+        mock_params.return_value = {"cfg_score": 0.70, "min_rr": 1.5}
+        # 4/15 wins = 26.7% < 50% → dyn_score = 0.70 + (0.50-0.267)*0.5 = 0.8167
         trades = [{"profit": -100} for _ in range(11)] + [{"profit": 50} for _ in range(4)]
         v = make_validator(trade_history={"EURUSD": trades})
         sig = make_signal(score=0.80)
         v.check("EURUSD", sig, [])
-        mock_update.assert_called_once_with("EURUSD", 0.7166666666666667)
+        mock_update.assert_called_once_with("EURUSD", 0.8166666666666666)
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_sl_tp_auto_calculated_when_missing(self, mock_params):
@@ -215,21 +214,21 @@ class TestCheck:
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_small_trade_history_ignores_dynamic_score(self, mock_params):
-        mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
-        # Seulement 10 trades (< 15) → pas de dyn_score
+        mock_params.return_value = {"cfg_score": 0.70, "min_rr": 1.5}
+        # Seulement 10 trades (< 15) → pas de dyn_score → effective = cfg_score = 0.70
         trades = [{"profit": -100} for _ in range(10)]
         v = make_validator(trade_history={"EURUSD": trades})
-        sig = make_signal(score=0.60)
+        sig = make_signal(score=0.70)
         ok, reason = v.check("EURUSD", sig, [])
         assert ok is True
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_wr_above_50_no_dynamic_score(self, mock_params):
-        mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
-        # 8/15 = 53% > 50% → pas de dyn_score
+        mock_params.return_value = {"cfg_score": 0.70, "min_rr": 1.5}
+        # 8/15 = 53% > 50% → pas de dyn_score → effective = cfg_score = 0.70
         trades = [{"profit": 50} for _ in range(8)] + [{"profit": -30} for _ in range(7)]
         v = make_validator(trade_history={"EURUSD": trades})
-        sig = make_signal(score=0.60)
+        sig = make_signal(score=0.70)
         ok, reason = v.check("EURUSD", sig, [])
         assert ok is True
 
