@@ -42,6 +42,11 @@ function Test-ProcessAlive {
 
 if ($Stop) {
     Write-Host "=== ARRET ==="
+    # 🔧 FIX 03 Aout 2026: Write a graceful-shutdown flag so the process watchdog
+    # knows this stop is INTENTIONAL and must NOT resurrect the robot.
+    $stopFlag = "$PID_FILE\..\robot.stop.flag"
+    try { New-Item -ItemType File -Path $stopFlag -Force | Out-Null; Write-Host "Shutdown flag set: $stopFlag" }
+    catch { Write-Host "Warning: could not write shutdown flag: $_" -ForegroundColor Yellow }
     $lockPid = Get-RobotPid
     if ($lockPid) {
         Write-Host "Robot PID $lockPid detected. Stopping..."
@@ -188,6 +193,21 @@ if ($autoMt5) {
 Write-Host "Syncing system clock..." -NoNewline
 & "$PSScriptRoot\sync_clock.ps1" | Out-Null
 Write-Host "OK"
+
+# 🔧 FIX 03 Aout 2026: Clear watchdog guard flags from a previous run (if any).
+# A lingering robot.stop.flag / robot.halt.flag would DISABLE the watchdog's
+# auto-resurrection for this new fresh start. We want auto-restart enabled.
+foreach ($gf in @("$PID_FILE\..\robot.stop.flag", "$PID_FILE\..\robot.halt.flag")) {
+    if (Test-Path $gf) {
+        Remove-Item $gf -Force -ErrorAction SilentlyContinue
+        Write-Host "Cleared watchdog guard flag: $(Split-Path $gf -Leaf)"
+    }
+}
+# Remove any stale restart-state tracker so the fresh watchdog starts its budget
+# at zero (not carry over old crash counts).
+if (Test-Path "$PID_FILE\..\watchdog_restarts.txt") {
+    Remove-Item "$PID_FILE\..\watchdog_restarts.txt" -Force -ErrorAction SilentlyContinue
+}
 
 # Launch main.py
 Write-Host "Starting robot (main.py)..." -NoNewline
