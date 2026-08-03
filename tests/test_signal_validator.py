@@ -83,6 +83,35 @@ class TestCheck:
         assert "Buys not allowed" in reason
 
     @patch("engine_simple.signal_validator.get_symbol_params")
+    def test_ranging_adx_low_rejected(self, mock_params):
+        """🐛 FIX 03 Aout 2026: pas de momentum en RANGING (ADX<20).
+        MOM20x3 en range = chaque breakout est un retournement (EURUSD 0/8, ADX 14.7)."""
+        mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
+        v = make_validator()
+        sig = make_signal(adx=14.7, _regime="RANGING", score=0.95)
+        ok, reason = v.check("EURUSD", sig, [])
+        assert ok is False
+        assert "RANGING" in reason
+
+    @patch("engine_simple.signal_validator.get_symbol_params")
+    def test_trend_adx_high_passes(self, mock_params):
+        """La garde régime ne bloque PAS les signaux en TREND (ADX>=20)."""
+        mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
+        v = make_validator()
+        sig = make_signal(adx=34.9, _regime="TREND_DOWN", score=0.95)
+        ok, reason = v.check("USOIL.cash", sig, [])
+        assert ok is True
+
+    @patch("engine_simple.signal_validator.get_symbol_params")
+    def test_ranging_adx_boundary_20_allowed(self, mock_params):
+        """ADX=20 exact est la frontière: autorisé (garde stricte <20)."""
+        mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
+        v = make_validator()
+        sig = make_signal(adx=20.0, _regime="RANGING", score=0.95)
+        ok, reason = v.check("EURUSD", sig, [])
+        assert ok is True
+
+    @patch("engine_simple.signal_validator.get_symbol_params")
     def test_score_too_low_rejected(self, mock_params):
         mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
         v = make_validator()

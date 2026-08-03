@@ -411,7 +411,11 @@ class OnlineLearner:
         h_valid = [t for t in h_valid_all if abs(t.get("r", 0)) >= 0.1]
         filtered_noise = len(h_valid_all) - len(h_valid)
 
-        if len(h_valid) < 5 or (len(h) > 0 and len(h_valid) / len(h) < 0.3):
+        # 🐛 FIX 03 Aout 2026: exiger min_trades (20) trades VALIDES, pas 5.
+        # L'ancien seuil de 5 permettait d'adapter risk_mult sur des échantillons de
+        # 5-17 trades = bruit (ex: risk_mult=0.50 sur USDJPY/NZDUSD/USOIL calibré sur
+        # rien). L'adaptation sur bruit DIVISE les gains par 2 et auto-renforce la perte.
+        if len(h_valid) < min_trades or (len(h) > 0 and len(h_valid) / len(h) < 0.3):
             logger.info(
                 f"[OnlineLearner] {symbol}: {len(h_valid)}/{len(h)} régimes valides "
                 f"(dont {filtered_noise} bruit r<0.1 filtré)"
