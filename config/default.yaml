@@ -78,7 +78,10 @@ risk:
   # --- Risque par trade (RECALIBRATION — 31 Juillet 2026) ---
   per_trade_pct: 0.005           # 🔧 31 Juil: ↑ 0.002→0.005 (0.50%) — risque calibré pour gagner
   short_mult: 1.0                # même risque long/short
-  max_risk_amount: 300.0         # MODE MIXTE 03 Aout 2026: $250→$300 (risk-compliance autorisé, VETO>$400)
+  max_risk_amount: 100.0         # ⚖️ SUPREME COUNCIL 03 Aout 2026: $300→$100 (Phase 1 CONDITIONAL RAMP).
+                                 #   Edge statistiquement absent (WR 43.3% pool, p=0.00017) — aucun sizing ne
+                                 #   gagne à l'edge actuel. $100 = 0.05% equity, valide l'edge SANS exposer $300.
+                                 #   Scaling $300 seulement si gates jour 15: USOIL WR≥52%/PF≥1.15/net>0 sur 40T.
 
   # --- Qualité ---
   min_rr_ratio: 2.0              # conservé (TP 6.0/SL 1.5 = RR 4.0 naturel)
@@ -244,7 +247,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   USDJPY:
     timeframe: "H1"
-    max_lot: 0.20               # 🚀 16 Juillet: ↑ 0.15→0.20 — WR 61.0%, PF 1.75, +$67 (meilleur symbole)
+    max_lot: 0.10               # ⚖️ 03 Aout 2026 (Supreme Council Phase 1): 0.20→0.10 — Kelly forex -84%, 0/1 récent.
+                                #   Scaling conditionnel: WR≥52%/PF≥1.15 sur 40 trades. (16 Juillet: 0.15→0.20)
     min_lot: 0.05
     risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
     max_spread_points: 40
@@ -558,7 +562,9 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   USOIL.cash:
     timeframe: "H1"
-    max_lot: 0.10               # 🚀 16 Juillet: ↑ 0.05→0.10 — WR 56.2%, PF 5.30, +$33 (meilleur PF)
+    max_lot: 0.08               # ⚖️ 03 Aout 2026 (Supreme Council Phase 1): 0.10→0.08 (~$75-100/trade).
+                                #   WR récente 52.6% mais NET NÉGATIF (-$2.74, payoff<1.0) → pas d'edge prouvé.
+                                #   Scaling $300 (max_lot 0.24) seulement si WR≥52%/PF≥1.15/net>0 sur 40T.
     min_lot: 0.05
     risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
     max_spread_points: 100

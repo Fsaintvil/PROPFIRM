@@ -26,7 +26,10 @@ risk:
   min_rr_ratio: 2.0             # conservé (TP 6.0/SL 1.5 = RR 4.0 naturel)
   cooldown_minutes: 15          # 🔧 31 Juil: ↓ 30→15 (pas besoin d'attendre 30min si WR s'améliore)
   auto_pause_losses: 5          # 🔧 31 Juil: ↑ 2→5 (STOP→réduction progressive du lot avant pause)
-  max_risk_amount: 300.0         # MODE MIXTE 03 Aout 2026: $250→$300 (risk-compliance: autorisé, VETO >$400). Batch ≤1.2% daily avant stop 1.5%.
+  max_risk_amount: 100.0         # ⚖️ SUPREME COUNCIL 03 Aout 2026 (Phase 1 CONDITIONAL RAMP): $300→$100.
+                                 #   Edge statistiquement absent (WR 43.3%, p=0.00017) → réduire le risque
+                                 #   pour valider l'edge sur 5-7 jours SANS exposer $300. Scaling au jour 15
+                                 #   si gates: USOIL WR≥52%/PF≥1.15/net>0 sur 40T, pool WR≥50%/PF≥1.10/payoff≥1.2.
   circuit_breaker_dd_pct: 0.06  # 🔧 31 Juil: ↑ 0.04→0.06 (6% au lieu de 4%, marge pour FTMO 10%)
 
 # ═══════════════════════════════════════════════════════════════════════════════
