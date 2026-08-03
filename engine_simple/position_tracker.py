@@ -544,7 +544,9 @@ class PositionTracker:
                         lot=closing.volume,
                         profit=closing.profit,
                         time_open=str(datetime.fromtimestamp(meta.get("opened_at", closing.time))),
-                        time_close=str(datetime.utcnow()),
+                        # 🐛 FIX 03 Aout 2026: timestamp de fermeture = vrai deal MT5 (deal_ts),
+                        # pas datetime.utcnow() (heure du cycle de surveillance — trompeur).
+                        time_close=str(datetime.utcfromtimestamp(deal_ts)) if deal_ts > 0 else str(datetime.utcnow()),
                         reason=exit_reason,
                         duration_min=duration_min,
                         # 🐛 FIX 4 Juillet 2026: ATR multiples pour analyse post-trade

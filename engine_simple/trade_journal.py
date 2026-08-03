@@ -167,6 +167,12 @@ class TradeJournal:
             "entry_time": trade.get("entry_time", trade.get("time_open", "")),
             "exit_time": trade.get("exit_time", trade.get("time_close", "")),
             "duration_min": trade.get("duration_min", 0),
+            # 🐛 FIX 03 Aout 2026: préserver reason/sl_atr/tp_atr du format position_tracker.
+            # Avant ce fix, le mapping les JETAIT → CSV toujours reason="closed" et sl_atr/tp_atr vides,
+            # rendant l'audit SL/TP/trailing/BE/time_stop impossible (optimisation à l'aveugle).
+            "sl_atr": trade.get("sl_atr", ""),
+            "tp_atr": trade.get("tp_atr", ""),
+            "reason": trade.get("reason", "closed"),
         }
         self.record_trade(mapped)
 

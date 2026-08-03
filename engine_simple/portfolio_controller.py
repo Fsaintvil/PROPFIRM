@@ -138,10 +138,13 @@ class PortfolioController:
             sym_max = MAX_POSITIONS_PER_SYMBOL * 2  # 8 au lieu de 4 pour high conf
             if len(sym_positions) >= sym_max:
                 return False, f"Max positions {symbol} atteint ({len(sym_positions)}/{sym_max})"
-            # ✅ 🔧 FIX 6 Juillet 2026: max 1 position par direction par symbole (relaxé à 2 en high confidence)
-            # 🐛 FIX 6 Juillet 2026: hc_max_per_dir utilisait MAX_POSITIONS_PER_SYMBOL*2=8 au lieu de MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION*2=2
+            # ✅ 🔧 FIX 6 Juillet 2026: max 1 position par direction par symbole
+            # 🐛 FIX 03 Aout 2026: hc_max_per_dir 2→1 — le stacking même direction/même symbole
+            # est interdit AUSSI en high confidence. Historique: -$982.8 de doublons sur le CSV
+            # (artefact partiel, mais le stacking EURUSD BUY réel a été observé — 4 entrées sur
+            # 2 symboles le 03/08). Principe: jamais 2 positions même direction/même symbole.
             sym_dir_positions = [p for p in sym_positions if self._get_dir(p) == direction]
-            hc_max_per_dir = MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION * 2  # relaxé à 2 en high confidence
+            hc_max_per_dir = MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION * 1  # = 1, même en high confidence
             if len(sym_dir_positions) >= hc_max_per_dir:
                 return (
                     False,

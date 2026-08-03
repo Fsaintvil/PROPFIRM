@@ -1,4 +1,5 @@
 """Tests for trade_journal.py — in-memory SQLite"""
+
 import os
 import sys
 
@@ -13,6 +14,7 @@ from engine_simple.trade_journal import TradeJournal
 @pytest.fixture
 def journal(tmp_path):
     import engine_simple.trade_journal as tj
+
     orig_db = tj.DB_PATH
     tj.DB_PATH = ":memory:"
     j = TradeJournal(csv_path=str(tmp_path / "test_trades.csv"))
@@ -26,16 +28,34 @@ def make_time(days_ago=1, hour=0):
 
 
 def test_record_and_count(journal):
-    journal.record(dict(
-        symbol="EURUSD", direction="BUY", entry=1.1, sl=1.09, tp=1.13,
-        lot=0.1, profit=50.0, time_open=make_time(2, 0),
-        time_close=make_time(2, 1), reason="TP"
-    ))
-    journal.record(dict(
-        symbol="EURUSD", direction="SELL", entry=1.1, sl=1.11, tp=1.07,
-        lot=0.1, profit=-30.0, time_open=make_time(2, 2),
-        time_close=make_time(2, 3), reason="SL"
-    ))
+    journal.record(
+        dict(
+            symbol="EURUSD",
+            direction="BUY",
+            entry=1.1,
+            sl=1.09,
+            tp=1.13,
+            lot=0.1,
+            profit=50.0,
+            time_open=make_time(2, 0),
+            time_close=make_time(2, 1),
+            reason="TP",
+        )
+    )
+    journal.record(
+        dict(
+            symbol="EURUSD",
+            direction="SELL",
+            entry=1.1,
+            sl=1.11,
+            tp=1.07,
+            lot=0.1,
+            profit=-30.0,
+            time_open=make_time(2, 2),
+            time_close=make_time(2, 3),
+            reason="SL",
+        )
+    )
     stats = journal.get_stats(symbol="EURUSD", days=30)
     assert stats is not None
     assert stats["trade_count"] == 2
@@ -48,16 +68,34 @@ def test_get_stats_empty(journal):
 
 
 def test_get_stats_profit_factor(journal):
-    journal.record(dict(
-        symbol="GBPUSD", direction="BUY", entry=1.25, sl=1.24, tp=1.28,
-        lot=0.2, profit=100.0, time_open=make_time(2, 0),
-        time_close=make_time(2, 1), reason="TP"
-    ))
-    journal.record(dict(
-        symbol="GBPUSD", direction="SELL", entry=1.25, sl=1.26, tp=1.22,
-        lot=0.1, profit=-20.0, time_open=make_time(2, 2),
-        time_close=make_time(2, 3), reason="SL"
-    ))
+    journal.record(
+        dict(
+            symbol="GBPUSD",
+            direction="BUY",
+            entry=1.25,
+            sl=1.24,
+            tp=1.28,
+            lot=0.2,
+            profit=100.0,
+            time_open=make_time(2, 0),
+            time_close=make_time(2, 1),
+            reason="TP",
+        )
+    )
+    journal.record(
+        dict(
+            symbol="GBPUSD",
+            direction="SELL",
+            entry=1.25,
+            sl=1.26,
+            tp=1.22,
+            lot=0.1,
+            profit=-20.0,
+            time_open=make_time(2, 2),
+            time_close=make_time(2, 3),
+            reason="SL",
+        )
+    )
     stats = journal.get_stats("GBPUSD", days=30)
     assert stats is not None
     assert stats["trade_profit_factor"] >= 5.0
@@ -66,11 +104,20 @@ def test_get_stats_profit_factor(journal):
 def test_winrate_lookbacks(journal):
     for i in range(10):
         profit = 10.0 if i < 7 else -10.0
-        journal.record(dict(
-            symbol="USDJPY", direction="BUY", entry=150.0, sl=149.5, tp=151.0,
-            lot=0.1, profit=profit, time_open=make_time(i+1, 0),
-            time_close=make_time(i+1, 1), reason="TP" if profit > 0 else "SL"
-        ))
+        journal.record(
+            dict(
+                symbol="USDJPY",
+                direction="BUY",
+                entry=150.0,
+                sl=149.5,
+                tp=151.0,
+                lot=0.1,
+                profit=profit,
+                time_open=make_time(i + 1, 0),
+                time_close=make_time(i + 1, 1),
+                reason="TP" if profit > 0 else "SL",
+            )
+        )
     stats = journal.get_stats("USDJPY", days=30)
     assert stats is not None
     assert stats["trade_count"] == 10
@@ -90,9 +137,68 @@ def test_multi_symbol_isolation(journal):
 
 def test_avg_pnl(journal):
     for i in range(5):
-        journal.record(dict(symbol="EURUSD", profit=10.0 * i,
-                            time_close=make_time(i+1, 1)))
+        journal.record(dict(symbol="EURUSD", profit=10.0 * i, time_close=make_time(i + 1, 1)))
     stats = journal.get_stats("EURUSD", days=30)
     assert stats is not None
     cumul = sum(10.0 * i for i in range(5))
     assert abs(stats["trade_avg_pnl"] - cumul / 5) < 0.01
+
+
+def test_csv_preserves_reason_and_sl_tp_atr(journal, tmp_path):
+    """🐛 FIX 03 Aout 2026: le mapping record() jetait reason/sl_atr/tp_atr.
+    Avant: CSV toujours reason="closed" et sl_atr/tp_atr vides → audit impossible.
+    Vérifie que le CSV reçoit bien les vraies valeurs."""
+    journal.record(
+        dict(
+            symbol="EURUSD",
+            direction="SELL",
+            entry=1.1,
+            sl=1.11,
+            tp=1.07,
+            lot=0.1,
+            profit=50.0,
+            time_open=make_time(1, 0),
+            time_close=make_time(1, 1),
+            reason="trailing",
+            sl_atr=1.5,
+            tp_atr=4.0,
+            atr=0.0012,
+        )
+    )
+    import csv
+
+    csv_file = tmp_path / "test_trades.csv"
+    with open(csv_file, "r", encoding="utf-8", newline="") as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 1
+    assert rows[0]["reason"] == "trailing"  # Avant: "closed" codé en dur
+    assert rows[0]["sl_atr"] == "1.5"  # Avant: vide
+    assert rows[0]["tp_atr"] == "4.0"  # Avant: vide
+    assert rows[0]["direction"] == "SELL"
+    assert rows[0]["pnl"] == "50.0"
+
+
+def test_csv_preserves_time_stop_reason(journal, tmp_path):
+    """Le fix doit aussi couvrir les raisons time_stop/kill_switch/partial_tp."""
+    journal.record(
+        dict(
+            symbol="USOIL.cash",
+            direction="BUY",
+            entry=79.0,
+            sl=78.5,
+            tp=82.0,
+            lot=0.1,
+            profit=-12.0,
+            time_open=make_time(1, 0),
+            time_close=make_time(1, 2),
+            reason="time_stop",
+            atr=0.9,
+        )
+    )
+    import csv
+
+    csv_file = tmp_path / "test_trades.csv"
+    with open(csv_file, "r", encoding="utf-8", newline="") as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 1
+    assert rows[0]["reason"] == "time_stop"

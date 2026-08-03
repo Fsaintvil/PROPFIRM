@@ -326,21 +326,30 @@ class TestCanOpenHighConfidence:
 
     def test_bypass_per_symbol_limit(self):
         pc = PortfolioController()
-        # 🔧 FIX 6 Juillet 2026: high_confidence permet max 2 positions par direction par symbole
-        # 1 seule position BUY → autorisé (dans la limite de 2)
-        sym_positions = [MAKE_POSITION("ZZZ_USD", "BUY", 0.1, 1.10)]
+        # 🐛 FIX 03 Aout 2026: high_confidence NE relâche PLUS le stacking direction/symbole
+        # (hc_max_per_dir 2→1). 0 position BUY → autorisé (la 1re passe).
+        sym_positions = []
         can, reason = pc.can_open_position("ZZZ_USD", "BUY", sym_positions, high_confidence=True)
         assert can is True
         assert "HIGH CONFIDENCE" in reason
 
+    def test_block_second_same_dir_same_symbol_hc(self):
+        pc = PortfolioController()
+        # 🐛 FIX 03 Aout 2026: 1 position BUY ZZZ_USD → la 2e est BLOQUÉE même en high confidence
+        # (avant: autorisé, max 2 → stacking EURUSD BUY observé le 03/08)
+        sym_positions = [MAKE_POSITION("ZZZ_USD", "BUY", 0.1, 1.10)]
+        can, reason = pc.can_open_position("ZZZ_USD", "BUY", sym_positions, high_confidence=True)
+        assert can is False
+        assert "ZZZ_USD" in reason
+        assert "déjà 1" in reason or "Max positions" in reason
+
     def test_still_block_at_direction_limit_hc(self):
         pc = PortfolioController()
-        # 2 positions BUY ZZZ_USD → la 3e est bloquée (max 2 par direction en high confidence)
+        # 2 positions BUY ZZZ_USD → la 3e est bloquée (max 1 par direction en high confidence)
         sym_positions = [MAKE_POSITION("ZZZ_USD", "BUY", 0.1, 1.10 + i * 0.001) for i in range(2)]
         can, reason = pc.can_open_position("ZZZ_USD", "BUY", sym_positions, high_confidence=True)
         assert can is False
         assert "ZZZ_USD" in reason
-        assert "déjà 2" in reason or "Max positions" in reason
 
     def test_correlation_still_active(self):
         pc = PortfolioController()

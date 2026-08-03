@@ -329,6 +329,10 @@ class TradingEngine:
 
         self._last_batch_time = time.time()  # dernier batch de signaux (batch_interval_sec=1s)
         self._last_signals = {}  # symbol -> dict pour mémoire de signaux entre cycles
+        # 🐛 FIX 03 Aout 2026: cooldown per-symbol anti-doublon — initialisé AVANT le restore
+        # d'état (l'ancien code l'initialisait lazily dans le batch loop, le restore d'état
+        # en __init__ plantait en AttributeError).
+        self._last_symbol_trade_time = {}
         # M15: Restaurer les signaux pré-crash depuis last_signals.json pour éviter replay
         self._restore_last_signals()
         self._stop_trading = False  # Désactivé — mode production continue (sans arret)
@@ -450,6 +454,23 @@ class TradingEngine:
             logger.info(
                 f"[STATE] symbol_consecutive_losses reset (restart) — ancien: {self._state.get('symbol_consecutive_losses')}"
             )
+        # 🐛 FIX 03 Aout 2026: Restore _last_symbol_trade_time (cooldown per-symbol MIN_TRADE_INTERVAL_SEC)
+        # Garde uniquement les timestamps < 2× l'intervalle (600s) pour ne pas bloquer les symboles
+        # qui n'ont pas tradé depuis longtemps. Empêche la re-entrée immédiate après restart.
+        if self._state.get("last_symbol_trade_time"):
+            _cooldown_keep = cfg.MIN_TRADE_INTERVAL_SEC * 2
+            _now_ts = time.time()
+            restored_trades = 0
+            for sym, ts in self._state["last_symbol_trade_time"].items():
+                try:
+                    ts = float(ts)
+                except (TypeError, ValueError):
+                    continue
+                if _now_ts - ts < _cooldown_keep:
+                    self._last_symbol_trade_time[sym] = ts
+                    restored_trades += 1
+            if restored_trades:
+                logger.info(f"[STATE] Restored {restored_trades} symbol trade cooldowns (anti-doublon restart)")
         if self._state.get("challenge_status"):
             self.ftmo.challenge_status = self._state["challenge_status"]
         # P5: Restore global_cooldown_until (protection restart)
@@ -1005,6 +1026,10 @@ class TradingEngine:
                 # 🔧 FIX 22 Juillet 2026: Persist win_rate_checked pour éviter
                 # que le WR check réduise le risk_mult à CHAQUE redémarrage (effet compound)
                 win_rate_checked=self._win_rate_checked,
+                # 🐛 FIX 03 Aout 2026: Persist _last_symbol_trade_time — le cooldown MIN_TRADE_INTERVAL_SEC
+                # (300s) était effacé à chaque redémarrage ⇒ re-entrée immédiate sur signal encore valide
+                # (source de doublons: 2 positions même symbole/même direction après restart).
+                last_symbol_trade_time=dict(self._last_symbol_trade_time),
             )
             save_full_state(STATE_FILE, state)
         except Exception as e:
