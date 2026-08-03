@@ -110,7 +110,9 @@ class RiskConfig(BaseModel):
     short_mult: float = Field(default=1.0, ge=0.1, le=2.0)
     max_daily_loss_pct: float = Field(default=0.02, ge=0.005, le=0.05)
     zone2_loss_pct: float = Field(default=0.012, ge=0.005, le=0.03)
-    zone3_loss_pct: float = Field(default=0.017, ge=0.01, le=0.04)
+    zone3_loss_pct: float = Field(
+        default=0.015, ge=0.01, le=0.04
+    )  # 03 Aout 2026: 0.017→0.015 (risk-compliance: 0.5% marge avant plancher 2% FTMO)
     max_dd_pct: float = Field(default=0.10, ge=0.02, le=0.15)
     profit_target_pct: float = Field(default=0.10, ge=0.02, le=0.20)
     consistency_max_pct: float = Field(default=0.30, ge=0.1, le=0.5)

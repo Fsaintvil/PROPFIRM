@@ -13,7 +13,7 @@ correlation:
 # ── Trading — 31 Juillet 2026 — MODE 5 SYMBOLES POSITIFS
 # (synchronisé avec default.yaml — audit performance 31 Juil: PF 0.54 global)
 trading:
-  max_positions: 5              # 5 symboles × 1 position max
+  max_positions: 6              # MODE MIXTE 03 Aout 2026: 5→6 (risk-compliance: plafond autorisé 6, veto >8) — débloque 3/direction
   max_positions_per_symbol: 2   # max 2 par symbole
   max_trades_per_day: 40        # 5 symboles × ~8 trades/jour max
   global_max_lot: 0.10          # plafond absolu
@@ -26,7 +26,7 @@ risk:
   min_rr_ratio: 2.0             # conservé (TP 6.0/SL 1.5 = RR 4.0 naturel)
   cooldown_minutes: 15          # 🔧 31 Juil: ↓ 30→15 (pas besoin d'attendre 30min si WR s'améliore)
   auto_pause_losses: 5          # 🔧 31 Juil: ↑ 2→5 (STOP→réduction progressive du lot avant pause)
-  max_risk_amount: 250.0         # 🔧 31 Juil (Quant Auditor R4): $2500→$250 hard-cap/trade. XAU SL≈$54@1.5ATR → lot ≤0.05 max. 6 trades 0.20 = -$2,272 = 55% de la perte totale.
+  max_risk_amount: 300.0         # MODE MIXTE 03 Aout 2026: $250→$300 (risk-compliance: autorisé, VETO >$400). Batch ≤1.2% daily avant stop 1.5%.
   circuit_breaker_dd_pct: 0.06  # 🔧 31 Juil: ↑ 0.04→0.06 (6% au lieu de 4%, marge pour FTMO 10%)
 
 # ═══════════════════════════════════════════════════════════════════════════════

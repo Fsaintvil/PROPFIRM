@@ -253,15 +253,15 @@ class TestCanOpenNormal:
     def test_correlation_group_direction_limit(self):
         pc = PortfolioController()
         # 2 positions BUY dans FOREX_MAJORS → une 3e BUY est bloquée.
-        # En mode 5 symboles (31 Juil 2026), MAX_POSITIONS_PER_DIRECTION=2
-        # et MAX_TRADES_PER_DIRECTION_IN_GROUP=2 coïncident: la limite
-        # globale par direction prime (vérifiée AVANT la limite groupe).
+        # MODE MIXTE 03 Aout 2026: max_positions 5→6 ⇒ MAX_POSITIONS_PER_DIRECTION=3
+        # (globale), donc la limite GROUPE (2/direction/groupe, garde de corrélation
+        # non négociable) prime désormais AVANT la limite direction globale.
         majors = ["EURUSD", "GBPUSD"]
         group_positions = [MAKE_POSITION(sym, "BUY", 0.1, 1.10) for sym in majors]
-        # Essayer une 3e BUY dans FOREX_MAJORS → bloqué par direction (2 max)
+        # Essayer une 3e BUY dans FOREX_MAJORS → bloqué par la limite GROUPE (2 max/direction)
         can, reason = pc.can_open_position("AUDUSD", "BUY", group_positions)
         assert can is False
-        assert "Max positions BUY" in reason
+        assert "Groupe FOREX_MAJORS" in reason
 
     def test_allow_opposite_direction_in_group(self):
         pc = PortfolioController()

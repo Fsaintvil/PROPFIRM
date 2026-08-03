@@ -45,8 +45,8 @@ trading:
     - EURUSD
     - NZDUSD
 
-  # 🔧 MODE 5 SYMBOLES (31 Juil 2026): capacités réduites en conséquence
-  max_positions: 5              # 5 symboles × 1 position max
+  # 🔧 MODE MIXTE 03 Aout 2026: max_positions 5→6 (risk-compliance plafond autorisé 6, VETO >8)
+  max_positions: 6              # 6 symboles/6 positions — débloque MAX_POSITIONS_PER_DIRECTION=3
   max_positions_per_symbol: 2   # max 2 par symbole (1 BUY + 1 SELL)
   max_trades_per_day: 40        # 5 symboles × ~8 trades/jour max
   max_signals_per_cycle: 8      # 5 symboles
@@ -78,7 +78,7 @@ risk:
   # --- Risque par trade (RECALIBRATION — 31 Juillet 2026) ---
   per_trade_pct: 0.005           # 🔧 31 Juil: ↑ 0.002→0.005 (0.50%) — risque calibré pour gagner
   short_mult: 1.0                # même risque long/short
-  max_risk_amount: 250.0         # 🔧 31 Juil (Quant Auditor R4): $2500→$250 hard-cap/trade. XAU SL≈$54@1.5ATR → lot ≤0.05 max (6 trades 0.20 = -$2,272 = 55% de la perte totale)
+  max_risk_amount: 300.0         # MODE MIXTE 03 Aout 2026: $250→$300 (risk-compliance autorisé, VETO>$400)
 
   # --- Qualité ---
   min_rr_ratio: 2.0              # conservé (TP 6.0/SL 1.5 = RR 4.0 naturel)

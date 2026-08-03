@@ -51,7 +51,7 @@ def test_as_flat_dict():
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
     assert flat["RISK_PER_TRADE_PCT"] == 0.005  # 🔧 31 Juil: RECALIBRATION → 0.50%
-    assert flat["TRADING_MAX_POSITIONS"] == 5  # 31 Juil: MODE 5 SYMBOLES → 5 positions max
+    assert flat["TRADING_MAX_POSITIONS"] == 6  # 03 Aout 2026: MODE MIXTE → 5→6 positions max
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
