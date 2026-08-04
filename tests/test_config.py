@@ -133,7 +133,7 @@ def test_config_simple_compat():
     assert cfg.RISK_PER_TRADE == 0.005  # 🔧 31 Juil: RECALIBRATION → 0.50%
     assert cfg.MAX_ORDERS_PER_MINUTE == 8  # 31 Juil: MODE 5 SYMBOLES → 8 ordres/min
     assert cfg.__version__ == "4.1.0"
-    assert cfg.MIN_SIGNAL_SCORE == 0.70  # inchangé
+    assert cfg.MIN_SIGNAL_SCORE == 0.60  # ⚖️ 04 Aout 2026: RÉGLAGE AGRESSIF ÉQUILIBRÉ → 0.70→0.60
 
 
 def test_config_reload():

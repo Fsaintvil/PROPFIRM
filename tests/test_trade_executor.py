@@ -268,8 +268,8 @@ class TestTradeExecutor:
 
         assert result is not None
         lot_arg = ex.mt5.order_send.call_args[0][0]
-        # 🔧 RECALIBRATION 31 Juillet 2026: global_max_lot=0.10 plafonne à 0.10
-        assert lot_arg["volume"] == 0.10
+        # ⚖️ 04 Aout 2026: RÉGLAGE AGRESSIF ÉQUILIBRÉ → global_max_lot=0.20 (0.15 < 0.20, pas de clamp)
+        assert lot_arg["volume"] == 0.15
         assert lot_arg["comment"] == "ADAPT_TRE"
 
     def test_execute_validation_fails(self):
@@ -316,8 +316,8 @@ class TestTradeExecutor:
         ex = self.make_executor()
         ex.ftmo.calculate_lot.return_value = 0.15
         lot = ex._calc_lot("XAUUSD", 1.1000, 1.0900)
-        # 🔧 RECALIBRATION 31 Juillet 2026: global_max_lot=0.10 plafonne à 0.10
-        assert lot == 0.10
+        # ⚖️ 04 Aout 2026: RÉGLAGE AGRESSIF ÉQUILIBRÉ → global_max_lot=0.20 (0.15 < 0.20, pas de clamp)
+        assert lot == 0.15
 
     def test_calc_lot_fallback_min(self):
         ex = self.make_executor()

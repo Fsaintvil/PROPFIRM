@@ -46,13 +46,16 @@ trading:
     - NZDUSD
 
   # 🔧 MODE MIXTE 03 Aout 2026: max_positions 5→6 (risk-compliance plafond autorisé 6, VETO >8)
-  max_positions: 6              # 6 symboles/6 positions — débloque MAX_POSITIONS_PER_DIRECTION=3
-  max_positions_per_symbol: 2   # max 2 par symbole (1 BUY + 1 SELL)
-  max_trades_per_day: 40        # 5 symboles × ~8 trades/jour max
+  # ⚖️ RÉGLAGE AGRESSIF ÉQUILIBRÉ 04 Aout 2026: retour vers niveau mi-juin (pic de PnL)
+  #   sans la volatilité destructrice. Sous les vetos risk-compliance (max_risk ≤$300, VETO >$400).
+  #   Garde les fixes: ADX RANGING, OL min_trades, degraded mode, trailing, protections FTMO.
+  max_positions: 6              # gardé au plafond risk-compliance (VETO >8)
+  max_positions_per_symbol: 3   # ↑ 2→3 (retour niveau mi-juin)
+  max_trades_per_day: 100       # ↑ 40→100 (retour niveau mi-juin, sous le plafond 200)
   max_signals_per_cycle: 8      # 5 symboles
   max_orders_per_minute: 8      # débit suffisant pour 5 symboles
-  lot_size: 0.01                # lot de démarrage minimal
-  global_max_lot: 0.10          # plafond absolu (5×0.10 = 0.5 lots max, très safe pour 200K)
+  lot_size: 0.02                # ↑ 0.01→0.02 (lot de démarrage 2× plus gros)
+  global_max_lot: 0.20          # ↑ 0.10→0.20 (permet des lots 2× plus gros — niveau mi-juin)
   min_trade_interval_sec: 120   # 2 minutes minimum entre trades
   batch_interval_sec: 60        # batch toutes les 60s
   trading_start_hour: 0
@@ -62,7 +65,7 @@ trading:
 
 # ── Signal ───────────────────────────────────────────────────────────────
 signal:
-  min_score: 0.70               # 🔧 Restauration Juin 2026: ↓ 0.80→0.70 (capture plus de signaux, comme au pic de perf)
+  min_score: 0.60               # ⚖️ 04 Aout 2026: ↓ 0.70→0.60 (retour niveau mi-juin, plus de signaux) — la garde ADX RANGING filtre le bruit
   daily_profit_limit_pct: 0.008  # 0.8% profit/jour max (FTMO consistency)
 
 # ── Risque FTMO ─────────────────────────────────────────────────────────
@@ -78,10 +81,11 @@ risk:
   # --- Risque par trade (RECALIBRATION — 31 Juillet 2026) ---
   per_trade_pct: 0.005           # 🔧 31 Juil: ↑ 0.002→0.005 (0.50%) — risque calibré pour gagner
   short_mult: 1.0                # même risque long/short
-  max_risk_amount: 100.0         # ⚖️ SUPREME COUNCIL 03 Aout 2026: $300→$100 (Phase 1 CONDITIONAL RAMP).
-                                 #   Edge statistiquement absent (WR 43.3% pool, p=0.00017) — aucun sizing ne
-                                 #   gagne à l'edge actuel. $100 = 0.05% equity, valide l'edge SANS exposer $300.
-                                 #   Scaling $300 seulement si gates jour 15: USOIL WR≥52%/PF≥1.15/net>0 sur 40T.
+  max_risk_amount: 250.0         # ⚖️ RÉGLAGE AGRESSIF ÉQUILIBRÉ 04 Aout 2026: $100→$250 (2.5×).
+                                 #   Retour vers le niveau mi-juin (pic de PnL) MAIS sous le plafond
+                                 #   risk-compliance ($300) et bien sous le VETO ($400).
+                                 #   Les freins dynamiques restent: degraded mode (WR<35%), garde ADX,
+                                 #   perf_mult par symbole, adaptive_lot_mult, daily loss 2%, DD 10%.
 
   # --- Qualité ---
   min_rr_ratio: 2.0              # conservé (TP 6.0/SL 1.5 = RR 4.0 naturel)
@@ -185,7 +189,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   EURUSD:
     timeframe: "H1"
-    max_lot: 0.01
+    max_lot: 0.10               # ⚖️ RÉGLAGE AGRESSIF ÉQUILIBRÉ 04 Aout 2026: 0.01→0.10 (niveau mi-juin).
+                                #   Dégradé tant que WR<35% + garde ADX RANGING → les freins protègent.
     min_lot: 0.01
     risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
     max_spread_points: 40
@@ -247,8 +252,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   USDJPY:
     timeframe: "H1"
-    max_lot: 0.10               # ⚖️ 03 Aout 2026 (Supreme Council Phase 1): 0.20→0.10 — Kelly forex -84%, 0/1 récent.
-                                #   Scaling conditionnel: WR≥52%/PF≥1.15 sur 40 trades. (16 Juillet: 0.15→0.20)
+    max_lot: 0.20               # ⚖️ RÉGLAGE AGRESSIF ÉQUILIBRÉ 04 Aout 2026: 0.10→0.20 (niveau mi-juin).
+                                #   Meilleur symbole live (ADX 57.9 TREND, signal fort) — sous le VETO risk.
     min_lot: 0.05
     risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
     max_spread_points: 40
@@ -343,7 +348,7 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   NZDUSD:
     timeframe: "H1"
-    max_lot: 0.01
+    max_lot: 0.10               # ⚖️ RÉGLAGE AGRESSIF ÉQUILIBRÉ 04 Aout 2026: 0.01→0.10 (niveau mi-juin).
     min_lot: 0.01
     risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
     max_spread_points: 40
@@ -469,7 +474,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   EURGBP:
     timeframe: "H1"
-    max_lot: 0.05
+    max_lot: 0.10               # ⚖️ RÉGLAGE AGRESSIF ÉQUILIBRÉ 04 Aout 2026: 0.05→0.10 (niveau mi-juin).
+                                #   WR 73.5% historique sur 34 trades — le meilleur WR du pool.
     min_lot: 0.01
     risk_mult: 1.0  # 🔓 DÉBLOQUÉ 22 Juil 2026 — WR 73.5%, PF 2.04 sur 34 trades
     max_spread_points: 40
@@ -562,9 +568,8 @@ symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
   USOIL.cash:
     timeframe: "H1"
-    max_lot: 0.08               # ⚖️ 03 Aout 2026 (Supreme Council Phase 1): 0.10→0.08 (~$75-100/trade).
-                                #   WR récente 52.6% mais NET NÉGATIF (-$2.74, payoff<1.0) → pas d'edge prouvé.
-                                #   Scaling $300 (max_lot 0.24) seulement si WR≥52%/PF≥1.15/net>0 sur 40T.
+    max_lot: 0.15               # ⚖️ RÉGLAGE AGRESSIF ÉQUILIBRÉ 04 Aout 2026: 0.08→0.15 (niveau mi-juin).
+                                #   TREND ADX 33 — dégradé tant que WR<35%, les freins protègent.
     min_lot: 0.05
     risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
     max_spread_points: 100
