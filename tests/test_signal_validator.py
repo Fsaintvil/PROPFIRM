@@ -83,15 +83,16 @@ class TestCheck:
         assert "Buys not allowed" in reason
 
     @patch("engine_simple.signal_validator.get_symbol_params")
-    def test_ranging_adx_low_rejected(self, mock_params):
-        """🐛 FIX 03 Aout 2026: pas de momentum en RANGING (ADX<20).
-        MOM20x3 en range = chaque breakout est un retournement (EURUSD 0/8, ADX 14.7)."""
+    def test_ranging_adx_low_allowed(self, mock_params):
+        """🚫 DÉGEL TOTAL 04 Aout 2026: la garde RÉGIME (ADX<20 en RANGING) est DÉSACTIVÉE.
+        Retour au comportement pic (23 Juin 2026) — les signaux MOM20x3 en RANGING
+        ne sont plus rejetés sur le seul critère ADX. La qualité passe par le
+        score (min_score) et les filtres volume (RVOL/CMF/OBV)."""
         mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
         v = make_validator()
         sig = make_signal(adx=14.7, _regime="RANGING", score=0.95)
         ok, reason = v.check("EURUSD", sig, [])
-        assert ok is False
-        assert "RANGING" in reason
+        assert ok is True  # garde désactivée → signal accepté si score ≥ min_score
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_trend_adx_high_passes(self, mock_params):

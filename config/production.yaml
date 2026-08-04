@@ -1,36 +1,35 @@
 # ============================================================================
-# PRODUCTION OVERRIDES — Synchronisé 2 Juillet 2026 (FIX #5)
+# PRODUCTION OVERRIDES — CONFIG PIC 23 Juin 2026 (commit 4011b396b)
 # ============================================================================
-# Overrides minimaux pour la production.
-# Les limites sont gérées par default.yaml + portfolio_controller + signal_pipeline.
-# Toutes les valeurs sont synchronisées avec default.yaml (ultra-conservateur).
+# Restauré par Robot Manager le 04 Aout 2026 — "Config pic COMPLÈTE + dégel total"
+# Objectif: retour au niveau de performance historique le plus élevé.
+# ⚠️ Dépassement volontaire des vetos risk-compliance (max_risk ≤$300, max_pos ≤8)
+#    décidé par l'utilisateur en connaissance de cause (risque de pertes -$1,000/jour).
+# Les protections FTMO OBLIGATOIRES restent actives (daily loss 2%, DD 10%, consistance 30%).
 # ============================================================================
 
 # ── Corrélation — Conservée
 correlation:
   enabled: true
 
-# ── Trading — RÉGLAGE AGRESSIF ÉQUILIBRÉ 04 Aout 2026
-# (synchronisé avec default.yaml — retour niveau mi-juin, sous les vetos risk-compliance)
+# ── Trading — CONFIG PIC 23 Juin 2026 ──────────────────────────────────
 trading:
-  max_positions: 6              # gardé au plafond risk-compliance (VETO >8) — débloque 3/direction
-  max_positions_per_symbol: 3   # ↑ 2→3 (niveau mi-juin)
-  max_trades_per_day: 100       # ↑ 40→100 (niveau mi-juin)
-  global_max_lot: 0.20          # ↑ 0.10→0.20 (permet des lots 2× plus gros)
+  max_positions: 30              # ↑ 20→30 (23 Juin) : 7 symboles × 3-4 positions
+  max_positions_per_symbol: 3    # ↑ 2→3 (23 Juin) : jusqu'à 3 positions par symbole
+  max_trades_per_day: 200        # ↑ 120→200 (23 Juin) : 7 symboles × ~28 trades/jour
+  max_signals_per_cycle: 10      # marge pour signaux simultanés
+  history_lookback_days: 3       # P2: réduit 7→3 jours (moins de contamination historique)
 
-# ── Risk — RÉGLAGE AGRESSIF ÉQUILIBRÉ 04 Aout 2026 ──────────
+# ── Risk — CONFIG PIC 23 Juin 2026 (production override) ───────────────
 risk:
-  per_trade_pct: 0.005          # conservé (0.50% — risque calibré pour gagner)
-  max_daily_loss_pct: 0.02      # FTMO: 2% daily loss (GARDÉ — protection critique)
-  max_dd_pct: 0.10              # FTMO: 10% max drawdown (GARDÉ)
-  min_rr_ratio: 2.0             # conservé (TP 6.0/SL 1.5 = RR 4.0 naturel)
-  cooldown_minutes: 15          # conservé
-  auto_pause_losses: 5          # conservé
-  max_risk_amount: 250.0         # ⚖️ RÉGLAGE AGRESSIF ÉQUILIBRÉ 04 Aout 2026: $100→$250.
-                                 #   Sous le plafond risk-compliance ($300) et le VETO ($400).
-                                 #   Les freins restent actifs: degraded mode WR<35%, garde ADX RANGING,
-                                 #   perf_mult par symbole, adaptive_lot_mult, daily loss 2%, DD 10%.
-  circuit_breaker_dd_pct: 0.06  # conservé (6% — marge pour FTMO 10%)
+  per_trade_pct: 0.006           # ↑ 0.5%→0.6% (augmentation validée 23 Juin)
+  max_daily_loss_pct: 0.02       # FTMO: 2% daily loss (GARDÉ — protection critique)
+  max_dd_pct: 0.10               # FTMO: 10% max drawdown (GARDÉ)
+  min_rr_ratio: 2.0
+  cooldown_minutes: 3            # Scénario A: réduit 5→3 min pour +20% trades
+  auto_pause_losses: 10
+  max_risk_amount: 1200.0        # ↑ $800→$1,200 (augmentation validée 23 Juin)
+  circuit_breaker_dd_pct: 0.08
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 🛡️ FOMC PREP — 28-29 Juillet 2026
@@ -38,7 +37,7 @@ risk:
 # DÉSACTIVÉ. Activer la veille du FOMC en décommentant le bloc ci-dessous.
 # ⚠️ ATTENTION: Les clés dupliquées YAML (trading:/risk:) écrasent les valeurs
 #    plus hautes dans le fichier. Ne PAS décommenter sans supprimer les clés
-#    dupliquées au-dessus (L.14-29).
+#    dupliquées au-dessus (L.15-26).
 # trading:
 #   max_positions: 5
 #   max_positions_per_symbol: 2

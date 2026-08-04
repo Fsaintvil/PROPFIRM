@@ -1927,34 +1927,44 @@ class TradingEngine:
             f"challenge WR={global_wr:.1%}, recent ({len(recent_trades)}) WR={recent_wr:.1%}"
         )
 
-        # PHASE 2.1: Check par symbole → degraded (lot minimum) si WR < 35% sur 20 trades
-        degraded_symbols = self._state.get("degraded_symbols", {})
-        for symbol in ACTIVE_SYMBOLS & set(cfg.SYMBOLS):
-            sym_trades = [t for t in recent_trades if t.get("symbol") == symbol]
-            if len(sym_trades) >= 20:
-                sym_wr = sum(1 for t in sym_trades if t["profit"] > 0) / len(sym_trades)
-                sym_pf = self._calc_pf(sym_trades)
-                _display_pf = min(sym_pf, 5.0)
-                logger.info(
-                    f"  [PHASE 3] {symbol}: {len(sym_trades)} trades, WR={sym_wr:.1%}, PF={_display_pf:.2f}"
-                    + (" (capé)" if sym_pf > 5.0 else "")
-                )
+        # ═══════════════════════════════════════════════════════════════════
+        # 🚫 PHASE 3 DEGRADED MODE — DÉSACTIVÉ 04 Aout 2026 (Robot Manager)
+        # ═══════════════════════════════════════════════════════════════════
+        # DÉGEL TOTAL: l'utilisateur a choisi "Config pic COMPLÈTE + dégel total"
+        # (retour au niveau historique le plus performant — commit 4011b396b, 23 Juin).
+        # Le degraded mode (lot minimum si WR<35% sur 20 trades) a été ajouté le
+        # 31 Juillet 2026, APRÈS le pic. Il gelait EURUSD/EURGBP/USOIL au lot minimum
+        # et empêchait toute récupération. Désactivé pour restaurer le comportement pic.
+        # Le code est conservé commenté ci-dessous pour référence/réactivation.
+        if False:  # DÉSACTIVÉ — DÉGEL TOTAL 04 Aout 2026
+            # PHASE 2.1: Check par symbole → degraded (lot minimum) si WR < 35% sur 20 trades
+            degraded_symbols = self._state.get("degraded_symbols", {})
+            for symbol in ACTIVE_SYMBOLS & set(cfg.SYMBOLS):
+                sym_trades = [t for t in recent_trades if t.get("symbol") == symbol]
+                if len(sym_trades) >= 20:
+                    sym_wr = sum(1 for t in sym_trades if t["profit"] > 0) / len(sym_trades)
+                    sym_pf = self._calc_pf(sym_trades)
+                    _display_pf = min(sym_pf, 5.0)
+                    logger.info(
+                        f"  [PHASE 3] {symbol}: {len(sym_trades)} trades, WR={sym_wr:.1%}, PF={_display_pf:.2f}"
+                        + (" (capé)" if sym_pf > 5.0 else "")
+                    )
 
-                if sym_wr < 0.35:
-                    if symbol not in degraded_symbols:
-                        degraded_symbols[symbol] = self.cycle_count
+                    if sym_wr < 0.35:
+                        if symbol not in degraded_symbols:
+                            degraded_symbols[symbol] = self.cycle_count
+                            self._state["degraded_symbols"] = degraded_symbols
+                            logger.warning(
+                                f"[DEGRADED] {symbol}: WR={sym_wr:.1%} < 35% (cycle {self.cycle_count}) → lot minimum"
+                            )
+                            self.notifier.send(f"DEGRADED: {symbol} WR={sym_wr:.1%} < 35% → lot min")
+                    elif sym_wr >= 0.50 and symbol in degraded_symbols:
+                        del degraded_symbols[symbol]
                         self._state["degraded_symbols"] = degraded_symbols
-                        logger.warning(
-                            f"[DEGRADED] {symbol}: WR={sym_wr:.1%} < 35% (cycle {self.cycle_count}) → lot minimum"
-                        )
-                        self.notifier.send(f"DEGRADED: {symbol} WR={sym_wr:.1%} < 35% → lot min")
-                elif sym_wr >= 0.50 and symbol in degraded_symbols:
-                    del degraded_symbols[symbol]
-                    self._state["degraded_symbols"] = degraded_symbols
-                    logger.info(f"[DEGRADED] {symbol}: WR={sym_wr:.1%} ≥ 50% → retour mode normal")
-                    self.notifier.send(f"[DEGRADED] {symbol}: WR={sym_wr:.1%} ≥ 50% → mode normal")
-                elif sym_wr < 0.50:
-                    logger.warning(f"[WR WATCH] {symbol}: WR={sym_wr:.1%} < 50% (à surveiller)")
+                        logger.info(f"[DEGRADED] {symbol}: WR={sym_wr:.1%} ≥ 50% → retour mode normal")
+                        self.notifier.send(f"[DEGRADED] {symbol}: WR={sym_wr:.1%} ≥ 50% → mode normal")
+                    elif sym_wr < 0.50:
+                        logger.warning(f"[WR WATCH] {symbol}: WR={sym_wr:.1%} < 50% (à surveiller)")
 
         # 🔧 FIX 29 Juillet 2026: WR CHECK DÉSACTIVÉ.
         # Ce mécanisme créait une double peine : l'OnlineLearner réduisait déjà

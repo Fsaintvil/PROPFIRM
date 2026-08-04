@@ -304,47 +304,18 @@ MAX_TOTAL_LOTS = 2.0  # volume total max (ex: 20 positions × 0.10 = 2.0)
 # ============================================================================
 # Utilisé par OnlineLearner (get_params + _update_params) pour plafonner
 # le risk_mult par symbole. Un hard block à 0.0 désactive complètement
-# le symbole pour l'OL. Mis à jour 10 Juillet 2026.
-# NOTE: les symboles NON listés ici utilisent le plancher 0.60.
+# le symbole pour l'OL.
+# 🚫 VIDÉ 04 Aout 2026 (Robot Manager) — DÉGEL TOTAL.
+# Ce mécanisme n'existait PAS au pic (commit 4011b396b, 23 Juin). Il a été
+# ajouté le 10 Juillet 2026 et capait les FX à 0.5-0.6, bridant les risk_mult
+# du pic (EURUSD 1.00, USDJPY 1.00, GBPUSD 0.90, USDCAD 0.85, AUDUSD 0.75).
+# Vidé pour restaurer le comportement pic: l'OL utilise les risk_mult config
+# + plancher 0.60. Voir _update_params (risk_mult = max(0.60, ...)).
+# NOTE: les symboles NON listés ici utilisent le plancher OL 0.60.
 # ============================================================================
 SYMBOL_MAX_RISK = {
     # ═══════════════════════════════════════════════════════════════════════
-    # SOLUTION A — 27 Juillet 2026: 5 symboles FTMO-viables
+    # DÉGEL TOTAL 04 Aout 2026 — dict VIDÉ (comportement pic restauré).
+    # L'OL applique le plancher 0.60 et les risk_mult de la config YAML.
     # ═══════════════════════════════════════════════════════════════════════
-    "XAUUSD": 1.0,  # ✅ PF=1.31, DD=0.29% backtest H4 14 ans
-    "BTCUSD": 1.0,  # ✅ PF=2.07, DD=5.50% backtest H4 14 ans
-    "US500.cash": 1.0,  # ✅ PF=1.39, DD=5.5% backtest 14 ans
-    "US100.cash": 1.0,  # ✅ PF=1.24, DD=5.1% backtest 14 ans
-    "JP225.cash": 0.7,  # 🟡 PF=1.15, DD=12.4% → risk_mult réduit à 0.7
-    # ═══════════════════════════════════════════════════════════════════════
-    # 26 SYMBOLES ACTIFS — débloqués 27 Juillet 2026
-    # Caps conservateurs, le OnlineLearner ajustera automatiquement.
-    # Les symboles NON listés utilisent le plancher OL 0.60.
-    # ═══════════════════════════════════════════════════════════════════════
-    # ── FX MAJORS (0.6) ──
-    "EURUSD": 0.6,
-    "GBPUSD": 0.6,
-    "USDCHF": 0.6,
-    "USDCAD": 0.6,
-    "AUDUSD": 0.6,
-    "NZDUSD": 0.6,
-    "USDJPY": 0.6,
-    # ── FX CROSSES (0.5) ──
-    "EURJPY": 0.5,
-    "GBPJPY": 0.5,
-    "EURGBP": 0.5,
-    "AUDJPY": 0.5,
-    # ── CRYPTO (0.3, volatile) ──
-    "ETHUSD": 0.3,
-    "BNBUSD": 0.3,
-    "SOLUSD": 0.3,
-    # ── INDICES (0.5) ──
-    "US30.cash": 0.5,
-    "GER40.cash": 0.5,
-    "UK100.cash": 0.5,
-    # ── COMMODITIES (0.5) ──
-    "XAGUSD": 0.5,
-    "USOIL.cash": 0.5,
-    "UKOIL.cash": 0.5,
-    "NATGAS.cash": 0.5,
 }

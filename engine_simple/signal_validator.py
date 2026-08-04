@@ -87,18 +87,26 @@ class SignalValidator:
                 )
 
         # ── 1c. Garde RÉGIME: pas de momentum en RANGING (ADX < 20) ────
-        # 🐛 FIX 03 Aout 2026: MOM20x3 achète des breakouts de momentum — en RANGING
-        # (ADX < 20), chaque breakout est un retournement. Preuves live depuis 28/07:
-        # EURUSD 0/8 (ADX 14.7), NZDUSD 1/8 (ADX 16.6), EURGBP 1/9 (ADX 18.5) = 2/25 (8% WR),
-        # pendant que USOIL (ADX 35, TREND) et USDJPY (ADX 58, TREND) ne perdent pas.
-        # Seul trader quand le momentum existe réellement (ADX ≥ 20).
-        _adx = signal.get("adx")
-        _regime = signal.get("_regime", "")
-        if _adx is not None and float(_adx) < 20.0 and _regime == "RANGING":
-            return False, (
-                f"Régime RANGING (ADX={float(_adx):.1f} < 20) — momentum MOM20x3 non fiable, "
-                f"signal rejeté (garde 03 Aout 2026)"
-            )
+        # 🚫 DÉSACTIVÉ 04 Aout 2026 (Robot Manager) — DÉGEL TOTAL.
+        # L'utilisateur a choisi "Config pic COMPLÈTE + dégel total" (retour au niveau
+        # historique le plus performant, commit 4011b396b, 23 Juin). Cette garde a été
+        # ajoutée le 03 Aout 2026, APRÈS le pic. Elle rejetait tous les signaux MOM20x3
+        # en RANGING (ADX<20) — exactement le marché actuel — donc le robot ne tradeait
+        # plus du tout. Désactivée pour restaurer le comportement pic.
+        # Le code est conservé commenté ci-dessous pour référence/réactivation.
+        if False:  # DÉSACTIVÉ — DÉGEL TOTAL 04 Aout 2026
+            # 🐛 FIX 03 Aout 2026: MOM20x3 achète des breakouts de momentum — en RANGING
+            # (ADX < 20), chaque breakout est un retournement. Preuves live depuis 28/07:
+            # EURUSD 0/8 (ADX 14.7), NZDUSD 1/8 (ADX 16.6), EURGBP 1/9 (ADX 18.5) = 2/25 (8% WR),
+            # pendant que USOIL (ADX 35, TREND) et USDJPY (ADX 58, TREND) ne perdent pas.
+            # Seul trader quand le momentum existe réellement (ADX ≥ 20).
+            _adx = signal.get("adx")
+            _regime = signal.get("_regime", "")
+            if _adx is not None and float(_adx) < 20.0 and _regime == "RANGING":
+                return False, (
+                    f"Régime RANGING (ADX={float(_adx):.1f} < 20) — momentum MOM20x3 non fiable, "
+                    f"signal rejeté (garde 03 Aout 2026)"
+                )
 
         # ── 2. Signal quality gate (dynamic min_score) ─────────────────
         sym_params = get_symbol_params(symbol)

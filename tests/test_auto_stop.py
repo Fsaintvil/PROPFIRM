@@ -510,5 +510,5 @@ class TestConstants:
 
     def test_active_symbols_non_empty(self):
         assert len(ACTIVE_SYMBOLS) >= 3
-        assert "USOIL.cash" in ACTIVE_SYMBOLS
+        assert "XAUUSD" in ACTIVE_SYMBOLS  # ⚖️ CONFIG PIC 23 Juin 2026 (04 Aout 2026)
         assert "USDJPY" in ACTIVE_SYMBOLS

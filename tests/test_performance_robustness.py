@@ -399,7 +399,7 @@ class TestConfigHardening:
         """Les contraintes FTMO doivent être valides"""
         assert 1 <= cfg.MIN_TRADING_DAYS <= 365, "MIN_TRADING_DAYS hors plage"
         assert 1 <= cfg.MAX_POSITIONS <= 50, "MAX_POSITIONS hors plage"
-        assert 1 <= cfg.MAX_TRADES_PER_DAY <= 100, "MAX_TRADES_PER_DAY hors plage"
+        assert 1 <= cfg.MAX_TRADES_PER_DAY <= 200, "MAX_TRADES_PER_DAY hors plage"
         assert 1 <= cfg.COOLDOWN_MINUTES <= 1440, "COOLDOWN_MINUTES hors plage"
 
     def test_spread_limits_rational(self):

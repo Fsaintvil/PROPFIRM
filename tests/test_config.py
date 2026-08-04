@@ -27,15 +27,16 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # 5 symboles actifs (31 Juillet 2026 — MODE 5 SYMBOLES POSITIFS, audit PF 0.54)
-    assert len(cfg.trading.symbols) == 5  # USDJPY, USOIL.cash, EURGBP, EURUSD, NZDUSD
-    assert "USDJPY" in cfg.trading.symbols
-    assert "USOIL.cash" in cfg.trading.symbols
-    assert "EURGBP" in cfg.trading.symbols
+    # ⚖️ CONFIG PIC 23 Juin 2026 (04 Aout 2026) — 7 symboles pic restaurés
+    assert len(cfg.trading.symbols) == 7  # XAUUSD, BTCUSD, EURUSD, USDJPY, GBPUSD, AUDUSD, USDCAD
+    assert "XAUUSD" in cfg.trading.symbols
+    assert "BTCUSD" in cfg.trading.symbols
     assert "EURUSD" in cfg.trading.symbols
-    assert "NZDUSD" in cfg.trading.symbols
-    assert "XAUUSD" not in cfg.trading.symbols  # DÉSACTIVÉ (-$2,139 cumulés)
-    assert cfg.risk.per_trade_pct == 0.005  # 🔧 31 Juil: RECALIBRATION → 0.50%
+    assert "USDJPY" in cfg.trading.symbols
+    assert "GBPUSD" in cfg.trading.symbols
+    assert "AUDUSD" in cfg.trading.symbols
+    assert "USDCAD" in cfg.trading.symbols
+    assert cfg.risk.per_trade_pct == 0.004  # défaut YAML (production override → 0.006)
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 2.0  # conservé
 
@@ -50,8 +51,8 @@ def test_as_flat_dict():
     cfg = load_config("default")
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
-    assert flat["RISK_PER_TRADE_PCT"] == 0.005  # 🔧 31 Juil: RECALIBRATION → 0.50%
-    assert flat["TRADING_MAX_POSITIONS"] == 6  # 03 Aout 2026: MODE MIXTE → 5→6 positions max
+    assert flat["RISK_PER_TRADE_PCT"] == 0.004  # défaut YAML (production override → 0.006)
+    assert flat["TRADING_MAX_POSITIONS"] == 30  # ⚖️ CONFIG PIC 23 Juin 2026
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -59,24 +60,23 @@ def test_symbol_limits_defaults():
     cfg = load_config("default")
     assert "XAUUSD" in cfg.symbol_limits
     assert "BTCUSD" in cfg.symbol_limits
-    assert (
-        cfg.symbol_limits["XAUUSD"].max_lot == 0.01
-    )  # 🔴 HARD BLOCK 16 Juil 2026: ↓ 0.03→0.01 (stop XAUUSD, 89% pertes)
+    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.10  # ⚖️ CONFIG PIC 23 Juin 2026: XAUUSD max_lot 0.10
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
-    assert cfg.symbol_limits["XAUUSD"].risk_mult == 1.0  # ✅ DÉBLOQUÉ 27 Juil 2026: Solution A
+    assert cfg.symbol_limits["XAUUSD"].risk_mult == 0.60  # ⚖️ CONFIG PIC 23 Juin 2026: risk réduit
+    assert cfg.symbol_limits["XAUUSD"].min_score == 0.63  # ⚖️ CONFIG PIC 23 Juin 2026
 
 
 def test_symbol_limits_new_portfolio():
-    """Le nouveau portefeuille 5 symboles focus."""
+    """Le portefeuille PIC 23 Juin (7 symboles)."""
     from config.schema import load_config
 
     cfg = load_config("default")
     btc = cfg.symbol_limits.get("BTCUSD", {})
-    assert btc.risk_mult == 1.0  # ✅ DÉBLOQUÉ 27 Juil 2026: Solution A
-    assert btc.allow_buys is True  # ✅ DÉBLOQUÉ 27 Juil 2026
-    assert btc.allow_shorts is True  # ✅ DÉBLOQUÉ 27 Juil 2026
-    assert btc.max_lot == 0.01  # lot minimal
-    assert btc.min_score is None  # per-symbol retiré — global 0.70 s'applique
+    assert btc.risk_mult == 0.0  # 🔴 DÉSACTIVÉ 23 Juin 2026 (comme au pic)
+    assert btc.allow_buys is True
+    assert btc.allow_shorts is True
+    assert btc.max_lot == 0.03  # lot minimal
+    assert btc.min_score == 0.60  # pic
 
 
 def test_env_interpolation():
@@ -130,10 +130,10 @@ def test_config_simple_compat():
     import config_simple as cfg
 
     assert cfg.ROBOT_MAGIC == 999001
-    assert cfg.RISK_PER_TRADE == 0.005  # 🔧 31 Juil: RECALIBRATION → 0.50%
-    assert cfg.MAX_ORDERS_PER_MINUTE == 8  # 31 Juil: MODE 5 SYMBOLES → 8 ordres/min
+    assert cfg.RISK_PER_TRADE == 0.006  # ⚖️ CONFIG PIC 23 Juin 2026 (production override → 0.60%)
+    assert cfg.MAX_ORDERS_PER_MINUTE == 6  # CONFIG PIC 23 Juin 2026
     assert cfg.__version__ == "4.1.0"
-    assert cfg.MIN_SIGNAL_SCORE == 0.60  # ⚖️ 04 Aout 2026: RÉGLAGE AGRESSIF ÉQUILIBRÉ → 0.70→0.60
+    assert cfg.MIN_SIGNAL_SCORE == 0.60  # ⚖️ CONFIG PIC 23 Juin 2026
 
 
 def test_config_reload():
