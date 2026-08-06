@@ -1,5 +1,13 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 06 Août 2026** : 🔧 **MODE PREUVE STRICT activé** (décision utilisateur "fait tout maintenant").
+> But : prouver l'edge en réel sur 100+ trades propres AVANT tout scaling. **5 symboles BUY-only**
+> (XAUUSD, EURUSD, USDJPY, EURGBP, USOIL.cash), `allow_shorts=false` partout, lots réduits 0.05 max,
+> veto risk-compliance appliqué (per_trade 0.3%, max_pos 8, auto_pause 5, min_score 0.70, cooldown 15,
+> max_risk $600). Fix signal_pipeline double pénalité H4 actif. **Checkpoint quotidien** :
+> `scripts/daily_checkpoint.py` via tâche planifiée Windows `MT5_FTMO_DailyCheckpoint` (20:00).
+> Rapports dans `runtime/daily_checkpoint/`. SELL bannis : WR 34% cumulé = -2 925$ sur 364 trades.
+> XAGUSD désactivé (trou noir -1 484$). Backups config : `config/backup_*_20260806.yaml`.
 > **Mise à jour 05 Août 2026** : Gate de régime STRICT (RANGING ADX<20 → TOUJOURS rejeté, plus d'exception
 > score ≥ 0.85), fix `trading_days` v3 (union jours persistés + reconstruits — 12 jours compte FTMO conservés),
 > fix label log `risk_per_01` (affichait sl_profit brut négatif → confusion, pas de bug de calcul),
