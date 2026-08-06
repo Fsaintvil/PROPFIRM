@@ -37,6 +37,25 @@ VALIDATION = {
     "windows": 2,  # stabilité sur 2 fenêtres de 50
 }
 
+# ── Critère de scaling par symbole ──────────────────────────────────────────
+# Un symbole devient "éligible au scaling" quand il prouve son edge sur un
+# échantillon suffisant : PF ≥ 1.5 ET WR ≥ 50% ET ≥ 30 trades BUY-only.
+# Le scaling (augmentation de lot) est une DÉCISION UTILISATEUR — le checkpoint
+# ne fait que signaler l'éligibilité, il ne modifie jamais les lots.
+SCALING = {
+    "min_trades": 30,  # échantillon minimum par symbole
+    "pf_target": 1.5,  # profit factor cible par symbole
+    "wr_target": 0.50,  # WR cible par symbole
+    "priority_symbols": ["XAUUSD"],  # moteur principal — signalé en premier
+    "suggested_lot": {  # lot proposé après validation (décision utilisateur)
+        "XAUUSD": 0.10,
+        "EURUSD": 0.08,
+        "EURGBP": 0.08,
+        "USDJPY": 0.05,
+        "USOIL.cash": 0.05,
+    },
+}
+
 
 def load_trades():
     path = BASE / "runtime" / "trades_log.csv"
@@ -152,11 +171,15 @@ def compute_proof_stats(rows):
         if not sym_trades:
             continue
         w = sum(1 for t in sym_trades if t["pnl"] > 0)
+        gw = sum(max(0, t["pnl"]) for t in sym_trades)
+        gl = sum(max(0, -t["pnl"]) for t in sym_trades)
         by_symbol[sym] = {
             "trades": len(sym_trades),
             "wins": w,
-            "wr": w / len(sym_trades),
+            "wr": round(w / len(sym_trades), 4),
             "pnl": round(sum(t["pnl"] for t in sym_trades), 2),
+            "expectancy": round(sum(t["pnl"] for t in sym_trades) / len(sym_trades), 2),
+            "pf": round(gw / gl, 3) if gl > 0 else (99.9 if gw > 0 else 0.0),
         }
 
     by_day = {}
@@ -206,6 +229,50 @@ def evaluate_validation(stats):
     else:
         verdict["message"] = f"Échantillon insuffisant ({n}/{c['min_trades']} trades)"
     return verdict
+
+
+def evaluate_scaling(stats):
+    """Éligibilité au scaling par symbole.
+
+    Chaque symbole est évalué sur son propre échantillon BUY-only :
+        - ≥ 30 trades (échantillon suffisant)
+        - PF ≥ 1.5
+        - WR ≥ 50%
+    Le checkpoint SIGNALE l'éligibilité — la décision d'augmenter le lot
+    appartient à l'utilisateur. Ne modifie jamais les lots automatiquement.
+    """
+    sc = SCALING
+    result = {"eligible": [], "in_progress": [], "symbols": {}}
+
+    by_symbol = stats.get("by_symbol", {})
+    # Priorité : les symboles moteurs d'abord (XAUUSD), puis les autres
+    ordered = [s for s in sc["priority_symbols"] if s in by_symbol]
+    ordered += [s for s in PROOF_SYMBOLS if s in by_symbol and s not in ordered]
+
+    for sym in ordered:
+        s = by_symbol[sym]
+        n = s["trades"]
+        pf = s.get("pf", 0.0)
+        wr = s.get("wr", 0.0)
+        eligible = n >= sc["min_trades"] and pf >= sc["pf_target"] and wr >= sc["wr_target"]
+
+        suggested = sc["suggested_lot"].get(sym, 0.05)
+        entry = {
+            "trades": n,
+            "wr": wr,
+            "pf": pf,
+            "expectancy": s.get("expectancy", 0.0),
+            "pnl": s.get("pnl", 0.0),
+            "eligible": eligible,
+            "suggested_lot": suggested,
+            "missing_trades": max(0, sc["min_trades"] - n),
+        }
+        result["symbols"][sym] = entry
+        if eligible:
+            result["eligible"].append(sym)
+        elif n > 0:
+            result["in_progress"].append(sym)
+    return result
 
 
 def ftmo_status(report):
@@ -258,6 +325,7 @@ def main():
     ftmo = ftmo_status(load_ftmo_report())
     proc = check_process()
     verdict = evaluate_validation(stats)
+    scaling = evaluate_scaling(stats)
 
     summary = {
         "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -265,6 +333,7 @@ def main():
         "ftmo": ftmo,
         "proof": stats,
         "validation": verdict,
+        "scaling": scaling,
     }
 
     path = write_report(summary)
@@ -304,7 +373,8 @@ def main():
     if stats["by_symbol"]:
         print("   Par symbole:")
         for sym, s in sorted(stats["by_symbol"].items(), key=lambda x: -x[1]["pnl"]):
-            print(f"     {sym:12s} {s['trades']:3d} trades | WR {s['wr']:.0%} | PnL {s['pnl']:+8.2f}$")
+            pf_s = s.get("pf", 0.0)
+            print(f"     {sym:12s} {s['trades']:3d} trades | WR {s['wr']:.0%} | PF {pf_s:.2f} | PnL {s['pnl']:+8.2f}$")
     if stats["by_day"]:
         print("   Par jour:")
         for d, s in sorted(stats["by_day"].items()):
@@ -320,6 +390,25 @@ def main():
         else:
             print(f"   {mark} {k}: {v['actuel']} (cible {v['cible']})")
     print(f"   → {verdict['message']}")
+
+    # Scaling par symbole
+    print("\n🚀 SCALING PAR SYMBOLE (critère: ≥30 trades + PF≥1.5 + WR≥50%)")
+    if scaling["eligible"]:
+        print("   🟢 ÉLIGIBLE(S) AU SCALING:")
+        for sym in scaling["eligible"]:
+            s = scaling["symbols"][sym]
+            print(
+                f"     ✅ {sym:12s} {s['trades']} trades | PF {s['pf']:.2f} | WR {s['wr']:.0%} | "
+                f"lot suggéré: {s['suggested_lot']} (décision utilisateur requise)"
+            )
+    for sym in scaling["in_progress"]:
+        s = scaling["symbols"][sym]
+        pf_ok = "✅" if s["pf"] >= SCALING["pf_target"] else "⏳"
+        wr_ok = "✅" if s["wr"] >= SCALING["wr_target"] else "⏳"
+        n_ok = "✅" if s["trades"] >= SCALING["min_trades"] else f"⏳ {s['missing_trades']} à faire"
+        print(f"     🟡 {sym:12s} {s['trades']} trades ({n_ok}) | PF {s['pf']:.2f} {pf_ok} | WR {s['wr']:.0%} {wr_ok}")
+    if not scaling["eligible"] and not scaling["in_progress"]:
+        print("     ⏳ Aucun trade de preuve accumulé pour l'instant — la phase démarre.")
 
     print(f"\n📁 Rapport écrit: {path}")
 
