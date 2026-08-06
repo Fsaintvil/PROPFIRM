@@ -13,3 +13,4 @@ nul
 features_institutionnelles.csv
 data/features/
 runtime/auto_state.json
+config/backup_*.yaml

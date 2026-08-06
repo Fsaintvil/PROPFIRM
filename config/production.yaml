@@ -1,34 +1,38 @@
 # ============================================================================
-# PRODUCTION OVERRIDES — CONFIG PIC 23 Juin 2026 (commit 4011b396b)
+# PRODUCTION OVERRIDES — MODE PREUVE STRICT 06 Aout 2026
 # ============================================================================
-# Restauré par Robot Manager le 04 Aout 2026 — "Config pic COMPLÈTE + dégel total"
-# Objectif: retour au niveau de performance historique le plus élevé.
-# ⚠️ Dépassement volontaire des vetos risk-compliance (max_risk ≤$300, max_pos ≤8)
-#    décidé par l'utilisateur en connaissance de cause (risque de pertes -$1,000/jour).
+# Appliqué par Robot Manager le 06 Aout 2026 — décision utilisateur "fait tout maintenant".
+# Phase de validation: prouver l'edge sur 100+ trades propres AVANT tout scaling.
+# ⚠️ Conforme au veto risk-compliance: per_trade ≤0.3%, max_pos ≤8, auto_pause ≤5.
 # Les protections FTMO OBLIGATOIRES restent actives (daily loss 2%, DD 10%, consistance 30%).
+# Sauvegarde avant changement: config/backup_production_20260806.yaml
 # ============================================================================
 
 # ── Corrélation — Conservée
 correlation:
   enabled: true
 
-# ── Trading — CONFIG PIC 23 Juin 2026 ──────────────────────────────────
+# ── Trading — MODE PREUVE STRICT ──────────────────────────────────────
 trading:
-  max_positions: 30              # ↑ 20→30 (23 Juin) : 7 symboles × 3-4 positions
-  max_positions_per_symbol: 3    # ↑ 2→3 (23 Juin) : jusqu'à 3 positions par symbole
-  max_trades_per_day: 200        # ↑ 120→200 (23 Juin) : 7 symboles × ~28 trades/jour
-  max_signals_per_cycle: 10      # marge pour signaux simultanés
-  history_lookback_days: 3       # P2: réduit 7→3 jours (moins de contamination historique)
+  max_positions: 8               # 🔧 VETO: 30→8 (06 Aout) — plafond risk-compliance
+  max_positions_per_symbol: 2    # 🔧 3→2 (06 Aout) — diversification
+  max_trades_per_day: 75         # 🔧 200→75 (06 Aout) — qualité > quantité
+  max_signals_per_cycle: 10      # conservé
+  history_lookback_days: 3       # conservé
 
-# ── Risk — CONFIG PIC 23 Juin 2026 (production override) ───────────────
+# ── Signal — MODE PREUVE STRICT ───────────────────────────────────────
+signal:
+  min_score: 0.70                # 🔧 VETO: 0.60→0.70 (06 Aout) — seuls les signaux de haute confiance
+
+# ── Risk — MODE PREUVE STRICT (veto risk-compliance) ──────────────────
 risk:
-  per_trade_pct: 0.006           # ↑ 0.5%→0.6% (augmentation validée 23 Juin)
+  per_trade_pct: 0.003           # 🔧 VETO: 0.006→0.003 (06 Aout) — risque par trade divisé par 2
   max_daily_loss_pct: 0.02       # FTMO: 2% daily loss (GARDÉ — protection critique)
   max_dd_pct: 0.10               # FTMO: 10% max drawdown (GARDÉ)
   min_rr_ratio: 2.0
-  cooldown_minutes: 3            # Scénario A: réduit 5→3 min pour +20% trades
-  auto_pause_losses: 10
-  max_risk_amount: 1200.0        # ↑ $800→$1,200 (augmentation validée 23 Juin)
+  cooldown_minutes: 15           # 🔧 3→15 (06 Aout) — pause après perte allongée
+  auto_pause_losses: 5           # 🔧 VETO: 10→5 (06 Aout) — pause après 5 pertes consécutives
+  max_risk_amount: 600.0         # 🔧 VETO: $1,200→$600 (06 Aout) — plafond risque par trade
   circuit_breaker_dd_pct: 0.08
 
 # ═══════════════════════════════════════════════════════════════════════════════

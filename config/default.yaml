@@ -31,19 +31,21 @@ robot:
 trading:
   symbols:
     # ═══════════════════════════════════════════════════════════════════════
-    # CONFIG PIC — 23 Juin 2026 (commit 4011b396b) — restauré 04 Aout 2026
+    # MODE PREUVE STRICT — 06 Aout 2026 (validé par l'utilisateur)
     # ═══════════════════════════════════════════════════════════════════════
-    # Retour au niveau historique le plus performant (7 symboles).
-    # BTCUSD présent mais DÉSACTIVÉ (risk_mult=0.0) comme au pic.
-    # ⚠️ Décision utilisateur: "Config pic COMPLÈTE + dégel total".
-    #    Dépassement volontaire des vetos risk-compliance.
+    # Phase de validation: prouver l'edge en réel sur 100+ trades propres.
+    # Seuls les symboles/directions rentables (analyse 805 trades):
+    #   XAUUSD BUY (WR 60.6%, +31$), EURUSD BUY (WR 59.1%, +82$),
+    #   EURGBP BUY (WR 67.6%, +26$), USDJPY BUY (WR 48%), USOIL BUY.
+    # ⚠️ SELL bannis: WR 34% cumulé = -2 925$ (XAUUSD SELL -1 938$).
+    # ⚠️ XAGUSD désactivé (trou noir -1 484$), BTCUSD/GBPUSD/AUDUSD/USDCAD
+    #    retirés de la liste active (WR<50% ou trous).
+    # Lots réduits 0.05 max — aucune augmentation avant validation statistique.
     - XAUUSD
-    - BTCUSD
     - EURUSD
     - USDJPY
-    - GBPUSD
-    - AUDUSD
-    - USDCAD
+    - EURGBP
+    - USOIL.cash
 
   # ⚖️ CONFIG PIC 23 Juin 2026 (4011b396b): max_positions 30, 200 trades/jour
   #   Restauré 04 Aout 2026 — retour au niveau le plus performant.
@@ -113,20 +115,21 @@ risk:
 #   WR ≥ 85% → lot 0.50
 symbol_limits:
   # ═══════════════════════════════════════════════════════════════════════════
-  # XAUUSD H4 — Or (CONFIG PIC 23 Juin 2026: H4, risk_mult 0.60, min_score 0.63)
-  # Backtest H4 2012-2026: WR 68.6%, PF 1.16, DD 6.9% ✅✅ FTMO
+  # XAUUSD H1 — Or (MODE PREUVE STRICT 06 Aout 2026)
+  #   BUY uniquement: WR 60.6% sur 71 trades (+31$). SELL banni: 27.3% WR, -1 938$.
+  #   Lot réduit 0.10→0.05 (phase de preuve, aucune augmentation avant validation).
   # ═══════════════════════════════════════════════════════════════════════════
   XAUUSD:
     timeframe: "H1"
     execution_timeframe: "M15"    # ✅ Analyse H4+H1, exécution M15 (27 Juil 2026)
-    max_lot: 0.10             # PIC 23 Juin: ↑ 0.05→0.10 (augmentation validée)
+    max_lot: 0.05             # 🔧 MODE PREUVE: 0.10→0.05 (06 Aout)
     min_lot: 0.01
     risk_mult: 0.60           # PIC 23 Juin: ↓ 1.10→0.60 (WR 36.4% Phase 3, PF 0.60)
     min_score: 0.63           # PIC 23 Juin (documentaire — la vraie source est strategy.py)
     max_spread_points: 60     # élargi (était 40)
     adx_thresh: 22
-    allow_buys: true              # ✅ DÉBLOQUÉ 27 Juil 2026
-    allow_shorts: true            # ✅ DÉBLOQUÉ 27 Juil 2026
+    allow_buys: true              # ✅ BUY autorisé (MODE PREUVE)
+    allow_shorts: false           # 🔴 SELL BANNI 06 Aout 2026 (WR 27.3%, -1 938$)
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 6.0
@@ -183,19 +186,20 @@ symbol_limits:
     circuit_breaker_dd_pct_override: 0.06
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # EURUSD H1 — Euro/Dollar (CONFIG PIC 23 Juin 2026: max_lot 0.20, risk_mult 1.00, min_score 0.70)
-  # Backtest H1 12+ ans: WR 68.6%, PF 1.12, DD 3.7%
+  # EURUSD H1 — Euro/Dollar (MODE PREUVE STRICT 06 Aout 2026)
+  #   BUY uniquement: WR 59.1% sur 44 trades (+82$). SELL banni: 3.7% WR, -64$.
+  #   Lot réduit 0.20→0.05 (phase de preuve).
   # ═══════════════════════════════════════════════════════════════════════════
   EURUSD:
     timeframe: "H1"
-    max_lot: 0.20               # PIC 23 Juin: ↑ 0.10→0.20 (augmentation validée)
+    max_lot: 0.05               # 🔧 MODE PREUVE: 0.20→0.05 (06 Aout)
     min_lot: 0.01
     risk_mult: 1.00             # PIC 23 Juin: ↑ 0.75→1.00 (WR 80% live, PF 29.4)
     min_score: 0.70             # PIC 23 Juin (documentaire — la vraie source est strategy.py)
     max_spread_points: 40       # serré (EURUSD très liquide)
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: true
+    allow_shorts: false         # 🔴 SELL BANNI 06 Aout 2026 (WR 3.7%, -64$)
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -249,19 +253,22 @@ symbol_limits:
     news_minutes_after: 5
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # USDJPY H1 — Dollar/Yen (CONFIG PIC 23 Juin 2026: max_lot 0.15, risk_mult 1.00, min_score 0.85)
-  # Backtest H1 12+ ans: WR 82.1%, PF 1.68, DD 2.5% — MEILLEUR SYMBOLE
+  # USDJPY H1 — Dollar/Yen (MODE PREUVE STRICT 06 Aout 2026)
+  #   BUY uniquement pendant la preuve (WR 48% sur 25 trades).
+  #   ⚠️ SELL temporairement banni: était le SEUL SELL rentable (+63$, WR 61.5%)
+  #      → sera réintroduit après validation de la phase de preuve.
+  #   Lot réduit 0.15→0.05.
   # ═══════════════════════════════════════════════════════════════════════════
   USDJPY:
     timeframe: "H1"
-    max_lot: 0.15               # PIC 23 Juin: ↑ 0.10→0.15 (augmentation validée)
+    max_lot: 0.05               # 🔧 MODE PREUVE: 0.15→0.05 (06 Aout)
     min_lot: 0.01
     risk_mult: 1.00             # PIC 23 Juin
     min_score: 0.85             # PIC 23 Juin (documentaire — la vraie source est strategy.py)
     max_spread_points: 45       # Spread JPY parfois légèrement plus large
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: true
+    allow_shorts: false         # 🔴 SELL banni pendant preuve (réintroduction prévue)
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -475,18 +482,19 @@ symbol_limits:
     news_minutes_after: 5
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # EURGBP H1 — Euro/Livre Sterling (forex cross)
+  # EURGBP H1 — Euro/Livre Sterling (MODE PREUVE STRICT 06 Aout 2026)
+  #   BUY uniquement: WR 67.6% sur 37 trades (+26$). SELL banni: 27.3% WR, -6$.
+  #   Lot réduit 0.10→0.05 (phase de preuve).
   # ═══════════════════════════════════════════════════════════════════════════
   EURGBP:
     timeframe: "H1"
-    max_lot: 0.10               # ⚖️ RÉGLAGE AGRESSIF ÉQUILIBRÉ 04 Aout 2026: 0.05→0.10 (niveau mi-juin).
-                                #   WR 73.5% historique sur 34 trades — le meilleur WR du pool.
+    max_lot: 0.05               # 🔧 MODE PREUVE: 0.10→0.05 (06 Aout)
     min_lot: 0.01
     risk_mult: 1.0  # 🔓 DÉBLOQUÉ 22 Juil 2026 — WR 73.5%, PF 2.04 sur 34 trades
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true  # 🔓 DÉBLOQUÉ 22 Juil 2026
-    allow_shorts: true  # 🔓 DÉBLOQUÉ 22 Juil 2026
+    allow_shorts: false  # 🔴 SELL BANNI 06 Aout 2026 (WR 27.3%)
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -569,19 +577,21 @@ symbol_limits:
     news_minutes_after: 5
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # USOIL.cash H1 — US Oil (commodité volatile)
+  # USOIL.cash H1 — US Oil (MODE PREUVE STRICT 06 Aout 2026)
+  #   BUY uniquement pendant la preuve (WR 58.8% sur 17 trades).
+  #   ⚠️ SELL temporairement banni: était positif (+29$), sera réintroduit après validation.
+  #   Lot réduit 0.15→0.05.
   # ═══════════════════════════════════════════════════════════════════════════
   USOIL.cash:
     timeframe: "H1"
-    max_lot: 0.15               # ⚖️ RÉGLAGE AGRESSIF ÉQUILIBRÉ 04 Aout 2026: 0.08→0.15 (niveau mi-juin).
-                                #   TREND ADX 33 — dégradé tant que WR<35%, les freins protègent.
-    min_lot: 0.05
+    max_lot: 0.05               # 🔧 MODE PREUVE: 0.15→0.05 (06 Aout)
+    min_lot: 0.01
     risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026
     max_spread_points: 100
     max_spread_atr_ratio: 0.22  # USOIL spread volatile → 20% ATR (↑ 80→100 pour spread réel ~86)
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: true
+    allow_shorts: false         # 🔴 SELL banni pendant preuve (réintroduction prévue)
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0

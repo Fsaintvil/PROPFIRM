@@ -27,16 +27,18 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # ⚖️ CONFIG PIC 23 Juin 2026 (04 Aout 2026) — 7 symboles pic restaurés
-    assert len(cfg.trading.symbols) == 7  # XAUUSD, BTCUSD, EURUSD, USDJPY, GBPUSD, AUDUSD, USDCAD
+    # 🔧 MODE PREUVE STRICT 06 Aout 2026 — 5 symboles BUY-only
+    assert len(cfg.trading.symbols) == 5  # XAUUSD, EURUSD, USDJPY, EURGBP, USOIL.cash
     assert "XAUUSD" in cfg.trading.symbols
-    assert "BTCUSD" in cfg.trading.symbols
     assert "EURUSD" in cfg.trading.symbols
     assert "USDJPY" in cfg.trading.symbols
-    assert "GBPUSD" in cfg.trading.symbols
-    assert "AUDUSD" in cfg.trading.symbols
-    assert "USDCAD" in cfg.trading.symbols
-    assert cfg.risk.per_trade_pct == 0.004  # défaut YAML (production override → 0.006)
+    assert "EURGBP" in cfg.trading.symbols
+    assert "USOIL.cash" in cfg.trading.symbols
+    assert "BTCUSD" not in cfg.trading.symbols
+    assert "GBPUSD" not in cfg.trading.symbols
+    assert "AUDUSD" not in cfg.trading.symbols
+    assert "USDCAD" not in cfg.trading.symbols
+    assert cfg.risk.per_trade_pct == 0.004  # défaut YAML (production override → 0.003)
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 2.0  # conservé
 
@@ -51,8 +53,8 @@ def test_as_flat_dict():
     cfg = load_config("default")
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
-    assert flat["RISK_PER_TRADE_PCT"] == 0.004  # défaut YAML (production override → 0.006)
-    assert flat["TRADING_MAX_POSITIONS"] == 30  # ⚖️ CONFIG PIC 23 Juin 2026
+    assert flat["RISK_PER_TRADE_PCT"] == 0.004  # défaut YAML (production override → 0.003)
+    assert flat["TRADING_MAX_POSITIONS"] == 30  # défaut YAML (production override → 8)
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -60,10 +62,12 @@ def test_symbol_limits_defaults():
     cfg = load_config("default")
     assert "XAUUSD" in cfg.symbol_limits
     assert "BTCUSD" in cfg.symbol_limits
-    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.10  # ⚖️ CONFIG PIC 23 Juin 2026: XAUUSD max_lot 0.10
+    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.05  # 🔧 MODE PREUVE 06 Aout 2026: 0.10→0.05
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
     assert cfg.symbol_limits["XAUUSD"].risk_mult == 0.60  # ⚖️ CONFIG PIC 23 Juin 2026: risk réduit
     assert cfg.symbol_limits["XAUUSD"].min_score == 0.63  # ⚖️ CONFIG PIC 23 Juin 2026
+    assert cfg.symbol_limits["XAUUSD"].allow_buys is True
+    assert cfg.symbol_limits["XAUUSD"].allow_shorts is False  # 🔧 MODE PREUVE 06 Aout: SELL banni
 
 
 def test_symbol_limits_new_portfolio():
@@ -130,10 +134,10 @@ def test_config_simple_compat():
     import config_simple as cfg
 
     assert cfg.ROBOT_MAGIC == 999001
-    assert cfg.RISK_PER_TRADE == 0.006  # ⚖️ CONFIG PIC 23 Juin 2026 (production override → 0.60%)
+    assert cfg.RISK_PER_TRADE == 0.003  # 🔧 MODE PREUVE 06 Aout 2026 (production override → 0.30%)
     assert cfg.MAX_ORDERS_PER_MINUTE == 6  # CONFIG PIC 23 Juin 2026
     assert cfg.__version__ == "4.1.0"
-    assert cfg.MIN_SIGNAL_SCORE == 0.60  # ⚖️ CONFIG PIC 23 Juin 2026
+    assert cfg.MIN_SIGNAL_SCORE == 0.70  # 🔧 MODE PREUVE 06 Aout 2026 (min_score 0.70 enforce)
 
 
 def test_config_reload():
