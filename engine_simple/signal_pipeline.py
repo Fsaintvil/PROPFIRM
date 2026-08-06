@@ -526,7 +526,14 @@ class SignalPipeline:
         signal["timeframe"] = tf
         signal["details"] = f"MOM20x3_{tf}"
         signal["quality"] = min(1.0, (signal.get("confidence", 0.5) + 0.1) * h4_conf)
-        if h4_conf < 1.0 and signal.get("score", 0.6) > 0.5:
+        # 🐛 FIX 06 Aout 2026: Double pénalité H4 supprimée.
+        # Ligne 530 appliquait ×0.90 sur le conflit H4 (EMA50), PUIS la phase 1d
+        # (H4_DIR, ligne 630) re-pénalisait ×0.75 le MÊME conflit (ADX+EMA50) →
+        # un signal contre-tendance perdait ~33% de score en double.
+        # On garde UNIQUEMENT la phase 1d (H4_DIR) qui gère déjà rejet (fort) /
+        # ×0.75 (modéré). Exception: symboles H4 (XAUUSD) → higher_tf="D1" n'est
+        # pas couvert par H4_DIR, on conserve la confirmation D1 ici (pas de doublon).
+        if h4_conf < 1.0 and signal.get("score", 0.6) > 0.5 and higher_tf != "H4":
             signal["score"] = max(0.5, signal["score"] * 0.90)
 
         # 🔓 FIX 8 Juillet: soft block SUPPRIMÉ — l'OL peut maintenant

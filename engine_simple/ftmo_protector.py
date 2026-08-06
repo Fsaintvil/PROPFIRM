@@ -468,6 +468,24 @@ class ChallengeTracker:
                 except (ValueError, TypeError):
                     pass
 
+            # 🔧 FIX 05 Août 2026: Dédup des doublons d'historique.
+            # Les imports historiques re-joués à chaque restart (position_tracker)
+            # ajoutent des COPIES du même trade (même symbole/profit à la même
+            # seconde, flag historical=true) → gonfle total_trades, fausse win_rate
+            # et contamine le rebuild de daily_pnl_by_date.
+            dedup: dict[tuple, dict] = {}
+            for _t in self._trade_history:
+                _key = (_t.get("symbol"), _t.get("profit"), str(_t.get("time")))
+                # Priorité au flag non-historique (le vrai trade live)
+                if _key not in dedup or not _t.get("historical"):
+                    dedup[_key] = _t
+            if len(dedup) != len(self._trade_history):
+                logger.info(
+                    f"[DEDUP] trade_history: {len(self._trade_history)} → "
+                    f"{len(dedup)} entrées uniques (doublons supprimés)"
+                )
+                self._trade_history = list(dedup.values())
+
         # ── Contamination Guard ──
         if self._trade_history:
             rebuilt: dict[date, float] = {}
@@ -1671,7 +1689,13 @@ class FTMOProtector:
         lot_size = self.config.get("LOT_SIZE", 0.05)
 
         order_type = self.mt5.ORDER_TYPE_BUY if direction == 0 else self.mt5.ORDER_TYPE_SELL
+        # 🐛 FIX 05 Août 2026: label de log trompeur. calc_profit renvoie un PnL
+        # NÉGATIF au niveau du SL (c'est une perte — comportement normal), puis
+        # abs() le transforme en risque positif. L'ancien log affichait sl_profit
+        # brut (négatif) sous le label "risk_per_01", faussant le diagnostic.
+        # On log désormais les DEUX valeurs explicitement.
         sl_profit = self.mt5.calc_profit(order_type, symbol, 0.1, entry, sl)
+        risk_per_01 = None
         if sl_profit is not None and sl_profit < 0:
             risk_per_01 = abs(sl_profit)
             if risk_per_01 < 1.0:
@@ -1680,13 +1704,20 @@ class FTMOProtector:
             else:
                 lot = (risk_amount / risk_per_01) * 0.1
         else:
+            # sl_profit None ou ≥ 0 (SL du mauvais côté / donnée invalide) → fallback sûr
+            logger.warning(
+                f"  [RISK] {symbol}: calc_profit renvoyé sl_profit={sl_profit} "
+                f"(None ou non-négatif = SL invalide) → fallback lot={lot_size}"
+            )
             lot = lot_size
 
         # Adaptive lot multiplier (performance-based)
         adaptive_mult = self._adaptive_lot_mult()
         lot *= adaptive_mult
         logger.debug(
-            f"  [ADAPTIVE LOT] {symbol}: lot pré-clamp={lot:.3f} (risk_per_01=${sl_profit if sl_profit else 0:.2f})"
+            f"  [ADAPTIVE LOT] {symbol}: lot pré-clamp={lot:.3f} "
+            f"(sl_profit brut=${sl_profit if sl_profit is not None else 0:.2f} → "
+            f"risk_per_01=${risk_per_01 if risk_per_01 is not None else 0:.2f})"
         )
 
         # 🔧 FIX 23 Juillet 2026: Suppression du safety clamp lot > 3×max_lot → lot_size

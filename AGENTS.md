@@ -1,5 +1,10 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 05 Août 2026** : Gate de régime STRICT (RANGING ADX<20 → TOUJOURS rejeté, plus d'exception
+> score ≥ 0.85), fix `trading_days` v3 (union jours persistés + reconstruits — 12 jours compte FTMO conservés),
+> fix label log `risk_per_01` (affichait sl_profit brut négatif → confusion, pas de bug de calcul),
+> **capture stderr du watchdog externe** dans `logs/watchdog_external.log` (gel 4h du 05/08 02:39→06:39 non
+> diagnostiqué car stderr partait dans le vide), XAGUSD désactivé.
 > **Mise à jour 31 Juillet 2026** : min_score 0.70 enforce (signal_validator), **XAGUSD désactivé** (trou noir,
 > ~$1,470 cumulés), circuit breaker progressif (lot ×0.25 à 7 pertes, HARD STOP à 10), **fix watchdog** (chemin
 > heartbeat ABSOLU — protection anti-freeze GIL restaurée), recalibration risk_per_trade 0.005, 25 symboles actifs.
@@ -7,6 +12,9 @@
 > Réparations post-régression, correction des 10 pertes consécutives,
 > **réactivation de TOUS les 22 agents** du council, création des skills **python-pro** et **data-analysis**.
 > ⚠️ **Ne pas réactiver le pipeline ML avant 500+ trades propres par symbole.**
+> ⚠️ **Tableau des symboles ci-dessous obsolète** : la colonne `max_lot=0.01` ne reflète plus la config
+> réelle (default.yaml) — EURUSD 0.20, GBPUSD/USDJPY/USDCAD 0.15, AUDUSD 0.12, XAUUSD 0.10, etc. La source
+> de vérité est `config/default.yaml` (le lot progressif WR-based a été désactivé le 16 Juillet).
 
 ## Architecture Intelligence
 ```

@@ -83,16 +83,19 @@ class TestCheck:
         assert "Buys not allowed" in reason
 
     @patch("engine_simple.signal_validator.get_symbol_params")
-    def test_ranging_adx_low_allowed(self, mock_params):
-        """🚫 DÉGEL TOTAL 04 Aout 2026: la garde RÉGIME (ADX<20 en RANGING) est DÉSACTIVÉE.
-        Retour au comportement pic (23 Juin 2026) — les signaux MOM20x3 en RANGING
-        ne sont plus rejetés sur le seul critère ADX. La qualité passe par le
-        score (min_score) et les filtres volume (RVOL/CMF/OBV)."""
+    def test_ranging_adx_low_rejected(self, mock_params):
+        """🚫 GATE RÉGIME STRICT 05 Aout 2026: AUCUN signal en RANGING (ADX<20).
+        Réactivé et renforcé après le dégel total du 04 Aout qui a laissé le robot
+        trader en RANGING (marché 28/07-04/08) → désastre WR live 27.1%, -$306.
+        Preuves: EURUSD 0/8, NZDUSD 1/8, EURGBP 1/9 en RANGING. Même les hauts
+        scores (≥0.85) perdent en RANGING (1er essai à risque ×0.35 insuffisant).
+        On ATTEND un vrai TREND (ADX > 20)."""
         mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
         v = make_validator()
         sig = make_signal(adx=14.7, _regime="RANGING", score=0.95)
         ok, reason = v.check("EURUSD", sig, [])
-        assert ok is True  # garde désactivée → signal accepté si score ≥ min_score
+        assert ok is False  # gate strict → signal rejeté même à score 0.95
+        assert "RANGING" in reason
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_trend_adx_high_passes(self, mock_params):

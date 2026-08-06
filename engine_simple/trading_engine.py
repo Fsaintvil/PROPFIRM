@@ -495,6 +495,14 @@ class TradingEngine:
             self.ftmo.challenge.consistency_violated = True  # sync source (ChallengeTracker)
         if self._state.get("daily_profit_reduced"):
             self.ftmo._daily_profit_reduced = True
+        # 🔒 FIX 05 Aout 2026 (régression trading_days 6→2): Un jour de trading FTMO
+        # appartient au COMPTE, pas au symbole. Les trades des symboles inactifs
+        # (ex: USOIL.cash, EURGBP, NZDUSD qui étaient actifs au 31 Juillet) comptent
+        # quand même pour le challenge. On collecte donc les jours depuis TOUS les
+        # trades non-historiques AVANT le filtrage par symboles actifs, puis on
+        # fusionne dans la reconstruction ci-dessous.
+        account_trading_days: set = set()
+        account_skipped_trades: list = []
         if self._state.get("trade_history"):
             # CRITICAL: set on challenge._trade_history directly, not ftmo._trade_history
             # because ftmo._trade_history is an alias that gets disconnected on reassignment
@@ -506,6 +514,21 @@ class TradingEngine:
                 sym = t.get("symbol", "")
                 if sym not in active_symbols:
                     skipped += 1
+                    # Collecter le jour de trading du compte même pour un symbole inactif
+                    if not t.get("historical"):
+                        try:
+                            _tv = t.get("time", "")
+                            if isinstance(_tv, (int, float)):
+                                _tdt = datetime.fromtimestamp(_tv)
+                            elif isinstance(_tv, str):
+                                _tdt = datetime.fromisoformat(_tv)
+                            else:
+                                _tdt = None
+                            if _tdt is not None:
+                                account_trading_days.add(_tdt.date())
+                                account_skipped_trades.append(t)
+                        except (ValueError, TypeError):
+                            pass
                     continue
                 try:
                     time_val = t.get("time", "")
@@ -550,6 +573,12 @@ class TradingEngine:
         # ⚠️ Utiliser clear()/update() au lieu de = pour préserver les alias
         #    (self.ftmo.trading_days = self.challenge.trading_days via alias dans ftmo_protector.py:59)
         if hasattr(self, "ftmo") and self.ftmo._trade_history:
+            # 🔒 FIX 05 Aout 2026 v3: Préserver les jours de trading du COMPTE chargés
+            # depuis trading_days_list (état persisté). La reconstruction ci-dessous ne
+            # doit JAMAIS jeter des jours FTMO valides : elle n'ajoute que les jours
+            # détectés dans trade_history, jamais en retirer.
+            persisted_trading_days = set(self.ftmo.trading_days)
+            persisted_daily_pnl = dict(self.ftmo.daily_pnl_by_date)
             self.ftmo.trading_days.clear()
             self.ftmo.daily_pnl_by_date.clear()
             historical_count = 0
@@ -583,6 +612,30 @@ class TradingEngine:
                 f"{len(self.ftmo.daily_pnl_by_date)} daily_pnl depuis trade_history "
                 f"(filtrés {historical_count} historiques + {stale_pnl_skipped} PnL âgés ignorés)"
             )
+            # 🔒 FIX 05 Aout 2026 v3: Réunion des jours persistés (compte FTMO).
+            # Quand trade_history ne contient que les symboles actifs (les inactifs
+            # sont filtrés à la restauration), les jours stockés dans trading_days_list
+            # restent la source de vérité du challenge — on ne doit JAMAIS les perdre.
+            _days_before_union = len(self.ftmo.trading_days)
+            self.ftmo.trading_days.update(persisted_trading_days)
+            if persisted_daily_pnl:
+                # Les valeurs persistées incluent les symboles inactifs (plus complètes)
+                # → elles priment sur la reconstruction partielle pour les jours communs.
+                self.ftmo.daily_pnl_by_date.update(persisted_daily_pnl)
+            if len(self.ftmo.trading_days) > _days_before_union:
+                logger.info(
+                    f"[STATE] Union {len(self.ftmo.trading_days) - _days_before_union} jours persistés "
+                    f"(trading_days_list) → {len(self.ftmo.trading_days)} jours au total (compte FTMO)"
+                )
+            # 🔒 FIX 05 Aout 2026: Fusionner les jours de trading du COMPTE collectés
+            # avant filtrage par symbole (trades de symboles inactifs comptent pour FTMO).
+            if account_trading_days:
+                _before = len(self.ftmo.trading_days)
+                self.ftmo.trading_days.update(account_trading_days)
+                logger.info(
+                    f"[STATE] Fusion {len(account_trading_days)} jours de trading de symboles "
+                    f"inactifs → {len(self.ftmo.trading_days)} jours au total (compte FTMO)"
+                )
             # Recalculer la règle de consistance FTMO à partir des daily_pnl_by_date reconstruits
             self.ftmo._check_consistency()
             logger.info(
@@ -798,12 +851,22 @@ class TradingEngine:
         timeout = max(int(os.environ.get("ROBOT_WATCHDOG_SECONDS", "180")) * 2, 300)
 
         try:
+            # 🐛 FIX 05 Août 2026: Capturer stderr du watchdog dans un fichier dédié.
+            # Avant, stderr partait dans le vide (Popen sans redirection) → impossible
+            # de diagnostiquer pourquoi un gel de 4h (02:39→06:39, 05 Août) n'a PAS été
+            # tué par le watchdog externe. Désormais chaque événement watchdog est tracé.
+            watchdog_log = Path(__file__).resolve().parent.parent / "logs" / "watchdog_external.log"
+            watchdog_log.parent.mkdir(exist_ok=True)
+            _wd_err = open(watchdog_log, "a", encoding="utf-8")
             self._watchdog_process = subprocess.Popen(
                 [sys.executable, str(watchdog_script), str(pid), heartbeat_file, str(timeout)],
                 cwd=os.path.dirname(os.path.abspath(__file__)),
-                # Pas de stdout/stderr capture — le watchdog écrit sur stderr directement
+                stdout=_wd_err,
+                stderr=_wd_err,
             )
-            logger.info(f"[WATCHDOG PROC] Démarré (PID={self._watchdog_process.pid}, timeout={timeout}s)")
+            logger.info(
+                f"[WATCHDOG PROC] Démarré (PID={self._watchdog_process.pid}, timeout={timeout}s, log={watchdog_log.name})"
+            )
         except Exception as e:
             logger.error(f"[WATCHDOG PROC] Échec démarrage: {e}")
 
@@ -977,7 +1040,14 @@ class TradingEngine:
 
     def _heartbeat(self):
         try:
-            Path(HEARTBEAT_FILE).write_text(datetime.utcnow().isoformat())
+            # 🐛 FIX 05 Août 2026: écriture ATOMIQUE (tmp + rename) au lieu de
+            # write_text direct. Le watchdog externe lisait parfois le fichier
+            # PENDANT l'écriture (write_text = truncate + write) → "Heartbeat
+            # file empty" ou timestamp corrompu → false positive "stale".
+            _hb_path = Path(HEARTBEAT_FILE)
+            _tmp = _hb_path.with_suffix(".tmp")
+            _tmp.write_text(datetime.utcnow().isoformat())
+            _tmp.replace(_hb_path)  # atomique sur Windows (même volume)
         except Exception as e:
             logger.warning(f"Heartbeat write failed: {e}")
 

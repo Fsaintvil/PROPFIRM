@@ -8,6 +8,11 @@
     Log dans runtime/clock_sync.log.
 
     Usage: .\scripts\sync_clock.ps1
+
+    🔧 FIX 05 Aout 2026 (Robot Manager): les chaines avec accents etaient encodees
+    en UTF-8 sans BOM → PowerShell 5.1 les lisait en ANSI et le parsing echouait
+    (le script entier ne s'executait JAMAIS). Chaines de log remplacees par de
+    l'ASCII pur pour garantir le parsing.
 #>
 
 $logFile = Join-Path $PSScriptRoot "..\runtime\clock_sync.log"
@@ -17,7 +22,7 @@ $maxOffsetSec = 1.0
 # Timestamp actuel
 $now = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
-# Vérifier le temps NTP
+# Verifier le temps NTP
 try {
     $client = New-Object System.Net.Sockets.UdpClient("$ntpServer", 123)
     $client.Client.ReceiveTimeout = 5000  # 5s timeout
@@ -30,7 +35,7 @@ try {
     $serverBytes = $client.Receive([ref]$null)
     $client.Close()
 
-    # Extraire le timestamp de référence (octets 40-43)
+    # Extraire le timestamp de reference (octets 40-43)
     $intPart = [bigint]0
     for ($i = 40; $i -le 43; $i++) {
         $intPart = ($intPart -shl 8) -bor $serverBytes[$i]
@@ -45,33 +50,33 @@ try {
     $ntpDate = [DateTimeOffset]::FromUnixTimeSeconds([long]$unixTime).LocalDateTime
 }
 catch {
-    "$now | ERREUR: Impossible de joindre $ntpServer — $_" | Out-File $logFile -Append
+    "$now | ERREUR: Impossible de joindre $ntpServer - $_" | Out-File $logFile -Append
     Write-Warning "NTP sync failed: $_"
     exit 1
 }
 
-# Calculer le décalage
+# Calculer le decalage
 $localTime = Get-Date
 $offset = ($localTime - $ntpDate).TotalSeconds
 
 if ([math]::Abs($offset) -le $maxOffsetSec) {
-    "$now | OK: décalage $([math]::Round($offset, 2))s (seuil ${maxOffsetSec}s) — aucun ajustement nécessaire" | Out-File $logFile -Append
+    "$now | OK: decalage $([math]::Round($offset, 2))s (seuil ${maxOffsetSec}s) - aucun ajustement necessaire" | Out-File $logFile -Append
     exit 0
 }
 
 # Corriger l'horloge
 try {
-    # Nécessite admin — sinon juste warning
+    # Necessite admin - sinon juste warning
     w32tm /resync /nowait 2>$null
     if ($LASTEXITCODE -eq 0) {
-        "$now | CORRIGÉ: horloge décalée de $([math]::Round($offset, 1))s → resync effectué" | Out-File $logFile -Append
+        "$now | CORRIGE: horloge decalee de $([math]::Round($offset, 1))s → resync effectue" | Out-File $logFile -Append
         Write-Host "Clock synced: offset was $([math]::Round($offset, 1))s"
     } else {
-        "$now | WARNING: décalage de $([math]::Round($offset, 1))s mais w32tm /resync a échoué (code $LASTEXITCODE)" | Out-File $logFile -Append
+        "$now | WARNING: decalage de $([math]::Round($offset, 1))s mais w32tm /resync a echoue (code $LASTEXITCODE)" | Out-File $logFile -Append
         Write-Warning "Clock offset: $([math]::Round($offset, 1))s (w32tm resync failed)"
     }
 }
 catch {
-    "$now | WARNING: décalage de $([math]::Round($offset, 1))s mais correction impossible: $_" | Out-File $logFile -Append
+    "$now | WARNING: decalage de $([math]::Round($offset, 1))s mais correction impossible: $_" | Out-File $logFile -Append
     Write-Warning "Clock offset: $([math]::Round($offset, 1))s (cannot fix: $_)"
 }

@@ -71,16 +71,40 @@ def log(msg: str, level: str = "INFO") -> None:
 
 
 def get_process_status(pid: int) -> bool:
-    """Check if a process is alive on Windows using tasklist."""
+    """Check if a process is alive on Windows."""
     if os.name == "nt":
+        # 🔧 FIX 06 Août 2026: remplace tasklist par OpenProcess (ctypes).
+        # Le fix du 05/08 (errors="replace") ne suffisait PAS : le reader thread
+        # de subprocess décode quand même la sortie tasklist (cp1252) en UTF-8
+        # → UnicodeDecodeError → result.stdout=None → TypeError "NoneType is not
+        # iterable" → catch → return True (assume alive) → le watchdog NE
+        # DÉTECTAIT PLUS les crashes et ne ressuscitait JAMAIS le robot.
+        # OpenProcess est fiable (pas de parsing de sortie, pas d'encodage),
+        # 100× plus rapide et retourne un booléen sans ambiguïté.
+        import ctypes
+        from ctypes import wintypes
+
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        ERROR_INVALID_PARAMETER = 87  # PID inexistant
+        handle = None
+        kernel32 = None
         try:
-            result = subprocess.run(
-                ["tasklist", "/FI", f"PID eq {pid}", "/FO", "CSV"], capture_output=True, text=True, timeout=10
-            )
-            return str(pid) in result.stdout
-        except (subprocess.TimeoutExpired, Exception) as e:
-            log(f"tasklist check failed: {e}", "WARN")
+            # use_last_error=True → ctypes.get_last_error() retourne le vrai
+            # code d'erreur Windows (sinon il renvoie 0 → mauvais jugement).
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, wintypes.DWORD(pid))
+            if handle:
+                return True
+            err = ctypes.get_last_error()
+            if err == ERROR_INVALID_PARAMETER:
+                return False  # Le PID n'existe pas → processus mort
+            return True  # Autre erreur → conservateur (assume vivant)
+        except Exception as e:
+            log(f"OpenProcess check failed: {e}", "WARN")
             return True  # Assume alive on error (conservative)
+        finally:
+            if handle and kernel32 is not None:
+                kernel32.CloseHandle(handle)
     else:
         # Unix: use os.kill with signal 0
         try:
@@ -94,7 +118,14 @@ def kill_process(pid: int) -> bool:
     """Force-kill a process on Windows using taskkill /F."""
     if os.name == "nt":
         try:
-            result = subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True, text=True, timeout=10)
+            # 🐛 FIX 05 Août 2026: errors='replace' (même raison que get_process_status)
+            result = subprocess.run(
+                ["taskkill", "/F", "/PID", str(pid)],
+                capture_output=True,
+                text=True,
+                errors="replace",
+                timeout=10,
+            )
             success = result.returncode == 0
             if success:
                 log(f"Process {pid} killed successfully")
@@ -277,10 +308,27 @@ def main():
             # Second check: is heartbeat recent? (only if process is alive)
             try:
                 if heartbeat_path.exists():
-                    hb_content = heartbeat_path.read_text().strip()
+                    # 🐛 FIX 05 Août 2026: lire avec retry. Le robot écrit le
+                    # heartbeat de façon ATOMIQUE (tmp+rename) depuis le 05/08,
+                    # mais un fichier vide peut subsister si une ancienne version
+                    # du robot tourne encore. Un heartbeat vide/corrompu ne doit
+                    # PAS incrémenter consecutive_stalls (évite les faux kills).
+                    hb_content = ""
+                    for _retry in range(3):
+                        try:
+                            hb_content = heartbeat_path.read_text(errors="replace").strip()
+                            if hb_content:
+                                break
+                        except Exception:
+                            pass
+                        time.sleep(0.2)
                     if hb_content:
                         # Parse ISO timestamp
-                        hb_time = datetime.fromisoformat(hb_content)
+                        try:
+                            hb_time = datetime.fromisoformat(hb_content)
+                        except ValueError:
+                            log(f"Heartbeat unparseable: {hb_content!r} — ignored (not a stall)", "WARN")
+                            continue  # ne compte pas comme stall
                         elapsed = (datetime.utcnow() - hb_time).total_seconds()
 
                         if elapsed > timeout:

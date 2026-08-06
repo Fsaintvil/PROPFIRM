@@ -86,27 +86,26 @@ class SignalValidator:
                     f"(max {MAX_TRADES_PER_DIRECTION_IN_GROUP}) — corrélation bloquée"
                 )
 
-        # ── 1c. Garde RÉGIME: pas de momentum en RANGING (ADX < 20) ────
-        # 🚫 DÉSACTIVÉ 04 Aout 2026 (Robot Manager) — DÉGEL TOTAL.
-        # L'utilisateur a choisi "Config pic COMPLÈTE + dégel total" (retour au niveau
-        # historique le plus performant, commit 4011b396b, 23 Juin). Cette garde a été
-        # ajoutée le 03 Aout 2026, APRÈS le pic. Elle rejetait tous les signaux MOM20x3
-        # en RANGING (ADX<20) — exactement le marché actuel — donc le robot ne tradeait
-        # plus du tout. Désactivée pour restaurer le comportement pic.
-        # Le code est conservé commenté ci-dessous pour référence/réactivation.
-        if False:  # DÉSACTIVÉ — DÉGEL TOTAL 04 Aout 2026
-            # 🐛 FIX 03 Aout 2026: MOM20x3 achète des breakouts de momentum — en RANGING
-            # (ADX < 20), chaque breakout est un retournement. Preuves live depuis 28/07:
-            # EURUSD 0/8 (ADX 14.7), NZDUSD 1/8 (ADX 16.6), EURGBP 1/9 (ADX 18.5) = 2/25 (8% WR),
-            # pendant que USOIL (ADX 35, TREND) et USDJPY (ADX 58, TREND) ne perdent pas.
-            # Seul trader quand le momentum existe réellement (ADX ≥ 20).
-            _adx = signal.get("adx")
-            _regime = signal.get("_regime", "")
-            if _adx is not None and float(_adx) < 20.0 and _regime == "RANGING":
-                return False, (
-                    f"Régime RANGING (ADX={float(_adx):.1f} < 20) — momentum MOM20x3 non fiable, "
-                    f"signal rejeté (garde 03 Aout 2026)"
-                )
+        # ── 1c. Garde RÉGIME STRICTE: AUCUN momentum en RANGING (ADX < 20) ──
+        # ✅ RÉACTIVÉ + RENFORCÉ 05 Aout 2026 (Robot Manager) — décision utilisateur
+        # "Protection + gate de régime". La désactivation du 04 Aout (dégel total)
+        # a laissé le robot trader en RANGING — marché du 28/07 au 04/08 — et le
+        # résultat est un désastre : WR live 27.1%, -$306. Preuves live :
+        # EURUSD 0/8 (ADX 14.7), NZDUSD 1/8 (ADX 16.6), EURGBP 1/9 (ADX 18.5)
+        # = 2/25 (8% WR) en RANGING, pendant que USOIL (ADX 35, TREND) et
+        # USDJPY (ADX 58, TREND) ne perdent pas. MOM20x3 est un breakout de
+        # momentum : en RANGING chaque breakout est un retournement.
+        # 🚫 GATE STRICT (v2 05 Aout) : le 1er essai (exception score ≥ 0.85 avec
+        # risk_mult ×0.35) laissait encore passer EURUSD (ADX 13.6, score 0.95) et
+        # GBPUSD (ADX 13.5, score 0.90) — or même les hauts scores perdent en RANGING
+        # (EURUSD 0/8 live). La protection prime : on ATTEND un vrai TREND (ADX > 20).
+        _adx = signal.get("adx")
+        _regime = signal.get("_regime", "")
+        if _adx is not None and float(_adx) < 20.0 and _regime == "RANGING":
+            return False, (
+                f"Régime RANGING (ADX={float(_adx):.1f} < 20) — momentum MOM20x3 non fiable, "
+                f"signal rejeté (garde régime STRICTE 05 Aout 2026)"
+            )
 
         # ── 2. Signal quality gate (dynamic min_score) ─────────────────
         sym_params = get_symbol_params(symbol)
