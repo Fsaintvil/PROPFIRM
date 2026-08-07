@@ -137,8 +137,8 @@ symbol_limits:
     tp_atr_ranging: 6.0
     adx_slope_threshold: -6.0
     adx_slope_threshold_strong: -10.0
-    threshold_trending: 4.0
-    threshold_ranging: 4.0
+    threshold_trending: 2.5   # 🔧 ALIGNÉ 06 Aout 2026: 4.0→2.5 (le pipeline réel utilise déjà 2.5 via OL base_thresh — 4.0 inerte, calé sur backtest H4 mais robot en H1)
+    threshold_ranging: 2.0    # 🔧 ALIGNÉ 06 Aout 2026: 4.0→2.0 (aligné OL base_thresh=2.5 trending / 2.0 ranging)
     pullback_band_trending: 0.5
     pullback_band_ranging: 0.3
     cmf_threshold: 0.10
@@ -492,6 +492,7 @@ symbol_limits:
     min_lot: 0.01
     risk_mult: 1.0  # 🔓 DÉBLOQUÉ 22 Juil 2026 — WR 73.5%, PF 2.04 sur 34 trades
     max_spread_points: 40
+    max_spread_atr_ratio: 0.20   # 🔧 06 Aout 2026 (risk-compliance GO conditionnel): défaut 15% bloquait EURGBP (ATR très bas, ratio 17.4%). 0.20 max — débloque spreads normaux 6-7pts, garde la barrière sur élargissements >8pts. Ne JAMAIS monter à 0.25.
     adx_thresh: 22
     allow_buys: true  # 🔓 DÉBLOQUÉ 22 Juil 2026
     allow_shorts: false  # 🔴 SELL BANNI 06 Aout 2026 (WR 27.3%)

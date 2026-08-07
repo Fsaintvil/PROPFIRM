@@ -91,8 +91,8 @@ SYMBOL_CONFIG = {
         "tp_atr_trending": 6.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 6.0,
-        "threshold_trending": 4.0,
-        "threshold_ranging": 4.0,
+        "threshold_trending": 2.5,  # 🔧 ALIGNÉ 06 Aout 2026: 4.0→2.5 (le pipeline réel utilise déjà 2.5 via OL base_thresh — le 4.0 était inerte/incohérent, calé sur backtest H4 mais robot en H1)
+        "threshold_ranging": 2.0,  # 🔧 ALIGNÉ 06 Aout 2026: 4.0→2.0 (même logique, aligné OL base_thresh=2.5 trending / 2.0 ranging)
         "adx_slope_threshold": -9.0,
         "adx_slope_threshold_strong": -14.0,
         "pullback_band_trending": 0.5,

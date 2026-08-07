@@ -48,6 +48,21 @@ STATIC_EVENTS = [
     # ── Gold Events ──
     # China Data (02:00 UTC)
     (2, 0, "MEDIUM", ["XAUUSD"], "China GDP/PMI"),
+    # ── UK / EU Events (EURGBP — ajoutés 06 Aout 2026, condition risk-compliance) ──
+    # BOE Rate Decision (monthly 12:00 UTC, approx)
+    (12, 0, "HIGH", ["EURGBP"], "BOE Rate Decision"),
+    # ECB Rate Decision (bi-monthly 13:15 UTC, approx)
+    (13, 15, "HIGH", ["EURGBP"], "ECB Rate Decision"),
+    # UK CPI (monthly 06:00 UTC, approx)
+    (6, 0, "HIGH", ["EURGBP"], "UK CPI"),
+    # UK GDP (monthly 06:00 UTC, approx)
+    (6, 0, "MEDIUM", ["EURGBP"], "UK GDP"),
+    # UK Retail Sales (monthly 06:00 UTC, approx)
+    (6, 0, "MEDIUM", ["EURGBP"], "UK Retail Sales"),
+    # UK Unemployment (monthly 06:00 UTC, approx)
+    (6, 0, "MEDIUM", ["EURGBP"], "UK Unemployment"),
+    # German CPI / EU events (EURGBP sensibilité)
+    (6, 0, "MEDIUM", ["EURGBP"], "German CPI"),
     # ── Crypto Events ──
     # CME BTC Futures Settlement (16:00 UTC Fri)
     (16, 0, "MEDIUM", ["BTCUSD"], "CME Crypto Futures Settlement"),
