@@ -831,6 +831,16 @@ class TradingEngine:
                 return
             logger.info(f"[WATCHDOG PROC] Ancien processus terminé (code={poll})")
 
+        # 🔧 FIX 07 Août 2026: Tue TOUS les process_watchdog.py orphelins AVANT
+        # d'en spawner un nouveau. Chaque redémarrage (auto-resurrection ou
+        # robot.ps1 manuel) spawnait un NOUVEAU watchdog sans tuer les anciens.
+        # Résultat: des watchdogs orphelins surveillaient des PIDs morts (voire
+        # réutilisés par d'autres process Windows) → ne détectaient jamais la
+        # mort de leur cible → restaient vivants indéfiniment, capables de
+        # spawner des main.py en double (risque de doublons de positions).
+        # Désormais: exactement UN watchdog par génération de robot.
+        self._kill_orphan_watchdogs()
+
         # 🔧 FIX 30 Juillet 2026: Path absolu depuis la racine du projet
         # Avait: Path(__file__).parent = engine_simple/ → engine_simple/scripts/ (INVALIDE)
         # Maintenant: Path(__file__).parent.parent = racine → scripts/ (CORRECT)
@@ -872,6 +882,46 @@ class TradingEngine:
             )
         except Exception as e:
             logger.error(f"[WATCHDOG PROC] Échec démarrage: {e}")
+
+    def _kill_orphan_watchdogs(self) -> int:
+        """Tue tous les process_watchdog.py orphelins des générations précédentes.
+
+        🔧 FIX 07 Août 2026: Chaque redémarrage du robot spawnait un nouveau
+        watchdog sans tuer les anciens → des orphelins surveillaient des PIDs
+        morts (réutilisés par d'autres process Windows) et restaient vivants
+        indéfiniment. Ils pouvaient spawner des main.py en double (risque de
+        doublons de positions sur le compte MT5).
+
+        Retourne le nombre de watchdogs tués. Le robot courant n'a pas encore
+        son propre watchdog à cet instant (il est spawné juste après), donc on
+        peut tuer TOUS les process_watchdog.py sans risque de suicide.
+        """
+        if not HAS_PSUTIL:
+            logger.warning("[WATCHDOG PROC] psutil absent — nettoyage des orphelins impossible")
+            return 0
+        try:
+            import psutil  # import local (pyright: HSA_PSUTIL=True garanti)
+        except ImportError:
+            logger.warning("[WATCHDOG PROC] psutil absent — nettoyage des orphelins impossible")
+            return 0
+        killed = 0
+        try:
+            for proc in psutil.process_iter(["pid", "cmdline"]):
+                try:
+                    cmdline = proc.info.get("cmdline") or []
+                    is_watchdog = any("process_watchdog.py" in (c or "") for c in cmdline)
+                    if is_watchdog:
+                        proc.kill()
+                        proc.wait(timeout=5)
+                        killed += 1
+                        logger.info(f"[WATCHDOG PROC] Orphelin tué (PID={proc.info['pid']})")
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+        except Exception as e:
+            logger.error(f"[WATCHDOG PROC] Erreur nettoyage orphelins: {e}")
+        if killed:
+            logger.info(f"[WATCHDOG PROC] {killed} watchdog(s) orphelin(s) nettoyé(s)")
+        return killed
 
     def _health_status(self):
         try:
