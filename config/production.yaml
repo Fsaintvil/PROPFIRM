@@ -15,7 +15,7 @@ correlation:
 # ── Trading — MODE PREUVE STRICT ──────────────────────────────────────
 trading:
   max_positions: 8               # 🔧 VETO: 30→8 (06 Aout) — plafond risk-compliance
-  max_positions_per_symbol: 2    # 🔧 3→2 (06 Aout) — diversification
+  max_positions_per_symbol: 4    # 🔧 2→4 (07 Aout) — mode preuve: plus de trades simultanés par symbole
   max_trades_per_day: 75         # 🔧 200→75 (06 Aout) — qualité > quantité
   max_signals_per_cycle: 10      # conservé
   history_lookback_days: 3       # conservé

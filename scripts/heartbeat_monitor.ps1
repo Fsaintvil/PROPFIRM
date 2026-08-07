@@ -27,6 +27,7 @@ $MainHeartbeat = Join-Path $ProjectRoot "runtime\heartbeat.txt"
 $WatchdogHeartbeat = Join-Path $ProjectRoot "runtime\watchdog_heartbeat.txt"
 $PidFile = Join-Path $ProjectRoot "runtime\robot.pid"
 $MainScript = Join-Path $ProjectRoot "main.py"
+$RobotScript = Join-Path $ProjectRoot "scripts\robot.ps1"
 $PythonExe = "C:\Users\saint\AppData\Local\Programs\Python\Python310\pythonw.exe"
 
 function Write-Log {
@@ -44,21 +45,22 @@ function Get-FileAge {
 }
 
 function Restart-Robot {
-    Write-Log "RESTART: killing old processes and starting main.py" -Level "WARN"
+    Write-Log "RESTART: delegating to robot.ps1 (kills old processes, clears flags, syncs clock, starts main.py)" -Level "WARN"
+    # 🔧 FIX 07 Août 2026: délègue à robot.ps1 au lieu de relancer pythonw.exe en direct.
+    # Le robot tourne en python.exe (lancé par robot.ps1), pas pythonw.exe — l'ancien
+    # Restart-Robot ne tuait PAS le bon processus et créait un DOUBLON.
+    # robot.ps1 gère : kill des instances existantes, cleanup lock stale, clear des
+    # flags watchdog (stop/halt), nettoyage budget restarts, sync clock, lancement.
     try {
-        Get-Process -Name "pythonw" -ErrorAction SilentlyContinue |
-            Where-Object { $_.CommandLine -match "main.py" } |
-            Stop-Process -Force -ErrorAction SilentlyContinue
-    } catch {}
-    try {
-        Get-Process -Name "python" -ErrorAction SilentlyContinue |
-            Where-Object { $_.CommandLine -match "watchdog.py" } |
-            Stop-Process -Force -ErrorAction SilentlyContinue
-    } catch {}
-    Start-Sleep -Seconds 3
-    try {
-        Start-Process -FilePath $PythonExe -ArgumentList $MainScript -WindowStyle Hidden
-        Write-Log "RESTART: main.py launched"
+        $proc = Start-Process -FilePath "powershell.exe" -ArgumentList @(
+            "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$RobotScript`""
+        ) -WindowStyle Hidden -PassThru
+        # Donne à robot.ps1 le temps de lancer main.py (Start-Sleep 8s + vérif 3s)
+        if (-not $proc.WaitForExit(30000)) {
+            Write-Log "RESTART: robot.ps1 still running after 30s (process may be up)" -Level "WARN"
+        } else {
+            Write-Log "RESTART: robot.ps1 exited (code $($proc.ExitCode))"
+        }
     } catch {
         Write-Log "RESTART FAILED: $_" -Level "ERROR"
     }
@@ -92,9 +94,9 @@ function Check-WatchdogHeartbeat {
 
 function Check-ProcessPid {
     if (-not (Test-Path $PidFile)) { return $false }
-    $Pid = Get-Content $PidFile -Raw | ForEach-Object { $_.Trim() }
-    if (-not $Pid) { return $false }
-    $Proc = Get-Process -Id $Pid -ErrorAction SilentlyContinue
+    $PidValue = Get-Content $PidFile -Raw | ForEach-Object { $_.Trim() }
+    if (-not $PidValue) { return $false }
+    $Proc = Get-Process -Id $PidValue -ErrorAction SilentlyContinue
     return ($null -ne $Proc)
 }
 
@@ -120,11 +122,22 @@ function Install-TaskScheduler {
         -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
     $Trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
         -RepetitionInterval (New-TimeSpan -Minutes 5) `
-        -RepetitionDuration ([TimeSpan]::MaxValue)
-    $Principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+        -RepetitionDuration (New-TimeSpan -Days 999)
+    # 🔧 FIX 07 Août 2026: tourne en tant que saint (session interactive, comme la
+    # tâche MT5_FTMO_DailyCheckpoint qui fonctionne) au lieu de SYSTEM. Le robot doit
+    # être lancé dans la même session que le terminal MT5 (session utilisateur).
+    $CurrentUser = "$env:COMPUTERNAME\$env:USERNAME"
+    $Principal = New-ScheduledTaskPrincipal -UserId $CurrentUser -LogonType Interactive -RunLevel Highest
+    # Le robot doit tourner 24/7 → désactive les restrictions batterie qui
+    # empêcheraient le watchdog de se lancer quand le PC est sur batterie.
+    $Settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
+        -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) `
+        -ExecutionTimeLimit (New-TimeSpan -Minutes 10) `
+        -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
     Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger `
-        -Principal $Principal -Description "MT5 FTMO Robot heartbeat monitor" -Force
-    Write-Host "Task Scheduler entry '$TaskName' created (runs every 5 minutes)"
+        -Principal $Principal -Settings $Settings `
+        -Description "MT5 FTMO Robot heartbeat monitor (external watchdog every 5 min)" -Force
+    Write-Host "Task Scheduler entry '$TaskName' created (runs every 5 minutes as $CurrentUser)"
 }
 
 function Remove-TaskScheduler {

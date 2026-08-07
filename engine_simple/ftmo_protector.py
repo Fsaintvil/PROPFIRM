@@ -1247,6 +1247,17 @@ class FTMOProtector:
         if signal is None:
             return True, None
 
+        # 🔧 07 Août 2026 (mode preuve): flag configurable pour désactiver le
+        # mode conservation. Quand il est désactivé, les trades passent même si
+        # le challenge est mathématiquement perdu — nécessaire pour collecter
+        # les 100+ trades de preuve (décision utilisateur).
+        if not self.config.get("CONSERVATION_MODE_ENABLED", True):
+            if self._conservation_mode:
+                logger.info("  🛡️ MODE CONSERVATION DÉSACTIVÉ (config CONSERVATION_MODE_ENABLED=false)")
+                self._conservation_mode = False
+                self._conservation_mode_logged = False
+            return True, None
+
         # Calculer l'état du challenge
         current_pnl = sum(self.daily_pnl_by_date.values())
         profit_progress = current_pnl / max(self.initial_balance * self.profit_target_pct, 1e-6)

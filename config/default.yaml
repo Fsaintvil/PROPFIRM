@@ -94,6 +94,13 @@ risk:
   cooldown_minutes: 15           # défaut (production override → 3 min)
   auto_pause_losses: 5           # défaut (production override → 10)
 
+  # 🔧 07 Août 2026 (mode preuve): désactive le mode conservation FTMO.
+  # Le mode conservation bloquait TOUS les trades quand le challenge était
+  # "mathématiquement perdu" (profit<5% et jours restants≤3) — ce qui empêchait
+  # la collecte des 100+ trades de preuve. Décision utilisateur : le mode preuve
+  # prime sur la protection d'un challenge déjà perdu. Mettre true pour réactiver.
+  conservation_mode_enabled: false
+
   # --- Volatilité ---
   max_spread_points: 120         # spread max global (overridden par symbole)
 

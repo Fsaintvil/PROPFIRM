@@ -136,6 +136,12 @@ class RiskConfig(BaseModel):
     circuit_breaker_dd_pct: float = Field(
         default=0.08, ge=0.02, le=0.15, description="DD > ce seuil → shorts bloqués (protection drawdown FTMO)"
     )
+    conservation_mode_enabled: bool = Field(
+        default=True,
+        description="🔧 07 Août 2026 (mode preuve): false = mode conservation FTMO désactivé. "
+        "Le mode conservation bloquait tous les trades quand le challenge était mathématiquement "
+        "perdu (profit<5% + jours restants≤3). Désactivé pour collecter les 100+ trades de preuve.",
+    )
 
 
 class SymbolLimit(BaseModel):

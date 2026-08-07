@@ -59,6 +59,11 @@ try:
     AUTO_PAUSE_LOSSES: int = _cfg.risk.auto_pause_losses
     MAX_CORRELATED_EXPOSURE: float = _cfg.risk.max_correlated_exposure
     CIRCUIT_BREAKER_DD_PCT: float = _cfg.risk.circuit_breaker_dd_pct
+    # 🔧 07 Août 2026 (mode preuve): false = mode conservation FTMO désactivé.
+    # Le mode conservation bloquait tous les trades quand le challenge était
+    # mathématiquement perdu (profit<5% + jours restants≤3). Nécessaire pour
+    # collecter les 100+ trades de preuve. Défaut true si absent de la config.
+    CONSERVATION_MODE_ENABLED: bool = getattr(_cfg.risk, "conservation_mode_enabled", True)
     CYCLE_SECONDS: int = _cfg.robot.cycle_seconds
     SYMBOL_LIMITS: dict[str, dict] = {sym: lim.model_dump(exclude_none=True) for sym, lim in _cfg.symbol_limits.items()}
     SYMBOL_TIMEFRAMES: dict[str, str] = {sym: limits.get("timeframe", "H1") for sym, limits in SYMBOL_LIMITS.items()}

@@ -417,6 +417,9 @@ class TradingEngine:
                 ZONE3_LOSS_PCT=cfg.ZONE3_LOSS_PCT,
                 AUTO_PAUSE_LOSSES=cfg.AUTO_PAUSE_LOSSES,
                 CIRCUIT_BREAKER_DD_PCT=cfg.CIRCUIT_BREAKER_DD_PCT,
+                # 🔧 07 Août 2026 (mode preuve): désactive le mode conservation
+                # FTMO pour permettre la collecte des 100+ trades de preuve.
+                CONSERVATION_MODE_ENABLED=cfg.CONSERVATION_MODE_ENABLED,
             ),
         )
         if self._state.get("peak_equity"):
