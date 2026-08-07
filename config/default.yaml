@@ -62,7 +62,10 @@ trading:
   batch_interval_sec: 1         # 1s = signaux chaque cycle (15s), pas de restriction batch
   trading_start_hour: 0
   trading_end_hour: 24          # 24/7 — sans arrêt
-  danger_hours: [12]            # 12:00 UTC = trou noir historique (0% WR documenté)
+  danger_hours: []                # 🔧 07 Août 2026 (mode preuve): danger hour 12h UTC SUPPRIMÉ.
+                                  #   Décision utilisateur : laisser le robot trader 24/7 pour collecter
+                                  #   les 100+ trades de preuve, même à 12h UTC. Le 0% WR documenté datait
+                                  #   de l'ancienne config (SELL autorisé). Réactiver avec: danger_hours: [12]
   history_lookback_days: 3
 
 # ── Signal ───────────────────────────────────────────────────────────────
