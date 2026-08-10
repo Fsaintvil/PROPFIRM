@@ -79,7 +79,12 @@ class ChallengeTracker:
     # ── Trade recording ──────────────────────────────────────────────
 
     def record_trade_result(
-        self, symbol: str, profit: float, historical: bool = False, trade_time: Optional[datetime] = None
+        self,
+        symbol: str,
+        profit: float,
+        historical: bool = False,
+        trade_time: Optional[datetime] = None,
+        direction: Optional[str] = None,
     ) -> None:
         """Enregistre le résultat d'un trade fermé."""
         now = trade_time or datetime.utcnow()
@@ -96,7 +101,18 @@ class ChallengeTracker:
                 add_to_history = False
 
         if add_to_history:
-            self._trade_history.append(dict(symbol=symbol, profit=profit, time=now, historical=historical))
+            # 🐛 FIX 10 Août 2026 (Bug #6): stocker la direction réelle ("BUY"/"SELL")
+            # dans trade_history. Sans elle, _check_directional_imbalance restait
+            # inerte (buys/sells toujours à 0) et la protection ne s'appliquait jamais.
+            self._trade_history.append(
+                dict(
+                    symbol=symbol,
+                    profit=profit,
+                    time=now,
+                    historical=historical,
+                    action=direction,
+                )
+            )
         if len(self._trade_history) > 1000:
             self._trade_history[:] = self._trade_history[-1000:]
 
@@ -197,22 +213,20 @@ class ChallengeTracker:
                 daily_loss_limit = sym_daily_loss
 
         if daily_loss_pct >= daily_loss_limit and self._opened_today == 0 and daily_loss_pct > 0:
-            try:
-                _retry_account = self.mt5.get_account_info()
-                if _retry_account:
-                    _retry_equity = getattr(_retry_account, "equity", None)
-                    if _retry_equity and isinstance(_retry_equity, (int, float)):
-                        _retry_change = _retry_equity - self.daily_start_equity
-                        _retry_pct = max(0, -_retry_change) / max(self.initial_balance, 1)
-                        if _retry_pct < daily_loss_pct:
-                            self.daily_start_equity = _retry_equity
-                            daily_loss_pct = _retry_pct
-                            logger.info(
-                                f"  [AUTO-HEAL] daily_start_equity corrigé: "
-                                f"${_retry_equity:.0f} (daily loss recalculé: {daily_loss_pct:.2%})"
-                            )
-            except Exception as _e:
-                logger.debug(f"  [AUTO-HEAL] échec: {_e}")
+            # 🐛 FIX 10 Août 2026 (Bug #5): AUTO-HEAL SUPPRIMÉ.
+            # L'ancien code (lignes 200-215) recalait daily_start_equity sur l'equity
+            # courante quand la perte dépassait le seuil SANS trade ouvert aujourd'hui.
+            # Or ce cas correspond à une perte HÉRITÉE de positions ouvertes avant minuit
+            # UTC, et un simple bruit de tick entre deux appels get_account_info()
+            # (écartés de quelques secondes seulement) suffisait à faire passer
+            # _retry_pct < daily_loss_pct → le DSE était recalé vers le bas → la perte
+            # réelle était MASQUÉE et le daily loss limit ne bloquait JAMAIS le trading.
+            # Le DSE ne doit être recalculé que par _reset_daily() à minuit UTC.
+            logger.warning(
+                f"DAILY LOSS LIMIT: {daily_loss_pct:.2%} >= {daily_loss_limit:.2%} "
+                f"sans trade ouvert aujourd'hui — perte héritée de positions d'avant "
+                f"minuit UTC. Trading bloqué pour aujourd'hui."
+            )
 
         self._daily_loss_violated = daily_loss_pct >= daily_loss_limit
         if self._daily_loss_violated:
@@ -388,6 +402,7 @@ class ChallengeTracker:
                     if isinstance(t["time"], (int, float))
                     else str(t["time"]),
                     "historical": t.get("historical", False),
+                    "action": t.get("action"),  # 🐛 FIX Bug #6: direction réelle (BUY/SELL)
                 }
                 for t in self._trade_history[-200:]  # last 200 trades
             ],
@@ -463,6 +478,7 @@ class ChallengeTracker:
                             "profit": t.get("profit", 0),
                             "time": time_val,
                             "historical": t.get("historical", True),
+                            "action": t.get("action"),  # 🐛 FIX Bug #6: direction réelle (BUY/SELL)
                         }
                     )
                 except (ValueError, TypeError):
@@ -575,6 +591,11 @@ class FTMOProtector:
         self._daily_profit_reduced = self.challenge._daily_profit_reduced
         self._symbol_trade_history = self.challenge._symbol_trade_history
         self.global_cooldown_until = None  # trading control, not challenge tracking
+        # 🐛 FIX 10 Août 2026 (Bug #4): Mémorise le palier de circuit breaker déjà servi.
+        # Sans lui, l'escalade 3→5→10 ne s'accumule jamais : chaque palier resetait
+        # consecutive_losses à 0 à l'expiration du cooldown, donc le HARD STOP à 10
+        # pertes n'était JAMAIS atteint. Ce compteur ne descend QUE sur une victoire.
+        self._circuit_stage_served = 0  # 0=none, 1=SOFT, 2=AUTO_PAUSE, 3=HARD_STOP
 
         # 🔧 FIX 22 Juillet 2026: Mode conservation — activé quand le challenge
         # FTMO est mathématiquement impossible à atteindre. Réduit les risques
@@ -850,10 +871,11 @@ class FTMOProtector:
         if now < self.global_cooldown_until:
             remaining = int((self.global_cooldown_until - now).total_seconds() // 60)
             return False, f"Global cooldown: {remaining}min (after {self.consecutive_losses} consecutive losses)"
-        # Cooldown expired → reset
-        logger.info(f"Global cooldown expired — reseting consecutive_losses from {self.consecutive_losses} to 0")
-        self.consecutive_losses = 0
-        self.challenge.consecutive_losses = 0  # 🐛 FIX 20 Juillet 2026: Sync challenge tracker
+        # 🐛 FIX 10 Août 2026 (Bug #4): Cooldown expiré → on vide le cooldown MAIS
+        # on NE RESET PLUS consecutive_losses à 0. Ce reset (avec celui de chaque
+        # palier) empêchait l'escalade 3→5→10 du circuit breaker : le compteur
+        # repartait à 0 à chaque expiration, donc le HARD STOP à 10 pertes n'était
+        # jamais atteint. Le compteur ne descend QUE sur une victoire.
         self.global_cooldown_until = None
         return True, None
 
@@ -994,66 +1016,57 @@ class FTMOProtector:
             global_cooldown if global_cooldown is not None else sym_full_cfg.get("cooldown_minutes", 15)
         )
         # 🔧 31 Juillet 2026: Palier progressif — court cooldown à 3 pertes, stop dur à 10+
+        # 🐛 FIX 10 Août 2026 (Bug #4): L'escalade 3→5→10 ne s'accumulait JAMAIS car
+        # chaque palier resetait consecutive_losses à 0 à l'expiration de son cooldown.
+        # Conséquence : le HARD STOP à 10 pertes n'était jamais atteint (le compteur
+        # repartait à zéro après chaque pause). Correction : le compteur ne descend
+        # QUE sur une victoire (record_trade_result). On mémorise le palier déjà servi
+        # (_circuit_stage_served) pour ne pas re-déclencher le même palier en boucle,
+        # et on n'escalade que lorsque consecutive_losses franchit le seuil supérieur.
         consec = self.consecutive_losses
         now = datetime.utcnow()
 
-        # Stage 1: 3 pertes → soft cooldown (5min, juste pour ralentir)
-        if consec >= 3 and consec < sym_auto_pause:
-            soft_cooldown = min(5, sym_cooldown_minutes)
-            if self.global_cooldown_until is None:
-                self.global_cooldown_until = now + timedelta(minutes=soft_cooldown)
-                logger.info(
-                    f"SOFT PAUSE ({symbol}): {consec} pertes, cooldown {soft_cooldown}min (réduction lot active)"
-                )
-                return False, f"Soft cooldown: {soft_cooldown}min ({consec} pertes consécutives)"
-            if now < self.global_cooldown_until:
-                remaining = int((self.global_cooldown_until - now).total_seconds() // 60)
-                return False, f"Soft cooldown: {remaining}min restantes"
-            logger.info(f"Soft cooldown expired — resetting consecutive_losses from {consec} to 0")
-            self.consecutive_losses = 0
-            self.challenge.consecutive_losses = 0
-            self._symbol_consecutive_losses.clear()
-            self.global_cooldown_until = None
+        # Déterminer le palier courant selon le nombre de pertes consécutives
+        if consec >= 10:
+            stage = 3
+            stage_cooldown = max(60, sym_cooldown_minutes * 4)
+        elif consec >= sym_auto_pause:
+            stage = 2
+            stage_cooldown = sym_cooldown_minutes
+        elif consec >= 3:
+            stage = 1
+            stage_cooldown = min(5, sym_cooldown_minutes)
+        else:
+            stage = 0
+            stage_cooldown = 0
 
-        # Stage 2: 5+ pertes → cooldown sérieux + réduction lot max
-        elif consec >= sym_auto_pause and consec < 10:
-            cooldown_duration = sym_cooldown_minutes
-            if self.global_cooldown_until is None:
-                self.global_cooldown_until = now + timedelta(minutes=cooldown_duration)
-                logger.warning(
-                    f"AUTO PAUSE ({symbol}): {consec} pertes >= {sym_auto_pause}, "
-                    f"cooldown {cooldown_duration}min (lot réduit 50%)"
-                )
-                return (
-                    False,
-                    f"Cooldown: {cooldown_duration}min ({consec} pertes consécutives, lot réduit)",
-                )
-            if now < self.global_cooldown_until:
+        if stage > 0:
+            # Un cooldown global est déjà actif (ex: ZONE 3, autre symbole) → bloquer
+            if self.global_cooldown_until is not None and now < self.global_cooldown_until:
                 remaining = int((self.global_cooldown_until - now).total_seconds() // 60)
-                return False, f"Cooldown: {remaining}min restantes ({consec} pertes)"
-            logger.info(f"Auto pause expired — resetting consecutive_losses from {consec} to 0")
-            self.consecutive_losses = 0
-            self.challenge.consecutive_losses = 0
-            self._symbol_consecutive_losses.clear()
-            self.global_cooldown_until = None
-
-        # Stage 3: 10+ pertes → HARD STOP (urgence, long cooldown)
-        elif consec >= 10:
-            hard_cooldown = max(60, sym_cooldown_minutes * 4)
-            if self.global_cooldown_until is None:
-                self.global_cooldown_until = now + timedelta(minutes=hard_cooldown)
-                logger.critical(
-                    f"HARD STOP ({symbol}): {consec} pertes consécutives! "
-                    f"Cooldown {hard_cooldown}min — vérifier le marché"
-                )
-                return False, f"HARD STOP: {hard_cooldown}min ({consec} pertes consécutives)"
-            if now < self.global_cooldown_until:
-                remaining = int((self.global_cooldown_until - now).total_seconds() // 60)
-                return False, f"HARD STOP: {remaining}min restantes"
-            logger.info(f"Hard STOP expired — resetting consecutive_losses from {consec} to 0")
-            self.consecutive_losses = 0
-            self.challenge.consecutive_losses = 0
-            self._symbol_consecutive_losses.clear()
+                return False, f"Cooldown global: {remaining}min restantes ({consec} pertes)"
+            # Nouveau palier atteint (escalade) → armer le cooldown de CE palier
+            if stage > self._circuit_stage_served:
+                self._circuit_stage_served = stage
+                self.global_cooldown_until = now + timedelta(minutes=stage_cooldown)
+                if stage == 3:
+                    logger.critical(
+                        f"HARD STOP ({symbol}): {consec} pertes consécutives! "
+                        f"Cooldown {stage_cooldown}min — vérifier le marché"
+                    )
+                elif stage == 2:
+                    logger.warning(
+                        f"AUTO PAUSE ({symbol}): {consec} pertes >= {sym_auto_pause}, "
+                        f"cooldown {stage_cooldown}min (lot réduit 50%)"
+                    )
+                else:
+                    logger.info(
+                        f"SOFT PAUSE ({symbol}): {consec} pertes, cooldown {stage_cooldown}min (réduction lot active)"
+                    )
+                return False, f"Cooldown: {stage_cooldown}min ({consec} pertes consécutives)"
+            # Palier déjà servi + cooldown expiré → on autorise le trading
+            # (le compteur consecutive_losses EST CONSERVÉ pour l'escalade :
+            # une nouvelle perte le fera grimper vers le palier supérieur)
             self.global_cooldown_until = None
 
         # Per-symbol cooldown
@@ -1336,6 +1349,18 @@ class FTMOProtector:
         if signal_action not in ("BUY", "SELL"):
             return True, None
 
+        # 🐛 FIX 10 Août 2026 (Bug #6): Ne pas appliquer la règle aux symboles
+        # UNIDIRECTIONNELS (allow_shorts=false en MODE PREUVE strict BUY-only).
+        # Avec le stockage de la direction désormais actif, un symbole 100% BUY
+        # (biais VOLONTAIRE et configuré, pas accidentel) aurait un buy_ratio=100%
+        # > 70% → la règle bloquerait la SEULE direction possible → robot figé.
+        # La règle ne protège que lorsque les DEUX directions sont possibles.
+        sym_cfg = self.symbol_limits.get(symbol, {})
+        allows_shorts = sym_cfg.get("allow_shorts", True)
+        allows_buys = sym_cfg.get("allow_buys", True)
+        if not allows_shorts or not allows_buys:
+            return True, None  # symbole unidirectionnel → règle sans objet
+
         # Analyser les N derniers trades fermés
         recent = self._trade_history[-30:] if len(self._trade_history) >= 30 else self._trade_history
         if len(recent) < 10:
@@ -1447,6 +1472,9 @@ class FTMOProtector:
         self.daily_start_equity = self.challenge.daily_start_equity
         self.consecutive_losses = self.challenge.consecutive_losses
         self.challenge_status = self.challenge.challenge_status
+        # 🐛 FIX 10 Août 2026 (Bug #4): Un reset de challenge remet aussi l'escalade
+        # du circuit breaker à zéro (nouveau départ, compteur de pertes réinitialisé).
+        self._circuit_stage_served = 0
 
     def _adaptive_lot_mult(self) -> float:
         """Multiplicateur adaptatif (0.30-1.0) basé sur performance récente.
@@ -1852,12 +1880,25 @@ class FTMOProtector:
                     logger.warning(f"Prune failed: {e}")
                     self.position_open_times = dict(list(self.position_open_times.items())[-150:])
 
-    def record_trade_result(self, symbol: str, profit: float, historical: bool = False, trade_time: Any = None) -> None:
+    def record_trade_result(
+        self,
+        symbol: str,
+        profit: float,
+        historical: bool = False,
+        trade_time: Any = None,
+        direction: Optional[str] = None,
+    ) -> None:
         """Enregistre le résultat d'un trade fermé. Delegates to ChallengeTracker."""
-        self.challenge.record_trade_result(symbol, profit, historical, trade_time=trade_time)
+        self.challenge.record_trade_result(symbol, profit, historical, trade_time=trade_time, direction=direction)
         # Sync aliases
         self.consecutive_losses = self.challenge.consecutive_losses
         self.challenge_status = self.challenge.challenge_status
+        # 🐛 FIX 10 Août 2026 (Bug #4): Le palier de circuit breaker (_circuit_stage_served)
+        # ne descend QUE sur une victoire réelle. Sans ce reset, une fois un palier déclenché
+        # (ex: HARD STOP), le robot resterait au palier max à vie — l'escalade serait bloquée
+        # à la baisse comme à la hausse. Une victoire remet l'escalade à zéro proprement.
+        if profit > 0 and not historical:
+            self._circuit_stage_served = 0
 
     def _check_consistency(self) -> None:
         """FTMO consistency rule. Delegates to ChallengeTracker."""

@@ -324,7 +324,7 @@ class TestPositionTracker:
         # Verify recording — pas historical car trade live (time > _start_time)
         assert 1 in tracker._recorded_deals
         assert "1_XAUUSD" in tracker._recorded_position_ids
-        ftmo.record_trade_result.assert_called_with("XAUUSD", 150.0, historical=False, trade_time=ANY)
+        ftmo.record_trade_result.assert_called_with("XAUUSD", 150.0, historical=False, trade_time=ANY, direction="BUY")
         journal.record.assert_called_once()
         adaptive.record_result.assert_called_once()
         audit.log_decision.assert_called_once()

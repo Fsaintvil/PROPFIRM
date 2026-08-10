@@ -484,13 +484,19 @@ class TradingEngine:
                     self.ftmo.global_cooldown_until = gcu
                     logger.info(f"[STATE] Restored global_cooldown_until: {gcu}")
                 else:
-                    # Cooldown expiré, reset consecutive_losses proprement
+                    # Cooldown expiré → on vide simplement le cooldown.
+                    # 🐛 FIX 10 Août 2026 (Bug #4): NE PAS reset consecutive_losses ici !
+                    # Ce reset (comme celui des paliers du circuit breaker) détruisait
+                    # l'escalade 3→5→10 au restart : le compteur persisté repartait à 0
+                    # sans qu'aucune perte réelle n'ait été annulée, donc le HARD STOP
+                    # à 10 pertes n'était jamais atteint. Le compteur ne descend QUE
+                    # sur une victoire (record_trade_result).
                     logger.info(
-                        f"[STATE] global_cooldown_until expired ({gcu}), "
-                        f"resetting consecutive_losses from {self.ftmo.consecutive_losses} to 0"
+                        f"[STATE] global_cooldown_until expired ({gcu}), cooldown vidé "
+                        f"(consecutive_losses={self.ftmo.consecutive_losses} conservé pour l'escalade)"
                     )
-                    self.ftmo.consecutive_losses = 0
-                    self.ftmo.challenge.consecutive_losses = 0
+                    self.ftmo.global_cooldown_until = None
+                    self.ftmo.challenge.global_cooldown_until = None
             except (ValueError, TypeError) as e:
                 logger.warning(f"[STATE] Cannot restore global_cooldown_until: {e}")
         if self._state.get("consistency_violated"):
@@ -545,6 +551,7 @@ class TradingEngine:
                             "profit": t.get("profit", 0),
                             "time": time_val,
                             "historical": t.get("historical", False),
+                            "action": t.get("action"),  # 🐛 FIX Bug #6: direction réelle (BUY/SELL)
                         }
                     )
                 except (ValueError, TypeError):
@@ -657,19 +664,15 @@ class TradingEngine:
             if int(_ot) > 0:
                 logger.info(f"[STATE] _opened_today restauré: {int(_ot)}")
         else:
-            # 🔧 FIX 7 Juillet 2026: Si _opened_today non trouvé/nul dans state, forcer 0
-            # (cause: état corrompu après crash, valeurs fantômes persistées)
+            # Si _opened_today non trouvé/nul dans state, forcer 0
             self.ftmo._opened_today = 0
             self.ftmo.challenge._opened_today = 0
-        # 🔧 FIX 7 Juillet 2026: Forcer opened_today=0 après restauration
-        # pour éviter les valeurs fantômes persistées (91/75).
-        # Cause identifiée: _opened_today peut être réhydraté depuis des trades
-        # historiques importés lors de import_history() qui précède la boucle.
-        # Solution: reset garanti à 0 avant la boucle trading.
-        if hasattr(self, "ftmo") and getattr(self.ftmo, "_opened_today", 0) != 0:
-            logger.warning(f"[STATE] _opened_today={self.ftmo._opened_today} avant reset forcé!")
-            self.ftmo._opened_today = 0
-            self.ftmo.challenge._opened_today = 0
+        # 🐛 FIX 10 Août 2026 (Bug #2): SUPPRIMÉ le reset forcé à 0 qui suivait.
+        # Il annulait complètement la restauration ci-dessus (FIX #1) et permettait
+        # le bypass de MAX_TRADES_PER_DAY au redémarrage : le compteur repartait
+        # à 0, autorisant 75 nouveaux trades en plus de ceux déjà ouverts le jour.
+        # La valeur restaurée est cohérente (elle reflète les trades du jour courant
+        # persistés dans l'état), et _reset_daily() la remet à 0 au changement de jour.
         _dse = self._state.get("daily_start_equity")
         if _dse is not None and _dse > 0:
             self.ftmo.daily_start_equity = _dse
@@ -1214,12 +1217,14 @@ class TradingEngine:
     def stop(self):
         self.running = False
         self._save_state()
-        # Fermer toutes les positions MT5 avant de déconnecter (bug C2 fix)
-        try:
-            logger.info("[STOP] Fermeture de toutes les positions MT5...")
-            self.mt5.close_all_positions(magic=cfg.ROBOT_MAGIC)
-        except Exception as e:
-            logger.error(f"[STOP] Erreur fermeture positions: {e}")
+        # 🐛 FIX 10 Août 2026 (Bug #1): NE PLUS fermer les positions ici.
+        # Le `finally:` de run() et le signal handler appelaient stop() sur
+        # TOUT arrêt (crash, erreur, SIGTERM), ce qui liquidait le portefeuille
+        # entier à chaque redémarrage (-142.8$ le 10/08 sur un gel).
+        # Le kill-switch externe (.opencode/agents/kill-switch.md, règle 1)
+        # est le SEUL mécanisme qui peut fermer toutes les positions.
+        # stop() ne fait que sauvegarder l'état et libérer les ressources :
+        # les positions restent ouvertes et sont reprises au redémarrage.
         if hasattr(self, "audit"):
             self.audit.log_state_change("robot_stop", "running", "stopped")
             self.audit.close()
@@ -1746,11 +1751,14 @@ class TradingEngine:
                         continue
                 except Exception as e:
                     logger.debug(f"  [PORTFOLIO] {symbol}: re-vérification error ({e}) — bypass")
-            # 🔥 HIGH CONFIDENCE BYPASS: pas de limite de positions
-            if not signal.get("high_confidence", False):
-                if live_total >= cfg.MAX_POSITIONS:
-                    logger.info(f"  [LIMIT] Max positions ({cfg.MAX_POSITIONS}) atteint ({live_total} en cours)")
-                    break
+            # 🐛 FIX 10 Août 2026 (Bug #3): La limite globale MAX_POSITIONS s'applique
+            # TOUJOURS, même en high_confidence. Le veto risk-compliance impose
+            # max_pos=8 absolu. Les relaxations high_confidence (par symbole/direction)
+            # sont gérées par le PortfolioController, mais le plafond GLOBAL ne peut
+            # jamais être dépassé.
+            if live_total >= cfg.MAX_POSITIONS:
+                logger.info(f"  [LIMIT] Max positions ({cfg.MAX_POSITIONS}) atteint ({live_total} en cours)")
+                break
             # 🔧 FIX DUPLICATION 9 Juillet: per-symbol min interval check
             last_trade = self._last_symbol_trade_time.get(symbol, 0)
             since_last_trade = time.time() - last_trade

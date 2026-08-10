@@ -267,7 +267,13 @@ class PositionTracker:
                 # Passer le vrai timestamp MT5 pour que challenge.py puisse filtrer
                 # les trades de plus de 48h (évite de polluer WR avec des trades anciens)
                 trade_dt = getattr(d, "time", None)
-                self.ftmo.record_trade_result(d.symbol, d.profit, historical=True, trade_time=trade_dt)
+                # 🐛 FIX 10 Août 2026 (Bug #6): direction réelle déduite du DEAL type.
+                # DEAL_TYPE_BUY(0)=rachat de SELL → réel=SELL; DEAL_TYPE_SELL(1)=vente de BUY → réel=BUY.
+                # Sans cette direction, _check_directional_imbalance restait inerte (buys/sells = 0).
+                hist_dir = "BUY" if getattr(d, "type", 1) == 1 else "SELL"
+                self.ftmo.record_trade_result(
+                    d.symbol, d.profit, historical=True, trade_time=trade_dt, direction=hist_dir
+                )
                 # ⛔ NE PAS appeler performance_monitor.record_trade() ici !
                 # Les trades historiques sont pour le cooldown/consecutive losses, PAS pour les stats.
                 # Appeler record_trade() ici corrompt les stats quotidiennes (double-count à chaque restart).
@@ -481,7 +487,13 @@ class PositionTracker:
             trade_dt = getattr(closing, "time", None)
             if isinstance(trade_dt, (int, float)):
                 trade_dt = datetime.utcfromtimestamp(trade_dt)
-            self.ftmo.record_trade_result(closing.symbol, closing.profit, historical=is_historical, trade_time=trade_dt)
+            # 🐛 FIX 10 Août 2026 (Bug #6): direction réelle déduite du DEAL type
+            # (voir convention ligne 498 : DEAL_TYPE_SELL(1)=vente de BUY → réel=BUY).
+            # Sans elle, _check_directional_imbalance restait inerte (buys/sells = 0).
+            closing_dir = "BUY" if closing.type == 1 else "SELL"
+            self.ftmo.record_trade_result(
+                closing.symbol, closing.profit, historical=is_historical, trade_time=trade_dt, direction=closing_dir
+            )
             # Persister immédiatement pour éviter la réimportation au prochain redémarrage
             self._save_recorded_positions()
             meta = self._position_meta.pop(ticket, {})

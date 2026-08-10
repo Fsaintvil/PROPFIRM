@@ -277,8 +277,10 @@ class TestCanTrade:
 
         return patch("engine_simple.ftmo_protector.datetime", _FakeDT)
 
-    def test_consecutive_losses_auto_reset_after_cooldown(self):
-        """Après expiration du cooldown, le compteur se reset automatiquement"""
+    def test_consecutive_losses_preserved_after_cooldown(self):
+        """Après expiration du cooldown, le trading reprend MAIS le compteur est
+        CONSERVÉ (FIX Bug #4) : il ne descend que sur une victoire, pour que
+        l'escalade 3→5→10 du circuit breaker s'accumule et atteigne le HARD STOP."""
         p = make_protector()
         self._mock_symbol_info(p)
         p.mt5.get_account_info.return_value = MagicMock(equity=200000)
@@ -286,12 +288,24 @@ class TestCanTrade:
         p.global_cooldown_until = None
         # Force le cooldown pour le test
         with self._as_weekday():
-            p.can_trade("EURUSD")  # Déclenche le cooldown
+            p.can_trade("EURUSD")  # Déclenche le cooldown (palier 2 servi)
             # Maintenant le cooldown est positionné, on le fait expirer
             p.global_cooldown_until = datetime(2026, 6, 8, 9, 59, 0)
             ok, reason = p.can_trade("EURUSD")
         assert ok, f"Devrait autoriser après le cooldown: {reason}"
+        # 🐛 FIX Bug #4: le compteur n'est PAS remis à 0 — il est conservé pour l'escalade
+        assert p.consecutive_losses == 8, f"Compteur conservé pour l'escalade, got {p.consecutive_losses}"
+        assert p._circuit_stage_served == 2  # palier 2 (AUTO_PAUSE) déjà servi
+        # 2 pertes supplémentaires → HARD STOP à 10 déclenché (escalade vers palier 3)
+        p.consecutive_losses = 10
+        with self._as_weekday():
+            ok, reason = p.can_trade("EURUSD")
+        assert not ok, f"Devrait déclencher le HARD STOP à 10 pertes: {reason}"
+        assert p._circuit_stage_served == 3  # palier 3 (HARD STOP) servi
+        # Une victoire remet l'escalade à zéro (reset sur profit > 0)
+        p.record_trade_result("EURUSD", 50.0)
         assert p.consecutive_losses == 0
+        assert p._circuit_stage_served == 0
 
     def test_consecutive_losses_sets_cooldown(self):
         """8 pertes consécutives → pause 30min (cooldown défini)"""
