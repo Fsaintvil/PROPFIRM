@@ -27,17 +27,18 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # 🔧 MODE PREUVE STRICT 06 Aout 2026 — 5 symboles BUY-only
-    assert len(cfg.trading.symbols) == 5  # XAUUSD, EURUSD, USDJPY, EURGBP, USOIL.cash
+    # 🔧 MODE PREUVE STRICT 07 Aout 2026 — 7 symboles BUY-only
+    assert len(cfg.trading.symbols) == 7  # XAUUSD, EURUSD, USDJPY, EURGBP, USOIL.cash, USDCAD, US100.cash
     assert "XAUUSD" in cfg.trading.symbols
     assert "EURUSD" in cfg.trading.symbols
     assert "USDJPY" in cfg.trading.symbols
     assert "EURGBP" in cfg.trading.symbols
     assert "USOIL.cash" in cfg.trading.symbols
+    assert "USDCAD" in cfg.trading.symbols  # 🔧 07 Aout: réactivé BUY-only (+11.8$)
+    assert "US100.cash" in cfg.trading.symbols  # 🔧 07 Aout: réactivé BUY-only (+3.0$)
     assert "BTCUSD" not in cfg.trading.symbols
     assert "GBPUSD" not in cfg.trading.symbols
     assert "AUDUSD" not in cfg.trading.symbols
-    assert "USDCAD" not in cfg.trading.symbols
     assert cfg.risk.per_trade_pct == 0.004  # défaut YAML (production override → 0.003)
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 2.0  # conservé
@@ -68,6 +69,16 @@ def test_symbol_limits_defaults():
     assert cfg.symbol_limits["XAUUSD"].min_score == 0.63  # ⚖️ CONFIG PIC 23 Juin 2026
     assert cfg.symbol_limits["XAUUSD"].allow_buys is True
     assert cfg.symbol_limits["XAUUSD"].allow_shorts is False  # 🔧 MODE PREUVE 06 Aout: SELL banni
+
+
+def test_usdcad_max_lot_preuve():
+    """🐛 FIX 10 Août 2026: USDCAD max_lot 0.15 → 0.05 (plafond mode preuve strict).
+    La config PIC 23 Juin (0.15) violait le veto risk-compliance du mode preuve
+    (lignes 43-45 de default.yaml: 'Lots réduits 0.05 max')."""
+    cfg = load_config("default")
+    assert "USDCAD" in cfg.symbol_limits
+    assert cfg.symbol_limits["USDCAD"].max_lot == 0.05
+    assert cfg.symbol_limits["USDCAD"].allow_shorts is False  # mode preuve BUY-only
 
 
 def test_symbol_limits_new_portfolio():

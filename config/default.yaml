@@ -38,14 +38,18 @@ trading:
     #   XAUUSD BUY (WR 60.6%, +31$), EURUSD BUY (WR 59.1%, +82$),
     #   EURGBP BUY (WR 67.6%, +26$), USDJPY BUY (WR 48%), USOIL BUY.
     # ⚠️ SELL bannis: WR 34% cumulé = -2 925$ (XAUUSD SELL -1 938$).
-    # ⚠️ XAGUSD désactivé (trou noir -1 484$), BTCUSD/GBPUSD/AUDUSD/USDCAD
+    # ⚠️ XAGUSD désactivé (trou noir -1 484$), BTCUSD/GBPUSD/AUDUSD
     #    retirés de la liste active (WR<50% ou trous).
+    # 🔧 07 Aout 2026: USDCAD + US100.cash réactivés (BUY-only, analyse 807 trades:
+    #    USDCAD BUY +11.8$, US100.cash BUY +3.0$ — seuls candidats rentables en BUY).
     # Lots réduits 0.05 max — aucune augmentation avant validation statistique.
     - XAUUSD
     - EURUSD
     - USDJPY
     - EURGBP
     - USOIL.cash
+    - USDCAD
+    - US100.cash
 
   # ⚖️ CONFIG PIC 23 Juin 2026 (4011b396b): max_positions 30, 200 trades/jour
   #   Restauré 04 Aout 2026 — retour au niveau le plus performant.
@@ -299,19 +303,21 @@ symbol_limits:
     news_minutes_after: 5
 
   # ═══════════════════════════════════════════════════════════════════════════
-  # USDCAD H1 — Dollar US/Dollar Canadien (CONFIG PIC 23 Juin 2026: max_lot 0.15, risk_mult 0.85, min_score 0.85)
+  # USDCAD H1 — Dollar US/Dollar Canadien (CONFIG PIC 23 Juin 2026: risk_mult 0.85, min_score 0.85)
   # Backtest H1 12+ ans: WR 80.7%, PF 1.40, DD 1.2%
   # ═══════════════════════════════════════════════════════════════════════════
   USDCAD:
     timeframe: "H1"
-    max_lot: 0.15               # PIC 23 Juin: ↑ 0.10→0.15 (augmentation validée)
+    max_lot: 0.05               # 🐛 FIX 10 Août 2026: 0.15 → 0.05 (plafond mode preuve strict,
+                                #    lignes 43-45: "Lots réduits 0.05 max — aucune augmentation avant
+                                #    validation statistique". 0.15 violait le veto risk-compliance.)
     min_lot: 0.01
     risk_mult: 0.85             # PIC 23 Juin
     min_score: 0.85             # PIC 23 Juin (documentaire — la vraie source est strategy.py)
     max_spread_points: 45
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: true
+    allow_shorts: false          # 🔴 SELL BANNI 07 Aout 2026 (mode preuve strict BUY-only, veto risk-compliance)
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -855,7 +861,7 @@ symbol_limits:
     max_spread_points: 200
     adx_thresh: 22
     allow_buys: true              # ✅ DÉBLOQUÉ 27 Juil 2026 — Solution A
-    allow_shorts: true            # ✅ DÉBLOQUÉ 27 Juil 2026 — Solution A
+    allow_shorts: false           # 🔴 SELL BANNI 07 Aout 2026 (mode preuve strict BUY-only, veto risk-compliance)
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 6.0

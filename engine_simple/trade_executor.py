@@ -280,8 +280,15 @@ class TradeExecutor:
                     price_diff_pct = abs(pos.price_open - price) / max(price, 0.0001) * 100
                     if price_diff_pct < 0.03:  # 0.03% d'écart max
                         # Vérifier aussi l'age de la position (ouverte < 120s = doublon probable)
+                        # 🐛 FIX 10 Août 2026: pos.time (API MT5) est en TEMPS SERVEUR (FTMO-Demo
+                        # décalé de ~3h vs time.time() local) → age NÉGATIF permanent → le
+                        # price-dedup bloquait TOUS les signaux high_confidence du symbole
+                        # (65 faux rejets USDJPY en 15 min le 10/08). On n'applique le price-dedup
+                        # QUE si l'age est cohérent (0 < age < 120s). Les vrais doublons restent
+                        # protégés par le rate limiter par symbole + le fingerprint _recent_trades
+                        # (qui utilisent time.time() de façon cohérente des deux côtés).
                         pos_age = _now - getattr(pos, "time", 0)
-                        if pos_age < 120:
+                        if 0 < pos_age < 120:
                             logger.warning(
                                 f"[DOUBLON] {symbol}: entrée {price:.5f} identique "
                                 f"à pos #{pos.ticket} ({pos.price_open:.5f}, diff={price_diff_pct:.3f}%, "

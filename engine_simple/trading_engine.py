@@ -871,9 +871,16 @@ class TradingEngine:
             watchdog_log = Path(__file__).resolve().parent.parent / "logs" / "watchdog_external.log"
             watchdog_log.parent.mkdir(exist_ok=True)
             _wd_err = open(watchdog_log, "a", encoding="utf-8")
+            # 🔧 FIX 10 Août 2026: cwd = RACINE du projet (et non engine_simple/).
+            # Ancien cwd=os.path.dirname(__file__) = engine_simple/ → le watchdog
+            # tournait dans le mauvais répertoire. Aujourd'hui inoffensif (chemins
+            # absolus partout : heartbeat, spawn_new_instance), mais fragile et
+            # trompeur. La racine est l'environnement de travail naturel du robot
+            # (logs/, runtime/, config/).
+            project_root = Path(__file__).resolve().parent.parent
             self._watchdog_process = subprocess.Popen(
                 [sys.executable, str(watchdog_script), str(pid), heartbeat_file, str(timeout)],
-                cwd=os.path.dirname(os.path.abspath(__file__)),
+                cwd=str(project_root),
                 stdout=_wd_err,
                 stderr=_wd_err,
             )

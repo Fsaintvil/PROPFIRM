@@ -393,6 +393,27 @@ class Trailer:
         if rc == 10016:
             retry_gap = trail_distance + 2 * atr_val * jitter
             retry_sl = peak - retry_gap if position.type == 0 else peak + retry_gap
+            # 🐛 FIX 10 Août 2026: le chemin retry 10016 n'avait AUCUNE garde sl_improves.
+            # retry_sl = peak - retry_gap pouvait passer SOUS l'entrée (profit non sécurisé)
+            # ou SOUS le SL actuel → le SL RECULAIT (protection réduite). On applique les
+            # mêmes bornes que le chemin principal (lignes 353-377) : jamais sous l'entrée,
+            # jamais pire que le SL actuel.
+            if position.type == 0:  # BUY
+                retry_sl = max(retry_sl, entry_price)
+                if retry_sl <= position.sl:
+                    logger.debug(
+                        f"  [TRAIL] retry 10016 {position.symbol}: retry_sl {retry_sl:.5f} "
+                        f"≤ SL actuel {position.sl:.5f} — skip (anti-recul)"
+                    )
+                    return
+            else:  # SELL
+                retry_sl = min(retry_sl, entry_price)
+                if retry_sl >= position.sl:
+                    logger.debug(
+                        f"  [TRAIL] retry 10016 {position.symbol}: retry_sl {retry_sl:.5f} "
+                        f"≥ SL actuel {position.sl:.5f} — skip (anti-recul)"
+                    )
+                    return
             retry_sl = round(retry_sl, info.digits)
             result2 = self.mt5.update_sl(position, retry_sl)
             if result2 and result2.retcode == 10009:

@@ -54,6 +54,13 @@ class PositionManager:
         self._pos_cache = pos_cache
         # Cache TTL pour les rates de vigilance (partagé entre symboles)
         self._vigilance_rate_cache = {}
+        # 🐛 FIX 10 Août 2026: throttle du log [REGIME SHIFT] — le régime DL est recalculé
+        # chaque cycle (15s) et comparé au régime d'entrée de la position. Tant que la position
+        # est ouverte, si les deux divergent, le log INFO était émis À CHAQUE CYCLE
+        # (4925 lignes de spam le 10/08 : USDJPY/ USOIL / EURUSD). Le trailing utilise le régime
+        # d'entrée stocké (position_regime), pas ce calcul → log purement informatif.
+        # Désormais max 1 log / 5 min par symbole.
+        self._regime_shift_log_time: dict[str, float] = {}
 
     # ── Position management ─────────────────────────────────────────
 
@@ -135,9 +142,14 @@ class PositionManager:
                     entry_regime = REGIME_SHORT_TO_FULL.get(raw_regime, raw_regime)
                     if entry_regime not in ("?", "LIMIT") and result["regime"] not in ("?", "LIMIT"):
                         if result["regime"] != entry_regime:
-                            logger.info(
-                                f"  [REGIME SHIFT] {symbol}: {entry_regime} → {result['regime']} (position ouverte)"
-                            )
+                            # Throttle: 1 log / 5 min par symbole (anti-spam 15s)
+                            _now = time.time()
+                            _last = self._regime_shift_log_time.get(symbol, 0.0)
+                            if _now - _last >= 300:
+                                self._regime_shift_log_time[symbol] = _now
+                                logger.info(
+                                    f"  [REGIME SHIFT] {symbol}: {entry_regime} → {result['regime']} (position ouverte)"
+                                )
                     if pos.sl > 0:
                         dist = abs(pos.price_open - pos.sl)
                         logger.debug(f"  [POS] {symbol}: SL={pos.sl:.5f} dist={dist:.5f} profit={pos.profit:+.2f}")

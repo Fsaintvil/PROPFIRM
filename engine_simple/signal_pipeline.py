@@ -1173,6 +1173,17 @@ class SignalPipeline:
             tf_signal = self.symbol_timeframes.get(symbol, "H1")
             higher_tfs = {"H1": "H4", "H4": "D1", "D1": "W1"}
             tf_higher = higher_tfs.get(tf_signal)
+            # 🐛 FIX 10 Août 2026: Double pénalité H4 supprimée (complément du FIX 06/08).
+            # La phase 1d (H4_DIR) gère DÉJÀ l'alignement avec H4 pour les symboles H1
+            # (rejet si H4 forte / ×0.75 si modérée / ×1.05 si aligné, via _h4_penalty/_h4_dir).
+            # La phase 9 re-pénalisait le MÊME conflit H4 via mtf_confirm (×0.7) → un conflit
+            # H4 modéré perdait ×0.75×0.7=×0.525 au lieu de ×0.75 (double pénalité ~33%).
+            # On skip la phase 9 quand le higher_tf est H4 ET que H4_DIR a déjà tourné
+            # (marqueur _h4_dir posé). La phase 9 reste active pour les higher_tf non couverts
+            # par H4_DIR (D1/W1, ex: XAUUSD H4 → D1) — pas de doublon.
+            if tf_higher == "H4" and signal.get("_h4_dir"):
+                logger.debug(f"  [MTF] {symbol}: H4 déjà géré par H4_DIR — phase 9 skip (anti double pénalité)")
+                return True
             if tf_higher:
                 recent_higher = self.mt5.get_rates(symbol, tf_higher, count=100)
                 if recent_higher is not None and len(recent_higher) >= 50:
