@@ -66,7 +66,9 @@ def test_symbol_limits_defaults():
     assert cfg.symbol_limits["XAUUSD"].max_lot == 0.05  # 🔧 MODE PREUVE 06 Aout 2026: 0.10→0.05
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
     assert cfg.symbol_limits["XAUUSD"].risk_mult == 0.60  # ⚖️ CONFIG PIC 23 Juin 2026: risk réduit
-    assert cfg.symbol_limits["XAUUSD"].min_score == 0.63  # ⚖️ CONFIG PIC 23 Juin 2026
+    assert (
+        cfg.symbol_limits["XAUUSD"].min_score == 0.75
+    )  # 🔧 FIX 10 Aout 2026: 0.63→0.75 (garde-fou risk-compliance, XAUUSD = 91% pertes mode preuve)
     assert cfg.symbol_limits["XAUUSD"].allow_buys is True
     assert cfg.symbol_limits["XAUUSD"].allow_shorts is False  # 🔧 MODE PREUVE 06 Aout: SELL banni
 
