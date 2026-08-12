@@ -47,6 +47,11 @@ logger = logging.getLogger("strategy")
 # Ces constantes ne sont plus utilisées dans le calcul du signal.
 THRESHOLD_MAX = 6.0  # 🔧 27 Juil 2026: ↑ 3.0→6.0 (Solution A: BTCUSD 5.0×ATR, XAUUSD 4.0×ATR)
 THRESHOLD_MIN = 1.5  # Plancher absolu (clamping sécurité)
+# Pour compatibilité avec les utilitaires/backtests
+# Ces constantes sont principalement documentaires — les valeurs
+# par symbole dans `SYMBOL_CONFIG` restent prioritaires.
+THRESHOLD_TRENDING = 2.5
+THRESHOLD_RANGING = 2.0
 
 # ============================================================================
 # PARAMÈTRES SPÉCIFIQUES PAR ACTIF — 27 Symboles Actifs (1er Juillet 2026)
@@ -109,7 +114,12 @@ SYMBOL_CONFIG = {
         "min_score": 0.50,
         "adx_thresh": 22,
         "min_rr": 2.0,
-        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+        "risk_mult": 0.0,  # 🔴 DÉSACTIVÉ 12 Août 2026 — trou noir confirmé en mode preuve
+        #    (7 trades, WR 14%, −288.65$; −2 196$ sur 89 trades au total).
+        #    ATTENTION: ce risk_mult est la VRAIE source du gel (get_symbol_param
+        #    → strategy.py, PAS config/default.yaml qui est la doc). Le signal
+        #    risk_mult = 0.0 × OL → calculate_lot → lot=0 → [GEL].
+        #    Réévaluer en mode scale si l'edge redevient positif sur paper.
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
         "lot_base": 0.01,
