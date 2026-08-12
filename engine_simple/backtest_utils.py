@@ -17,7 +17,7 @@ from typing import Any
 # ═══════════════════════════════════════════════════════════════════════════════
 THRESHOLD_TRENDING: float = 2.5
 THRESHOLD_RANGING: float = 2.0
-THRESHOLD_MAX: float = 3.0  # ⚠️ Doit correspondre à strategy.py (3.0, pas 2.5)
+THRESHOLD_MAX: float = 6.0  # Aligné sur engine_simple/strategy.py (mise à jour 27 Jul 2026)
 THRESHOLD_MIN: float = 1.5
 
 SL_ATR_TRENDING: float = 2.0
