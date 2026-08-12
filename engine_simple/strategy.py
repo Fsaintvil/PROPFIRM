@@ -316,7 +316,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # très sélectif
         "adx_thresh": 20,
         "min_rr": 2.0,
-        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+        "risk_mult": 0.0,  # 🔴 GEL TEMPORAIRE par automation: freeze symbol due to large losses
         "risk_per_trade": 0.001,  # risque réduit (soft block)
         "cooldown_minutes": 30,
         "auto_pause_losses": 3,
@@ -414,7 +414,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.60,  # très sélectif
         "adx_thresh": 25,
         "min_rr": 2.0,
-        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+        "risk_mult": 0.0,  # 🔴 GEL TEMPORAIRE par automation: freeze symbol due to large losses
         "cooldown_minutes": 30,
         "auto_pause_losses": 3,
     },

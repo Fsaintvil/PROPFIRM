@@ -138,7 +138,11 @@ symbol_limits:
     execution_timeframe: "M15"    # ✅ Analyse H4+H1, exécution M15 (27 Juil 2026)
     max_lot: 0.05             # 🔧 MODE PREUVE: 0.10→0.05 (06 Aout)
     min_lot: 0.01
-    risk_mult: 0.60           # PIC 23 Juin: ↓ 1.10→0.60 (WR 36.4% Phase 3, PF 0.60)
+    risk_mult: 0.0            # 🔴 DÉSACTIVÉ 12 Août 2026 — trou noir confirmé en mode preuve:
+                              #    7 trades, WR 14%, −288.65$ (proof) ; −2 196$ sur 89 trades au total.
+                              #    Malgré WR 52.8% au global, pertes asymétriques (SL larges > gains).
+                              #    Décision Robot Manager + utilisateur (analyse 12/08). Réévaluer en
+                              #    mode scale uniquement si l'edge redevient positif sur paper.
     min_score: 0.75           # 🔧 FIX 10 Aout 2026: 0.63→0.75 (garde-fou risk-compliance — XAUUSD = 91% des pertes mode preuve, WR 33%). Le dyn_score (~0.78) prime déjà, on verrouille le plancher symbole.
     max_spread_points: 60     # élargi (était 40)
     adx_thresh: 22
@@ -570,7 +574,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 2 Juillet 2026 — WR 33.3%, -$1,264 (avg -$60/trade)
+    risk_mult: 0.0              # 🔴 GEL TEMPORAIRE par automation: freeze symbol due to large losses
     max_spread_points: 80
     adx_thresh: 22
     allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
@@ -698,7 +702,7 @@ symbol_limits:
     timeframe: "H1"
     max_lot: 0.05
     min_lot: 0.05
-    risk_mult: 1.0              # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades   # 🔴 HARD BLOCK 2 Juillet 2026 — WR 29.4%, -$139 (avg -$4/trade)
+    risk_mult: 0.0              # 🔴 GEL TEMPORAIRE par automation: freeze symbol due to large losses
     max_spread_points: 120
     adx_thresh: 20
     allow_buys: true             # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
