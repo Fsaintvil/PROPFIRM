@@ -1,4 +1,5 @@
-.env
+runtime/*.json
+runtime/*.md.env
 *.env.bak*
 config/*.bak_*
 _diag.ps1
