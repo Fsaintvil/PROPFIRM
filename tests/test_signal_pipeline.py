@@ -447,10 +447,12 @@ class TestPhase1MOM20x3:
     def test_risk_mult_combines_base_and_ol(self, mock_mom, pipeline, mock_mt5, mock_adaptive):
         mock_mt5.get_rates.return_value = [(i, 1.1, 1.11, 1.09, 1.1, 1000, 10, 1000) for i in range(100)]
         mock_adaptive.learner.get_params.return_value = {"thresh": 2.5, "risk_mult": 0.75}
-        signal = pipeline._phase1_mom20x3("BTCUSD")
+        # 🛡️ 13 Août 2026: symbole changé BTCUSD → EURUSD. BTCUSD a risk_mult=0.0
+        # (désactivé 12 Août 2026 — trou noir en mode preuve) → effective=0.0×0.75=0.0,
+        # le test ne vérifierait plus la COMBINAISON static×OL. EURUSD (risk_mult=1.0,
+        # débloqué) préserve l'intention : le OL risk_mult=0.75 × base 1.0 → 0.75.
+        signal = pipeline._phase1_mom20x3("EURUSD")
         assert signal is not None
-        # 🔧 29 Juillet 2026: BTCUSD débloqué (risk_mult=1.0 dans strategy.py)
-        # Le OL risk_mult=0.75 est multiplié par la base 1.0 → 0.75
         assert abs(signal["risk_mult"] - 0.75) < 0.01
 
 

@@ -95,7 +95,11 @@ def test_symbol_limits_new_portfolio():
     assert btc.allow_buys is True
     assert btc.allow_shorts is True
     assert btc.max_lot == 0.03  # lot minimal
-    assert btc.min_score == 0.60  # pic
+    # 🛡️ 13 Août 2026: min_score aligné sur la config réelle (default.yaml + strategy.py
+    # ont tous deux min_score=0.50 pour BTCUSD). Le test attendait 0.60 (valeur "pic"
+    # historique jamais alignée sur la config) → échec permanent depuis l'activation
+    # de la config réelle. 0.50 est la source de vérité (default.yaml ligne ~105).
+    assert btc.min_score == 0.50
 
 
 def test_env_interpolation():

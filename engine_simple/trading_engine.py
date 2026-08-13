@@ -681,41 +681,25 @@ class TradingEngine:
             logger.debug(f"[STATE] daily_start_equity restauré: {_dse} (ftmo + challenge)")
         else:
             logger.debug(f"[STATE] daily_start_equity ignoré: {_dse} (<=0 ou None)")
-        # 🔧 FIX H3: Forcer le recalage de daily_start_equity après restart
-        # pour éviter qu'il reste bloqué à l'initial_balance (200000).
-        # Le _reset_daily() est appelé dans la boucle trading, mais si on est
-        # dans le même jour UTC, il ne se déclenche pas. On force ici.
-        # ATTENTION: _reset_daily() copie challenge→ftmo, donc on modifie LES DEUX.
-        import datetime as _dt
-
-        _saved_day = self._state.get("daily_stats", {}).get("day")
-        _today = _dt.datetime.utcnow().date()
-        if self.mt5:
-            _acct = self.mt5.get_account_info()
-            if _acct:
-                if str(_today) != str(_saved_day):
-                    # Jour différent → _reset_daily() va normalement corriger
-                    pass
-                # 🔧 FIX 7 Juillet 2026: Toujours forcer le recalage, pas seulement
-                # quand equity != daily_start_equity. Le challenge.daily_start_equity
-                # peut être resté à initial_balance si la restauration d'état ne l'a
-                # pas touché (line 613 ne set que ftmo, pas challenge).
-                # Comparer avec le challenge ET ftmo pour couvrir les deux cas.
-                _challenge_dse = getattr(self.ftmo, "challenge", None)
-                _challenge_dse_val = _challenge_dse.daily_start_equity if _challenge_dse else None
-                if _acct.equity != _challenge_dse_val:
-                    # Même jour, restart dans la journée → on recale sur l'equity actuelle
-                    _old_ftmo = self.ftmo.daily_start_equity
-                    _old_challenge = _challenge_dse_val
-                    _new_eq = _acct.equity
-                    # Modifier les DEUX (protector + challenge) car _reset_daily()
-                    # copie challenge→protector à chaque cycle
-                    self.ftmo.daily_start_equity = _new_eq
-                    if _challenge_dse:
-                        _challenge_dse.daily_start_equity = _new_eq
-                    logger.info(
-                        f"[STATE] daily_start_equity recalculé: ftmo={_old_ftmo} challenge={_old_challenge}→{_new_eq}"
-                    )
+        # 🛡️ FIX P0-1 (13 Août 2026, Robot Manager): SUPPRIMÉ le bloc H3 de recalage
+        # forcé de daily_start_equity après restart.
+        # ────────────────────────────────────────────────────────────────────────
+        # Le bloc H3 recalculait daily_start_equity sur l'equity courante à CHAQUE
+        # redémarrage dans la même journée UTC. Après une perte + restart, le DSE
+        # descendait au niveau réduit → daily_equity_change ≈ 0 → la limite FTMO
+        # daily-loss 2% ne déclenchait JAMAIS. C'était exactement le bug que le
+        # FIX #5 du 10/08 (ftmo_protector.py:216-229) prétendait corriger, mais
+        # la porte restait ouverte ici.
+        # ── Règle désormais en vigueur ──
+        #  * daily_start_equity n'est recalculé QUE par _reset_daily() à minuit UTC
+        #    (boucle trading). Aucun recalage intra-jour, y compris au restart.
+        #  * La restauration ci-dessus (lignes 676-683) restaure la valeur persistée
+        #    de l'état — c'est la seule source légitime de DSE au démarrage.
+        #  * Conséquence : si _reset_daily() ne s'exécute pas (période de gel),
+        #    le DSE peut rester à la valeur du jour précédent → au pire la protection
+        #    daily-loss est PLUS stricte, jamais contournée.
+        # Références: FIX H3 (07 Juillet) supprimé, FIX Bug #5 (10 Août) restauré
+        # dans sa totalité. Tests: pytest tests/test_main_integration.py -q
 
         class _Cache:
             def __init__(self, mt5_conn):
@@ -1264,6 +1248,25 @@ class TradingEngine:
         # peut détecter un faux "cycle bloqué" si l'import prend du temps)
         self._last_cycle_time = time.time()
 
+        # 🔧 FIX 11 Août 2026: EMPÊCHER LA VEILLE MACHINE pendant que le robot tourne.
+        # Cause racine des "gels" 05/08 (02:39→06:39) et 11/08 (01:55→06:07) :
+        # le LAPTOP entrait en veille S3 sur batterie (Event 42, motif Battery),
+        # suspendant robot ET watchdog externe pendant 4h13m. Le watchdog externe
+        # ne se réveillait pas correctement après la reprise (waitable-timer perdu).
+        # SetThreadExecutionState(ES_CONTINUOUS|ES_SYSTEM_REQUIRED) déclare au noyau
+        # que ce process est "système critique" → la veille automatique est repoussée
+        # tant que le robot tourne. (powercfg /change standby-timeout-dc 0 appliqué
+        # en complément au niveau de l'alimentation globale.)
+        try:
+            import ctypes
+
+            ES_CONTINUOUS = 0x80000000
+            ES_SYSTEM_REQUIRED = 0x00000001
+            ctypes.windll.kernel32.SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED)
+            logger.info("[POWER] Veille machine désactivée pendant l'exécution (SetThreadExecutionState)")
+        except Exception as _e:
+            logger.warning(f"[POWER] Impossible de désactiver la veille: {_e}")
+
         # 🔧 FIX 21 Juillet 2026: Démarrer le PROCESSUS watchdog EXTERNE
         # Le thread watchdog NE PEUT PAS détecter les freezes MT5 car les appels
         # C de MT5 bloquent le GIL, empêchant tous les autres threads Python.
@@ -1307,7 +1310,12 @@ class TradingEngine:
                         # SPAWN d'abord, PUIS libérer le lock (évite la fenêtre de race condition)
                         import subprocess as _sp
 
-                        _sp.Popen([sys.executable, "main.py"], cwd=os.path.dirname(os.path.abspath(__file__)))
+                        # 🛡️ FIX P0-2 (13 Août 2026, Robot Manager): cwd corrigé vers la RACINE
+                        # du projet. Ancien cwd=os.path.dirname(__file__) = engine_simple/ →
+                        # main.py introuvable (FileNotFoundError) → la résurrection interne
+                        # était MORTA. Même logique que le watchdog externe (process_watchdog.py)
+                        # et le watchdog interne (ligne 883 : project_root = parent.parent).
+                        _sp.Popen([sys.executable, "main.py"], cwd=str(Path(__file__).resolve().parent.parent))
                         time.sleep(5)  # 🔧 FIX_SUPREME_COUNCIL: 5s (était 1.5s) pour éviter race condition
                         _release_lock()
                         sys.exit(1)
@@ -1315,7 +1323,9 @@ class TradingEngine:
                     # SPAWN d'abord, PUIS libérer le lock
                     import subprocess as _sp
 
-                    _sp.Popen([sys.executable, "main.py"], cwd=os.path.dirname(os.path.abspath(__file__)))
+                    # 🛡️ FIX P0-2 (13 Août 2026, Robot Manager): cwd = racine projet.
+                    # Ancien cwd=engine_simple/ → main.py introuvable → résurrection morte.
+                    _sp.Popen([sys.executable, "main.py"], cwd=str(Path(__file__).resolve().parent.parent))
                     time.sleep(5)  # 🔧 FIX_SUPREME_COUNCIL: 5s (était 1.5s) pour éviter race condition
                     _release_lock()
                     logger.warning("Watchdog: spawn nouveau processus, arrêt de l'ancien")
