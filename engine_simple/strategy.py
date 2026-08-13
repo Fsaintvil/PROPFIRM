@@ -766,6 +766,21 @@ DEFAULT_SYMBOL_CONFIG = {
     "max_dd_pct": 0.10,  # drawdown max depuis peak (10%)
 }
 
+# Ensure commonly used symbols from `config/default.yaml` exist in SYMBOL_CONFIG
+# If absent, inject a safe default based on DEFAULT_SYMBOL_CONFIG to avoid
+# runtime inconsistencies between YAML doc and in-code source-of-truth.
+_MISSING_SYMBOLS = [
+    'GBPUSD', 'USDCAD', 'AUDUSD', 'USDCHF', 'EURJPY', 'AUDJPY'
+]
+for _sym in _MISSING_SYMBOLS:
+    if _sym not in SYMBOL_CONFIG:
+        SYMBOL_CONFIG[_sym] = DEFAULT_SYMBOL_CONFIG.copy()
+        SYMBOL_CONFIG[_sym].update({
+            'timeframe': 'H1',
+            'preferred_hours': list(range(24)),
+        })
+
+
 # Compatibilité avec l'ancien code (momentum periods)
 # 🔒 MappingProxyType = immutable — empêche les modifications à chaud depuis Phase 3
 _SYMBOL_MOMENTUM_PERIODS = {sym: cfg["momentum_period"] for sym, cfg in SYMBOL_CONFIG.items()}
