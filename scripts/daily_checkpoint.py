@@ -25,6 +25,10 @@ from pathlib import Path
 
 BASE = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE))
+sys.path.insert(0, str(BASE / "scripts"))  # pour importer golden_rule
+
+# 🏆 RÈGLE D'OR (13 Août 2026) — import du framework de validation 100 trades
+import golden_rule  # noqa: E402
 
 # ── Constantes de la phase de preuve ────────────────────────────────────────
 PROOF_START = datetime(2026, 8, 6, 19, 36)  # redémarrage mode preuve strict
@@ -327,6 +331,10 @@ def main():
     verdict = evaluate_validation(stats)
     scaling = evaluate_scaling(stats)
 
+    # 🏆 RÈGLE D'OR — évaluation sur les symboles du repositionnement
+    golden_stats = golden_rule.compute_stats(rows, golden_rule.GOLDEN_RULE_START, golden_rule.GOLDEN_SYMBOLS)
+    golden_verdict = golden_rule.evaluate_golden_rule(golden_stats)
+
     summary = {
         "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "process": proc,
@@ -334,6 +342,12 @@ def main():
         "proof": stats,
         "validation": verdict,
         "scaling": scaling,
+        "golden_rule": {
+            "start": golden_rule.GOLDEN_RULE_START,
+            "symbols": golden_rule.GOLDEN_SYMBOLS,
+            "stats": golden_stats,
+            "verdict": golden_verdict,
+        },
     }
 
     path = write_report(summary)
@@ -365,7 +379,7 @@ def main():
     )
 
     # Preuve
-    print("\n🧪 PHASE DE PREUVE (BUY-only, 5 symboles)")
+    print("\n🧪 PHASE DE PREUVE (BUY-only, 5 symboles) — ANCIENNE, dépréciée (retirés le 13/08)")
     print(
         f"   Trades: {stats['trades']} | WR: {stats['wr']:.1%} | Expectancy: {stats['expectancy']:+.2f}$ | PF: {stats['pf']:.2f}"
     )
@@ -381,7 +395,7 @@ def main():
             print(f"     {d}  {s['trades']:3d} trades | {s['pnl']:+8.2f}$")
 
     # Validation
-    print("\n⚖️ VALIDATION")
+    print("\n⚖️ VALIDATION (ANCIENNE phase de preuve — obsolète, voir RÈGLE D'OR en bas)")
     print(f"   Statut: {verdict['status']}")
     for k, v in verdict["criteria"].items():
         mark = "✅" if v["ok"] else ("⏳" if v["ok"] is None else "❌")
@@ -409,6 +423,23 @@ def main():
         print(f"     🟡 {sym:12s} {s['trades']} trades ({n_ok}) | PF {s['pf']:.2f} {pf_ok} | WR {s['wr']:.0%} {wr_ok}")
     if not scaling["eligible"] and not scaling["in_progress"]:
         print("     ⏳ Aucun trade de preuve accumulé pour l'instant — la phase démarre.")
+
+    # 🏆 RÈGLE D'OR
+    print("\n🏆 RÈGLE D'OR (100 trades propres — repositionnement INDICES/CRYPTO)")
+    gs = golden_stats
+    gv = golden_verdict
+    bar_len = 30
+    filled = int(bar_len * min(1.0, gs["trades"] / golden_rule.GOLDEN_RULE["min_trades"]))
+    bar = "█" * filled + "░" * (bar_len - filled)
+    print(
+        f"   Progression: {gs['trades']}/{golden_rule.GOLDEN_RULE['min_trades']} [{bar}]"
+    )
+    print(
+        f"   WR: {gs['wr']:.1%} (cible {golden_rule.GOLDEN_RULE['wr_target']:.0%}) | "
+        f"PF: {gs['pf']:.2f} (cible {golden_rule.GOLDEN_RULE['pf_target']:.2f}) | "
+        f"PnL: {gs['pnl_total']:+.2f}$"
+    )
+    print(f"   Verdict: {gv['status']} — {gv['message']}")
 
     print(f"\n📁 Rapport écrit: {path}")
 

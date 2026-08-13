@@ -1,5 +1,14 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 13 Août 2026** : 🏆 **RÈGLE D'OR activée** (décision utilisateur) — remplace l'ancienne
+> phase de preuve (obsolète). **AUCUN scaling ni re-tentative de challenge avant validation** de 100
+> trades propres sur les 4 symboles du repositionnement : **US100.cash, US30.cash, JP225.cash, SOLUSD**
+> (edge démontré après coûts réels, 160 877 trades : PF 1.20 / 1.14 / 1.23 / 1.25). Forex retiré
+> (EURUSD PF 0.74, USDJPY 0.96, EURGBP 0.64, USDCAD 0.74, USOIL 0.99 — perdants structurels).
+> Critères RÈGLE D'OR : **≥ 100 trades ET WR ≥ 60% ET PF ≥ 1.1** → sinon STOP définitif.
+> Suivi automatisé : `python scripts/golden_rule.py` (état dans `runtime/golden_rule/state.json`),
+> intégré au checkpoint quotidien `MT5_FTMO_DailyCheckpoint` (20:00). Borne : 2026-08-13 21:20 heure
+> journal (UTC+3). Challenge FTMO perdu (0 jour restant, 19 jours consommés) — compte démo en cours.
 > **Mise à jour 06 Août 2026** : 🔧 **MODE PREUVE STRICT activé** (décision utilisateur "fait tout maintenant").
 > But : prouver l'edge en réel sur 100+ trades propres AVANT tout scaling. **5 symboles BUY-only**
 > (XAUUSD, EURUSD, USDJPY, EURGBP, USOIL.cash), `allow_shorts=false` partout, lots réduits 0.05 max,
