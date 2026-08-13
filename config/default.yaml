@@ -4,13 +4,16 @@ robot:
   version: 4.1.0
 trading:
   symbols:
-  - XAUUSD
-  - EURUSD
-  - USDJPY
-  - EURGBP
-  - USOIL.cash
-  - USDCAD
+  # ?? 13 Aout 2026 - REPOSITIONNEMENT INDICES/CRYPTO (Robot Manager)
+  #   Edge demontre apres couts reels (160 877 trades backtest_with_costs):
+  #   US100 PF 1.20 (6/6 annees +), US30 PF 1.14 (8/8), JP225 PF 1.23 (6/6),
+  #   SOLUSD PF 1.25. Forex (EURUSD/USDJPY/EURGBP/USDCAD/USOIL) retire:
+  #   PF < 1.0 apres couts - perdants structurels sur 16 ans.
+  #   Backup: config/backup_default_20260813_195142_avant_indices.yaml
   - US100.cash
+  - US30.cash
+  - JP225.cash
+  - SOLUSD
   max_positions: 30
   max_positions_per_symbol: 3
   max_trades_per_day: 200
@@ -998,7 +1001,7 @@ symbol_limits:
     max_spread_points: 120
     adx_thresh: 20
     allow_buys: true
-    allow_shorts: true
+    allow_shorts: false  # ?? 13 Aout 2026: mode preuve BUY-only (Robot Manager)
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -1140,7 +1143,7 @@ symbol_limits:
     max_spread_points: 300
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: true
+    allow_shorts: false  # ?? 13 Aout 2026: mode preuve BUY-only (Robot Manager)
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 4.5
@@ -1231,7 +1234,7 @@ symbol_limits:
     max_spread_points: 1200
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: true
+    allow_shorts: false  # ?? 13 Aout 2026: mode preuve BUY-only (Robot Manager)
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 6.0

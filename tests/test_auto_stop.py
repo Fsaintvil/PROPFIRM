@@ -511,4 +511,6 @@ class TestConstants:
     def test_active_symbols_non_empty(self):
         assert len(ACTIVE_SYMBOLS) >= 3
         assert "XAUUSD" not in ACTIVE_SYMBOLS  # 🔴 RETIRÉ 12 Août 2026 (trou noir confirmé en mode preuve)
-        assert "USDJPY" in ACTIVE_SYMBOLS
+        # ?? 13 Aout 2026 - REPOSITIONNEMENT INDICES/CRYPTO: forex retire (PF<1.0 apres couts)
+        assert "USDJPY" not in ACTIVE_SYMBOLS  # ?? PF 0.96 apres couts
+        assert "US100.cash" in ACTIVE_SYMBOLS  # ?? PF 1.20, 6/6 annees positives

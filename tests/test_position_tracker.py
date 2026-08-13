@@ -150,7 +150,7 @@ class TestPositionTracker:
         mock_pos.magic = cfg.ROBOT_MAGIC
         mock_pos.ticket = 100
         mock_pos.type = 0  # BUY
-        mock_pos.symbol = "XAUUSD"  # ⚖️ CONFIG PIC 23 Juin 2026 (whitelist 7 symboles)
+        mock_pos.symbol = "US100.cash"  # ?? 13 Aout 2026 (XAUUSD retiré - trou noir mode preuve)
         mock_pos.volume = 0.1
         mock_pos.price_open = 2450.50
         mock_pos.sl = 2440.50
@@ -164,7 +164,7 @@ class TestPositionTracker:
 
         assert 100 in tracker._position_meta
         meta = tracker._position_meta[100]
-        assert meta["symbol"] == "XAUUSD"
+        assert meta["symbol"] == "US100.cash"
         assert meta["entry"] == 2450.50
         assert meta["sl"] == 2440.50
         assert meta["lot"] == 0.1
@@ -177,7 +177,7 @@ class TestPositionTracker:
         mock_pos.magic = cfg.ROBOT_MAGIC
         mock_pos.ticket = 101
         mock_pos.type = 1  # SELL
-        mock_pos.symbol = "EURUSD"  # ⚖️ CONFIG PIC 23 Juin 2026 (whitelist 7 symboles)
+        mock_pos.symbol = "US30.cash"  # ?? 13 Aout 2026 (EURUSD retiré - PF 0.74 après coûts)
         mock_pos.volume = 0.05
         mock_pos.price_open = 1.1000
         mock_pos.sl = 1.1100
@@ -201,7 +201,7 @@ class TestPositionTracker:
         mock_pos.magic = cfg.ROBOT_MAGIC
         mock_pos.ticket = 102
         mock_pos.type = 0
-        mock_pos.symbol = "XAUUSD"  # ⚖️ CONFIG PIC 23 Juin 2026 (whitelist 7 symboles)
+        mock_pos.symbol = "US100.cash"  # ?? 13 Aout 2026 (XAUUSD retiré - trou noir mode preuve)
         mock_pos.volume = 0.1
         mock_pos.price_open = 2450.50
         mock_pos.sl = 2440.50
@@ -298,7 +298,7 @@ class TestPositionTracker:
 
         # Meta du trade (comme le tracker l'aurait stocké à l'ouverture)
         tracker._position_meta[1] = {
-            "symbol": "XAUUSD",
+            "symbol": "US100.cash",
             "entry": 2450.0,
             "sl": 2440.0,
             "lot": 0.1,
@@ -309,7 +309,7 @@ class TestPositionTracker:
 
         deal = MagicMock()
         deal.position_id = 1
-        deal.symbol = "XAUUSD"
+        deal.symbol = "US100.cash"
         deal.magic = cfg.ROBOT_MAGIC
         deal.profit = -120.5
         deal.type = 1  # SELL (closing a BUY) → direction réelle = BUY
@@ -328,9 +328,9 @@ class TestPositionTracker:
         tracker.check_closed()
         assert 1 in tracker._recorded_deals, "le retry doit enregistrer le trade laissé pour compte"
         assert 1 not in tracker._pending_closures, "la file de retry doit être nettoyée"
-        assert "1_XAUUSD" in tracker._recorded_position_ids
+        assert "1_US100.cash" in tracker._recorded_position_ids
         ftmo.record_trade_result.assert_called_with(
-            "XAUUSD", -120.5, historical=False, trade_time=ANY, direction="BUY"
+            "US100.cash", -120.5, historical=False, trade_time=ANY, direction="BUY"
         )
         journal.record.assert_called_once()
         adaptive.record_result.assert_called_once()
@@ -385,7 +385,7 @@ class TestPositionTracker:
 
         # Setup meta
         tracker._position_meta[1] = {
-            "symbol": "XAUUSD",  # ⚖️ CONFIG PIC 23 Juin 2026 (whitelist 7 symboles)
+            "symbol": "US100.cash",  # ?? 13 Aout 2026 (XAUUSD retiré - trou noir mode preuve)
             "entry": 2450.0,
             "sl": 2440.0,
             "lot": 0.1,
@@ -397,7 +397,7 @@ class TestPositionTracker:
         # Setup closing deal — time APRÈS _start_time (trade live = pas historique)
         deal = MagicMock()
         deal.position_id = 1
-        deal.symbol = "XAUUSD"
+        deal.symbol = "US100.cash"
         deal.magic = cfg.ROBOT_MAGIC
         deal.profit = 150.0
         deal.type = 1  # SELL (closing a BUY)
@@ -410,8 +410,8 @@ class TestPositionTracker:
 
         # Verify recording — pas historical car trade live (time > _start_time)
         assert 1 in tracker._recorded_deals
-        assert "1_XAUUSD" in tracker._recorded_position_ids
-        ftmo.record_trade_result.assert_called_with("XAUUSD", 150.0, historical=False, trade_time=ANY, direction="BUY")
+        assert "1_US100.cash" in tracker._recorded_position_ids
+        ftmo.record_trade_result.assert_called_with("US100.cash", 150.0, historical=False, trade_time=ANY, direction="BUY")
         journal.record.assert_called_once()
         adaptive.record_result.assert_called_once()
         audit.log_decision.assert_called_once()
@@ -442,11 +442,11 @@ class TestPositionTracker:
         tracker, _, _, _, pos_cache, mt5, _ = self.make_tracker()
         tracker._previous_tickets = {1}
         pos_cache.get.return_value = []
-        tracker._recorded_position_ids["1_XAUUSD"] = None  # ⚖️ CONFIG PIC 23 Juin 2026
+        tracker._recorded_position_ids["1_US100.cash"] = None  # ?? 13 Aout 2026 (XAUUSD retiré)
 
         deal = MagicMock()
         deal.position_id = 1
-        deal.symbol = "XAUUSD"
+        deal.symbol = "US100.cash"
         deal.magic = cfg.ROBOT_MAGIC
         deal.profit = 50.0
         deal.type = 1
