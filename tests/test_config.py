@@ -65,7 +65,9 @@ def test_symbol_limits_defaults():
     assert "BTCUSD" in cfg.symbol_limits
     assert cfg.symbol_limits["XAUUSD"].max_lot == 0.05  # 🔧 MODE PREUVE 06 Aout 2026: 0.10→0.05
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
-    assert cfg.symbol_limits["XAUUSD"].risk_mult == 0.60  # ⚖️ CONFIG PIC 23 Juin 2026: risk réduit
+    assert (
+        cfg.symbol_limits["XAUUSD"].risk_mult == 0.0
+    )  # 🔴 DÉSACTIVÉ 12 Août 2026 (trou noir mode preuve: WR 14%, −288.65$)
     assert (
         cfg.symbol_limits["XAUUSD"].min_score == 0.75
     )  # 🔧 FIX 10 Aout 2026: 0.63→0.75 (garde-fou risk-compliance, XAUUSD = 91% pertes mode preuve)

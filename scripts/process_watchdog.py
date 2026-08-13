@@ -287,9 +287,25 @@ def main():
     consecutive_stalls = 0
     max_stalls = 3  # Kill after 3 consecutive stale reads (~90s + timeout = ~6.5min typical)
 
+    # 🔧 FIX 11 Août 2026: deadline MONOTONIC au lieu de time.sleep pur.
+    # Après une reprise de veille S3, le sleep(30) peut être PERDU (waitable-timer
+    # Windows qui ne se réveille jamais) → le watchdog reste suspendu indéfiniment
+    # alors que le robot tourne → gel non détecté (observé 11/08 : CPU figé à 0.5s).
+    # On découpe l'attente en slices de 5s avec un deadline monotone : même si un
+    # slice est perdu au réveil, la prochaine itération rattrape immédiatement.
+    # NB: une veille machine complète suspend quand même le processus (aucun code
+    # ne tourne) — ce fix ne protège que contre la perte du timer APRÈS la reprise.
+    _next_check = time.monotonic() + check_interval
+
     try:
         while True:
-            time.sleep(check_interval)
+            # Attente découpée en slices courtes jusqu'au deadline
+            while True:
+                _remaining = _next_check - time.monotonic()
+                if _remaining <= 0:
+                    break
+                time.sleep(min(5.0, _remaining))
+            _next_check = time.monotonic() + check_interval
 
             if auto_restart_disabled:
                 # Allowed to keep monitoring but never resurrect on our own.
@@ -308,11 +324,22 @@ def main():
             # Second check: is heartbeat recent? (only if process is alive)
             try:
                 if heartbeat_path.exists():
-                    # 🐛 FIX 05 Août 2026: lire avec retry. Le robot écrit le
-                    # heartbeat de façon ATOMIQUE (tmp+rename) depuis le 05/08,
-                    # mais un fichier vide peut subsister si une ancienne version
-                    # du robot tourne encore. Un heartbeat vide/corrompu ne doit
-                    # PAS incrémenter consecutive_stalls (évite les faux kills).
+                    # 🔧 FIX 11 Août 2026: détection de staleness via le MTIME du
+                    # fichier (fiable au réveil de veille) au lieu du parsing ISO.
+                    # Le contenu est écrit en UTC par le robot (écriture atomique
+                    # tmp+rename depuis le 05/08) ; l'mtime est POSIX, comparable
+                    # directement à time.time() sans parsing ni fuseau. Après une
+                    # veille S3, on détecte ainsi correctement un heartbeat vieux
+                    # de 4h alors que le parsing ISO + datetime.utcnow() aurait pu
+                    # être ambigu au moment du réveil.
+                    hb_mtime = heartbeat_path.stat().st_mtime
+                    elapsed = time.time() - hb_mtime
+
+                    # 🐛 FIX 05 Août 2026: le robot écrit le heartbeat de façon
+                    # ATOMIQUE (tmp+rename) depuis le 05/08, mais un fichier vide
+                    # peut subsister si une ancienne version du robot tourne encore.
+                    # (garde: on relit le contenu UNIQUEMENT pour valider qu'il est
+                    # non vide — la staleness, elle, est calculée sur l'mtime.)
                     hb_content = ""
                     for _retry in range(3):
                         try:
@@ -323,14 +350,6 @@ def main():
                             pass
                         time.sleep(0.2)
                     if hb_content:
-                        # Parse ISO timestamp
-                        try:
-                            hb_time = datetime.fromisoformat(hb_content)
-                        except ValueError:
-                            log(f"Heartbeat unparseable: {hb_content!r} — ignored (not a stall)", "WARN")
-                            continue  # ne compte pas comme stall
-                        elapsed = (datetime.utcnow() - hb_time).total_seconds()
-
                         if elapsed > timeout:
                             consecutive_stalls += 1
                             log(f"Heartbeat stale: {elapsed:.0f}s old (stall #{consecutive_stalls}/{max_stalls})")

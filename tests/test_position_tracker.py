@@ -276,15 +276,102 @@ class TestPositionTracker:
         tracker.check_closed()
         assert tracker._recorded_deals == OrderedDict()
 
-    def test_check_closed_no_closing_deal(self):
+    def test_check_closed_no_closing_deal_goes_to_retry(self):
         tracker, _, _, _, pos_cache, mt5, _ = self.make_tracker()
         tracker._previous_tickets = {1}
         pos_cache.get.return_value = []  # all positions closed
         mt5.get_history.return_value = []  # no closing deals
         tracker.check_closed()
-        # Les tickets sans closing deal sont marqués comme traités (gap session)
+        # 🔧 FIX 12 Août 2026: plus d'abandon immédiat du PnL — le ticket part en retry.
+        # Avant ce fix, 1 était marqué _recorded_deals[1]=None et le PnL perdu (stats fausses).
+        assert 1 not in tracker._recorded_deals
+        assert 1 in tracker._pending_closures
+        assert tracker._pending_closures[1] == tracker.CLOSE_RETRY_ATTEMPTS
+
+    def test_check_closed_retry_recovers_lost_deal(self):
+        """🔧 FIX 12 Août 2026: un deal MT5 absent au cycle N mais présent au cycle N+1
+        (gap de session post-reconnexion, observé le 11/08 avec 2 XAUUSD −240.65$)
+        doit être ENREGISTRÉ via le retry, pas abandonné définitivement."""
+        tracker, ftmo, journal, adaptive, pos_cache, mt5, audit = self.make_tracker()
+        tracker._previous_tickets = {1}
+        pos_cache.get.return_value = []  # position fermée
+
+        # Meta du trade (comme le tracker l'aurait stocké à l'ouverture)
+        tracker._position_meta[1] = {
+            "symbol": "XAUUSD",
+            "entry": 2450.0,
+            "sl": 2440.0,
+            "lot": 0.1,
+            "regime": "TREND_UP",
+            "r1_usd": 100.0,
+            "opened_at": time.time() - 3600,
+        }
+
+        deal = MagicMock()
+        deal.position_id = 1
+        deal.symbol = "XAUUSD"
+        deal.magic = cfg.ROBOT_MAGIC
+        deal.profit = -120.5
+        deal.type = 1  # SELL (closing a BUY) → direction réelle = BUY
+        deal.volume = 0.1
+        deal.price = 2455.0
+        deal.time = int(time.time()) + 3600  # futur (après _start_time → trade live, pas historique)
+
+        # Cycle 1: MT5 pas encore synchronisé après reconnexion → aucun deal
+        mt5.get_history.return_value = []
+        tracker.check_closed()
+        assert 1 not in tracker._recorded_deals, "le ticket ne doit pas être abandonné au cycle 1"
+        assert 1 in tracker._pending_closures
+
+        # Cycle 2: MT5 a synchronisé le deal → le sweep du retry l'enregistre complètement
+        mt5.get_history.return_value = [deal]
+        tracker.check_closed()
+        assert 1 in tracker._recorded_deals, "le retry doit enregistrer le trade laissé pour compte"
+        assert 1 not in tracker._pending_closures, "la file de retry doit être nettoyée"
+        assert "1_XAUUSD" in tracker._recorded_position_ids
+        ftmo.record_trade_result.assert_called_with(
+            "XAUUSD", -120.5, historical=False, trade_time=ANY, direction="BUY"
+        )
+        journal.record.assert_called_once()
+        adaptive.record_result.assert_called_once()
+        audit.log_decision.assert_called_once()
+
+    def test_check_closed_retry_abandons_after_exhaustion(self):
+        """🔧 FIX 12 Août 2026: après CLOSE_RETRY_ATTEMPTS cycles sans deal MT5,
+        le ticket retombe sur le comportement historique (fallback import_history)."""
+        tracker, ftmo, _, _, pos_cache, mt5, _ = self.make_tracker()
+        tracker._previous_tickets = {1}
+        pos_cache.get.return_value = []
+        mt5.get_history.return_value = []  # deal jamais synchronisé
+
+        tracker.check_closed()  # enqueue le retry
+        assert 1 in tracker._pending_closures
+
+        # On épuise les tentatives (sweeps des cycles suivants)
+        for _ in range(tracker.CLOSE_RETRY_ATTEMPTS):
+            tracker.check_closed()
+
+        assert 1 not in tracker._pending_closures, "le retry doit avoir été purgé"
         assert 1 in tracker._recorded_deals
         assert tracker._recorded_deals[1] is None
+        ftmo.record_trade_result.assert_not_called()
+
+    def test_check_closed_retry_cancelled_on_reappearance(self):
+        """🔧 FIX 12 Août 2026: si la position RÉAPPARAÎT (glitch MT5, pas une vraie
+        fermeture), le retry doit être annulé — jamais enregistrer un faux trade."""
+        tracker, ftmo, _, _, pos_cache, mt5, _ = self.make_tracker()
+        tracker._pending_closures = {1: 6}
+        # La position 1 est toujours ouverte (glitch: get_positions avait timeout)
+        mock_pos = MagicMock()
+        mock_pos.magic = cfg.ROBOT_MAGIC
+        mock_pos.ticket = 1
+        pos_cache.get.return_value = [mock_pos]
+        mt5.get_history.return_value = []
+
+        tracker.check_closed()
+        assert 1 not in tracker._pending_closures, "retry doit être annulé si la position réapparaît"
+        assert 1 not in tracker._recorded_deals
+        ftmo.record_trade_result.assert_not_called()
 
     @patch("engine_simple.position_tracker.FeatureStore")
     def test_check_closed_with_deal(self, mock_fs):

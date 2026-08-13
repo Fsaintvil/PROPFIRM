@@ -357,6 +357,7 @@ class TestMultiSymbolCorrelation:
                 )
                 assert ok, "1 trade crypto < max 2/direction/groupe → devrait passer. Raison: " + (reason or "N/A")
 
+
     def test_correlation_allows_different_groups(self):
         """Trades dans différents groupes passent (comportement actuel)"""
         mt5 = MagicMock()
@@ -368,7 +369,9 @@ class TestMultiSymbolCorrelation:
         ]
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
-            mock_dt.utcnow.return_value = datetime(2026, 7, 5, 12, 0)
+            mock_dt.utcnow.return_value = datetime(
+                2026, 7, 6, 12, 0
+            )  # lundi — évite le blocage week-end XAUUSD (garde-fous)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
                     "XAUUSD",

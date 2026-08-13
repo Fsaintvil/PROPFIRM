@@ -510,5 +510,5 @@ class TestConstants:
 
     def test_active_symbols_non_empty(self):
         assert len(ACTIVE_SYMBOLS) >= 3
-        assert "XAUUSD" in ACTIVE_SYMBOLS  # ⚖️ CONFIG PIC 23 Juin 2026 (04 Aout 2026)
+        assert "XAUUSD" not in ACTIVE_SYMBOLS  # 🔴 RETIRÉ 12 Août 2026 (trou noir confirmé en mode preuve)
         assert "USDJPY" in ACTIVE_SYMBOLS

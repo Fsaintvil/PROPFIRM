@@ -52,7 +52,7 @@ symbol_limits:
     max_lot: 0.05
     min_lot: 0.01
     risk_mult: 0.0
-    min_score: 0.5
+    min_score: 0.75
     max_spread_points: 60
     adx_thresh: 22
     cooldown_minutes: 30
@@ -105,7 +105,7 @@ symbol_limits:
     execution_timeframe: M15
     max_lot: 0.03
     min_lot: 0.01
-    risk_mult: 1.0
+    risk_mult: 0.0
     min_score: 0.5
     max_spread_points: 150
     adx_thresh: 20

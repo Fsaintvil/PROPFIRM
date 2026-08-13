@@ -167,6 +167,20 @@ class PositionTracker:
         self._max_recorded = 2000
         self._trim_target = 1500
         self._position_meta = {}
+        # ⭐⭐ FIX 12 Août 2026 — Retry des fermetures sans deal MT5 (gap de session)
+        # Problème observé (analyse de la journée du 11/08) : 2 XAUUSD fermées pendant
+        # la reprise post-gel machine (S3) ont été détectées par check_closed() AVANT que
+        # MT5 n'ait synchronisé leur deal de fermeture. L'ancien chemin `closing is None`
+        # marquait le ticket "recorded" et ABANDONNAIT le PnL → trades absents de
+        # trades_log.csv, de daily_pnl_by_date et du performance monitor (−240.65$
+        # invisibles sur la journée du 11/08, chute d'équité non expliquée par les stats).
+        # Le fix : mettre le ticket en file d'attente de retry pendant CLOSE_RETRY_ATTEMPTS
+        # cycles (~15s chacun ≈ 90s). Si le deal apparaît entre-temps (sync MT5 post-
+        # reconnexion), le trade est enregistré normalement (CSV + perf monitor + daily_pnl).
+        # Sinon, l'import_history() au prochain restart le récupérera (comportement FTMO
+        # conservé). Un ticket qui "réapparaît" en position = glitch MT5 → retry annulé.
+        self.CLOSE_RETRY_ATTEMPTS = 6
+        self._pending_closures: dict[int, int] = {}  # ticket -> tentatives restantes
         self._meta_extra = {}  # Stockage temporaire pour ATR/sl_atr/tp_atr avant que track_new() crée le meta
         self.feature_store = FeatureStore()
         self.performance = {}
@@ -393,6 +407,19 @@ class PositionTracker:
 
     def check_closed(self) -> None:
         current = {p.ticket for p in self.positions_cache.get() if p.magic == cfg.ROBOT_MAGIC}
+        # 🔧 FIX 12 Août 2026: Annuler les retries des tickets réapparus en position.
+        # Un ticket mis en file _pending_closures car "fermé sans historique MT5" peut
+        # en réalité être un glitch MT5 (position restaurée au cycle suivant). Dans ce
+        # cas on ANNULE le retry — ne jamais enregistrer un faux trade.
+        if self._pending_closures:
+            reappeared = [t for t in self._pending_closures if t in current]
+            if reappeared:
+                logger.info(
+                    f"  [TRACKER] {len(reappeared)} tickets réapparus en position "
+                    f"(glitch MT5) → retry annulé: {reappeared}"
+                )
+                for t in reappeared:
+                    self._pending_closures.pop(t, None)
         closed = self._previous_tickets - current
         if closed:
             logger.info(
@@ -414,6 +441,8 @@ class PositionTracker:
                 for t in closed:
                     self._recorded_deals[t] = None
                 return
+        pending_this_cycle: set[int] = set()
+        # 🔧 FIX 12 Août 2026: tickets fermés sans deal MT5 mis en retry
         for ticket in closed:
             if ticket in self._recorded_deals:
                 logger.debug(f"  [TRACKER] ticket {ticket} already recorded")
@@ -425,199 +454,252 @@ class PositionTracker:
                 self._recorded_position_ids = OrderedDict(
                     list(self._recorded_position_ids.items())[-self._trim_target :]
                 )
-            since = int(time.time() - cfg.HISTORY_LOOKBACK_DAYS * 86400)
-            now_ts = int(time.time())
-            history = self.mt5.get_history(since, now_ts) or []
-            logger.debug(f"  [TRACKER] query history for ticket {ticket}: {len(history)} deals")
-            closing = None
-            for deal in history:
-                if deal.position_id == ticket and deal.magic == cfg.ROBOT_MAGIC and deal.profit != 0:
-                    closing = deal
-                    break
+            closing = self._find_closing_deal(ticket)
             if closing is None:
-                # Fallback: chercher par position ID directement (plus fiable que time-range)
-                try:
-                    # 🔧 FIX 16 Juillet 2026: Utiliser self.mt5.get_history_by_position() avec timeout
-                    # au lieu de mt5.history_deals_get(position=...) direct.
-                    direct = self.mt5.get_history_by_position(ticket)
-                    if direct and len(direct) > 0:
-                        for d in direct:
-                            if d.profit != 0:
-                                closing = d
-                                logger.info(f"  [TRACKER] Found closing deal via direct lookup: {closing.profit:.2f}")
-                                break
-                except Exception as e:
-                    logger.debug(f"Direct lookup failed for ticket {ticket}: {e}")
-
-            if closing is None:
+                # 🔧 FIX 12 Août 2026: Retry des fermetures sans deal MT5 (gap de session).
+                # Avant ce fix, marquer _recorded_deals[ticket]=None ABANDONNAIT définitivement
+                # le PnL (absent de trades_log.csv, daily_pnl_by_date et perf monitor).
+                # Observé le 11/08: 2 XAUUSD (−240.65$) fermées pendant la reprise post-gel
+                # machine S3, deal MT5 pas encore synchronisé → stats fausses.
+                # Désormais: file de retry CLOSE_RETRY_ATTEMPTS cycles (~90s) où l'on retente
+                # la recherche du deal. Si trouvé → enregistrement complet (_record_closed_trade).
+                self._pending_closures[ticket] = self.CLOSE_RETRY_ATTEMPTS
+                pending_this_cycle.add(ticket)
                 logger.info(
-                    f"  [TRACKER] Ticket {ticket} ferme sans historique MT5 (gap de session — normal apres reconnexion)"
+                    f"  [TRACKER] Ticket {ticket} ferme sans historique MT5 — "
+                    f"retry {self.CLOSE_RETRY_ATTEMPTS} cycles (~90s) avant fallback import_history"
                 )
-                # Marquer comme traité pour éviter les logs répétés
-                self._recorded_deals[ticket] = None
                 continue
-            logger.info(
-                f"  [TRACKER] Found closing deal for {closing.symbol} ticket {ticket}: profit={closing.profit:.2f}"
-            )
-            # P3: Whitelist — ignorer les symboles inactifs (contamination EURUSD)
-            if closing.symbol not in cfg.SYMBOLS:
-                logger.debug(f"  [TRACKER] Skipping {closing.symbol} (not in SYMBOLS whitelist)")
-                self._recorded_deals[ticket] = None
-                continue
-            pos_key = f"{closing.position_id}_{closing.symbol}"
-            if pos_key in self._recorded_position_ids:
-                continue
-            self._recorded_position_ids[pos_key] = None
-            self._recorded_deals[ticket] = None
-            # 🔒 Si le trade a été fermé AVANT le démarrage du robot, c'est un replay historique
-            # → ne pas incrémenter consecutive_losses (sinon circuit breaker trip au restart)
-            # 🔧 FIX 9 Juillet 2026: support datetime + int robuste (float(datetime) crashait)
-            deal_time = getattr(closing, "time", None)
-            if deal_time is None:
-                deal_time = getattr(closing, "timestamp", 0)
-            # Conversion robuste: datetime → timestamp, int/float → float
-            if isinstance(deal_time, datetime):
-                deal_ts = deal_time.timestamp()
-            elif isinstance(deal_time, (int, float)):
-                deal_ts = float(deal_time)
-            else:
-                deal_ts = 0.0
+            deal_ts = self._deal_timestamp(closing)
             is_historical = deal_ts > 0 and deal_ts < float(self._start_time)
-            # Prendre le vrai timestamp MT5 pour que challenge.py filtre les trades >48h
-            trade_dt = getattr(closing, "time", None)
-            if isinstance(trade_dt, (int, float)):
-                trade_dt = datetime.utcfromtimestamp(trade_dt)
-            # 🐛 FIX 10 Août 2026 (Bug #6): direction réelle déduite du DEAL type
-            # (voir convention ligne 498 : DEAL_TYPE_SELL(1)=vente de BUY → réel=BUY).
-            # Sans elle, _check_directional_imbalance restait inerte (buys/sells = 0).
-            closing_dir = "BUY" if closing.type == 1 else "SELL"
-            self.ftmo.record_trade_result(
-                closing.symbol, closing.profit, historical=is_historical, trade_time=trade_dt, direction=closing_dir
-            )
-            # Persister immédiatement pour éviter la réimportation au prochain redémarrage
-            self._save_recorded_positions()
-            meta = self._position_meta.pop(ticket, {})
-            # 🆕 LGB: Logger le trade réel avec ses features pour retraining futur
-            try:
-                _log_real_trade(closing, meta)
-            except Exception as e:
-                logger.debug(f"[LGB] Log real trade failed: {e}")
-            # Performance Monitor — suivi autonome des métriques
-            try:
-                from engine_simple.performance_monitor import record_trade
-
-                regime = meta.get("regime", "UNKNOWN")
-                # MT5: le DEAL type est l'inverse de la position réelle
-                # DEAL_TYPE_BUY(0)=rachat de SELL → réel=SELL; DEAL_TYPE_SELL(1)=vente de BUY → réel=BUY
-                pos_dir = "BUY" if closing.type == 1 else "SELL"
-                record_trade(closing.symbol, closing.profit, regime, pos_dir)
-            except Exception as e:
-                logger.warning(f"[TRACK] record_trade failed: {e}")  # ne jamais bloquer le cycle
-
-            # ── Phase 12-13: AdaptiveParams + WFO — update après trade fermé ──
-            try:
-                from engine_simple.adaptive_params import get_adaptive
-
-                # Update AdaptiveParams
-                ap = get_adaptive(closing.symbol)
-                win = closing.profit > 0
-                ap.record_trade(pnl=closing.profit, win=win, regime=meta.get("regime", "UNKNOWN"))
-
-                # WFO retiré (archivé dans retired/) — pas de mise à jour
-
-                logger.debug(
-                    f"  [LEARN] {closing.symbol}: profit={closing.profit:+.2f}, "
-                    f"win={win}, adaptive_wr={ap.get_adapted_params().win_rate:.1%}"
+            self._record_closed_trade(closing, ticket, deal_ts, is_historical)
+        # 🔧 FIX 12 Août 2026: Sweep des retries en attente (cycles suivants).
+        # Un ticket fermé sans deal MT5 au cycle N reste dans _pending_closures et est
+        # ré-interrogé à chaque cycle jusqu'à épuisement des tentatives ou apparition du deal.
+        for ticket, remaining in list(self._pending_closures.items()):
+            if ticket in pending_this_cycle:
+                continue  # déjà traité ce cycle (enqueued dans la boucle closed)
+            if ticket in self._recorded_deals:
+                # Déjà traité (ex: réapparu + re-fermé, ou import) → nettoyer la file
+                self._pending_closures.pop(ticket, None)
+                continue
+            closing = self._find_closing_deal(ticket)
+            if closing is not None:
+                deal_ts = self._deal_timestamp(closing)
+                is_historical = deal_ts > 0 and deal_ts < float(self._start_time)
+                logger.info(f"  [TRACKER] Retry OK: deal trouvé pour ticket {ticket} → PnL enregistré")
+                self._record_closed_trade(closing, ticket, deal_ts, is_historical)
+                self._pending_closures.pop(ticket, None)
+                continue
+            if remaining <= 1:
+                logger.warning(
+                    f"  [TRACKER] Ticket {ticket}: deal introuvable après {self.CLOSE_RETRY_ATTEMPTS} cycles "
+                    f"de retry — PnL abandonné (sera récupéré par import_history au prochain restart)"
                 )
-            except Exception as e:
-                logger.debug(f"  [LEARN] {closing.symbol}: erreur update: {e}")
+                self._recorded_deals[ticket] = None
+                self._pending_closures.pop(ticket, None)
+            else:
+                self._pending_closures[ticket] = remaining - 1
 
-            # 🔧 FIX 29 Juillet 2026: DEAL type ≠ position direction
+        self._previous_tickets = current
+
+    def _find_closing_deal(self, ticket: int) -> Any:
+        """Cherche le deal de fermeture d'un ticket dans l'historique MT5.
+
+        🔧 FIX 12 Août 2026: extrait de check_closed() pour être réutilisable par
+        le retry des fermetures sans historique MT5 (_pending_closures).
+        """
+        since = int(time.time() - cfg.HISTORY_LOOKBACK_DAYS * 86400)
+        now_ts = int(time.time())
+        history = self.mt5.get_history(since, now_ts) or []
+        logger.debug(f"  [TRACKER] query history for ticket {ticket}: {len(history)} deals")
+        for deal in history:
+            if deal.position_id == ticket and deal.magic == cfg.ROBOT_MAGIC and deal.profit != 0:
+                return deal
+        # Fallback: chercher par position ID directement (plus fiable que time-range)
+        try:
+            # 🔧 FIX 16 Juillet 2026: Utiliser self.mt5.get_history_by_position() avec timeout
+            # au lieu de mt5.history_deals_get(position=...) direct.
+            direct = self.mt5.get_history_by_position(ticket)
+            if direct and len(direct) > 0:
+                for d in direct:
+                    if d.profit != 0:
+                        logger.info(f"  [TRACKER] Found closing deal via direct lookup: {d.profit:.2f}")
+                        return d
+        except Exception as e:
+            logger.debug(f"Direct lookup failed for ticket {ticket}: {e}")
+        return None
+
+    @staticmethod
+    def _deal_timestamp(closing: Any) -> float:
+        """Convertit le timestamp de fermeture MT5 (datetime | int | float) en epoch float.
+
+        🔧 FIX 9 Juillet 2026: support datetime + int robuste (float(datetime) crashait).
+        🔧 FIX 12 Août 2026: factorisé pour le retry des closes sans historique MT5.
+        """
+        deal_time = getattr(closing, "time", None)
+        if deal_time is None:
+            deal_time = getattr(closing, "timestamp", 0)
+        # Conversion robuste: datetime → timestamp, int/float → float
+        if isinstance(deal_time, datetime):
+            return deal_time.timestamp()
+        if isinstance(deal_time, (int, float)):
+            return float(deal_time)
+        return 0.0
+
+    def _record_closed_trade(self, closing: Any, ticket: int, deal_ts: float, is_historical: bool) -> None:
+        """Enregistre un trade fermé dont le deal MT5 a été trouvé (chemin live).
+
+        🔧 FIX 12 Août 2026: factorisé de check_closed() pour être partagé entre le
+        chemin normal et le retry des fermetures sans historique MT5 (_pending_closures).
+        Centre de tout ce qui était PERDU quand le deal n'était pas trouvé immédiatement:
+        record_trade_result FTMO (cooldown/consecutive), journal CSV, perf monitor,
+        AdaptiveParams, audit — plus le PnL dans trades_log.csv et daily_pnl.
+        """
+        # P3: Whitelist — ignorer les symboles inactifs (contamination EURUSD)
+        if closing.symbol not in cfg.SYMBOLS:
+            logger.debug(f"  [TRACKER] Skipping {closing.symbol} (not in SYMBOLS whitelist)")
+            self._recorded_deals[ticket] = None
+            return
+        pos_key = f"{closing.position_id}_{closing.symbol}"
+        if pos_key in self._recorded_position_ids:
+            return
+        self._recorded_position_ids[pos_key] = None
+        self._recorded_deals[ticket] = None
+        logger.info(
+            f"  [TRACKER] Found closing deal for {closing.symbol} ticket {ticket}: profit={closing.profit:.2f}"
+        )
+        # 🔒 Si le trade a été fermé AVANT le démarrage du robot, c'est un replay historique
+        # → ne pas incrémenter consecutive_losses (sinon circuit breaker trip au restart)
+        # Prendre le vrai timestamp MT5 pour que challenge.py filtre les trades >48h
+        trade_dt = getattr(closing, "time", None)
+        if isinstance(trade_dt, (int, float)):
+            trade_dt = datetime.utcfromtimestamp(trade_dt)
+        # 🐛 FIX 10 Août 2026 (Bug #6): direction réelle déduite du DEAL type
+        # (convention: DEAL_TYPE_SELL(1)=vente de BUY → réel=BUY).
+        closing_dir = "BUY" if closing.type == 1 else "SELL"
+        self.ftmo.record_trade_result(
+            closing.symbol, closing.profit, historical=is_historical, trade_time=trade_dt, direction=closing_dir
+        )
+        # Persister immédiatement pour éviter la réimportation au prochain redémarrage
+        self._save_recorded_positions()
+        meta = self._position_meta.pop(ticket, {})
+        # 🆕 LGB: Logger le trade réel avec ses features pour retraining futur
+        try:
+            _log_real_trade(closing, meta)
+        except Exception as e:
+            logger.debug(f"[LGB] Log real trade failed: {e}")
+        # Performance Monitor — suivi autonome des métriques
+        try:
+            from engine_simple.performance_monitor import record_trade
+
+            regime = meta.get("regime", "UNKNOWN")
+            # MT5: le DEAL type est l'inverse de la position réelle
             # DEAL_TYPE_BUY(0)=rachat de SELL → réel=SELL; DEAL_TYPE_SELL(1)=vente de BUY → réel=BUY
             pos_dir = "BUY" if closing.type == 1 else "SELL"
-            # 🐛 FIX 31 Juillet 2026: Calculer la VRAIE raison de sortie au lieu de "closed" codé en dur.
-            # La raison est essentielle pour auditer SL/TP/trailing/BE/time_stop (optimisation aveugle sinon).
-            exit_reason = self._extract_exit_reason(closing)
-            # durée réelle du trade: opened_at (epoch) → timestamp de fermeture MT5
-            try:
-                opened_ts = float(meta.get("opened_at", 0) or 0)
-                duration_min = int(max(0, (deal_ts - opened_ts) / 60.0)) if opened_ts > 0 else 0
-            except (TypeError, ValueError):
-                duration_min = 0
-            try:
-                self.journal.record(
-                    dict(
-                        symbol=closing.symbol,
-                        direction=pos_dir,
-                        entry=meta.get("entry", closing.price),
-                        exit_price=closing.price,
-                        sl=meta.get("sl", 0),
-                        tp=meta.get("tp", 0),
-                        lot=closing.volume,
-                        profit=closing.profit,
-                        time_open=str(datetime.fromtimestamp(meta.get("opened_at", closing.time))),
-                        # 🐛 FIX 03 Aout 2026: timestamp de fermeture = vrai deal MT5 (deal_ts),
-                        # pas datetime.utcnow() (heure du cycle de surveillance — trompeur).
-                        time_close=str(datetime.utcfromtimestamp(deal_ts)) if deal_ts > 0 else str(datetime.utcnow()),
-                        reason=exit_reason,
-                        duration_min=duration_min,
-                        # 🐛 FIX 4 Juillet 2026: ATR multiples pour analyse post-trade
-                        sl_atr=meta.get("sl_atr", ""),
-                        tp_atr=meta.get("tp_atr", ""),
-                        atr=meta.get("atr", 0.0),
-                    )
+            record_trade(closing.symbol, closing.profit, regime, pos_dir)
+        except Exception as e:
+            logger.warning(f"[TRACK] record_trade failed: {e}")  # ne jamais bloquer le cycle
+
+        # ── Phase 12-13: AdaptiveParams + WFO — update après trade fermé ──
+        try:
+            from engine_simple.adaptive_params import get_adaptive
+
+            # Update AdaptiveParams
+            ap = get_adaptive(closing.symbol)
+            win = closing.profit > 0
+            ap.record_trade(pnl=closing.profit, win=win, regime=meta.get("regime", "UNKNOWN"))
+
+            # WFO retiré (archivé dans retired/) — pas de mise à jour
+
+            logger.debug(
+                f"  [LEARN] {closing.symbol}: profit={closing.profit:+.2f}, "
+                f"win={win}, adaptive_wr={ap.get_adapted_params().win_rate:.1%}"
+            )
+        except Exception as e:
+            logger.debug(f"  [LEARN] {closing.symbol}: erreur update: {e}")
+
+        # 🔧 FIX 29 Juillet 2026: DEAL type ≠ position direction
+        # DEAL_TYPE_BUY(0)=rachat de SELL → réel=SELL; DEAL_TYPE_SELL(1)=vente de BUY → réel=BUY
+        pos_dir = "BUY" if closing.type == 1 else "SELL"
+        # 🐛 FIX 31 Juillet 2026: Calculer la VRAIE raison de sortie au lieu de "closed" codé en dur.
+        exit_reason = self._extract_exit_reason(closing)
+        # durée réelle du trade: opened_at (epoch) → timestamp de fermeture MT5
+        try:
+            opened_ts = float(meta.get("opened_at", 0) or 0)
+            duration_min = int(max(0, (deal_ts - opened_ts) / 60.0)) if opened_ts > 0 else 0
+        except (TypeError, ValueError):
+            duration_min = 0
+        try:
+            self.journal.record(
+                dict(
+                    symbol=closing.symbol,
+                    direction=pos_dir,
+                    entry=meta.get("entry", closing.price),
+                    exit_price=closing.price,
+                    sl=meta.get("sl", 0),
+                    tp=meta.get("tp", 0),
+                    lot=closing.volume,
+                    profit=closing.profit,
+                    time_open=str(datetime.fromtimestamp(meta.get("opened_at", closing.time))),
+                    # 🐛 FIX 03 Aout 2026: timestamp de fermeture = vrai deal MT5 (deal_ts),
+                    time_close=str(datetime.utcfromtimestamp(deal_ts)) if deal_ts > 0 else str(datetime.utcnow()),
+                    reason=exit_reason,
+                    duration_min=duration_min,
+                    # 🐛 FIX 4 Juillet 2026: ATR multiples pour analyse post-trade
+                    sl_atr=meta.get("sl_atr", ""),
+                    tp_atr=meta.get("tp_atr", ""),
+                    atr=meta.get("atr", 0.0),
                 )
-            except Exception as e:
-                logger.warning(f"[TRACK] journal.record failed for {closing.symbol}: {e}")
-            self.feature_store.delete(ticket)
-            regime = meta.get("regime", "UNKNOWN")
-            r1 = meta.get("r1_usd", 1)
-            r_mul = round(closing.profit / r1, 2) if r1 > 0 else 0
-            dl_features = meta.get("dl_features")
-            # 🔧 FIX 28 Juillet 2026: Guard anti-contamination historique
-            # is_historical = True quand le trade a été fermé avant le démarrage du robot.
-            # Sans ce guard, un cache MT5 vide (timeout) transforme TOUTES les positions
-            # en "fermées", et les trades historiques (≤48h mais pré-start) alimentent l'OL
-            # avec des centaines de faux trades en une seconde.
-            if not is_historical:
-                self.adaptive.record_result(
-                    closing.symbol, r_mul, regime, dl_features, profit=closing.profit, win=closing.profit > 0
-                )
-            else:
-                logger.debug(
-                    f"  [TRACKER] {closing.symbol}: skip adaptive.record_result "
-                    f"(historical trade, profit={closing.profit:.2f})"
-                )
-            # 🔧 FIX 28 Juillet 2026: Ne PAS alimenter l'OnlineLearner avec des trades historiques.
-            # is_historical = True quand le trade a été fermé AVANT le démarrage du robot.
-            # Sans ce guard, une rafale de trades historiques (ex: 166 trades en 16s) corrompt
-            # l'apprentissage avec des patterns WLWLWL artificiels.
-            self._perf(closing.symbol).record(closing.profit, r_mul)
-            if self.audit:
-                self.audit.log_decision(
-                    "position_closed",
-                    {
-                        "symbol": closing.symbol,
-                        "ticket": ticket,
-                        "profit": closing.profit,
-                        "r_multiple": r_mul,
-                        "regime": regime,
-                        "holding_seconds": time.time() - meta.get("opened_at", time.time()),
-                    },
-                )
-            pos_correct = closing.profit > 0
-            saved_predictions = meta.get("predictions", {})
-            # Fallback: si pas de prédictions stockées, MOM20x3 est le seul modèle
-            if not saved_predictions:
-                saved_predictions = {"MOM20x3": {"action": pos_dir, "score": 0.5}}
-            if saved_predictions and regime not in ("?", "LIMIT"):
-                pred_outcomes = {}
-                for mname, maction in saved_predictions.items():
-                    # maction peut être un dict {"action":"BUY",...} ou une string "BUY"
-                    action = maction.get("action", "HOLD") if isinstance(maction, dict) else maction
-                    pred_outcomes[mname] = (action == pos_dir) if pos_correct else (action != pos_dir)
-                self.adaptive.record_meta_result(closing.symbol, regime, pred_outcomes)
-        self._previous_tickets = current
+            )
+        except Exception as e:
+            logger.warning(f"[TRACK] journal.record failed for {closing.symbol}: {e}")
+        self.feature_store.delete(ticket)
+        regime = meta.get("regime", "UNKNOWN")
+        r1 = meta.get("r1_usd", 1)
+        r_mul = round(closing.profit / r1, 2) if r1 > 0 else 0
+        dl_features = meta.get("dl_features")
+        # 🔧 FIX 28 Juillet 2026: Guard anti-contamination historique
+        # is_historical = True quand le trade a été fermé avant le démarrage du robot.
+        # Sans ce guard, un cache MT5 vide (timeout) transforme TOUTES les positions
+        # en "fermées", et les trades historiques (≤48h mais pré-start) alimentent l'OL
+        # avec des centaines de faux trades en une seconde.
+        if not is_historical:
+            self.adaptive.record_result(
+                closing.symbol, r_mul, regime, dl_features, profit=closing.profit, win=closing.profit > 0
+            )
+        else:
+            logger.debug(
+                f"  [TRACKER] {closing.symbol}: skip adaptive.record_result "
+                f"(historical trade, profit={closing.profit:.2f})"
+            )
+        # 🔧 FIX 28 Juillet 2026: Ne PAS alimenter l'OnlineLearner avec des trades historiques.
+        self._perf(closing.symbol).record(closing.profit, r_mul)
+        if self.audit:
+            self.audit.log_decision(
+                "position_closed",
+                {
+                    "symbol": closing.symbol,
+                    "ticket": ticket,
+                    "profit": closing.profit,
+                    "r_multiple": r_mul,
+                    "regime": regime,
+                    "holding_seconds": time.time() - meta.get("opened_at", time.time()),
+                },
+            )
+        pos_correct = closing.profit > 0
+        saved_predictions = meta.get("predictions", {})
+        # Fallback: si pas de prédictions stockées, MOM20x3 est le seul modèle
+        if not saved_predictions:
+            saved_predictions = {"MOM20x3": {"action": pos_dir, "score": 0.5}}
+        if saved_predictions and regime not in ("?", "LIMIT"):
+            pred_outcomes = {}
+            for mname, maction in saved_predictions.items():
+                # maction peut être un dict {"action":"BUY",...} ou une string "BUY"
+                action = maction.get("action", "HOLD") if isinstance(maction, dict) else maction
+                pred_outcomes[mname] = (action == pos_dir) if pos_correct else (action != pos_dir)
+            self.adaptive.record_meta_result(closing.symbol, regime, pred_outcomes)
+
 
     # MT5 DEAL_REASON codes (définition Python MT5)
     _DEAL_REASON = {

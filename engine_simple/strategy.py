@@ -111,7 +111,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 10,
         "news_minutes_after": 10,
-        "min_score": 0.50,
+        "min_score": 0.75,
         "adx_thresh": 22,
         "min_rr": 2.0,
         "risk_mult": 0.0,  # 🔴 DÉSACTIVÉ 12 Août 2026 — trou noir confirmé en mode preuve
@@ -164,7 +164,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.50,
         "adx_thresh": 20,
         "min_rr": 2.0,
-        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+        "risk_mult": 0.0,  # 🔴 DÉSACTIVÉ 23 Juin 2026 (align with default.yaml / tests)
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
         "lot_base": 0.01,
