@@ -457,3 +457,44 @@ class TestPositionTracker:
 
         tracker.check_closed()
         assert 1 not in tracker._recorded_deals
+
+    # ── FIX 14 Août 2026: anti-pollution perf monitor ─────────────────
+
+    def test_historical_trade_does_not_feed_perf_monitor(self):
+        """🐛 FIX 14 Août 2026: un trade HISTORIQUE (deal MT5 fermé avant le démarrage
+        du robot, is_historical=True) ne doit PAS alimenter le performance monitor.
+        Avant ce fix, les deals rejoués au restart (dont SELL bannis et ancienne
+        config) polluaient recent_trades → rolling windows WR 31-45% au lieu de 83%."""
+        tracker, ftmo, journal, adaptive, pos_cache, mt5, audit = self.make_tracker()
+        tracker._previous_tickets = {1}
+        pos_cache.get.return_value = []
+
+        tracker._position_meta[1] = {
+            "symbol": "US100.cash",
+            "entry": 2450.0,
+            "sl": 2440.0,
+            "lot": 0.1,
+            "regime": "TREND_UP",
+            "r1_usd": 100.0,
+            "opened_at": time.time() - 3600,
+        }
+
+        deal = MagicMock()
+        deal.position_id = 1
+        deal.symbol = "US100.cash"
+        deal.magic = cfg.ROBOT_MAGIC
+        deal.profit = 150.0
+        deal.type = 1  # SELL (closing a BUY) → direction réelle = BUY
+        deal.volume = 0.1
+        deal.price = 2455.0
+        deal.time = int(time.time()) - 7200  # AVANT _start_time → historique
+        mt5.get_history.return_value = [deal]
+
+        with patch("engine_simple.performance_monitor.record_trade") as mock_record_trade:
+            tracker.check_closed()
+
+        # Le perf monitor ne doit PAS être appelé pour un trade historique rejoué
+        mock_record_trade.assert_not_called()
+        # Mais le FTMO record_trade_result et le journal restent fonctionnels (sauvegarde)
+        ftmo.record_trade_result.assert_called()
+        journal.record.assert_called_once()

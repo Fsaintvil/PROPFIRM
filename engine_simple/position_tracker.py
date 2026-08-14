@@ -593,11 +593,19 @@ class PositionTracker:
         try:
             from engine_simple.performance_monitor import record_trade
 
-            regime = meta.get("regime", "UNKNOWN")
-            # MT5: le DEAL type est l'inverse de la position réelle
-            # DEAL_TYPE_BUY(0)=rachat de SELL → réel=SELL; DEAL_TYPE_SELL(1)=vente de BUY → réel=BUY
-            pos_dir = "BUY" if closing.type == 1 else "SELL"
-            record_trade(closing.symbol, closing.profit, regime, pos_dir)
+            # 🔧 FIX 14 Août 2026: NE PAS alimenter le perf monitor avec des trades
+            # historiques rejoués (is_historical=True). Le robot rejoue les deals MT5
+            # des 48h au restart : cela importait des centaines de trades (dont SELL
+            # bannis et ancienne config) dans recent_trades, POLLUANT les rolling
+            # windows (WR 31-45% au lieu de 83% réel) et les stats par symbole.
+            # Même principe que le FIX 28 Juillet pour l'OnlineLearner : seuls les
+            # vrais trades LIVE exécutés avec la config actuelle alimentent les stats.
+            if not is_historical:
+                regime = meta.get("regime", "UNKNOWN")
+                # MT5: le DEAL type est l'inverse de la position réelle
+                # DEAL_TYPE_BUY(0)=rachat de SELL → réel=SELL; DEAL_TYPE_SELL(1)=vente de BUY → réel=BUY
+                pos_dir = "BUY" if closing.type == 1 else "SELL"
+                record_trade(closing.symbol, closing.profit, regime, pos_dir)
         except Exception as e:
             logger.warning(f"[TRACK] record_trade failed: {e}")  # ne jamais bloquer le cycle
 

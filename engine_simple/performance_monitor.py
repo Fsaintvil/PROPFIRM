@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import logging
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -79,7 +79,18 @@ class PerformanceMonitor:
         Résout le désync entre CSV (8 trades) et performance_history (3 trades)
         causé par MT5 history expiration + restarts.
         Ne s'exécute QUE si recent_trades est vide (premier lancement)
-        ET que HISTORY_FILE est dans le RUNTIME_DIR par défaut (pas un test)."""
+        ET que HISTORY_FILE est dans le RUNTIME_DIR par défaut (pas un test).
+
+        🔧 FIX 14 Août 2026 (Robot Manager): l'import chargeait l'intégralité du CSV
+        (jusqu'à 500 trades, 6 semaines d'historique) avec regime="IMPORT", ce qui
+        POLLUAIT les rolling windows 20/50/100/200 avec :
+        - des SELL (bannis depuis le 06/08, WR 34% = -2 925$ historique)
+        - des symboles désactivés (XAGUSD trou noir)
+        - l'ancienne config (lots, min_score 0.75, allow_shorts)
+        Résultat: WR rolling 31-45% et PF < 1.0 pour 13 symboles = FAUX signal
+        (la performance live réelle était WR 83% le 14/08).
+        Désormais: import limité aux 7 derniers jours, SELL exclus, symboles
+        désactivés exclus — l'import ne sert qu'à combler un désync récent."""
         if self.history.get("recent_trades"):
             return  # Already has data, skip CSV import
         # Skip if HISTORY_FILE was patched to a different directory (test environment)
@@ -90,19 +101,47 @@ class PerformanceMonitor:
             return
         try:
             import csv as csv_mod
+            import os
+
+            # 🐛 FIX 14 Août 2026: n'importer QUE les symboles actuellement actifs.
+            # Les symboles désactivés (XAGUSD trou noir -1 484$, SELL bannis, anciens
+            # symboles retirés) ne doivent pas polluer les stats.
+            _env_syms = os.environ.get("SYMBOLS", "").strip()
+            active_symbols = {s.strip() for s in _env_syms.split(",") if s.strip()}
 
             with open(csv_file, "r") as f:
                 reader = csv_mod.DictReader(f)
                 csv_trades = list(reader)
             if not csv_trades:
                 return
+            # 🐛 FIX 14 Août 2026: ne garder que les 7 derniers jours (désync récent)
+            try:
+                cutoff = datetime.utcnow() - timedelta(days=7)
+                cutoff_str = cutoff.strftime("%Y-%m-%d")
+            except Exception:
+                cutoff_str = None
             imported = 0
+            skipped_sell = 0
+            skipped_old = 0
+            skipped_disabled = 0
             for row in csv_trades:
                 symbol = row.get("symbol", "")
                 pnl = float(row.get("pnl", 0))
                 direction = row.get("direction", "BUY")
                 ts = row.get("timestamp", "")
                 if pnl == 0 or not symbol:
+                    continue
+                # 🐛 FIX 14 Août 2026: exclure les SELL (bannis — WR 34% historique)
+                if direction == "SELL":
+                    skipped_sell += 1
+                    continue
+                # 🐛 FIX 14 Août 2026: exclure les symboles désactivés
+                if active_symbols and symbol not in active_symbols:
+                    skipped_disabled += 1
+                    continue
+                # 🐛 FIX 14 Août 2026: limiter aux 7 derniers jours
+                if cutoff_str and ts and ts[:10] < cutoff_str:
+                    skipped_old += 1
                     continue
                 # Manually add to recent_trades (bypass record_trade to avoid daily stats)
                 self.history["recent_trades"].append(
@@ -138,7 +177,11 @@ class PerformanceMonitor:
                     sd["gross_loss"] += abs(pnl)
                 imported += 1
             if imported > 0:
-                logger.info(f"[PERF] CSV import: {imported} trades ajoutés à performance_history")
+                logger.info(
+                    f"[PERF] CSV import: {imported} trades ajoutés à performance_history "
+                    f"(7j max, SELL exclus={skipped_sell}, désactivés exclus={skipped_disabled}, "
+                    f"anciens exclus={skipped_old})"
+                )
                 self._save()
         except Exception as e:
             logger.debug(f"[PERF] CSV import skip: {e}")

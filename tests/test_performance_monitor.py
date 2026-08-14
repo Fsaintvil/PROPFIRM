@@ -987,6 +987,74 @@ class TestAlertRecommendationCross:
         assert isinstance(report["recommendations"], list)
 
 
+# ══════════════════════════════════════════════════════════════════════
+# 16. CSV IMPORT — ANTI-POLLUTION (FIX 14 Août 2026)
+# ══════════════════════════════════════════════════════════════════════
+
+
+class TestCsvImportAntiPollution:
+    """Le _import_from_csv ne doit PAS polluer les rolling windows avec :
+    - des SELL (bannis depuis le 06/08, WR 34% = -2 925$ historique)
+    - des symboles désactivés (XAGUSD trou noir)
+    - des trades vieux de plus de 7 jours (l'ancienne config)
+    Bug corrigé : l'import chargeait tout le CSV (500 trades, 6 semaines),
+    faussant WR rolling (31-45%) et PF (<1.0) sur 13 symboles."""
+
+    def _setup_csv_import(self, perf_monitor, csv_lines):
+        """Configure un CSV temporaire + .env SYMBOLS, puis déclenche l'import."""
+        pm, hist_file, _ = perf_monitor
+        # HISTORY_FILE doit pointer vers RUNTIME_DIR pour que l'import s'exécute
+        tmp_dir = hist_file.parent
+        csv_file = tmp_dir / "trades_log.csv"
+        csv_file.write_text("\n".join(csv_lines), encoding="utf-8")
+        with (
+            patch("engine_simple.performance_monitor.RUNTIME_DIR", tmp_dir),
+            patch("engine_simple.performance_monitor.HISTORY_FILE", hist_file),
+            patch.dict("os.environ", {"SYMBOLS": "US100.cash,GBPUSD"}),
+        ):
+            pm.history["recent_trades"] = []  # force l'import (vide)
+            pm._import_from_csv()
+        return pm
+
+    def test_excludes_sell_and_old_and_disabled(self, perf_monitor):
+        # FAKE_NOW = 2026-06-07 → cutoff = 2026-05-31 (7 jours avant)
+        csv_lines = [
+            "timestamp,symbol,direction,volume,entry_price,sl_price,tp_price,exit_price,sl_atr,tp_atr,pnl,reason,duration_h,atr_h1",
+            # SELL banni → exclu
+            "2026-06-05 04:00:00,XAUUSD,SELL,0.05,4300.0,4310.0,4250.0,4302.0,1.5,6.0,20.0,sl,2.0,10.0",
+            # Symbole désactivé (XAGUSD) → exclu
+            "2026-06-05 04:00:00,XAGUSD,BUY,0.05,4300.0,4310.0,4250.0,4302.0,1.5,6.0,15.0,sl,2.0,10.0",
+            # Vieux de plus de 7 jours (avant 2026-05-31) → exclu
+            "2026-05-01 04:00:00,US100.cash,BUY,0.01,30000.0,29900.0,30300.0,30001.0,1.5,6.0,-100.0,sl,2.0,10.0",
+            # Trade actif récent (US100.cash BUY) → inclus
+            "2026-06-05 04:00:00,US100.cash,BUY,0.01,30000.0,29900.0,30300.0,30010.0,1.5,6.0,10.0,sl,2.0,10.0",
+            # Trade actif récent (GBPUSD BUY) → inclus
+            "2026-06-04 12:00:00,GBPUSD,BUY,0.15,1.35000,1.34800,1.36000,1.35100,2.0,5.0,15.0,sl,2.0,10.0",
+        ]
+        pm = self._setup_csv_import(perf_monitor, csv_lines)
+        recents = pm.history["recent_trades"]
+        # Seuls les 2 trades valides (BUY, actifs, récents) doivent être importés
+        assert len(recents) == 2
+        symbols = {t["symbol"] for t in recents}
+        assert symbols == {"US100.cash", "GBPUSD"}
+        assert all(t["direction"] == "BUY" for t in recents)
+
+    def test_no_import_when_recent_trades_exists(self, perf_monitor):
+        pm, hist_file, _ = perf_monitor
+        tmp_dir = hist_file.parent
+        csv_file = tmp_dir / "trades_log.csv"
+        csv_file.write_text(
+            "timestamp,symbol,direction,volume,entry_price,sl_price,tp_price,exit_price,sl_atr,tp_atr,pnl,reason,duration_h,atr_h1\n"
+            "2026-08-14 04:00:00,US100.cash,BUY,0.01,30000.0,29900.0,30300.0,30010.0,1.5,6.0,10.0,sl,2.0,10.0",
+            encoding="utf-8",
+        )
+        with patch("engine_simple.performance_monitor.RUNTIME_DIR", tmp_dir):
+            pm.history["recent_trades"] = [{"profit": 5.0, "symbol": "US100.cash", "regime": "TREND_UP", "direction": "BUY", "ts": "2026-08-14T00:00:00"}]
+            pm._import_from_csv()
+        # Pas de double import si des données existent déjà
+        assert len(pm.history["recent_trades"]) == 1
+
+
 # ── Temp dir helper (avoids pytest tmp_path dependency in patched context) ──
 
 
