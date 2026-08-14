@@ -45,8 +45,10 @@ GOLDEN_RULE_START = "2026-08-13 21:20:00"
 
 # Symboles cibles : ceux qui ont démontré un edge après coûts réels (PF>1.0
 # sur 16 ans de backtest_with_costs : US100 1.20, US30 1.14, JP225 1.23,
-# SOLUSD 1.25). Forex retiré (PF<1.0) — non compté dans la règle d'or.
-GOLDEN_SYMBOLS = ["US100.cash", "US30.cash", "JP225.cash", "SOLUSD"]
+# SOLUSD 1.25, BTCUSD 1.18). Forex retiré (PF<1.0) — non compté dans la règle d'or.
+# BTCUSD ajouté le 13/08/2026 20:35 (décision utilisateur) : groupe CRYPTO
+# indépendant = 2 slots de corrélation libres, accélère la collecte.
+GOLDEN_SYMBOLS = ["US100.cash", "US30.cash", "JP225.cash", "SOLUSD", "BTCUSD"]
 
 # Critères de la règle d'or (décision utilisateur — 13 Août 2026)
 GOLDEN_RULE = {

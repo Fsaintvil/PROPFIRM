@@ -164,7 +164,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.50,
         "adx_thresh": 20,
         "min_rr": 2.0,
-        "risk_mult": 0.0,  # 🔴 DÉSACTIVÉ 23 Juin 2026 (align with default.yaml / tests)
+        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 13 Août 2026 (décision utilisateur): PF backtest 1.18, groupe CRYPTO indépendant
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
         "lot_base": 0.01,

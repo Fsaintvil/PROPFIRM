@@ -22,7 +22,7 @@ trading:
 
 # ── Signal — MODE PREUVE STRICT ───────────────────────────────────────
 signal:
-  min_score: 0.70                # 🔧 VETO: 0.60→0.70 (06 Aout) — seuls les signaux de haute confiance
+  min_score: 0.65                # 🔧 13 Août 2026: 0.70→0.65 (décision utilisateur — +~30% de signaux, risque WR légèrement plus bas)
 
 # ── Risk — MODE PREUVE STRICT (veto risk-compliance) ──────────────────
 risk:

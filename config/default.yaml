@@ -10,10 +10,15 @@ trading:
   #   SOLUSD PF 1.25. Forex (EURUSD/USDJPY/EURGBP/USDCAD/USOIL) retire:
   #   PF < 1.0 apres couts - perdants structurels sur 16 ans.
   #   Backup: config/backup_default_20260813_195142_avant_indices.yaml
+  # ?? 13 Aout 2026 20:35 - BTCUSD ACTIVE (decision utilisateur): groupe CRYPTO
+  #   independant = 2 slots de correlation libres -> accelere la regle d'or sans
+  #   degradere la selectivite. PF backtest 1.18, spread live 100pts (0.4% ATR).
+  #   BUY-only (allow_shorts=false). Backup: config/backup_default_20260813_avant_btc.yaml
   - US100.cash
   - US30.cash
   - JP225.cash
   - SOLUSD
+  - BTCUSD
   max_positions: 30
   max_positions_per_symbol: 3
   max_trades_per_day: 200
@@ -21,7 +26,7 @@ trading:
   max_orders_per_minute: 6
   lot_size: 0.05
   global_max_lot: 0.5
-  min_trade_interval_sec: 300
+  min_trade_interval_sec: 180
   batch_interval_sec: 1
   trading_start_hour: 0
   trading_end_hour: 24
@@ -108,12 +113,12 @@ symbol_limits:
     execution_timeframe: M15
     max_lot: 0.03
     min_lot: 0.01
-    risk_mult: 0.0
+    risk_mult: 1.0
     min_score: 0.5
     max_spread_points: 150
     adx_thresh: 20
     allow_buys: true
-    allow_shorts: true
+    allow_shorts: false
     momentum_period: 20
     sl_atr_trending: 1.5
     tp_atr_trending: 6.0

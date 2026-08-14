@@ -28,19 +28,20 @@ def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
     # ?? 13 Aout 2026 - REPOSITIONNEMENT INDICES/CRYPTO (Robot Manager)
-    # 4 symboles avec edge demontre apres couts reels (PF>1.0 sur 16 ans).
-    # Forex retire (PF<1.0 apres couts). Backup: config/backup_default_20260813_195142_avant_indices.yaml
-    assert len(cfg.trading.symbols) == 4  # US100.cash, US30.cash, JP225.cash, SOLUSD
+    # 5 symboles avec edge demontre apres couts reels (PF>1.0 sur 16 ans).
+    # Forex retire (PF<1.0 apres couts). BTCUSD active le 13/08 (groupe CRYPTO independant).
+    # Backup: config/backup_default_20260813_195142_avant_indices.yaml
+    assert len(cfg.trading.symbols) == 5  # US100.cash, US30.cash, JP225.cash, SOLUSD, BTCUSD
     assert "US100.cash" in cfg.trading.symbols  # ?? PF 1.20, 6/6 annees positives
     assert "US30.cash" in cfg.trading.symbols  # ?? PF 1.14, 8/8 annees positives
     assert "JP225.cash" in cfg.trading.symbols  # ?? PF 1.23, 6/6 annees positives
     assert "SOLUSD" in cfg.trading.symbols  # ?? PF 1.25, spread live 3 pts
+    assert "BTCUSD" in cfg.trading.symbols  # ?? PF 1.18, groupe CRYPTO independant (13/08)
     assert "XAUUSD" not in cfg.trading.symbols  # ?? trou noir -2 196$ mode preuve
     assert "EURUSD" not in cfg.trading.symbols  # ?? PF 0.74 apres couts
     assert "USDJPY" not in cfg.trading.symbols  # ?? PF 0.96 apres couts
     assert "EURGBP" not in cfg.trading.symbols  # ?? PF 0.64 apres couts
     assert "USDCAD" not in cfg.trading.symbols  # ?? PF 0.74 apres couts
-    assert "BTCUSD" not in cfg.trading.symbols
     assert "AUDUSD" not in cfg.trading.symbols
     assert cfg.risk.per_trade_pct == 0.004  # défaut YAML (production override → 0.003)
     assert cfg.risk.max_dd_pct == 0.10
@@ -94,9 +95,9 @@ def test_symbol_limits_new_portfolio():
 
     cfg = load_config("default")
     btc = cfg.symbol_limits.get("BTCUSD", {})
-    assert btc.risk_mult == 0.0  # 🔴 DÉSACTIVÉ 23 Juin 2026 (comme au pic)
+    assert btc.risk_mult == 1.0  # 🔓 DÉBLOQUÉ 13 Août 2026 (décision utilisateur — groupe CRYPTO indépendant)
     assert btc.allow_buys is True
-    assert btc.allow_shorts is True
+    assert btc.allow_shorts is False  # mode preuve BUY-only (aligné US30/JP225/SOLUSD)
     assert btc.max_lot == 0.03  # lot minimal
     # 🛡️ 13 Août 2026: min_score aligné sur la config réelle (default.yaml + strategy.py
     # ont tous deux min_score=0.50 pour BTCUSD). Le test attendait 0.60 (valeur "pic"
@@ -159,7 +160,7 @@ def test_config_simple_compat():
     assert cfg.RISK_PER_TRADE == 0.003  # 🔧 MODE PREUVE 06 Aout 2026 (production override → 0.30%)
     assert cfg.MAX_ORDERS_PER_MINUTE == 6  # CONFIG PIC 23 Juin 2026
     assert cfg.__version__ == "4.1.0"
-    assert cfg.MIN_SIGNAL_SCORE == 0.70  # 🔧 MODE PREUVE 06 Aout 2026 (min_score 0.70 enforce)
+    assert cfg.MIN_SIGNAL_SCORE == 0.65  # 🔧 13 Août 2026: 0.70→0.65 (décision utilisateur — +~30% de signaux)
 
 
 def test_config_reload():

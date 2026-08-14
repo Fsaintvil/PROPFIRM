@@ -1,10 +1,15 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 13 Août 2026 (23:30)** : 🔥 **BTCUSD activé** (décision utilisateur) — groupe CRYPTO
+> indépendant (2 slots de corrélation libres, PF backtest 1.18, spread live 100 pts = 0.4% ATR H1),
+> BUY-only. **Paramètres assouplis** : `min_score` 0.70 → **0.65** (+~30% de signaux, risque WR
+> légèrement bas assumé), `min_trade_interval_sec` 300 → **180s** (plus de doublons temporels assumé).
+> Backups : `config/backup_*_20260813_avant_btc.yaml`. Suite de tests : **1162 passed**.
 > **Mise à jour 13 Août 2026** : 🏆 **RÈGLE D'OR activée** (décision utilisateur) — remplace l'ancienne
 > phase de preuve (obsolète). **AUCUN scaling ni re-tentative de challenge avant validation** de 100
-> trades propres sur les 4 symboles du repositionnement : **US100.cash, US30.cash, JP225.cash, SOLUSD**
-> (edge démontré après coûts réels, 160 877 trades : PF 1.20 / 1.14 / 1.23 / 1.25). Forex retiré
-> (EURUSD PF 0.74, USDJPY 0.96, EURGBP 0.64, USDCAD 0.74, USOIL 0.99 — perdants structurels).
+> trades propres sur les 5 symboles du repositionnement : **US100.cash, US30.cash, JP225.cash, SOLUSD,
+> BTCUSD** (edge démontré après coûts réels, 160 877 trades : PF 1.20 / 1.14 / 1.23 / 1.25 / 1.18).
+> Forex retiré (EURUSD PF 0.74, USDJPY 0.96, EURGBP 0.64, USDCAD 0.74, USOIL 0.99 — perdants structurels).
 > Critères RÈGLE D'OR : **≥ 100 trades ET WR ≥ 60% ET PF ≥ 1.1** → sinon STOP définitif.
 > Suivi automatisé : `python scripts/golden_rule.py` (état dans `runtime/golden_rule/state.json`),
 > intégré au checkpoint quotidien `MT5_FTMO_DailyCheckpoint` (20:00). Borne : 2026-08-13 21:20 heure
