@@ -118,7 +118,13 @@ class SymbolParamManager:
         if self._learner is None:
             return {}
         try:
-            ol = self._learner.get_params(symbol, base_thresh=2.5)
+            # 🔧 FIX 14 Août 2026: base_thresh depuis la config du symbole (strategy.py)
+            # au lieu du hardcode 2.5 — aligne le fallback OL sur le seuil validé
+            # au backtest (BTCUSD=5.0, US100/JP225=3.0, US30/SOLUSD=2.5, défaut 2.5).
+            from engine_simple.strategy import get_symbol_full_config
+
+            _base_thresh = get_symbol_full_config(symbol).get("threshold_trending", 2.5)
+            ol = self._learner.get_params(symbol, base_thresh=_base_thresh)
             return {
                 "ol_thresh": ol.get("thresh"),
                 "ol_risk_mult": ol.get("risk_mult"),

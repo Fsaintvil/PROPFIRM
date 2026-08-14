@@ -357,14 +357,16 @@ class SignalPipeline:
         - Pas de trades en RANGING
         """
         from engine_simple.strategy_trend_follow import TrendFollow
-        from engine_simple.strategy import SYMBOL_CONFIG as _SYMBOL_CFG
+        from engine_simple.strategy import SYMBOL_CONFIG as _SYMBOL_CFG, get_symbol_full_config as _get_sym_full
 
         tf = self.symbol_timeframes.get(symbol, "H1")
 
         # OnlineLearner params (pour risk_mult seulement — pas de thresh tuning)
         ol_risk_mult = 0.75
         try:
-            ol_params = self.adaptive.learner.get_params(symbol, base_thresh=2.5)
+            # 🔧 FIX 14 Août 2026: base_thresh depuis la config du symbole (aligné avec _phase1_mom20x3)
+            _base_thresh = _get_sym_full(symbol).get("threshold_trending", 2.5)
+            ol_params = self.adaptive.learner.get_params(symbol, base_thresh=_base_thresh)
             ol_risk_mult = ol_params.get("risk_mult", 1.0)
         except Exception:
             pass
@@ -452,17 +454,24 @@ class SignalPipeline:
         assigne "MOM20x3" au symbole.
         NOTE: Garde le nom _phase1_mom20x3 pour compatibilité ascendante.
         """
-        from engine_simple.strategy import MOM20x3, SYMBOL_CONFIG as _SYMBOL_CFG
+        from engine_simple.strategy import MOM20x3, SYMBOL_CONFIG as _SYMBOL_CFG, get_symbol_full_config as _get_sym_full
 
         tf = self.symbol_timeframes.get(symbol, "H1")
+
+        # 🔧 FIX 14 Août 2026: base_thresh depuis la config du symbole (strategy.py),
+        # source de vérité utilisée par le backtest (backtest_full.py lit threshold_trending).
+        # L'ancien hardcode 2.5 ignorait le seuil BTCUSD=5.0 validé (PF 1.18) → le robot
+        # trade BTCUSD 2× plus agressif que la validation. Désormais le fallback OL
+        # respecte le seuil par symbole (BTCUSD=5.0, US100/JP225=3.0, US30/SOLUSD=2.5).
+        _base_thresh = _get_sym_full(symbol).get("threshold_trending", 2.5)
 
         # OnlineLearner params — réactivé 25 Juin 2026 (calibration fixée)
         ol_thresh_trending = None
         ol_thresh_ranging = None
         ol_risk_mult = 0.75  # fallback si OL indisponible
         try:
-            ol_params = self.adaptive.learner.get_params(symbol, base_thresh=2.5)
-            ol_thresh = ol_params.get("thresh", 2.5)
+            ol_params = self.adaptive.learner.get_params(symbol, base_thresh=_base_thresh)
+            ol_thresh = ol_params.get("thresh", _base_thresh)
             ol_risk_mult = ol_params.get("risk_mult", 1.0)
             # 🔓 FIX 8 Juillet: supprimé le cap supérieur à 2.0 qui empêchait l'OL
             # d'être plus sélectif. L'OL peut maintenant monter jusqu'à 2.5×ATR

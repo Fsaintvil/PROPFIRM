@@ -455,6 +455,45 @@ class TestPhase1MOM20x3:
         assert signal is not None
         assert abs(signal["risk_mult"] - 0.75) < 0.01
 
+    @patch("engine_simple.strategy.MOM20x3")
+    def test_ol_base_thresh_from_symbol_config_btcusd(self, mock_mom, pipeline, mock_mt5, mock_adaptive):
+        """🔧 FIX 14 Août 2026: le base_thresh passé à l'OL doit venir de la config
+        du symbole (strategy.py), PAS du hardcode 2.5. BTCUSD=5.0 (validé au backtest
+        PF 1.18) → l'OL fallback doit recevoir 5.0 et non 2.5."""
+        mock_mom.return_value = _make_mock_mom20x3()
+        # Capture l'argument base_thresh passé à get_params
+        captured = {}
+
+        def _fake_get_params(symbol, base_thresh=2.5):
+            captured["base_thresh"] = base_thresh
+            return {"thresh": base_thresh, "risk_mult": 1.0}
+
+        mock_adaptive.learner.get_params.side_effect = _fake_get_params
+        pipeline._rates_cache.clear()
+        signal = pipeline._phase1_mom20x3("BTCUSD")
+        # Le signal peut être None (filtres aval), mais l'OL DOIT avoir reçu 5.0
+        assert captured["base_thresh"] == 5.0, (
+            f"OL base_thresh BTCUSD = {captured['base_thresh']} (attendu 5.0) "
+            f"— le fallback 2.5 hardcodé ferait trader BTCUSD 2× plus agressif que la validation"
+        )
+
+    @patch("engine_simple.strategy.MOM20x3")
+    def test_ol_base_thresh_default_25_for_symbols_without_override(
+        self, mock_mom, pipeline, mock_mt5, mock_adaptive
+    ):
+        """Les symboles sans override (défaut) doivent conserver base_thresh=2.5."""
+        mock_mom.return_value = _make_mock_mom20x3()
+        captured = {}
+
+        def _fake_get_params(symbol, base_thresh=2.5):
+            captured["base_thresh"] = base_thresh
+            return {"thresh": base_thresh, "risk_mult": 1.0}
+
+        mock_adaptive.learner.get_params.side_effect = _fake_get_params
+        pipeline._rates_cache.clear()
+        pipeline._phase1_mom20x3("TESTXXX")
+        assert captured["base_thresh"] == 2.5
+
 
 # ── Phase 2: ADX Filter ──────────────────────────────────────────────────
 
