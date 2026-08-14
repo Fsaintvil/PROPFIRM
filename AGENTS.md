@@ -122,28 +122,46 @@ Indicateurs volume (Phase 7b/8) filtrent les signaux MOM20x3 :
 | RANGING | ADX<18 | 1.5×ATR | 4.0×ATR | 100% |
 | LOW_VOL | ATR%<20% | 1.5×ATR | 4.0×ATR | 100% |
 
-### Trailing stop (ATR-based) — Config 30 Juillet 2026 (v2)
+### Trailing stop (ATR-based) — Config 31 Juillet 2026 (R2, backtest-validée)
+> ⚠️ **Divergence historique corrigée le 14 Août 2026** : AGENTS.md documentait l'ancienne config
+> du 30 Juillet (N1 lock 1.20×ATR / trail 0.80×ATR) mais le code réel (ftmo_config.py
+> `TRAILING_BY_REGIME`) utilise la config 31 Juillet. La doc est désormais alignée sur le code.
+> La config serrée du 30/07 avait été calibrée sur un WR 35% corrompu (direction inversée dans le CSV) ;
+> le revert R2 du 31 Juillet laisse les gagnants respirer jusqu'au partial TP (65% du TP) avant de verrouiller.
+
 Niveaux par régime (lock = profit en ×ATR pour activer, trail = distance SL/peak en ×ATR) :
-| Régime | 1er lock | N1 trail | N1.5 lock | N1.5 trail | N2 lock | N2 trail | N3 lock | N3 trail | N4 lock | N4 trail |
-|--------|:--------:|:--------:|:---------:|:----------:|:-------:|:--------:|:-------:|:--------:|:-------:|:--------:|
-| RANGING | 1.20×ATR | 0.55×ATR | 1.80×ATR | 0.42×ATR | 2.50×ATR | 0.30×ATR | 4.00×ATR | 0.18×ATR | 5.50×ATR | 0.10×ATR |
-| TREND_UP/DOWN | 1.20×ATR | 0.80×ATR | 1.80×ATR | 0.60×ATR | 2.50×ATR | 0.45×ATR | 4.00×ATR | 0.25×ATR | 6.00×ATR | 0.12×ATR |
-| HIGH_VOL | 1.20×ATR | 0.90×ATR | 1.80×ATR | 0.72×ATR | 2.50×ATR | 0.55×ATR | 4.00×ATR | 0.32×ATR | 6.00×ATR | 0.18×ATR |
-| LOW_VOL | 1.20×ATR | 0.50×ATR | 1.80×ATR | 0.40×ATR | 2.20×ATR | 0.30×ATR | 3.20×ATR | 0.18×ATR | 4.50×ATR | 0.10×ATR |
+| Régime | N1 lock | N1 trail | N2 lock | N2 trail | N3 lock | N3 trail | N4 lock | N4 trail | N5 lock | N5 trail |
+|--------|:-------:|:--------:|:-------:|:--------:|:-------:|:--------:|:-------:|:--------:|:-------:|:--------:|
+| RANGING | 1.80×ATR | 0.80×ATR | 2.50×ATR | 0.55×ATR | 3.50×ATR | 0.40×ATR | 5.00×ATR | 0.25×ATR | 5.50×ATR | 0.15×ATR |
+| TREND_UP/DOWN | 1.80×ATR | 1.00×ATR | 2.50×ATR | 0.70×ATR | 3.50×ATR | 0.50×ATR | 5.00×ATR | 0.30×ATR | 6.00×ATR | 0.20×ATR |
+| HIGH_VOL | 1.80×ATR | 1.20×ATR | 2.50×ATR | 0.90×ATR | 3.50×ATR | 0.65×ATR | 5.00×ATR | 0.40×ATR | 6.00×ATR | 0.25×ATR |
+| LOW_VOL | 1.80×ATR | 0.70×ATR | 2.50×ATR | 0.50×ATR | 3.20×ATR | 0.35×ATR | 4.50×ATR | 0.20×ATR | 5.50×ATR | 0.12×ATR |
 
 Note : ces valeurs incluent un jitter aléatoire ±10% pour éviter le hunting.
-Exemple : USOIL.cash TREND_UP, ATR=0.91, profit=2.29×ATR (>1.80) → N1.5: SL = peak − 0.60×ATR
-Pour atteindre N2 (2.50×ATR), le trade doit gagner encore ~$0.19.
+Exemple : GBPUSD TREND_UP, ATR=0.00096, peak_profit=1.82×ATR (>1.80) → N1: SL = peak − 1.00×ATR = 1.35463
+Pour atteindre N2 (2.50×ATR), le trade doit gagner encore 0.68×ATR (~$0.00065 sur GBPUSD).
 
-### Breakeven progressif (30 Juillet 2026)
-Séquence de sécurisation des profits AVANT que le trailing N1 (1.20×ATR) ne s'active :
+### Breakeven progressif (31 Juillet 2026)
+Séquence de sécurisation des profits AVANT que le trailing N1 (1.80×ATR) ne s'active :
 ```
-profit > 0.50×ATR → SL = entry (breakeven pur, zéro perte garantie)
-profit > 0.80×ATR → SL = entry ± 0.15×ATR (petit gain garanti)
+profit > 1.00×ATR → SL = entry (breakeven pur, zéro perte garantie)
+profit > 1.30×ATR → SL = entry ± 0.15×ATR (petit gain garanti)
 ```
+> 🔧 FIX 31 Juillet 2026 (Quant Auditor) : les seuils précédents (0.80/0.50×ATR) coupaient
+> 62% des gagnants à <0.5R avant même le lock N1. En repoussant à 1.00/1.30×ATR, les trades
+> faibles ont une chance d'atteindre la zone N1 au lieu d'être stoppés net sur le bruit.
+
 Fonctionne avec la garde `sl_improves` : ne s'applique QUE si le nouveau SL est meilleur
 que l'actuel (ne réduit jamais la protection déjà en place).
 Appelé dans la séquence : time_stop → **progressive_be** → partial_tp → step_trail → structure
+
+### Partial TP (31 Juillet 2026)
+- Déclenchement : progress ≥ **0.65** (65% du chemin vers le TP, calculé sur le PEAK pas price_current)
+- Ferme **50%** du volume (arrondi au lot_step), puis set BE avec buffer par symbole/régime (`BE_BUFFER_BY_SYMBOL`)
+- 🔧 31 Juil 2026 (R3) : 0.40→0.65 — la config 40% fermait la moitié du trade dès 1.6R,
+  coupant la course vers le TP. À 65% (=3.25R sur TP 5×ATR), la moitié close est déjà en
+  zone rentable ET la moitié restante a une vraie chance d'atteindre le TP 4-6×ATR.
+  Le backtest 158K trades (PF>1.1) n'avait PAS de partial TP à 40% — jamais validé.
 
 ## Seuils de signal (strategy.py)
 - ADX ≥ 22 (trending): thresh = 2.5×ATR
@@ -283,7 +301,7 @@ XAUUSD       11 734  65.3%   -$51,445  126.2%
 
 ## Trailing + Partial TP
 - `_check_partial_tp` → `_check_step_trailing` (ordre inverse)
-- Partial TP ferme 50% à 60% du TP, set BE à 0.8×ATR
+- Partial TP ferme 50% à **65% du chemin vers le TP** (config 31 Juillet R3), set BE avec buffer par symbole/régime (`BE_BUFFER_BY_SYMBOL`)
 - BE conditionnel : ne s'applique QUE si le SL actuel est plus faible
 - Trailing 4 niveaux ATR (0.5× → 0.35× → 0.20× → 0.10× du peak)
 

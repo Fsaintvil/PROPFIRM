@@ -495,3 +495,47 @@ class TestCheckStructureExit:
             pos = _make_position()
             trailer._check_structure_exit(pos)
             mock_mt5.update_sl.assert_not_called()
+
+
+# ── Verrouillage config trailing (alignement AGENTS.md) ────────────────────
+
+
+class TestTrailingConfigLock:
+    """Fige la config TRAILING_BY_REGIME (31 Juillet 2026 R2) pour garantir
+    l'alignement doc (AGENTS.md) ↔ code. Toute modification de ces niveaux doit
+    être une décision explicite, testée et documentée — pas une dérive silencieuse."""
+
+    def test_trailing_levels_match_agents_doc(self):
+        from engine_simple.ftmo_config import TRAILING_BY_REGIME
+
+        expected = {
+            "RANGING": [(1.80, 0.80), (2.50, 0.55), (3.50, 0.40), (5.00, 0.25), (5.50, 0.15)],
+            "TREND_UP": [(1.80, 1.00), (2.50, 0.70), (3.50, 0.50), (5.00, 0.30), (6.00, 0.20)],
+            "TREND_DOWN": [(1.80, 1.00), (2.50, 0.70), (3.50, 0.50), (5.00, 0.30), (6.00, 0.20)],
+            "HIGH_VOL": [(1.80, 1.20), (2.50, 0.90), (3.50, 0.65), (5.00, 0.40), (6.00, 0.25)],
+            "LOW_VOL": [(1.80, 0.70), (2.50, 0.50), (3.20, 0.35), (4.50, 0.20), (5.50, 0.12)],
+        }
+        assert TRAILING_BY_REGIME == expected
+
+    def test_get_trailing_for_symbol_fallback(self):
+        """Symbole sans config spécifique → fallback sur TRAILING_BY_REGIME."""
+        from engine_simple.ftmo_config import get_trailing_for_symbol, TRAILING_BY_REGIME
+
+        for regime, levels in TRAILING_BY_REGIME.items():
+            assert get_trailing_for_symbol("GBPUSD", regime) == levels
+
+    def test_progressive_be_thresholds(self):
+        """Breakeven progressif : les seuils 1.00/1.30×ATR sont hardcodés dans trailer.py.
+        Ce test verrouille le contrat (AGENTS.md 31 Juillet 2026)."""
+        from engine_simple.trailer import Trailer
+
+        src = [c for c in Trailer._check_progressive_be.__code__.co_consts if isinstance(c, float)]
+        assert any(abs(c - 1.30) < 1e-9 for c in src), "seuil 1.30×ATR manquant"
+        assert any(abs(c - 1.00) < 1e-9 for c in src), "seuil 1.00×ATR manquant"
+
+    def test_partial_tp_threshold_065(self):
+        """Partial TP : progress ≥ 0.65 (65% du TP) — config 31 Juillet R3."""
+        from engine_simple.trailer import Trailer
+
+        src = [c for c in Trailer._check_partial_tp.__code__.co_consts if isinstance(c, float)]
+        assert any(abs(c - 0.65) < 1e-9 for c in src), "seuil 0.65 du partial TP manquant"
