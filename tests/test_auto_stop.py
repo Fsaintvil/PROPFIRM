@@ -510,8 +510,9 @@ class TestConstants:
 
     def test_active_symbols_non_empty(self):
         assert len(ACTIVE_SYMBOLS) >= 3
-        assert "XAUUSD" not in ACTIVE_SYMBOLS  # 🔴 RETIRÉ 12 Août 2026 (trou noir confirmé en mode preuve)
-        # ?? 13 Aout 2026 - REPOSITIONNEMENT INDICES/CRYPTO: forex retire (PF<1.0 apres couts)
-        assert "USDJPY" not in ACTIVE_SYMBOLS  # ?? PF 0.96 apres couts
-        assert "US100.cash" in ACTIVE_SYMBOLS  # ?? PF 1.20, 6/6 annees positives
-        assert "BTCUSD" in ACTIVE_SYMBOLS  # ?? DÉBLOQUÉ 13 Août 2026 — groupe CRYPTO indépendant
+        # 🔧 14 Aout 2026 - XAUUSD + PAIRES PRIMAIRES ACTIVES (decision utilisateur)
+        assert "XAUUSD" in ACTIVE_SYMBOLS  # 🔧 REACTIVE 14 Aout 2026 (decision utilisateur)
+        assert "EURUSD" in ACTIVE_SYMBOLS  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
+        assert "USDJPY" in ACTIVE_SYMBOLS  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
+        assert "US100.cash" in ACTIVE_SYMBOLS  # 🔧 PF 1.20, 6/6 annees positives
+        assert "BTCUSD" in ACTIVE_SYMBOLS  # 🔧 DEBLOQUE 13 Aout 2026 - groupe CRYPTO independant

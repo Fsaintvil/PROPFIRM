@@ -14,11 +14,24 @@ trading:
   #   independant = 2 slots de correlation libres -> accelere la regle d'or sans
   #   degradere la selectivite. PF backtest 1.18, spread live 100pts (0.4% ATR).
   #   BUY-only (allow_shorts=false). Backup: config/backup_default_20260813_avant_btc.yaml
+  # 🔧 14 Aout 2026 - XAUUSD + PAIRES PRIMAIRES ACTIVES (decision utilisateur)
+  #   XAUUSD + les 7 paires FOREX majeures (EURUSD, GBPUSD, USDJPY, USDCAD,
+  #   AUDUSD, NZDUSD, USDCHF). ⚠️ Fore x retire le 13 Aout (PF<1.0 apres couts)
+  #   mais reactivation utilisateur. Garde-fous: BUY-only, lots min, min_score 0.65.
+  #   Backup: config/backup_default_20260814_avant_xauusd_forex.yaml
   - US100.cash
   - US30.cash
   - JP225.cash
   - SOLUSD
   - BTCUSD
+  - XAUUSD
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - USDCAD
+  - AUDUSD
+  - NZDUSD
+  - USDCHF
   max_positions: 30
   max_positions_per_symbol: 3
   max_trades_per_day: 200
@@ -60,8 +73,8 @@ symbol_limits:
     execution_timeframe: M15
     max_lot: 0.05
     min_lot: 0.01
-    risk_mult: 0.0
-    min_score: 0.75
+    risk_mult: 1.0  # 🔧 14 Aout 2026: 0.0→1.0 (bloqueur de trades — réactivé)
+    min_score: 0.65  # 🔧 14 Aout 2026: 0.75→0.65 (cohérent mode preuve)
     max_spread_points: 60
     adx_thresh: 22
     cooldown_minutes: 30
@@ -225,7 +238,7 @@ symbol_limits:
     max_spread_points: 50
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: true
+    allow_shorts: false  # 🔧 14 Aout 2026: BUY-only (mode preuve)
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -382,7 +395,7 @@ symbol_limits:
     max_spread_atr_ratio: 0.15
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: true
+    allow_shorts: false  # 🔧 14 Aout 2026: BUY-only (mode preuve)
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -433,7 +446,7 @@ symbol_limits:
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: true
+    allow_shorts: false  # 🔧 14 Aout 2026: BUY-only (mode preuve)
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0
@@ -485,7 +498,7 @@ symbol_limits:
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: true
+    allow_shorts: false  # 🔧 14 Aout 2026: BUY-only (mode preuve)
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0

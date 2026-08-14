@@ -72,16 +72,16 @@ PID_FILE = os.environ.get("ROBOT_PID_FILE", "runtime/robot.pid")
 # Named mutex Windows — plus fiable que le fichier PID (auto-libéré par l'OS)
 _MUTEX_NAME = os.environ.get("ROBOT_MUTEX_NAME", "Global\\MT5_FTMO_MOM20x3")
 
-# ── Symboles activement tradés — depuis .env, PAS cfg.SYMBOLS (qui a 27 symboles) ──
-# 🔥 CRITIQUE: cfg.SYMBOLS contient 27 symboles (YAML).
-# Seuls ceux dans .env:SYMBOLS doivent être tradés.
-# 🔧 FIX 27 Juillet 2026: ACTIVE_SYMBOLS par défaut = 5 symboles Solution A
+# ── Symboles activement tradés — depuis .env, sinon cfg.SYMBOLS (source de vérité) ──
+# 🔧 FIX 14 Aout 2026: le fallback codé en dur (5 symboles) ignorait les nouveaux
+# symboles activés (XAUUSD + paires primaires). Désormais le fallback = cfg.SYMBOLS
+# qui est la source de vérité (trading.symbols dans default.yaml/production.yaml).
 _env_syms = os.environ.get("SYMBOLS", "").strip()
 ACTIVE_SYMBOLS: set[str] = set()
 if _env_syms:
     ACTIVE_SYMBOLS = {s.strip() for s in _env_syms.split(",") if s.strip()}
 if not ACTIVE_SYMBOLS:
-    ACTIVE_SYMBOLS = {"XAUUSD", "BTCUSD", "US500.cash", "US100.cash", "JP225.cash"}
+    ACTIVE_SYMBOLS = set(cfg.SYMBOLS)
 
 # ── Catégories de symboles — SUPPRIMÉ 1er Juillet 2026 ──
 # Les SYMBOL_CONFIDENCE_GATES et catégories CORE/TARGET_80/REACTIVATED

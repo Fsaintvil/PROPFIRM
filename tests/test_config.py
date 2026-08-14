@@ -27,22 +27,25 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # ?? 13 Aout 2026 - REPOSITIONNEMENT INDICES/CRYPTO (Robot Manager)
-    # 5 symboles avec edge demontre apres couts reels (PF>1.0 sur 16 ans).
-    # Forex retire (PF<1.0 apres couts). BTCUSD active le 13/08 (groupe CRYPTO independant).
-    # Backup: config/backup_default_20260813_195142_avant_indices.yaml
-    assert len(cfg.trading.symbols) == 5  # US100.cash, US30.cash, JP225.cash, SOLUSD, BTCUSD
-    assert "US100.cash" in cfg.trading.symbols  # ?? PF 1.20, 6/6 annees positives
-    assert "US30.cash" in cfg.trading.symbols  # ?? PF 1.14, 8/8 annees positives
-    assert "JP225.cash" in cfg.trading.symbols  # ?? PF 1.23, 6/6 annees positives
-    assert "SOLUSD" in cfg.trading.symbols  # ?? PF 1.25, spread live 3 pts
-    assert "BTCUSD" in cfg.trading.symbols  # ?? PF 1.18, groupe CRYPTO independant (13/08)
-    assert "XAUUSD" not in cfg.trading.symbols  # ?? trou noir -2 196$ mode preuve
-    assert "EURUSD" not in cfg.trading.symbols  # ?? PF 0.74 apres couts
-    assert "USDJPY" not in cfg.trading.symbols  # ?? PF 0.96 apres couts
-    assert "EURGBP" not in cfg.trading.symbols  # ?? PF 0.64 apres couts
-    assert "USDCAD" not in cfg.trading.symbols  # ?? PF 0.74 apres couts
-    assert "AUDUSD" not in cfg.trading.symbols
+    # 🔧 14 Aout 2026 - XAUUSD + PAIRES PRIMAIRES ACTIVES (decision utilisateur)
+    # 13 symboles: 5 repositionnés (PF edge démontré) + XAUUSD + 7 paires FOREX majeures.
+    # Garde-fous: BUY-only, risk_mult 1.0, min_score 0.65.
+    # Backup: config/backup_default_20260814_avant_xauusd_forex.yaml
+    assert len(cfg.trading.symbols) == 13
+    assert "US100.cash" in cfg.trading.symbols  # 🔧 PF 1.20, 6/6 annees positives
+    assert "US30.cash" in cfg.trading.symbols  # 🔧 PF 1.14, 8/8 annees positives
+    assert "JP225.cash" in cfg.trading.symbols  # 🔧 PF 1.23, 6/6 annees positives
+    assert "SOLUSD" in cfg.trading.symbols  # 🔧 PF 1.25, spread live 3 pts
+    assert "BTCUSD" in cfg.trading.symbols  # 🔧 PF 1.18, groupe CRYPTO independant (13/08)
+    # 🔧 14 Aout 2026 - REACTIVATION utilisateur (XAUUSD + paires primaires)
+    assert "XAUUSD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (decision utilisateur)
+    assert "EURUSD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
+    assert "USDJPY" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
+    assert "USDCAD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
+    assert "AUDUSD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
+    assert "NZDUSD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
+    assert "USDCHF" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
+    assert "GBPUSD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
     assert cfg.risk.per_trade_pct == 0.004  # défaut YAML (production override → 0.003)
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 2.0  # conservé
@@ -69,12 +72,13 @@ def test_symbol_limits_defaults():
     assert "BTCUSD" in cfg.symbol_limits
     assert cfg.symbol_limits["XAUUSD"].max_lot == 0.05  # 🔧 MODE PREUVE 06 Aout 2026: 0.10→0.05
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
+    # 🔧 14 Aout 2026: XAUUSD REACTIVÉ (décision utilisateur) — risk_mult 0.0→1.0
     assert (
-        cfg.symbol_limits["XAUUSD"].risk_mult == 0.0
-    )  # 🔴 DÉSACTIVÉ 12 Août 2026 (trou noir mode preuve: WR 14%, −288.65$)
+        cfg.symbol_limits["XAUUSD"].risk_mult == 1.0
+    )  # 🔧 REACTIVÉ 14 Aout 2026 (décision utilisateur: XAUUSD + paires primaires)
     assert (
-        cfg.symbol_limits["XAUUSD"].min_score == 0.75
-    )  # 🔧 FIX 10 Aout 2026: 0.63→0.75 (garde-fou risk-compliance, XAUUSD = 91% pertes mode preuve)
+        cfg.symbol_limits["XAUUSD"].min_score == 0.65
+    )  # 🔧 14 Aout 2026: 0.75→0.65 (cohérent mode preuve)
     assert cfg.symbol_limits["XAUUSD"].allow_buys is True
     assert cfg.symbol_limits["XAUUSD"].allow_shorts is False  # 🔧 MODE PREUVE 06 Aout: SELL banni
 
