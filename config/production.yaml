@@ -23,6 +23,7 @@ trading:
 # ── Signal — MODE PREUVE STRICT ───────────────────────────────────────
 signal:
   min_score: 0.65                # 🔧 13 Août 2026: 0.70→0.65 (décision utilisateur — +~30% de signaux, risque WR légèrement plus bas)
+  enable_m15_confirmation: false # 🔧 14 Août 2026: M15 désactivé (alignement backtest validé — PF 1.18-1.25 sans ce filtre)
 
 # ── Risk — MODE PREUVE STRICT (veto risk-compliance) ──────────────────
 risk:

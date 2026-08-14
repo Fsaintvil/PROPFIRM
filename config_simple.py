@@ -34,6 +34,8 @@ try:
     BATCH_INTERVAL_SEC: int = _cfg.trading.batch_interval_sec
     HISTORY_LOOKBACK_DAYS: int = _cfg.trading.history_lookback_days
     MIN_SIGNAL_SCORE: float = _cfg.signal.min_score
+    # 🔧 14 Aout 2026: filtre M15 désactivé (alignement backtest validé — PF 1.18-1.25)
+    ENABLE_M15_CONFIRMATION: bool = getattr(_cfg.signal, "enable_m15_confirmation", False)
     MAX_SIGNALS_PER_CYCLE: int = _cfg.trading.max_signals_per_cycle
     MAX_ORDERS_PER_MINUTE: int = _cfg.trading.max_orders_per_minute
     DAILY_PROFIT_LIMIT_PCT: float = _cfg.signal.daily_profit_limit_pct
@@ -227,6 +229,7 @@ except Exception as e:
     SYMBOL_TIMEFRAMES = {}
     ML_EXPERIMENT_TRACKING = False
     ML_TRACKING_URI = ""
+    ENABLE_M15_CONFIRMATION = False
     CONCEPT_DRIFT = dict(
         enabled=True,
         window_size=100,
@@ -290,6 +293,7 @@ def _re_export():
     global SYMBOL_LIMITS, SYMBOL_TIMEFRAMES, __version__, DANGER_HOURS
     global NEWS_MINUTES_BEFORE, NEWS_MINUTES_AFTER
     global ML_EXPERIMENT_TRACKING, ML_TRACKING_URI, CONCEPT_DRIFT, RETRAINING
+    global ENABLE_M15_CONFIRMATION
     MT5_LOGIN = _cfg.secrets.mt5_login_int
     MT5_PASSWORD = _cfg.secrets.mt5_password
     MT5_SERVER = _cfg.secrets.mt5_server
@@ -342,3 +346,4 @@ def _re_export():
     ML_TRACKING_URI = _cfg.ml.tracking_uri
     CONCEPT_DRIFT = _cfg.ml.concept_drift.model_dump()
     RETRAINING = _cfg.ml.retraining.model_dump()
+    ENABLE_M15_CONFIRMATION = _cfg.signal.enable_m15_confirmation

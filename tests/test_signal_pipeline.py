@@ -147,6 +147,8 @@ def mock_config():
         LOT_SIZE = 0.01
         RISK_PER_TRADE = 0.004
         ROBOT_MAGIC = 999001
+        # 🔧 14 Aout 2026: filtre M15 désactivé (alignement backtest validé)
+        ENABLE_M15_CONFIRMATION = False
 
     return MockConfig()
 
@@ -251,6 +253,46 @@ class TestPipelineProcess:
         assert result.symbol == "EURUSD"
         assert "action" in result.signal
         assert result.signal["max_per_symbol"] > 0
+
+    # 🔧 14 Aout 2026 (REGRESSION): M15 désactivé par défaut — le backtest validé
+    # (PF 1.18-1.25) n'inclut PAS le filtre M15. Il bloquait 100% des BUY en marché
+    # baissier (bougie M15 rouge pendant que H1 signale BUY) → RÈGLE D'OR inatteignable.
+    @patch("engine_simple.strategy.MOM20x3")
+    def test_process_m15_disabled_by_default(self, mock_mom, pipeline):
+        """Le filtre M15 ne doit PAS bloquer le signal quand ENABLE_M15_CONFIRMATION=False."""
+        assert pipeline._enable_m15 is False
+        # Même si la confirmation M15 renverrait False (bougie opposée), le signal passe.
+        pipeline._check_m15_confirmation = MagicMock(return_value=False)
+        mock_mom.return_value = _make_mock_mom20x3()
+        result = pipeline.process(
+            symbol="EURUSD",
+            cycle_count=1,
+            degraded_symbols={},
+            sym_dir_counts={},
+            sym_total_counts={},
+            config_limits={"EURUSD": 4},
+            last_signals={},
+            log_throttle={},
+        )
+        assert result is not None
+
+    @patch("engine_simple.strategy.MOM20x3")
+    def test_process_m15_blocked_when_enabled(self, mock_mom, pipeline):
+        """Quand ENABLE_M15_CONFIRMATION=True, un M15 opposé bloque bien le signal."""
+        pipeline._enable_m15 = True
+        pipeline._check_m15_confirmation = MagicMock(return_value=False)
+        mock_mom.return_value = _make_mock_mom20x3()
+        result = pipeline.process(
+            symbol="EURUSD",
+            cycle_count=1,
+            degraded_symbols={},
+            sym_dir_counts={},
+            sym_total_counts={},
+            config_limits={"EURUSD": 4},
+            last_signals={},
+            log_throttle={},
+        )
+        assert result is None
 
     def test_process_none_on_pre_trade_fail(self, pipeline, mock_risk_manager):
         mock_risk_manager.pre_trade.return_value = (

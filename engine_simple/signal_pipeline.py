@@ -73,6 +73,11 @@ class SignalPipeline:
         self.symbol_limits = symbol_limits
         self.symbol_timeframes = symbol_timeframes
         self.symbol_execution_timeframes = symbol_execution_timeframes or {}
+        # 🔧 14 Aout 2026: filtre M15 désactivé par défaut (alignement backtest).
+        # Le backtest validé (PF 1.18-1.25) n'inclut pas la confirmation M15 — en
+        # marché baissier elle bloquait 100% des signaux BUY (bougie M15 rouge vs
+        # signal H1 BUY) → RÈGLE D'OR inatteignable. Flag contrôlé par la config.
+        self._enable_m15 = bool(getattr(config, "ENABLE_M15_CONFIRMATION", False))
         # Cache des AdaptiveParameters par symbole
         self._adaptive_params: dict = {}
         # Cache get_rates() par (symbole, timeframe, count) — évite appels MT5 redondants
@@ -312,7 +317,10 @@ class SignalPipeline:
         # Phase finale: M15 Confirmation (exécution de précision)
         # La dernière bougie M15 fermée doit confirmer la direction du signal.
         # Si pas de confirmation → attendre le prochain cycle (15s).
-        if not self._check_m15_confirmation(symbol, signal):
+        # 🔧 14 Aout 2026: DÉSACTIVÉ par défaut (config ENABLE_M15_CONFIRMATION).
+        # Le backtest validé n'inclut pas ce filtre — il bloquait les signaux BUY
+        # valides (US100 score 0.85) quand la bougie M15 était rouge en marché baissier.
+        if self._enable_m15 and not self._check_m15_confirmation(symbol, signal):
             return None
 
         # 🔧 RÉTRACTÉ 28 Juillet 2026: Le fingerprint via last_signals était trop agressif.

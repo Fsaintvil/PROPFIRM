@@ -103,6 +103,10 @@ class TradingConfig(BaseModel):
 class SignalConfig(BaseModel):
     min_score: float = Field(default=0.70, ge=0.0, le=1.0)  # ↑ 1er Juillet 2026 (0.60→0.70)
     daily_profit_limit_pct: float = Field(default=0.008, ge=0.0, le=0.05)
+    # 🔧 14 Aout 2026: filtre M15 désactivé — le backtest validé (PF 1.18-1.25)
+    # n'inclut PAS ce filtre. En marché baissier il bloquait 100% des signaux BUY
+    # (bougie M15 rouge pendant que H1 signale BUY) → RÈGLE D'OR inatteignable.
+    enable_m15_confirmation: bool = Field(default=False, description="Confirmation M15 avant exécution (désactivé: alignement backtest)")
 
 
 class RiskConfig(BaseModel):
