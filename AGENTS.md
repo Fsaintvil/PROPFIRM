@@ -1,5 +1,16 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 14 Août 2026 (14:20)** : 🔥 **XAUUSD + 7 PAIRES PRIMAIRES réactivées** (décision
+> utilisateur). **13 symboles actifs** : US100.cash, US30.cash, JP225.cash, SOLUSD, BTCUSD (repositionnement
+> 13 Août) + **XAUUSD, EURUSD, GBPUSD, USDJPY, USDCAD, AUDUSD, NZDUSD, USDCHF**. Garde-fous :
+> **BUY-only partout** (allow_shorts=false — SELL = WR 34% historique = −2 925 $), `XAUUSD risk_mult`
+> 0.0→**1.0** (c'était un bloqueur de trades), `min_score` XAUUSD 0.75→**0.65** (cohérent mode preuve),
+> max_lot XAUUSD 0.05 / EURUSD-USDJPY-USDCAD 0.05 / GBPUSD 0.15 / AUDUSD 0.12 / NZDUSD 0.10 / USDCHF 0.01.
+> ⚠️ Le Forex est un **perdant structurel après coûts** (EURUSD PF 0.74, USDJPY 0.96) mais c'est une
+> décision utilisateur explicite. Fallback `ACTIVE_SYMBOLS` dans trading_engine.py = `cfg.SYMBOLS`
+> (le hardcode 5 symboles ignorait les nouveaux). `.env` `SYMBOLS` étendu à 13. Backups :
+> `config/backup_default_20260814_avant_xauusd_forex.yaml`, `.env.bak_20260814_avant_xauusd_forex`.
+> Suite de tests : **1166 passed**. Commit `c277b9db4`.
 > **Mise à jour 13 Août 2026 (23:30)** : 🔥 **BTCUSD activé** (décision utilisateur) — groupe CRYPTO
 > indépendant (2 slots de corrélation libres, PF backtest 1.18, spread live 100 pts = 0.4% ATR H1),
 > BUY-only. **Paramètres assouplis** : `min_score` 0.70 → **0.65** (+~30% de signaux, risque WR
