@@ -500,8 +500,9 @@ class TestPhase1MOM20x3:
     @patch("engine_simple.strategy.MOM20x3")
     def test_ol_base_thresh_from_symbol_config_btcusd(self, mock_mom, pipeline, mock_mt5, mock_adaptive):
         """🔧 FIX 14 Août 2026: le base_thresh passé à l'OL doit venir de la config
-        du symbole (strategy.py), PAS du hardcode 2.5. BTCUSD=5.0 (validé au backtest
-        PF 1.18) → l'OL fallback doit recevoir 5.0 et non 2.5."""
+        du symbole (strategy.py), PAS du hardcode 2.5. BTCUSD=2.5/2.0 (aligné backtest
+        16 Août 2026, PF 1.18 / 6250 trades — l'ancien 5.0/5.0 n'a jamais été validé)
+        → l'OL fallback doit recevoir 2.5 et non un autre seuil."""
         mock_mom.return_value = _make_mock_mom20x3()
         # Capture l'argument base_thresh passé à get_params
         captured = {}
@@ -513,10 +514,10 @@ class TestPhase1MOM20x3:
         mock_adaptive.learner.get_params.side_effect = _fake_get_params
         pipeline._rates_cache.clear()
         signal = pipeline._phase1_mom20x3("BTCUSD")
-        # Le signal peut être None (filtres aval), mais l'OL DOIT avoir reçu 5.0
-        assert captured["base_thresh"] == 5.0, (
-            f"OL base_thresh BTCUSD = {captured['base_thresh']} (attendu 5.0) "
-            f"— le fallback 2.5 hardcodé ferait trader BTCUSD 2× plus agressif que la validation"
+        # Le signal peut être None (filtres aval), mais l'OL DOIT avoir reçu 2.5
+        assert captured["base_thresh"] == 2.5, (
+            f"OL base_thresh BTCUSD = {captured['base_thresh']} (attendu 2.5) "
+            f"— source de vérité = strategy.py:SYMBOL_CONFIG (aligné backtest 16/08)"
         )
 
     @patch("engine_simple.strategy.MOM20x3")

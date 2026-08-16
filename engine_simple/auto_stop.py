@@ -177,7 +177,13 @@ def save_state(state: dict[str, Any]) -> None:
     try:
         # Utiliser _NumpyEncoder au lieu de default=str pour éviter
         # la corruption des types booléens (np.bool_ → chaîne "False"/"True")
-        STATE_FILE.write_text(json.dumps(state, indent=2, cls=_NumpyEncoder))
+        # Écriture atomique : tmp + replace (Vague 5, hygiène)
+        tmp = STATE_FILE.with_suffix(".json.tmp")
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(json.dumps(state, indent=2, cls=_NumpyEncoder))
+            f.flush()
+            os.fsync(f.fileno())
+        tmp.replace(STATE_FILE)
     except OSError as e:
         logger.error(f"Erreur sauvegarde auto_state: {e}")
 

@@ -175,7 +175,6 @@ class ChallengeTracker:
         # FTMO conçoit la règle pour des profits significatifs. < $100 = bruit statistique.
         if sum(positive_days) < 100:
             return
-        best_day = max(positive_days)
         positive_total = sum(positive_days)
         max_per_day = positive_total * self.consistency_max_pct
         for day, day_pnl in sorted(self.daily_pnl_by_date.items()):
@@ -228,7 +227,12 @@ class ChallengeTracker:
                 f"minuit UTC. Trading bloqué pour aujourd'hui."
             )
 
-        self._daily_loss_violated = daily_loss_pct >= daily_loss_limit
+        # 🐛 FIX 16 Août 2026 (Audit A3): LATCh — une fois le daily loss dépassé,
+        # le flag reste True jusqu'au _reset_daily() de minuit UTC. FTMO applique
+        # la règle sur le pire niveau du jour : une remontée d'equity intraday
+        # ne doit PAS ré-autoriser le trading.
+        if not self._daily_loss_violated:
+            self._daily_loss_violated = daily_loss_pct >= daily_loss_limit
         if self._daily_loss_violated:
             logger.warning(f"DAILY LOSS LIMIT: {daily_loss_pct:.1%} — trading bloqué pour aujourd'hui")
 
@@ -364,6 +368,9 @@ class ChallengeTracker:
             self._symbol_daily_pnl = {}
             self._opened_today = 0
             self._daily_profit_reduced = False
+            # 🐛 FIX 16 Août 2026 (Audit A3): reset du latch daily loss au minuit
+            # UTC (le latch est arme en intraday par _check_daily_loss_limit).
+            self._daily_loss_violated = False
             account = self.mt5.get_account_info()
             if account:
                 self.daily_start_equity = account.equity
@@ -1212,6 +1219,12 @@ class FTMOProtector:
 
     def _check_ftmo_status(self) -> tuple[bool, str | None]:
         """Challenge expiry, profit target, consistency."""
+        # 🐛 FIX 16 Août 2026 (Audit A2): FAILED_DD / FAILED_EXPIRY / FAILED_CONSISTENCY
+        # doivent bloquer définitivement can_trade. Avant ce fix, un challenge perdu
+        # (DD dépassé) pouvait continuer à trader tant que le DD courant < seuil.
+        if self.challenge_status in ("FAILED_DD", "FAILED_EXPIRY", "FAILED_CONSISTENCY", "PASSED"):
+            return False, f"FTMO: challenge terminé ({self.challenge_status}) — trading bloqué"
+
         # Max trading days
         if self.max_trading_days > 0 and len(self.trading_days) >= self.max_trading_days:
             self.challenge_status = "FAILED_EXPIRY"
@@ -1645,7 +1658,11 @@ class FTMOProtector:
     ) -> float:
         account = self.mt5.get_account_info()
         if account is None:
-            return 0.05
+            # 🐛 FIX 16 Août 2026 (Audit M-EX1): retournait 0.05 fixe (trade SANS
+            # contrôle de risque si MT5 down). Désormais REFUS (0.0) — un trade
+            # ne doit jamais partir sans compte valide.
+            logger.warning(f"[LOT] {symbol}: account=None (MT5 down?) → lot=0 (refus)")
+            return 0.0
         current_equity = account.equity
 
         # 🔒 GARDE-FOU MAX TOTAL LOTS: refuse tout trade si le volume total
@@ -1655,12 +1672,14 @@ class FTMOProtector:
             all_pos = self.mt5.get_positions()
             total_vol = sum(getattr(p, "volume", 0) or 0 for p in all_pos) if all_pos else 0
             if total_vol >= MAX_TOTAL_LOTS:
+                # 🐛 FIX 16 Août 2026 (Audit M-EX3): retournait min_lot au lieu de
+                # refuser → le volume total CONTINUAIT de croître (anti-runaway
+                # inopérant). Retourne 0.0 = refus clair.
                 logger.warning(
                     f"[LOT SAFETY] Volume total {total_vol:.2f} >= MAX_TOTAL_LOTS={MAX_TOTAL_LOTS} "
-                    f"— refus nouveau trade {symbol}, retour min_lot"
+                    f"— refus nouveau trade {symbol} (lot=0)"
                 )
-                min_lot = self.symbol_limits.get(symbol, {}).get("min_lot", 0.05)
-                return min_lot
+                return 0.0
         except Exception as e:
             logger.debug(f"[LOT SAFETY] Volume check failed: {e}")
 
@@ -1677,6 +1696,17 @@ class FTMOProtector:
             risk_amount *= 0.20  # ×0.20 au lieu de ×0.93 → 80% de réduction
             logger.warning(f"  [DD CRITICAL] {symbol}: DD peak {dd_peak:.1%} > 7% → risk ×0.20")
         risk_amount *= quality
+
+        # 🐛 FIX 16 Août 2026 (Audit M-EX4): _daily_profit_reduced était posé
+        # (log "risk reduit a 25%") mais JAMAIS lu → la réduction annoncée
+        # n'avait aucun effet sur le lot. Appliquée ici : risk × 0.25 quand
+        # le profit journalier dépasse DAILY_PROFIT_LIMIT_PCT.
+        if getattr(self, "_daily_profit_reduced", False):
+            risk_amount *= 0.25
+            logger.debug(
+                f"  [PROFIT LIMIT] {symbol}: _daily_profit_reduced=True → risk ×0.25 "
+                f"(risk_amount={risk_amount:.2f})"
+            )
 
         # Friday risk reduction SUPPRIMÉE — mode 24/7
 
@@ -1788,8 +1818,11 @@ class FTMOProtector:
         """Enregistre un trade qui VIENT d'être ouvert.
         Permet au MAX_TRADES_PER_DAY de compter aussi les trades ouverts,
         pas seulement les fermés (était la cause des 222 trades/jour)."""
-        self._opened_today += 1
+        # 🐛 FIX 16 Août 2026 (Audit M-EX7): _reset_daily() AVANT l'incrément.
+        # L'ancien ordre (incrément puis reset) perdait le trade quand le jour
+        # UTC changeait entre les deux → MAX_TRADES_PER_DAY non compté à minuit.
         self._reset_daily()  # reset si jour a changé
+        self._opened_today += 1
 
     def refresh_symbol_limits(self) -> None:
         """Recharge les symbol_limits depuis la config globale.

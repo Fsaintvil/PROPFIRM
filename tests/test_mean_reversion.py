@@ -1,14 +1,19 @@
 """Tests pour MeanReversion — stratégie RSI en marché RANGING (ADX<18).
 
-Teste :
-1. _generate_mr_signal() : déclenchement RSI < 30 / > 70
+⚠️ DÉSACTIVÉ 16 Août 2026 (Robot Manager): le fallback MR est neutralisé
+dans signal_pipeline.process() (Phase 1b). La fonction _generate_mr_signal
+est conservée pour référence mais n'est plus appelée — un signal primaire
+échoué retourne None (pas de fallback).
+
+Tests conservés :
+1. _generate_mr_signal() : logique de la fonction (unitaire, référence)
 2. Bypass Phase 2 (ADX) : MR ne doit pas être filtré par l'ADX threshold
 3. Bypass Phase 6 (Strategy Selector) : MR ne doit pas être rejeté
 4. Bypass Phase 7 (Volume Profile) : MR ne doit pas être modifié
 5. Bypass Phase 7b (RVOL/CMF) : MR ne doit pas être pénalisé
 6. Bypass Phase 7c (OBV) : MR ne doit pas être pénalisé
 7. Bypass Phase 9 (MTF) : MR ne doit pas être filtré
-8. Pipeline complet : MR doit produire un SignalResult
+8. Pipeline complet : MR désactivé → pas de SignalResult (même en RSI extrême)
 9. MOM20x3 prime sur MR
 """
 
@@ -320,7 +325,8 @@ class TestMRPipelineFull:
     @patch("engine_simple.indicators.rsi")
     @patch("engine_simple.indicators.adx")
     def test_mr_oversold_flow(self, mock_adx, mock_rsi):
-        """Un MR oversold doit passer tout le pipeline et retourner un SignalResult."""
+        """⚠️ FIX 16 Août 2026: MR DÉSACTIVÉ — même en RSI oversold, le fallback
+        ne produit plus de signal. process() retourne None (MOM échoué)."""
         rsi_arr = np.full(100, 25.0)
         mock_rsi.return_value = rsi_arr
         mock_adx.return_value = (12.0, 15.0, 10.0)
@@ -338,16 +344,13 @@ class TestMRPipelineFull:
             last_signals={},
             log_throttle={},
         )
-        assert result is not None, "MR oversold devrait produire un SignalResult"
-        assert isinstance(result, SignalResult)
-        assert result.signal["_strategy"] == "MR"
-        assert result.signal["action"] == "BUY"
-        assert result.signal["rsi"] < 30
+        assert result is None, "MR désactivé → pas de SignalResult même en RSI oversold"
 
     @patch("engine_simple.indicators.rsi")
     @patch("engine_simple.indicators.adx")
     def test_mr_overbought_flow(self, mock_adx, mock_rsi):
-        """Un MR overbought doit passer tout le pipeline."""
+        """⚠️ FIX 16 Août 2026: MR DÉSACTIVÉ — même en RSI overbought, le fallback
+        ne produit plus de signal. process() retourne None (MOM échoué)."""
         rsi_arr = np.full(100, 75.0)
         mock_rsi.return_value = rsi_arr
         mock_adx.return_value = (15.0, 20.0, 8.0)
@@ -365,10 +368,7 @@ class TestMRPipelineFull:
             last_signals={},
             log_throttle={},
         )
-        assert result is not None, "MR overbought devrait produire un SignalResult"
-        assert isinstance(result, SignalResult)
-        assert result.signal["_strategy"] == "MR"
-        assert result.signal["action"] == "SELL"
+        assert result is None, "MR désactivé → pas de SignalResult même en RSI overbought"
 
     @patch("engine_simple.indicators.rsi")
     def test_mr_neutral_flow(self, mock_rsi):

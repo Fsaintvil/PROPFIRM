@@ -28,6 +28,15 @@ class PreTradeChecklist:
     def __init__(self, ftmo: Any, audit: Optional[Any] = None) -> None:
         self.ftmo = ftmo
         self.audit = audit
+        # 🐛 FIX 16 Août 2026 (Quant Auditor): log_risk_check était émis à CHAQUE
+        # pre_trade × chaque symbole × chaque batch (BATCH_INTERVAL_SEC=1) →
+        # ~13 entrées "risk_check PASS" par seconde → audit trail noyé (rotation
+        # toutes les 10-15 min, FAIL réels invisibles, I/O permanent).
+        # Correction: ne logger que sur CHANGEMENT d'état (PASS↔FAIL) par symbole,
+        # plus un PASS heartbeat toutes les 60s (preuve de vie sans bruit).
+        self._last_rc_state: dict[str, str] = {}
+        self._last_rc_ts: dict[str, float] = {}
+        self._RC_HEARTBEAT_SEC = 60.0
 
     def check(
         self, symbol: str, signal: Optional[dict[str, Any]] = None, positions: Optional[list[Any]] = None
@@ -71,7 +80,13 @@ class PreTradeChecklist:
             )
 
         if signal:
-            rr = signal.get("rr", 0)
+            # 🐛 FIX 16 Août 2026 (Quant Auditor): signal.get("rr", 0) → toujours 0
+            # car la clé "rr" n'est jamais posée par le pipeline → 0 < MIN_RR_RATIO →
+            # deadlock total (TOUS les trades bloqués) si pre_trade est appelé avec
+            # un signal. Même convention que trading_engine.py:1927 : défaut fail-open
+            # (rr par défaut = MIN_RR_RATIO × 1.5) — le RR réel est vérifié en aval
+            # par signal_validator + le gate final trading_engine.
+            rr = signal.get("rr", cfg.MIN_RR_RATIO * 1.5)
             if rr < cfg.MIN_RR_RATIO:
                 checks.append(
                     {
@@ -84,11 +99,19 @@ class PreTradeChecklist:
                 all_pass = False
 
         if self.audit:
-            self.audit.log_risk_check(
-                "PASS" if all_pass else "FAIL",
-                symbol,
-                {c["rule"]: c["pass"] for c in checks},
-            )
+            state = "PASS" if all_pass else "FAIL"
+            now = time.time()
+            prev = self._last_rc_state.get(symbol)
+            last_ts = self._last_rc_ts.get(symbol, 0)
+            # Logger sur changement d'état OU heartbeat périodique (PASS seulement)
+            if prev != state or (state == "PASS" and now - last_ts > self._RC_HEARTBEAT_SEC):
+                self.audit.log_risk_check(
+                    state,
+                    symbol,
+                    {c["rule"]: c["pass"] for c in checks},
+                )
+                self._last_rc_state[symbol] = state
+                self._last_rc_ts[symbol] = now
 
         return all_pass, checks
 
@@ -182,7 +205,16 @@ class StressTester:
             move = scenario["move_sigma"] * atr if "move_sigma" in scenario else price * scenario["move_pct"]
             new_price = price + move
             pnl = (new_price - entry) * direction * lot * 100000
-            hits_sl = (move < 0 and new_price <= sl) or (move > 0 and new_price >= sl)
+            # 🐛 FIX 16 Août 2026 (Quant Auditor): la condition direction-agnostique
+            # déclarait hits_sl=True pour les mouvements FAVORABLES (BUY + up-move :
+            # new_price > entry > sl → new_price >= sl → True; SELL + down-move
+            # identique). Un BUY ne peut PAS toucher son SL (sous l'entrée) sur un
+            # move haussier. Logique correcte : BUY → SL touché si new_price <= sl ;
+            # SELL → SL touché si new_price >= sl.
+            if direction == 1:  # BUY
+                hits_sl = new_price <= sl
+            else:  # SELL
+                hits_sl = new_price >= sl
             results[name] = {
                 "pnl_estimate": round(pnl, 2),
                 "hits_sl": hits_sl,

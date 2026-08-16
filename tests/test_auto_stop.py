@@ -227,33 +227,38 @@ class TestLoadState:
 @patch("engine_simple.auto_stop.STATE_FILE", new_callable=MagicMock)
 class TestSaveState:
     def test_writes_state(self, mock_file):
-        mock_file.parent.mkdir = MagicMock()
-        state = {"auto_paused": True}
-        with patch("engine_simple.auto_stop.STATE_FILE.write_text") as mock_write:
-            save_state(state)
-            mock_write.assert_called_once()
-            args, _ = mock_write.call_args
-            parsed = json.loads(args[0])
-            assert parsed["auto_paused"] is True
+        # Vague 5: save_state écrit en atomique (tmp+replace) — on teste sur un
+        # vrai fichier temporaire (pattern identique à test_adaptive_intelligence).
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as d:
+            target = Path(d) / "auto_state.json"
+            with patch("engine_simple.auto_stop.STATE_FILE", target):
+                save_state({"auto_paused": True})
+                parsed = json.loads(target.read_text())
+                assert parsed["auto_paused"] is True
 
     def test_oserror_logged(self, mock_file):
-        mock_file.parent.mkdir = MagicMock()
-        state = {"auto_paused": True}
-        with patch("engine_simple.auto_stop.STATE_FILE.write_text") as mock_write:
-            mock_write.side_effect = OSError("disk full")
-            with patch("engine_simple.auto_stop.logger") as mock_log:
-                save_state(state)
-                mock_log.error.assert_called_once()
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as d:
+            target = Path(d) / "auto_state.json"
+            with patch("engine_simple.auto_stop.STATE_FILE", target):
+                with patch("engine_simple.auto_stop.os.fsync", side_effect=OSError("disk full")):
+                    with patch("engine_simple.auto_stop.logger") as mock_log:
+                        save_state({"auto_paused": True})
+                        mock_log.error.assert_called_once()
 
     def test_handles_numpy_types(self, mock_file):
-        mock_file.parent.mkdir = MagicMock()
-        state = {"val": np.float64(2.5), "flag": np.bool_(True)}
-        with patch("engine_simple.auto_stop.STATE_FILE.write_text") as mock_write:
-            save_state(state)
-            args, _ = mock_write.call_args
-            parsed = json.loads(args[0])
-            assert parsed["val"] == 2.5
-            assert parsed["flag"] is True
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as d:
+            target = Path(d) / "auto_state.json"
+            with patch("engine_simple.auto_stop.STATE_FILE", target):
+                save_state({"val": np.float64(2.5), "flag": np.bool_(True)})
+                parsed = json.loads(target.read_text())
+                assert parsed["val"] == 2.5
+                assert parsed["flag"] is True
 
 
 # ── check_adx ────────────────────────────────────────────────────────

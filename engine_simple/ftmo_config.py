@@ -4,6 +4,15 @@ Extrait de ftmo_protector.py pour réduire la god class.
 Calibration spécifique par actif (Juin 2026).
 """
 
+# Import défensif : config_simple peut être en cours de chargement (cycle
+# d'import). Fallback = 4 (valeur production.yaml) si indisponible.
+try:
+    import config_simple as cfg
+
+    _MAX_POS_PER_SYMBOL_DEFAULT = cfg.MAX_POSITIONS_PER_SYMBOL
+except Exception:  # pragma: no cover — dépendance d'import
+    _MAX_POS_PER_SYMBOL_DEFAULT = 4
+
 # ============================================================================
 # TRAILING STOP — Par actif et par régime
 # ============================================================================
@@ -215,8 +224,13 @@ RISK_MULT_CAP = {
 }
 
 # Per-symbol max positions — 27 symboles (fix M12: valeur globale depuis YAML)
+# 🐛 FIX 16 Août 2026 (Data Manager): était hardcodé à 6 alors que la config
+# réelle MAX_POSITIONS_PER_SYMBOL = 4 (default.yaml 3 / production.yaml 4).
+# Le portfolio_controller bloquait déjà à 4 en aval, mais le pipeline autorisait
+# 6 → divergence silencieuse (signaux générés puis rejetés). Aligné sur la
+# config effective pour une source unique de vérité.
 MAX_POS_PER_SYMBOL = {
-    sym: 6
+    sym: _MAX_POS_PER_SYMBOL_DEFAULT
     for sym in [
         "XAUUSD",
         "BTCUSD",
@@ -253,12 +267,6 @@ MAX_POS_PER_SYMBOL = {
 DD_REDUCE_THRESHOLD = 0.05  # 5% DD → risk × (1 - dd_peak)
 DD_CRITICAL_THRESHOLD = 0.07  # 7% DD → risk × 0.20 (aggressive reduction)
 DD_AUTODISABLE_THRESHOLD = 0.20  # 20% WR → auto-disable symbol
-
-# ============================================================================
-# TIME-STOP — Maximum position hold duration
-# ============================================================================
-MAX_POSITION_HOLD_HOURS = 12  # hours before time-stop
-TIME_STOP_MIN_PROFIT_ATR = 0.5  # minimum profit in ATR to trigger time-stop
 
 # ============================================================================
 # PULLBACK FILTER — Score threshold for pullback enforcement

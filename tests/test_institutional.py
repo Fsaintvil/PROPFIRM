@@ -12,6 +12,8 @@ os.environ["LOG_LEVEL"] = "CRITICAL"
 
 import numpy as np
 
+import pytest
+
 import config_simple as cfg
 from engine_simple.audit_trail import AuditTrail
 from engine_simple.broker import Broker, LatencyTracker
@@ -300,12 +302,15 @@ def test_broker_delegates_calls():
 
 
 def test_broker_raises_on_disconnect():
+    """Le broker doit lever ConnectionError quand MT5 est déconnecté.
+
+    🐛 FIX 16 Août 2026 (Audit C3): l'ancien test utilisait
+    `except (ConnectionError, Exception): pass` qui attrapait AUSSI
+    l'AssertionError → le test passait TOUJOURS sans rien vérifier.
+    """
     mt5_mock = MagicMock()
     broker = Broker(mt5_mock, max_connect_attempts=1)  # 1 tentative = pas de backoff
     broker._connected = False
     mt5_mock.connect.return_value = False
-    try:
+    with pytest.raises(ConnectionError):
         broker.get_symbol_info("EURUSD")
-        raise AssertionError("Expected ConnectionError")
-    except (ConnectionError, Exception):
-        pass

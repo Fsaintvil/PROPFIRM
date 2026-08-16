@@ -68,12 +68,17 @@ SYMBOL_STRATEGY_MAP: dict[str, str] = {
 # STRATEGY_MODULES — mapping nom de stratégie → module Python
 # ═══════════════════════════════════════════════════════════════════════════════
 # Utilisé pour l'import dynamique dans signal_pipeline.py
-# Les stratégies built-in (MOM20x3, MR) sont importées directement.
+# Les stratégies built-in (MOM20x3, TrendFollow) sont importées directement.
+# MeanReversion désactivé 16 Août 2026 — plus dans le mapping.
 
 STRATEGY_MODULES: dict[str, str] = {
     "MOM20x3": "engine_simple.strategy",
     "TrendFollow": "engine_simple.strategy_trend_follow",
-    "MeanReversion": "",  # Gérée séparément dans signal_pipeline._generate_mr_signal()
+    # ⚠️ MeanReversion DÉSACTIVÉ 16 Août 2026 (FIX Robot Manager):
+    # jamais déclenché en production (0 trade), conditions RSI+ADX antinomiques
+    # (0 occurrence sur 300 barres réelles), et rejeté par min_score/RR en aval.
+    # Le fallback dans signal_pipeline.process() (Phase 1b) est neutralisé.
+    # "MeanReversion": "",  # ← retiré du mapping (module vide obsolète)
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════

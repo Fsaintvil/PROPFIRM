@@ -154,11 +154,21 @@ class TestAuditTrail:
 
     def test_flush(self):
         audit = self._make_audit()
+        d = self._tmp_dirs[-1].name
         audit.log_decision("test", {"k": "v"})
         audit.flush()
         audit.close()
+        # 🔧 FIX M-S3: flush() doit avoir persisté l'entrée sur disque
+        lines = list(Path(d, "decisions.jsonl").read_text().strip().splitlines())
+        assert len(lines) == 1, f"flush() n'a pas persisté l'entrée (lignes: {len(lines)})"
+        assert json.loads(lines[0])["context"] == {"k": "v"}
 
     def test_close(self):
         audit = self._make_audit()
+        d = self._tmp_dirs[-1].name
         audit.log_decision("test", {"k": "v"})
         audit.close()
+        # 🔧 FIX M-S3: close() = flush + fermeture des handlers → entrée persistée
+        lines = list(Path(d, "decisions.jsonl").read_text().strip().splitlines())
+        assert len(lines) == 1, f"close() n'a pas persisté l'entrée (lignes: {len(lines)})"
+        assert json.loads(lines[0])["type"] == "test"

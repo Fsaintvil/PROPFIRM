@@ -100,10 +100,38 @@ def check_pid_health() -> dict:
 
 
 def check_orphan_tmp_files() -> int:
-    """Nettoie les fichiers .tmp orphelins — retourne le nombre supprimé."""
+    """Nettoie les fichiers .tmp orphelins — retourne le nombre supprimé.
+
+    🐛 FIX 16 Août 2026 (Audit B5): NE SUPPRIME QUE les .tmp ÂGÉS > 5 min.
+    Les écritures atomiques du robot (ol_state.json.tmp, performance_history.tmp,
+    robot_state.tmp, heartbeat.tmp) créent un .tmp puis font tmp.replace(path)
+    dans la même seconde. Supprimer un .tmp récent = casser l'écriture atomique
+    en cours → perte d'état. On protège aussi les noms d'état connus.
+    """
     cleaned = 0
+    PROTECTED_TMP = {
+        "ol_state.json.tmp", "performance_history.tmp", "robot_state.tmp",
+        "heartbeat.tmp", "calibration_state.json.tmp", "adaptive_",
+    }
+    now = time.time()
+    MIN_AGE_S = 300  # 5 min
+
+    def _is_safe_to_delete(f: Path) -> bool:
+        name = f.name
+        for prot in PROTECTED_TMP:
+            if name == prot or name.startswith(prot):
+                logger.debug(f"[CLEAN] Protégé (état actif du robot): {f}")
+                return False
+        # Ne supprimer que les fichiers suffisamment vieux
+        try:
+            return (now - f.stat().st_mtime) > MIN_AGE_S
+        except OSError:
+            return False
+
     for pattern in ["*.tmp", "*.tmp.*"]:
         for f in Path(".").glob(pattern):
+            if not _is_safe_to_delete(f):
+                continue
             try:
                 f.unlink()
                 cleaned += 1
@@ -112,6 +140,8 @@ def check_orphan_tmp_files() -> int:
                 logger.debug(f"[CLEAN] Erreur suppression {f}: {e}")
     if RUNTIME_DIR.exists():
         for f in RUNTIME_DIR.glob("*.tmp"):
+            if not _is_safe_to_delete(f):
+                continue
             try:
                 f.unlink()
                 cleaned += 1

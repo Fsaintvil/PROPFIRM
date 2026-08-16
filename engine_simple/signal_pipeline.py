@@ -169,11 +169,18 @@ class SignalPipeline:
         # Phase 1a: Signal primaire selon Strategy Registry (MOM20x3 par défaut)
         signal = self._phase1_primary_strategy(symbol)
 
-        # Phase 1b: MeanReversion fallback (si stratégie primaire échoue ET marché en RANGING)
+        # ── Phase 1b: MeanReversion fallback — DÉSACTIVÉ 16 Août 2026 ──────
+        # Diagnostic: le MR ne s'est JAMAIS déclenché en production (0 trade,
+        # 0 log "[MR FALLBACK]"). Analyse quantitative sur 300 barres réelles:
+        #   123 barres en RANGING (ADX<18) mais 0 avec RSI<30 ou RSI>70
+        #   → conditions antinomiques (RSI extrême arrive en trend, pas en range).
+        # De plus, même déclenché il aurait été rejeté en aval:
+        #   - score 0.60 < min_score 0.65-0.75 (signal_validator)
+        #   - RR 1.5 < MIN_RR_RATIO 1.8 (protector FTMO)
+        # Décision: désactiver proprement (le robot est en RÈGLE D'OR — seuls
+        # les trades MOM20x3 purs comptent pour les 100 trades requis).
         if signal is None:
-            signal = self._generate_mr_signal(symbol)
-            if signal is not None:
-                logger.debug(f"  [MR FALLBACK] {symbol}: stratégie primaire échouée, MeanReversion pris")
+            logger.debug(f"  [MR] {symbol}: fallback MeanReversion DÉSACTIVÉ (FIX 16 Août 2026)")
 
         if signal is None:
             return None
@@ -338,7 +345,8 @@ class SignalPipeline:
         """Génère le signal selon la stratégie assignée au symbole (Strategy Registry).
 
         Délègue à la méthode appropriée selon la stratégie configurée pour ce symbole.
-        Par défaut: MOM20x3. Nouveautés: TrendFollow, MeanReversion (via fallback).
+        Par défaut: MOM20x3. Nouveautés: TrendFollow.
+        ⚠️ MeanReversion DÉSACTIVÉ 16 Août 2026 (via fallback neutralisé en Phase 1b).
         """
         from engine_simple.strategy_registry import get_strategy_for
 
@@ -756,7 +764,12 @@ class SignalPipeline:
     def _generate_mr_signal(self, symbol: str) -> dict | None:
         """Génère un signal MeanReversion en marché RANGING (ADX<18).
 
-        Logique :
+        ⚠️ DÉSACTIVÉ 16 Août 2026 — fonction conservée pour référence.
+        Le fallback est désactivé dans process() (Phase 1b): jamais déclenché
+        en production (0 trade), conditions RSI+ADX antinomiques, et rejeté
+        par min_score/RR en aval. Voir le commentaire Phase 1b.
+
+        Logique historique (avant désactivation):
         - RSI < 30 → BUY (suracheté, retour vers la moyenne)
         - RSI > 70 → SELL (survendu, retour vers la moyenne)
         - TP = 1.5×ATR (petite cible, les ranges ne vont pas loin)
@@ -858,7 +871,6 @@ class SignalPipeline:
         """Vérifie le seuil ADX. Plus de bypass — le bypass centralisé gère les exceptions."""
         signal_adx = signal.get("adx", 0)
         sym_cfg = self.symbol_limits.get(symbol, {})
-        signal_score = signal.get("score", 0.6)
 
         # 🔧 FIX 22 Juillet 2026: Révision Pipeline — bypass ADX supprimé
         # Ancien: les signaux score>=0.80 bypassaient ADX, créant un trou dans le filtre.
@@ -1207,7 +1219,6 @@ class SignalPipeline:
                     df = self._to_dataframe(recent_higher)
                     mtf_confirmed, mtf_factor = self.mtf_confirm.confirm(None, df, signal.get("action"))
                     if mtf_factor != 1.0:
-                        old_score = signal["score"]
                         signal["score"] = max(0.3, min(0.95, signal["score"] * mtf_factor))
                         signal["mtf_factor"] = mtf_factor
         except Exception as e:
@@ -1218,11 +1229,17 @@ class SignalPipeline:
 
     def _phase12_adaptive_params(self, symbol: str, signal: dict) -> None:
         try:
-            from engine_simple.adaptive_params import AdaptiveParameters
+            from engine_simple.adaptive_params import get_adaptive
 
-            if symbol not in self._adaptive_params:
-                self._adaptive_params[symbol] = AdaptiveParameters(symbol)
-            ap = self._adaptive_params[symbol]
+            # 🔧 FIX M-ML3 (16 Août 2026): Centraliser l'accès via get_adaptive()
+            # (cache module _adaptive_instances) au lieu d'instancier directement
+            # AdaptiveParameters(). Avant, signal_pipeline et position_tracker
+            # (get_adaptive) et trading_engine (_adaptive_params mort) tenaient des
+            # instances SÉPARÉES → chaque écriture écrasait
+            # runtime/adaptive_{symbol}.json avec un état mémoire divergent
+            # (last-writer-wins). get_adaptive() est désormais LA seule porte.
+            ap = get_adaptive(symbol)
+            self._adaptive_params[symbol] = ap
             adapted = ap.get_adapted_params()
             if adapted.sample_size >= 20:
                 # NE PAS multiplier par adapted.risk_mult — l'OL gère déjà le risk

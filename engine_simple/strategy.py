@@ -111,15 +111,14 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 10,
         "news_minutes_after": 10,
-        "min_score": 0.75,
+        "min_score": 0.65,  # 🔧 ALIGNÉ 14 Aout 2026: 0.75→0.65 (décision utilisateur, cohérent mode preuve)
         "adx_thresh": 22,
         "min_rr": 2.0,
-        "risk_mult": 0.0,  # 🔴 DÉSACTIVÉ 12 Août 2026 — trou noir confirmé en mode preuve
-        #    (7 trades, WR 14%, −288.65$; −2 196$ sur 89 trades au total).
-        #    ATTENTION: ce risk_mult est la VRAIE source du gel (get_symbol_param
-        #    → strategy.py, PAS config/default.yaml qui est la doc). Le signal
-        #    risk_mult = 0.0 × OL → calculate_lot → lot=0 → [GEL].
-        #    Réévaluer en mode scale si l'edge redevient positif sur paper.
+        "risk_mult": 1.0,  # 🔧 ALIGNÉ 14 Aout 2026: 0.0→1.0 (décision utilisateur — réactivation XAUUSD)
+        #    AVERTISSEMENT historique: le 14 Août seul config/default.yaml avait été mis à jour
+        #    (0.0→1.0) mais PAS strategy.py → XAUUSD restait gelé car get_symbol_param lit
+        #    strategy.py, PAS le YAML (c'était "la doc"). Aligné le 14 Aout sur la décision
+        #    utilisateur. Signal risk_mult = 1.0 × OL → calculate_lot → lot réel.
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
         "lot_base": 0.01,
@@ -137,17 +136,20 @@ SYMBOL_CONFIG = {
     "BTCUSD": {
         # ═══════════════════════════════════════════════════════════════════
         # SOLUTION A — 27 Juillet 2026: Optimisé FTMO (H1)
-        # Threshold 5.0×ATR, SL 1.5×ATR, TP 6.0×ATR
-        # Trailing: DÉSACTIVÉ, Partial TP: DÉSACTIVÉ
-        # Backtest H4 2012-2026: PF=2.07, DD=5.50%, +$175K ✅✅ FTMO-safe
+        # Threshold aligné BACKTEST 16 Août 2026: 2.5/2.0 (au lieu de 5.0/5.0)
+        # — backtest validé scripts/backtest_with_costs.py: PF 1.18, 6250 trades
+        # — 5.0/5.0 = anomalie (le backtest n'a JAMAIS été validé à 5.0)
+        # SL 1.5×ATR, TP 6.0×ATR, Trailing: DÉSACTIVÉ, Partial TP: DÉSACTIVÉ
+        # Garde-fou (16 Août 2026): si WR BTCUSD < 50% après 15-20 trades
+        #   RÈGLE D'OR → revenir à 3.5 ou plafonner contribution ≤ 25%
         # ═══════════════════════════════════════════════════════════════════
         "momentum_period": 20,
         "sl_atr_trending": 1.5,
         "tp_atr_trending": 6.0,
         "sl_atr_ranging": 1.5,
         "tp_atr_ranging": 6.0,
-        "threshold_trending": 5.0,
-        "threshold_ranging": 5.0,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
         "adx_slope_threshold": -8.0,  # 🔧 29 Juil: assoupli ×1.3 (était -6.0) — dégelé
         "adx_slope_threshold_strong": -12.0,  # 🔧 29 Juil: assoupli (était -9.0) — aligné DEFAULT
         "pullback_band_trending": 0.8,

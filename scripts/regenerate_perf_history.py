@@ -14,9 +14,20 @@ trades_log.csv (la source fiable), avec les filtres du fix:
 """
 import json
 import os
+import sys
 from collections import Counter
 from datetime import datetime, timedelta
 from pathlib import Path
+
+# 🐛 FIX 16 Août 2026 (Audit C2): charger explicitement .env — le filtre des
+# symboles désactivés était silencieusement désactivé si SYMBOLS absent.
+try:
+    from dotenv import load_dotenv
+
+    _env_path = Path(__file__).parent.parent / ".env"
+    load_dotenv(_env_path)
+except ImportError:
+    pass
 
 RUNTIME_DIR = Path(__file__).parent.parent / "runtime"
 HISTORY_FILE = RUNTIME_DIR / "performance_history.json"
@@ -25,6 +36,13 @@ CSV_FILE = RUNTIME_DIR / "trades_log.csv"
 # Symboles actifs (source .env, comme dans _import_from_csv)
 _env_syms = os.environ.get("SYMBOLS", "").strip()
 active_symbols = {s.strip() for s in _env_syms.split(",") if s.strip()}
+if not active_symbols:
+    print(
+        "❌ ERREUR: variable SYMBOLS absente/vide — le filtre des symboles "
+        "désactivés serait inopérant. Lancez ce script depuis la racine du "
+        "projet avec .env chargé (ou définissez SYMBOLS)."
+    )
+    sys.exit(1)
 
 
 def build_recent_from_csv() -> list:

@@ -64,6 +64,13 @@ class Trailer:
         self._rates_cache: dict = {}
         self._profile_cache: dict = {}
         self.peak_profit: dict = {}
+        # 🐛 FIX 16 Août 2026 (Log Analyst): le jitter ±10% était re-tiré à CHAQUE
+        # cycle (15s). Le ratchet sl_improves poussait le SL vers la borne serrée
+        # (0.9×) au fil des cycles → trailing silencieusement ~10% plus serré que
+        # la config backtestée (déviation WR/PF sans trace dans les logs).
+        # Correction: un jitter FIXE par (ticket, palier atteint) — tiré une seule
+        # fois quand le palier change, comme le fait déjà calc_sl_tp pour l'entrée.
+        self._trail_jitter_cache: dict = {}
 
     # ── Note: Utiliser FTMOProtector.check_invariants() pour la séquence production ──
 
@@ -76,13 +83,26 @@ class Trailer:
         return pips * pip_size
 
     def _get_atr(self, symbol: str, period: int = 14) -> Optional[float]:
-        """Get current ATR in price units (True Range) for a symbol (cached TTL=60s)."""
+        """Get current ATR in price units (True Range) for a symbol (cached TTL=60s).
+
+        🐛 FIX 16 Août 2026 (Audit m5): utilise le TIMEFRAME du symbole au lieu
+        de durcir H1. Avant, le trailing/partial TP des positions XAUUSD (signal
+        H4) utilisait un ATR H1 incohérent avec l'ATR de la stratégie (4× plus
+        granulaire → multiplicateurs ATR mal appliqués).
+        """
         now = time.time()
         cached = self._atr_cache.get(symbol)
         if cached and (now - cached[1]) < ATR_CACHE_TTL:
             return cached[0]
         try:
-            rates = self.mt5.get_rates(symbol, "H1", period + 5)
+            # Timeframe du symbole (H1 par défaut, H4 pour XAUUSD)
+            try:
+                import config_simple as _cfg
+
+                tf = getattr(_cfg, "SYMBOL_TIMEFRAMES", {}).get(symbol, "H1") or "H1"
+            except Exception:
+                tf = "H1"
+            rates = self.mt5.get_rates(symbol, tf, period + 5)
             if rates is None or len(rates) < period:
                 return None
             high = np.array([r[2] for r in rates], dtype=float)
@@ -162,7 +182,14 @@ class Trailer:
             return
         lot_step = getattr(info, "volume_step", 0.01)
         if isinstance(lot_step, (int, float)) and lot_step > 0:
-            close_vol = round(close_vol / lot_step) * lot_step
+            # 🐛 FIX 16 Août 2026 (Audit m1): round() Python = arrondi bancaire
+            # (round(2.5)=2, round(0.025/0.01)=0.02) → partial TP fermait 40/60
+            # au lieu de 50/50. Quantisation déterministe au lot_step le plus proche.
+            steps = close_vol / lot_step
+            # Arrondi demi-vers-le-haut explicite (évite le biais bancaire)
+            import math
+
+            close_vol = (math.floor(steps + 0.5) if steps >= 0 else math.ceil(steps - 0.5)) * lot_step
             close_vol = round(close_vol, 6)
         tick = self.mt5.get_tick(position.symbol)
         if tick is None:
@@ -279,7 +306,16 @@ class Trailer:
         if result and result.retcode == 10009:
             logger.info(f"Time-stop: {position.symbol} ferme apres {hours:.1f}h (profit={position.profit:.2f})")
         elif result and result.retcode == 10018:
-            logger.debug(f"  [TIME-STOP] {position.symbol}: rate limit, reessai dans 1h")
+            # 10018 = TRADE_RETCODE_MARKET_CLOSED (marché fermé). NB: TOO_MANY_REQUESTS
+            # est le retcode 10020 (pas 10018) — doc corrigée 16 Août 2026.
+            # 🐛 FIX 16 Août 2026: le message "reessai dans 1h" était trompeur — le
+            # cooldown réel _time_stop_cooldown est 300s (5 min, fix M8). Pendant le
+            # week-end (Forex fermé), le time-stop échoue ainsi en boucle toutes les
+            # 5 min jusqu'à l'ouverture — comportement normal, message clarifié.
+            logger.debug(
+                f"  [TIME-STOP] {position.symbol}: retcode 10018 (marché fermé / rate limit), "
+                f"réessai dans {self._time_stop_cooldown.get(ticket, 0) and '300s'}"
+            )
         elif result and result.retcode != 10009:
             logger.warning(f"TIME STOP FAILED {position.symbol}: retcode={result.retcode}")
 
@@ -315,7 +351,7 @@ class Trailer:
             f"  [TRAIL] {position.symbol} ticket={ticket} "
             f"ATR={atr_val:.5f} peak={peak:.5f} "
             f"entry={position.price_open:.5f} profit_atr={profit_atr:.2f} "
-            f"SL={position.sl:.5f} regime={regime}"
+            f"SL={position.sl if position.sl is not None else 0.0:.5f} regime={regime}"
         )
         if profit_atr <= first_thresh:
             return
@@ -326,7 +362,17 @@ class Trailer:
                 trail_dist = dist
                 break
 
-        jitter = 1.0 + random.uniform(-0.10, 0.10)
+        # 🐛 FIX 16 Août 2026: jitter FIXE par ticket au lieu de re-tirer à chaque cycle.
+        # Sans cache, le SL cliquetait vers 0.9× (borne serrée du jitter) au fil des
+        # cycles → trailing silencieusement ~10% plus serré que la config backtestée
+        # (déviation WR/PF sans trace dans les logs). Le jitter est tiré UNE seule
+        # fois par trade (au premier trailing) — il varie entre trades (anti-hunting,
+        # conforme à la doc) mais reste stable pendant la vie du trade. Le retry
+        # 10016 (ci-dessous) réutilise le même jitter que le chemin principal.
+        jitter = self._trail_jitter_cache.get(ticket)
+        if jitter is None:
+            jitter = 1.0 + random.uniform(-0.10, 0.10)
+            self._trail_jitter_cache[ticket] = jitter
         trail_distance = trail_dist * atr_val * jitter
         info = self.mt5.get_symbol_info(position.symbol)
         if info is None:
@@ -347,7 +393,10 @@ class Trailer:
                 if retrace_atr > 1.5:
                     self.trailing_peaks[ticket] = current_price
                 # Retracement > 1 ATR : forcer BE pour limiter la casse
-                if retrace_atr > 1.0 and position.sl < position.price_open:
+                # 🐛 FIX 16 Août 2026: garde None-safe (position.sl peut être None
+                # pour une position manuelle avec magic — TypeError attrapé par
+                # check_invariants désactivait SILENCIEUSEMENT le trailing du ticket)
+                if retrace_atr > 1.0 and (position.sl is None or position.sl < position.price_open):
                     self._force_breakeven(position)
                 return
             lower = entry_price
@@ -371,9 +420,13 @@ class Trailer:
             new_sl = min(new_sl, upper)
 
         new_sl = round(new_sl, info.digits)
-        if position.type == 0 and new_sl <= position.sl:
+        # 🐛 FIX 16 Août 2026: garde None-safe — si position.sl est None (position
+        # manuelle sans SL), on applique le trailing directement au lieu de lever
+        # TypeError (qui désactivait silencieusement le trailing de ce ticket).
+        cur_sl = position.sl
+        if position.type == 0 and (cur_sl is not None and new_sl <= cur_sl):
             return
-        if position.type == 1 and new_sl >= position.sl:
+        if position.type == 1 and (cur_sl is not None and new_sl >= cur_sl):
             return
 
         old_sl = position.sl
@@ -400,7 +453,7 @@ class Trailer:
             # jamais pire que le SL actuel.
             if position.type == 0:  # BUY
                 retry_sl = max(retry_sl, entry_price)
-                if retry_sl <= position.sl:
+                if position.sl is not None and retry_sl <= position.sl:
                     logger.debug(
                         f"  [TRAIL] retry 10016 {position.symbol}: retry_sl {retry_sl:.5f} "
                         f"≤ SL actuel {position.sl:.5f} — skip (anti-recul)"
@@ -408,7 +461,7 @@ class Trailer:
                     return
             else:  # SELL
                 retry_sl = min(retry_sl, entry_price)
-                if retry_sl >= position.sl:
+                if position.sl is not None and retry_sl >= position.sl:
                     logger.debug(
                         f"  [TRAIL] retry 10016 {position.symbol}: retry_sl {retry_sl:.5f} "
                         f"≥ SL actuel {position.sl:.5f} — skip (anti-recul)"

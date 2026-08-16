@@ -11,6 +11,174 @@ from dotenv import load_dotenv
 load_dotenv()
 logger = logging.getLogger("robot.config")
 
+
+def _fallback_minimal() -> None:
+    """Fallback valeurs hardcodées minimales — ne devrait jamais arriver en production.
+
+    🔧 FIX M-N5 (Auto-Fixer): extrait dans une fonction dédiée pour :
+      1. Distinguer les erreurs de CONVERSION (ValueError/TypeError) des vrais
+         échecs de chargement (YAML corrompu, schéma invalide, bug de code).
+      2. Définir AUSSI les variables qui manquaient au fallback
+         (SYMBOL_EXECUTION_TIMEFRAMES, GLOBAL_MAX_LOT, REGIME_*, AUTO_STOP_*,
+         CONSERVATION_MODE_ENABLED) — sinon AttributeError après un fallback.
+    """
+    _g = globals()
+    # C-04: Logger chaque valeur de fallback pour traçabilité
+    _fb_log = lambda name, val: logger.warning(f"  [FALLBACK] {name} = {val}")
+    _g["MT5_LOGIN"] = 0
+    _fb_log("MT5_LOGIN", 0)
+    _g["MT5_PASSWORD"] = ""
+    _fb_log("MT5_PASSWORD", "(masqué)")
+    _g["MT5_SERVER"] = ""
+    _fb_log("MT5_SERVER", "(vide)")
+    # ⚠️ 1er Juillet 2026: 27 symboles actifs
+    _g["SYMBOLS"] = [
+        "EURUSD",
+        "GBPUSD",
+        "USDJPY",
+        "USDCAD",
+        "AUDUSD",
+        "NZDUSD",
+        "USDCHF",
+        "EURJPY",
+        "GBPJPY",
+        "EURGBP",
+        "AUDJPY",
+        "XAUUSD",
+        "XAGUSD",
+        "USOIL.cash",
+        "UKOIL.cash",
+        "NATGAS.cash",
+        "BTCUSD",
+        "ETHUSD",
+        "SOLUSD",
+        "BNBUSD",
+        "US500.cash",
+        "US30.cash",
+        "US100.cash",
+        "JP225.cash",
+        "GER40.cash",
+        "UK100.cash",
+    ]
+    _fb_log("SYMBOLS", _g["SYMBOLS"])
+    _g["ROBOT_MAGIC"] = 999001
+    _fb_log("ROBOT_MAGIC", 999001)
+    _g["MAX_POSITIONS"] = 64
+    _fb_log("MAX_POSITIONS", 64)
+    _g["MAX_POSITIONS_PER_SYMBOL"] = 6
+    _fb_log("MAX_POSITIONS_PER_SYMBOL", 6)
+    _g["MAX_TRADES_PER_DAY"] = 100
+    _fb_log("MAX_TRADES_PER_DAY", 100)
+    _g["LOT_SIZE"] = 0.30
+    _fb_log("LOT_SIZE", 0.30)
+    _g["GLOBAL_MAX_LOT"] = 0.02  # défaut schéma — plafond absolu du lot
+    _fb_log("GLOBAL_MAX_LOT", 0.02)
+    _g["MIN_TRADE_INTERVAL_SEC"] = 300
+    _fb_log("MIN_TRADE_INTERVAL_SEC", 300)
+    _g["BATCH_INTERVAL_SEC"] = 1
+    _fb_log("BATCH_INTERVAL_SEC", 1)
+    _g["MIN_SIGNAL_SCORE"] = 0.50
+    _fb_log("MIN_SIGNAL_SCORE", 0.50)
+    _g["MAX_SIGNALS_PER_CYCLE"] = 10
+    _fb_log("MAX_SIGNALS_PER_CYCLE", 10)
+    _g["MAX_ORDERS_PER_MINUTE"] = 6
+    _fb_log("MAX_ORDERS_PER_MINUTE", 6)
+    _g["DAILY_PROFIT_LIMIT_PCT"] = 0.008
+    _fb_log("DAILY_PROFIT_LIMIT_PCT", 0.008)
+    _g["RISK_PER_TRADE"] = 0.002
+    _fb_log("RISK_PER_TRADE", 0.002)
+    _g["RISK_SHORT_MULT"] = 1.0
+    _fb_log("RISK_SHORT_MULT", 1.0)
+    _g["MAX_DAILY_LOSS_PCT"] = 0.02
+    _fb_log("MAX_DAILY_LOSS_PCT", 0.02)
+    _g["ZONE2_LOSS_PCT"] = 0.012
+    _fb_log("ZONE2_LOSS_PCT", 0.012)
+    _g["ZONE3_LOSS_PCT"] = 0.017
+    _fb_log("ZONE3_LOSS_PCT", 0.017)
+    _g["MAX_DD_PCT"] = 0.10
+    _fb_log("MAX_DD_PCT", 0.10)
+    _g["PROFIT_TARGET_PCT"] = 0.10
+    _fb_log("PROFIT_TARGET_PCT", 0.10)
+    _g["CONSISTENCY_MAX_PCT"] = 0.30
+    _fb_log("CONSISTENCY_MAX_PCT", 0.30)
+    _g["MIN_RR_RATIO"] = 2.5
+    _fb_log("MIN_RR_RATIO", 2.5)
+    _g["ATR_MULTIPLIER"] = 1.5
+    _fb_log("ATR_MULTIPLIER", 1.5)
+    _g["COOLDOWN_MINUTES"] = 15
+    _fb_log("COOLDOWN_MINUTES", 15)
+    _g["MIN_TRADING_DAYS"] = 10
+    _fb_log("MIN_TRADING_DAYS", 10)
+    _g["MAX_TRADING_DAYS"] = 0
+    _fb_log("MAX_TRADING_DAYS", 0)
+    _g["MAX_RISK_AMOUNT"] = 800.0
+    _fb_log("MAX_RISK_AMOUNT", 800.0)
+    _g["MAX_SPREAD_POINTS"] = 120
+    _fb_log("MAX_SPREAD_POINTS", 120)
+    _g["TRADING_START_HOUR"] = 0
+    _fb_log("TRADING_START_HOUR", 0)
+    _g["TRADING_END_HOUR"] = 24
+    _fb_log("TRADING_END_HOUR", 24)
+    _g["DANGER_HOURS"] = [7, 17]
+    _fb_log("DANGER_HOURS", [7, 17])
+    _g["RECALIBRATION_FREQUENCY"] = 50
+    _fb_log("RECALIBRATION_FREQUENCY", 50)
+    _g["AUTO_PAUSE_LOSSES"] = 5
+    _fb_log("AUTO_PAUSE_LOSSES", 5)
+    _g["MAX_CORRELATED_EXPOSURE"] = 1.5
+    _fb_log("MAX_CORRELATED_EXPOSURE", 1.5)
+    _g["CIRCUIT_BREAKER_DD_PCT"] = 0.08
+    _fb_log("CIRCUIT_BREAKER_DD_PCT", 0.08)
+    _g["CYCLE_SECONDS"] = 15
+    _fb_log("CYCLE_SECONDS", 15)
+    _g["HISTORY_LOOKBACK_DAYS"] = 7
+    _fb_log("HISTORY_LOOKBACK_DAYS", 7)
+    _g["SYMBOL_LIMITS"] = {}
+    _g["SYMBOL_TIMEFRAMES"] = {}
+    _g["SYMBOL_EXECUTION_TIMEFRAMES"] = {}
+    _g["ML_EXPERIMENT_TRACKING"] = False
+    _g["ML_TRACKING_URI"] = ""
+    _g["ENABLE_M15_CONFIRMATION"] = False
+    _g["CONCEPT_DRIFT"] = dict(
+        enabled=True,
+        window_size=100,
+        psi_threshold_light=0.10,
+        psi_threshold_moderate=0.20,
+        psi_threshold_severe=0.25,
+        auto_retrain=True,
+        retrain_cooldown_hours=24,
+    )
+    _g["RETRAINING"] = dict(
+        days=90,
+        min_samples=50,
+        epochs=10,
+        n_splits=5,
+        schedule_trades=500,
+        log_mlflow=True,
+    )
+    _g["__version__"] = "4.1.0"
+    _g["NEWS_MINUTES_BEFORE"] = 5
+    _g["NEWS_MINUTES_AFTER"] = 5
+    # ── Market Regime (défauts schéma) — ajouté FIX M-N5 ──
+    _g["REGIME_ADX_TREND_ENTER"] = 22
+    _g["REGIME_ADX_TREND_EXIT"] = 18
+    _g["REGIME_HYSTERESIS_OFFSET"] = 4
+    _g["REGIME_SLOPE_BULLISH"] = 0.002
+    _g["REGIME_SLOPE_BEARISH"] = -0.002
+    _g["REGIME_VOL_HIGH_RATIO"] = 0.015
+    _g["REGIME_VOL_LOW_RATIO"] = 0.003
+    # ── Auto-Stop (défauts schéma) — ajouté FIX M-N5 ──
+    _g["AUTO_STOP_ADX_LOW_THRESHOLD"] = 22
+    _g["AUTO_STOP_ADX_HIGH_THRESHOLD"] = 18
+    _g["AUTO_STOP_RATIO_STOP"] = 0.50
+    _g["AUTO_STOP_SYMBOLS_MIN_RESUME"] = 2
+    _g["AUTO_STOP_PAUSE_MIN_DURATION"] = 1800
+    _g["AUTO_STOP_ADX_SNAPSHOT_TTL"] = 300
+    _g["AUTO_STOP_STATE_TTL"] = 86400
+    # ── Mode conservation (défaut schéma) — ajouté FIX M-N5 ──
+    _g["CONSERVATION_MODE_ENABLED"] = True
+
+
 try:
     from config.schema import hot_reload, load_config
 
@@ -113,143 +281,24 @@ try:
         if _val is not None and not (_min <= _val <= _max):
             logger.warning(f"[CONFIG] {_var}={_val} ({_msg}) — attendu entre {_min} et {_max}")
 
-except Exception as e:
-    logger.critical(f"Erreur chargement config YAML: {e}")
+except (ValueError, TypeError) as e:
+    # 🔧 FIX M-N5 (Auto-Fixer): erreurs de CONVERSION uniquement (valeur non
+    # numérique, type inattendu dans le YAML) → fallback avec warning.
+    logger.warning(f"Erreur de conversion config YAML: {e}")
     logger.warning("Fallback: valeurs hardcodees minimales — ⚠️ RISQUE les valeurs YAML sont perdues")
-    # C-04: Logger chaque valeur de fallback pour traçabilité
-    _fb_log = lambda name, val: logger.warning(f"  [FALLBACK] {name} = {val}")
-    # Fallback minimal — ne devrait jamais arriver en production
-    MT5_LOGIN = 0
-    _fb_log("MT5_LOGIN", 0)
-    MT5_PASSWORD = ""
-    _fb_log("MT5_PASSWORD", "(masqué)")
-    MT5_SERVER = ""
-    _fb_log("MT5_SERVER", "(vide)")
-    # ⚠️ 1er Juillet 2026: 27 symboles actifs
-    SYMBOLS = [
-        "EURUSD",
-        "GBPUSD",
-        "USDJPY",
-        "USDCAD",
-        "AUDUSD",
-        "NZDUSD",
-        "USDCHF",
-        "EURJPY",
-        "GBPJPY",
-        "EURGBP",
-        "AUDJPY",
-        "XAUUSD",
-        "XAGUSD",
-        "USOIL.cash",
-        "UKOIL.cash",
-        "NATGAS.cash",
-        "BTCUSD",
-        "ETHUSD",
-        "SOLUSD",
-        "BNBUSD",
-        "US500.cash",
-        "US30.cash",
-        "US100.cash",
-        "JP225.cash",
-        "GER40.cash",
-        "UK100.cash",
-    ]
-    _fb_log("SYMBOLS", SYMBOLS)
-    ROBOT_MAGIC = 999001
-    _fb_log("ROBOT_MAGIC", 999001)
-    MAX_POSITIONS = 64
-    _fb_log("MAX_POSITIONS", 64)
-    MAX_POSITIONS_PER_SYMBOL = 6
-    _fb_log("MAX_POSITIONS_PER_SYMBOL", 6)
-    MAX_TRADES_PER_DAY = 100
-    _fb_log("MAX_TRADES_PER_DAY", 100)
-    LOT_SIZE = 0.30
-    _fb_log("LOT_SIZE", 0.30)
-    MIN_TRADE_INTERVAL_SEC = 300
-    _fb_log("MIN_TRADE_INTERVAL_SEC", 300)
-    BATCH_INTERVAL_SEC = 1
-    _fb_log("BATCH_INTERVAL_SEC", 1)
-    MIN_SIGNAL_SCORE = 0.50
-    _fb_log("MIN_SIGNAL_SCORE", 0.50)
-    MAX_SIGNALS_PER_CYCLE = 10
-    _fb_log("MAX_SIGNALS_PER_CYCLE", 10)
-    MAX_ORDERS_PER_MINUTE = 6
-    _fb_log("MAX_ORDERS_PER_MINUTE", 6)
-    DAILY_PROFIT_LIMIT_PCT = 0.008
-    _fb_log("DAILY_PROFIT_LIMIT_PCT", 0.008)
-    RISK_PER_TRADE = 0.002
-    _fb_log("RISK_PER_TRADE", 0.002)
-    RISK_SHORT_MULT = 1.0
-    _fb_log("RISK_SHORT_MULT", 1.0)
-    MAX_DAILY_LOSS_PCT = 0.02
-    _fb_log("MAX_DAILY_LOSS_PCT", 0.02)
-    ZONE2_LOSS_PCT = 0.012
-    _fb_log("ZONE2_LOSS_PCT", 0.012)
-    ZONE3_LOSS_PCT = 0.017
-    _fb_log("ZONE3_LOSS_PCT", 0.017)
-    MAX_DD_PCT = 0.10
-    _fb_log("MAX_DD_PCT", 0.10)
-    PROFIT_TARGET_PCT = 0.10
-    _fb_log("PROFIT_TARGET_PCT", 0.10)
-    CONSISTENCY_MAX_PCT = 0.30
-    _fb_log("CONSISTENCY_MAX_PCT", 0.30)
-    MIN_RR_RATIO = 2.5
-    _fb_log("MIN_RR_RATIO", 2.5)
-    ATR_MULTIPLIER = 1.5
-    _fb_log("ATR_MULTIPLIER", 1.5)
-    COOLDOWN_MINUTES = 15
-    _fb_log("COOLDOWN_MINUTES", 15)
-    MIN_TRADING_DAYS = 10
-    _fb_log("MIN_TRADING_DAYS", 10)
-    MAX_TRADING_DAYS = 0
-    _fb_log("MAX_TRADING_DAYS", 0)
-    MAX_RISK_AMOUNT = 800.0
-    _fb_log("MAX_RISK_AMOUNT", 800.0)
-    MAX_SPREAD_POINTS = 120
-    _fb_log("MAX_SPREAD_POINTS", 120)
-    TRADING_START_HOUR = 0
-    _fb_log("TRADING_START_HOUR", 0)
-    TRADING_END_HOUR = 24
-    _fb_log("TRADING_END_HOUR", 24)
-    DANGER_HOURS = [7, 17]
-    _fb_log("DANGER_HOURS", [7, 17])
-    RECALIBRATION_FREQUENCY = 50
-    _fb_log("RECALIBRATION_FREQUENCY", 50)
-    AUTO_PAUSE_LOSSES = 5
-    _fb_log("AUTO_PAUSE_LOSSES", 5)
-    MAX_CORRELATED_EXPOSURE = 1.5
-    _fb_log("MAX_CORRELATED_EXPOSURE", 1.5)
-    CIRCUIT_BREAKER_DD_PCT = 0.08
-    _fb_log("CIRCUIT_BREAKER_DD_PCT", 0.08)
-    CYCLE_SECONDS = 15
-    _fb_log("CYCLE_SECONDS", 15)
-    HISTORY_LOOKBACK_DAYS = 7
-    _fb_log("HISTORY_LOOKBACK_DAYS", 7)
-    SYMBOL_LIMITS = {}
-    SYMBOL_TIMEFRAMES = {}
-    ML_EXPERIMENT_TRACKING = False
-    ML_TRACKING_URI = ""
-    ENABLE_M15_CONFIRMATION = False
-    CONCEPT_DRIFT = dict(
-        enabled=True,
-        window_size=100,
-        psi_threshold_light=0.10,
-        psi_threshold_moderate=0.20,
-        psi_threshold_severe=0.25,
-        auto_retrain=True,
-        retrain_cooldown_hours=24,
+    _fallback_minimal()
+except Exception as e:
+    # 🔧 FIX M-N5 (Auto-Fixer): échec RÉEL de chargement (YAML corrompu, schéma
+    # invalide, clé manquante, bug de code) → message CRITIQUE IMPOSSIBLE à
+    # manquer (avant: warning silencieux). Le fallback reste fonctionnel pour ne
+    # pas bloquer le démarrage, mais l'opérateur DOIT corriger la config.
+    logger.critical(
+        f"⛔ ERREUR CRITIQUE CHARGEMENT CONFIG YAML: {e!r}\n"
+        f"Le robot démarre avec le FALLBACK MINIMAL — les valeurs YAML sont PERDUES "
+        f"(MT5_LOGIN=0, symboles hardcodés, MAX_POSITIONS=64, limites risque par défaut). "
+        f"CORRIGE config/default.yaml et config/production.yaml AVANT de trader !"
     )
-    RETRAINING = dict(
-        days=90,
-        min_samples=50,
-        epochs=10,
-        n_splits=5,
-        schedule_trades=500,
-        log_mlflow=True,
-    )
-    __version__ = "4.1.0"
-    NEWS_MINUTES_BEFORE = 5
-    NEWS_MINUTES_AFTER = 5
+    _fallback_minimal()
 
 
 def reload_config() -> bool:
@@ -294,6 +343,17 @@ def _re_export():
     global NEWS_MINUTES_BEFORE, NEWS_MINUTES_AFTER
     global ML_EXPERIMENT_TRACKING, ML_TRACKING_URI, CONCEPT_DRIFT, RETRAINING
     global ENABLE_M15_CONFIRMATION
+    # 🔧 FIX M-N4 (Auto-Fixer): globals manquants → valeurs JETÉES au hot-reload.
+    # SYMBOL_EXECUTION_TIMEFRAMES était assigné SANS global → le module gardait
+    # l'ancienne valeur (modifs YAML invisibles). REGIME_ADX_*, AUTO_STOP_*,
+    # GLOBAL_MAX_LOT et CONSERVATION_MODE_ENABLED n'étaient PAS réexportés du tout.
+    global SYMBOL_EXECUTION_TIMEFRAMES, GLOBAL_MAX_LOT
+    global REGIME_ADX_TREND_ENTER, REGIME_ADX_TREND_EXIT, REGIME_HYSTERESIS_OFFSET
+    global REGIME_SLOPE_BULLISH, REGIME_SLOPE_BEARISH, REGIME_VOL_HIGH_RATIO, REGIME_VOL_LOW_RATIO
+    global AUTO_STOP_ADX_LOW_THRESHOLD, AUTO_STOP_ADX_HIGH_THRESHOLD, AUTO_STOP_RATIO_STOP
+    global AUTO_STOP_SYMBOLS_MIN_RESUME, AUTO_STOP_PAUSE_MIN_DURATION
+    global AUTO_STOP_ADX_SNAPSHOT_TTL, AUTO_STOP_STATE_TTL
+    global CONSERVATION_MODE_ENABLED
     MT5_LOGIN = _cfg.secrets.mt5_login_int
     MT5_PASSWORD = _cfg.secrets.mt5_password
     MT5_SERVER = _cfg.secrets.mt5_server
@@ -347,3 +407,23 @@ def _re_export():
     CONCEPT_DRIFT = _cfg.ml.concept_drift.model_dump()
     RETRAINING = _cfg.ml.retraining.model_dump()
     ENABLE_M15_CONFIRMATION = _cfg.signal.enable_m15_confirmation
+    # 🔧 FIX M-N4 (Auto-Fixer): réexport complet au hot-reload.
+    GLOBAL_MAX_LOT = _cfg.trading.global_max_lot
+    # ── Market Regime (étaient absents du hot-reload) ──
+    REGIME_ADX_TREND_ENTER = _cfg.market_regime.adx_trend_enter_default
+    REGIME_ADX_TREND_EXIT = _cfg.market_regime.adx_trend_exit_default
+    REGIME_HYSTERESIS_OFFSET = _cfg.market_regime.hysteresis_offset
+    REGIME_SLOPE_BULLISH = _cfg.market_regime.slope_bullish
+    REGIME_SLOPE_BEARISH = _cfg.market_regime.slope_bearish
+    REGIME_VOL_HIGH_RATIO = _cfg.market_regime.vol_high_ratio
+    REGIME_VOL_LOW_RATIO = _cfg.market_regime.vol_low_ratio
+    # ── Auto-Stop (étaient absents du hot-reload) ──
+    AUTO_STOP_ADX_LOW_THRESHOLD = _cfg.auto_stop.adx_low_threshold
+    AUTO_STOP_ADX_HIGH_THRESHOLD = _cfg.auto_stop.adx_high_threshold
+    AUTO_STOP_RATIO_STOP = _cfg.auto_stop.ratio_stop
+    AUTO_STOP_SYMBOLS_MIN_RESUME = _cfg.auto_stop.symbols_min_resume
+    AUTO_STOP_PAUSE_MIN_DURATION = _cfg.auto_stop.pause_min_duration
+    AUTO_STOP_ADX_SNAPSHOT_TTL = _cfg.auto_stop.adx_snapshot_ttl
+    AUTO_STOP_STATE_TTL = _cfg.auto_stop.state_ttl
+    # ── Mode conservation (absent du hot-reload) ──
+    CONSERVATION_MODE_ENABLED = getattr(_cfg.risk, "conservation_mode_enabled", True)

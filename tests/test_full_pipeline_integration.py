@@ -1026,6 +1026,7 @@ class TestTrailingStopIntegration:
         )
         assert hasattr(trailer, "_force_breakeven")
 
+    # NOTE (16 Août 2026, Vague 5): test "ne doit pas crasher" — valeur = non-propagation
     def test_trailer_handles_positions(self):
         """Trailer.check_partial_tp + check_step_trailing ne doit pas planter"""
         from engine_simple.trailer import Trailer

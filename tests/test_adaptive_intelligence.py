@@ -552,13 +552,18 @@ class TestAdaptiveEngine:
     def test_save_calibration_no_path(self):
         ae = AdaptiveEngine(MagicMock())
         ae.calibration_path = None
-        ae.save_calibration()  # should not raise
+        result = ae.save_calibration()  # pas de chemin → no-op sans exception
+        # 🔧 FIX M-S3: save_calibration() retourne None et ne lève pas quand
+        # calibration_path est None (la sauvegarde est simplement ignorée)
+        assert result is None
 
     def test_load_calibration_not_found(self):
         """_load_calibration logs warning when file is missing."""
         ae = AdaptiveEngine(MagicMock())
         # Invoke directly to avoid side effects from __init__ order
         ae._load_calibration("/nonexistent/path.jbl")  # should not crash
+        # 🔧 FIX M-S3: le moteur reste opérationnel après l'échec de chargement
+        assert ae.learner is not None, "le learner doit rester initialisé après un chargement raté"
 
     @patch("engine_simple.adaptive_intelligence.os.path.exists", return_value=True)
     @patch("engine_simple.adaptive_intelligence.os.stat")
@@ -566,6 +571,8 @@ class TestAdaptiveEngine:
         mock_stat.return_value = MagicMock(st_size=100)
         ae = AdaptiveEngine(MagicMock(), calibration_path="/fake/path.json")
         # Should catch error, log warning, not crash
+        # 🔧 FIX M-S3: fichier corrompu → le moteur reste utilisable
+        assert ae.learner is not None, "le learner doit rester initialisé après un chargement corrompu"
 
     @patch("engine_simple.adaptive_intelligence.datetime")
     @pytest.mark.skip(reason="P7: DL supprimé (code mort)")
@@ -814,6 +821,10 @@ class TestAdaptiveEngine:
         try:
             ae = AdaptiveEngine(MagicMock(), calibration_path=tmppath)
             ae.save_calibration()  # should not raise
+            # 🔧 FIX M-S3: l'échec d'écriture ne doit pas corrompre/supprimer
+            # le fichier de calibration d'origine (le tmp+replace avorté laisse
+            # l'ancien fichier intact)
+            assert Path(tmppath).exists(), "le fichier de calibration a disparu après l'échec"
         finally:
             os.chmod(tmppath, 0o666)
             os.unlink(tmppath)

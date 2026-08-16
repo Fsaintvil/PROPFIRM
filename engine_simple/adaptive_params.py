@@ -9,8 +9,10 @@ Usage:
     ap.record_trade(pnl=150, win=True)
 """
 
-import logging
 import json
+import logging
+import os
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -100,8 +102,13 @@ class AdaptiveParameters:
                 "last_update": time.time(),
             }
 
-            with open(self._state_file, "w") as f:
+            # Écriture atomique : tmp + replace (Vague 5, hygiène)
+            tmp = self._state_file.with_suffix(".json.tmp")
+            with open(tmp, "w") as f:
                 json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            tmp.replace(self._state_file)
         except Exception as e:
             logger.warning(f"  [ADAPTIVE] {self.symbol}: save failed — {e}")
 
@@ -231,12 +238,25 @@ class AdaptiveParameters:
 # CONVENIENCE FUNCTIONS
 # ============================================================================
 _adaptive_instances: dict[str, AdaptiveParameters] = {}
+# 🔧 FIX M-ML3 (16 Août 2026): Verrou protégeant le cache module contre les
+# courses check-then-act (deux threads peuvent créer deux instances du même
+# symbole si l'un écrit pendant que l'autre lit).
+_adaptive_instances_lock = threading.Lock()
 
 
-def get_adaptive(symbol: str, lookback: int = 100, min_trades: int = 20) -> AdaptiveParameters:
-    """Retourne (ou crée) l'instance adaptive pour un symbole."""
-    if symbol not in _adaptive_instances:
-        _adaptive_instances[symbol] = AdaptiveParameters(symbol, lookback, min_trades)
+def get_adaptive(symbol: str, lookback: int = 100, min_trades: int = 10) -> AdaptiveParameters:
+    """Retourne (ou crée) l'instance adaptive pour un symbole.
+
+    🔧 FIX M-ML3 (16 Août 2026): C'est LA SEULE porte d'entrée vers
+    AdaptiveParameters. Avant, chaque appelant instanciait directement la classe
+    (signal_pipeline._adaptive_params, trading_engine._adaptive_params mort)
+    → plusieurs états mémoire divergents qui s'écrasaient mutuellement dans
+    runtime/adaptive_{symbol}.json (last-writer-wins).
+    min_trades unifié à 10 (défaut de la classe — activation plus rapide).
+    """
+    with _adaptive_instances_lock:
+        if symbol not in _adaptive_instances:
+            _adaptive_instances[symbol] = AdaptiveParameters(symbol, lookback, min_trades)
     return _adaptive_instances[symbol]
 
 

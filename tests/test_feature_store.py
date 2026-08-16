@@ -1,5 +1,6 @@
 """Tests for feature_store.py — SQLite-backed position feature persistence"""
 import os
+import sqlite3
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -52,6 +53,10 @@ def test_close(store):
     store.close()
     # double close should not raise
     store.close()
+    # 🔧 FIX M-S3: vérifier que la connexion est réellement fermée
+    # (une fermeture incomplète laisserait une fuite de connexion silencieuse)
+    with pytest.raises(sqlite3.ProgrammingError):
+        store.load(99999)
 
 
 def test_multiple_tickets(store):

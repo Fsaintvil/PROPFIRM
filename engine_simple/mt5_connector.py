@@ -57,6 +57,19 @@ class MT5Connector:
             return future.result(timeout=timeout)
         except concurrent.futures.TimeoutError:
             logger.error(f"[MT5 TIMEOUT] {name} bloque depuis >{timeout}s")
+            # 🐛 FIX 16 Août 2026 (Audit B3): le thread C bloqué ne libère jamais
+            # l'unique worker du pool. Tout appel MT5 suivant se retrouve en file
+            # derrière l'appel gelé → timeouts en cascade → robot paralysé.
+            # On recrée un executor neuf : l'ancien worker reste bloqué en arrière-plan
+            # (processus vivant) mais les NOUVEAUX appels MT5 retrouvent un worker libre.
+            try:
+                self._executor.shutdown(wait=False, cancel_futures=True)
+            except Exception:
+                pass
+            self._executor = concurrent.futures.ThreadPoolExecutor(
+                max_workers=1, thread_name_prefix="mt5_timeout"
+            )
+            self.connected = False  # forcer un reconnect au prochain cycle
             return default
         except Exception as e:
             logger.error(f"[MT5 ERROR] {name}: {e}")
@@ -116,7 +129,10 @@ class MT5Connector:
             import config_simple as cfg
 
             for sym in cfg.SYMBOLS:
-                mt5.symbol_select(sym, True)
+                # 🔧 FIX M-ML5 (16 Août 2026): passer par self.symbol_select()
+                # (wrapé dans _call_with_timeout) au lieu de mt5.symbol_select()
+                # direct — un appel bloquant gelait le connect() entier.
+                self.symbol_select(sym)
         except Exception as e:
             logger.warning(f"[CONNECT] symbol_select error during connect: {e}")
         self.connected = True
@@ -384,6 +400,19 @@ class MT5Connector:
             name="account_info",
         )
 
+    def terminal_info(self) -> Any:
+        """Retourne les infos du terminal MT5 connecté (mt5.terminal_info) avec timeout.
+
+        🔧 FIX M-N6 (Auto-Fixer): expose terminal_info pour récupérer le PID du
+        terminal (attribut .pid) — permet un taskkill ciblé par PID au lieu de
+        `taskkill /IM terminal64.exe` qui tuait TOUS les terminaux de la machine.
+        """
+        return self._call_with_timeout(
+            lambda: mt5.terminal_info(),
+            timeout=10,
+            name="terminal_info",
+        )
+
     def ping(self) -> bool:
         """Keepalive : vérifie la connexion MT5, tente un appel léger.
         Retourne True si la connexion est active.
@@ -402,22 +431,27 @@ class MT5Connector:
             return False
 
     def reconnect(self) -> bool:
-        """Tente une reconnexion complète à MT5 avec retry rapide."""
+        """Tente une reconnexion complète à MT5 avec retry + backoff exponentiel.
+
+        🔧 FIX M-ML5 (16 Août 2026): Backoff exponentiel 1s→3s→8s au lieu de
+        sleep(1) fixe. Si MT5 met du temps à redémarrer, 3 tentatives espacées
+        de 1s échouaient systématiquement sans laisser le terminal se rétablir.
+        """
         logger.info("[MT5] Tentative de reconnexion...")
+        backoffs = [1, 3, 8]  # secondes — backoff exponentiel
         for attempt in range(3):
             try:
                 mt5.shutdown()
             except Exception as e:
                 logger.warning(f"  [MT5] reconnect shutdown: {e}")
-                pass
             import time as _time
 
-            _time.sleep(1)
+            _time.sleep(backoffs[attempt])
             if self.connect():
                 logger.info(f"[MT5] Reconnexion réussie (tentative #{attempt + 1})")
                 return True
             logger.warning(f"[MT5] Tentative #{attempt + 1}/3 échouée")
-        logger.error("[MT5] Échec de reconnexion après 3 tentatives")
+        logger.error("[MT5] Échec de reconnexion après 3 tentatives (backoff 1s→3s→8s)")
         return False
 
     def get_history(self, from_time: int, to_time: int) -> Any:

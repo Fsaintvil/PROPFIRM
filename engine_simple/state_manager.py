@@ -18,13 +18,26 @@ from pathlib import Path
 logger = logging.getLogger("state_manager")
 
 # Lock partagé entre main.py et trailer.py via ce module
-_STATE_LOCK = threading.Lock()
+# 🐛 FIX 16 Août 2026 (Audit B1): RLock au lieu de Lock — le signal handler
+# (SIGINT/SIGTERM) s'exécute dans le thread principal entre deux bytecodes.
+# Si le signal arrive pendant save_full_state() (lock tenu), le handler appelle
+# robot.stop() → _save_state() → save_full_state() → with _STATE_LOCK:
+# un Lock() non réentrant = auto-deadlock. RLock() autorise la réentrance.
+_STATE_LOCK = threading.RLock()
 
 
 def _atomic_write(path: Path, data: dict) -> None:
     """Écriture atomique JSON : temp → rename. Évite la corruption si crash."""
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(data, default=str))
+    # 🐛 FIX 16 Août 2026 (Audit B6): backup du fichier actuel AVANT replace.
+    # Permet à _load_state de restaurer l'état précédent si le nouveau est corrompu.
+    try:
+        if path.exists():
+            bak = path.with_suffix(".json.bak")
+            bak.write_bytes(path.read_bytes())
+    except Exception as e:
+        logger.warning(f"_atomic_write: backup {path.name} impossible: {e}")
     tmp.replace(path)  # atomique sur NTFS
 
 

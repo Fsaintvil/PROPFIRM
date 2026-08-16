@@ -713,8 +713,17 @@ class AdaptiveEngine:
             }
             import json
 
-            with open(self.calibration_path, "w") as f:
-                json.dump(state, f, indent=2, default=str)
+            # 🔧 FIX M-ML1 (16 Août 2026): Écriture atomique tmp+replace.
+            # `with open(path, "w")` écrivait DIRECTEMENT dans le fichier final :
+            # un force-kill pendant l'écriture laissait calibration_state.json tronqué
+            # → perte de TOUT l'apprentissage OL au redémarrage.
+            # Même pattern que OnlineLearner.save_state() (l.187-191) : tmp fixe
+            # (sans timestamp, l'écriture précédente échouée est écrasée) + replace.
+            p = Path(self.calibration_path)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            tmp = p.with_suffix(".json.tmp")
+            tmp.write_text(json.dumps(state, indent=2, default=str), encoding="utf-8")
+            tmp.replace(p)  # atomique sur NTFS
         except (OSError, KeyError, ValueError, TypeError) as e:
             logger.warning(f"  [CAL] Failed to save calibration: {e}")
 

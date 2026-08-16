@@ -140,20 +140,24 @@ def test_static_events_structure():
     assert len(STATIC_EVENTS) > 0
 
     for event in STATIC_EVENTS:
-        assert len(event) == 5  # (hour, minute, impact, symbols, description)
-        hour, minute, impact, symbols, desc = event
+        # (hour, minute, impact, symbols, description, days) — days ajouté au FIX M-ML2
+        assert len(event) == 6
+        hour, minute, impact, symbols, desc, days = event
         assert 0 <= hour <= 23
         assert 0 <= minute <= 59
         assert impact in ("HIGH", "MEDIUM", "LOW")
         assert isinstance(symbols, list)
         assert len(symbols) > 0
         assert isinstance(desc, str)
+        assert isinstance(days, list)
+        for d in days:
+            assert 0 <= d <= 6  # 0=Lundi .. 6=Dimanche
 
 
 def test_static_events_have_major_pairs():
     """Test que les principaux symboles sont couverts."""
     all_symbols = set()
-    for _, _, _, symbols, _ in STATIC_EVENTS:
+    for _, _, _, symbols, _, _ in STATIC_EVENTS:
         all_symbols.update(symbols)
 
     # XAUUSD devrait être couvert (China data)

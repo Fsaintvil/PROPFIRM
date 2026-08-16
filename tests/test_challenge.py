@@ -366,6 +366,7 @@ class TestCheckDrawdownLimit:
         # DD = (200000 - 180001) / 200000 = 9.9995% < 10% → ACTIVE
         assert t.challenge_status == "ACTIVE"
 
+    # NOTE (16 Août 2026, Vague 5): test "ne doit pas crasher" — valeur = non-propagation
     def test_exception_does_not_crash(self):
         t = make_position_tracker()
         t.mt5.get_account_info.side_effect = RuntimeError("MT5 crash")

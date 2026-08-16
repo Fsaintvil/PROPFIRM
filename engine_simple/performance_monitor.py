@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import threading
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -467,19 +468,17 @@ class PerformanceMonitor:
 
         today = datetime.utcnow().strftime("%Y-%m-%d")
 
-        # Extraire le type d'alerte (avant le premier symbole underscore)
-        # metric_key = "SYMBOL_LOSING_AUDUSD_2026-07-03" → type="SYMBOL_LOSING"
-        parts = metric_key.split("_")
-        # Le type est composé des mots avant le symbole (ex: SYMBOL + LOSING)
-        # On cherche le pattern: TYPE_DATE ou TYPE_SYMBOL_DATE
-        if metric_key.endswith(f"_{today}"):
-            base = metric_key[: -len(f"_{today}")]  # retire le suffixe date
-            # base = "SYMBOL_LOSING_AUDUSD" ou "CHALLENGE_BEHIND"
-            # Le type d'alerte stocké est le préfixe avant le symbole
-            # On extrait le type en retirant le symbole si présent
-            # Pour les alertes sans symbole: type = base
-            # Pour les alertes avec symbole: type = base sans le dernier segment
-            pass
+        # 🔧 FIX M-ML4 (16 Août 2026): Comparaison sur la clé COMPLÈTE (base sans date)
+        # au lieu de `metric_key.startswith(existing_type)`.
+        # Ancien bug: l'alerte PF fenêtre 50 était stockée avec metric="PF_BELOW_1"
+        # (sans numéro de fenêtre) → metric_key "PF_BELOW_1_100_..." startswith
+        # "PF_BELOW_1" → TOUTE tentative de la fenêtre 100 était dédupliquée par la
+        # fenêtre 50 → l'alerte PF 100 ne pouvait JAMAIS se déclencher.
+        # On reconstruit la base attendue depuis (metric, symbol) stockés et on
+        # compare en ÉGALITÉ stricte: "PF_BELOW_1_100" ≠ "PF_BELOW_1" → chaque
+        # fenêtre (50/100) a son propre slot de déduplication quotidienne.
+        suffix = f"_{today}"
+        base = metric_key[: -len(suffix)] if metric_key.endswith(suffix) else metric_key
 
         for existing in self.history.get("alerts", []):
             if existing.get("date") != today:
@@ -487,22 +486,10 @@ class PerformanceMonitor:
 
             existing_type = existing.get("metric", "")
             existing_symbol = existing.get("symbol", "")
-
-            # Vérifier si le type correspond : le metric_key commence par le type stocké
-            # ex: "SYMBOL_LOSING_AUDUSD_2026-07-03" commence par "SYMBOL_LOSING" ✅
-            if metric_key.startswith(existing_type):
-                # Si l'alerte a un symbole, vérifier qu'il correspond aussi
-                if existing_symbol:
-                    # Extraire le symbole du metric_key: "SYMBOL_LOSING_AUDUSD_..."
-                    # Le symbole est entre le type et la date
-                    sym_start = len(existing_type) + 1  # +1 pour l'underscore
-                    date_part = f"_{today}"
-                    if metric_key[sym_start:].endswith(date_part):
-                        key_symbol = metric_key[sym_start : -len(date_part)]
-                        if key_symbol == existing_symbol:
-                            return False  # Même type + même symbole + même date → skip
-                else:
-                    return False  # Même type global + même date → skip
+            # Reconstruire la base attendue: "TYPE" (global) ou "TYPE_SYMBOL"
+            expected = existing_type + (f"_{existing_symbol}" if existing_symbol else "")
+            if base == expected:
+                return False  # Même type (+ même symbole) + même date → skip
 
         self._last_alert_time[metric_key] = now
         return True
@@ -649,11 +636,15 @@ class PerformanceMonitor:
         # Générer des recommandations basées sur l'analyse
         report["recommendations"] = self._generate_recommendations(report)
 
-        # Sauvegarder le rapport
+        # Sauvegarder le rapport (écriture atomique : tmp + replace)
         try:
             RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
-            with open(REPORT_FILE, "w") as f:
+            tmp = REPORT_FILE.with_suffix(".json.tmp")
+            with open(tmp, "w") as f:
                 json.dump(report, f, indent=2, default=str)
+                f.flush()
+                os.fsync(f.fileno())
+            tmp.replace(REPORT_FILE)
         except OSError as e:
             logger.error(f"Impossible de sauvegarder le rapport: {e}")
 

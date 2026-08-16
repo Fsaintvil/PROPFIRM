@@ -610,10 +610,12 @@ class TestCalculateLot:
         assert lot <= 0.10
 
     def test_mt5_account_none(self):
+        """🐛 FIX 16 Août 2026 (Audit M-EX1): account=None (MT5 down) → lot=0
+        (refus) au lieu de l'ancien 0.05 fixe SANS contrôle de risque."""
         p = make_protector()
         p.mt5.get_account_info.return_value = None
         lot = p.calculate_lot("EURUSD", 1.1, 1.095)
-        assert lot == 0.05
+        assert lot == 0.0
 
     def test_zone2_half_risk(self):
         p = self._make_protector()

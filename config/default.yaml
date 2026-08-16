@@ -140,8 +140,15 @@ symbol_limits:
     tp_atr_ranging: 6.0
     adx_slope_threshold: -3.0
     adx_slope_threshold_strong: -6.0
-    threshold_trending: 5.0
-    threshold_ranging: 5.0
+    # 🔧 16 Août 2026 — BTCUSD ALIGNÉ SUR LE BACKTEST VALIDÉ (PF 1.18, 6250 trades,
+    # scripts/backtest_with_costs.py lignes 33-36 : THRESHOLD_TRENDING=2.5 / RANGING=2.0).
+    # Le 5.0/5.0 était un héritage de l'ancien mode crypto (06/08), JAMAIS recalibré,
+    # et 2× plus restrictif que le backtest → goulet de production RÈGLE D'OR
+    # (0 signal BTCUSD depuis le redémarrage, mom≈-11 vs thresh≈327).
+    # Garde-fou (adaptive-engine 16/08) : si WR BTCUSD < 50% après 15-20 trades GR,
+    # revenir à 3.5 ou plafonner la contribution BTCUSD ≤ 25% de l'échantillon GR.
+    threshold_trending: 2.5
+    threshold_ranging: 2.0
     pullback_band_trending: 0.8
     pullback_band_ranging: 0.5
     cmf_threshold: 0.2

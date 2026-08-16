@@ -118,23 +118,29 @@ def _acquire_mutex():
             existing = ctypes.windll.kernel32.OpenMutexW(0x00100000, False, _MUTEX_NAME)
             if existing:
                 WAIT_ABANDONED = 0x00000080
-                WAIT_TIMEOUT = 0x00000102
+                WAIT_OBJECT_0 = 0x00000000
                 wait_result = ctypes.windll.kernel32.WaitForSingleObject(existing, 0)
-                ctypes.windll.kernel32.CloseHandle(existing)
-                if wait_result == WAIT_ABANDONED:
-                    # Le précédent propriétaire est mort — on peut prendre possession
-                    # Release + Close le handle obtenu par CreateMutexW, puis ré-essayer
-                    ctypes.windll.kernel32.ReleaseMutex(handle)
-                    ctypes.windll.kernel32.CloseHandle(handle)
-                    # Réessai: CreateMutexW devrait maintenant réussir
-                    handle2 = ctypes.windll.kernel32.CreateMutexW(None, True, _MUTEX_NAME)
-                    if handle2:
-                        _mutex_handle = handle2
+                if wait_result in (WAIT_ABANDONED, WAIT_OBJECT_0):
+                    # 🔧 FIX M-N1 (Auto-Fixer): Le précédent propriétaire est mort
+                    # (WAIT_ABANDONED) ou le mutex existait mais était libre
+                    # (WAIT_OBJECT_0). Dans les deux cas, WaitForSingleObject a
+                    # DONNÉ la propriété du mutex à l'appelant via le handle
+                    # `existing`. Il NE FAUT PAS fermer ce handle : il EST
+                    # désormais le mutex possédé.
+                    # Ancien code: ReleaseMutex+CloseHandle(existing) puis 2e
+                    # CreateMutexW. Comme le mutex nommé existe toujours (Windows
+                    # ne le détruit que quand TOUS les handles sont fermés), le 2e
+                    # CreateMutexW renvoyait ENCORE ERROR_ALREADY_EXISTS SANS
+                    # propriété → la protection anti-doublon ne tenait que par le
+                    # fallback fichier PID (fenêtre de doublon possible).
+                    ctypes.windll.kernel32.CloseHandle(handle)  # handle initial (non possédé)
+                    _mutex_handle = existing
+                    if wait_result == WAIT_ABANDONED:
                         logger.warning("PID lock: mutex ABANDONED récupéré (ancien processus tué)")
-                        return True
                     else:
-                        logger.warning("PID lock: récupération mutex ABANDONED échouée — fallback fichier")
-                        return False
+                        logger.info("PID lock: mutex existant mais libre — propriété acquise")
+                    return True
+                ctypes.windll.kernel32.CloseHandle(existing)
             # Vrai conflit: un autre processus détient le mutex
             ctypes.windll.kernel32.CloseHandle(handle)
             logger.critical("PID lock: mutex déjà détenu par une autre instance — abandon")
@@ -206,7 +212,6 @@ def _acquire_lock():
             PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
             PROCESS_QUERY_INFORMATION = 0x0400
             STILL_ACTIVE = 259  # Windows: exit code when process is still running
-            ERROR_ACCESS_DENIED = 5  # Windows: GetLastError() value for access denied
             handle = ctypes.windll.kernel32.OpenProcess(
                 PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION, False, existing
             )
@@ -252,6 +257,24 @@ def _release_lock():
 logger = logging.getLogger("robot")
 
 
+def _env_int(name: str, default: int) -> int:
+    """Lit une variable d'environnement comme entier avec fallback robuste.
+
+    🔧 FIX M-N7 (Auto-Fixer): un int() non protégé sur une valeur non-numérique
+    du .env (ex: ROBOT_HEALTH_PORT="abc") levait ValueError → crash du robot au
+    démarrage. Le helper logue un warning explicite et retourne la valeur par
+    défaut au lieu de crasher.
+    """
+    raw = os.environ.get(name, "")
+    if raw is None or str(raw).strip() == "":
+        return default
+    try:
+        return int(raw)
+    except (ValueError, TypeError):
+        logger.warning(f"[ENV] {name}={raw!r} non numérique — fallback {default}")
+        return default
+
+
 class TradingEngine:
     def _validate_config(self):
         errors = []
@@ -289,7 +312,7 @@ class TradingEngine:
         self.audit.log_state_change("robot_start", None, f"v{cfg.__version__}" if hasattr(cfg, "__version__") else "?")
         self.metrics = MetricsCollector()
         self.metrics.gauge("initial_balance", 0)
-        _health_port = int(os.environ.get("ROBOT_HEALTH_PORT", "9090"))
+        _health_port = _env_int("ROBOT_HEALTH_PORT", 9090)
         self.health_server = HealthServer(port=_health_port, metrics=self.metrics, health_check=self._health_status)
         try:
             self.health_server.start()
@@ -640,7 +663,6 @@ class TradingEngine:
             # 🔒 FIX 05 Aout 2026: Fusionner les jours de trading du COMPTE collectés
             # avant filtrage par symbole (trades de symboles inactifs comptent pour FTMO).
             if account_trading_days:
-                _before = len(self.ftmo.trading_days)
                 self.ftmo.trading_days.update(account_trading_days)
                 logger.info(
                     f"[STATE] Fusion {len(account_trading_days)} jours de trading de symboles "
@@ -767,6 +789,7 @@ class TradingEngine:
         )
 
         self.running = False
+        self._stopped = False  # 🔧 FIX M-N3: garde d'idempotence pour stop()
         self.cycle_count = 0
         self.last_report_cycle = 0
         self._last_cycle_time = time.time()
@@ -848,7 +871,7 @@ class TradingEngine:
         # lire l'âge du heartbeat). Sans ce fix, un blocage MT5 de 14h (30 Juillet)
         # aurait été invisible.
         heartbeat_file = os.path.abspath(HEARTBEAT_FILE)
-        timeout = max(int(os.environ.get("ROBOT_WATCHDOG_SECONDS", "180")) * 2, 300)
+        timeout = max(_env_int("ROBOT_WATCHDOG_SECONDS", 180) * 2, 300)
 
         try:
             # 🐛 FIX 05 Août 2026: Capturer stderr du watchdog dans un fichier dédié.
@@ -957,26 +980,26 @@ class TradingEngine:
             if tick is not None:
                 tick_time = getattr(tick, "time", None)
                 if tick_time is not None:
-                    dt = datetime.fromtimestamp(float(tick_time))
+                    # 🔧 FIX M-N2 (Auto-Fixer): datetime.fromtimestamp() sans tz
+                    # produit une heure LOCALE naïve comparée à datetime.utcnow()
+                    # → faux avertissement permanent d'horloge décalée sur les
+                    # machines en TZ≠UTC. MT5 tick time est UTC : on construit
+                    # directement un datetime aware UTC.
+                    dt = datetime.fromtimestamp(float(tick_time), tz=timezone.utc)
             if dt is not None:
-                local_now = datetime.utcnow()
+                local_now = datetime.now(timezone.utc)
                 diff = (local_now - dt).total_seconds()
                 if abs(diff) > 5:
                     logger.warning(
                         f"[CLOCK SYNC] Horloge système décalée de {diff:.0f}s "
                         f"(locale={local_now}, MT5={dt}) — timestamps peuvent être négatifs"
                     )
-                    # Stocker le décalage pour corriger les calculs de durée
-                    self._mt5_clock_offset = diff
                 else:
                     logger.info(f"[CLOCK SYNC] Horloge synchronisée (diff={diff:.0f}s)")
-                    self._mt5_clock_offset = 0.0
             else:
                 logger.warning("[CLOCK SYNC] Impossible d'obtenir le temps serveur MT5 (tick EURUSD indisponible)")
-                self._mt5_clock_offset = 0.0
         except Exception as e:
             logger.warning(f"[CLOCK SYNC] Échec synchronisation: {e}")
-            self._mt5_clock_offset = 0.0
 
     def _health_check(self):
         """Vérifie la connexion MT5 avec tolérance aux glitchs passagers.
@@ -1071,8 +1094,30 @@ class TradingEngine:
                 try:
                     import subprocess
 
-                    # Tuer le processus MT5 terminal
-                    subprocess.run(["taskkill", "/F", "/IM", "terminal64.exe"], timeout=10)
+                    # 🔧 FIX M-N6 (Auto-Fixer): Cibler le PID du terminal au lieu de
+                    # `taskkill /IM terminal64.exe` qui tuait TOUS les terminaux MT5
+                    # de la machine (risque réel quand plusieurs comptes/instances
+                    # cohabitent sur le même poste).
+                    # Ordre de résolution du PID :
+                    #   1. MT5_TERMINAL_PID (env, configurable explicitement)
+                    #   2. mt5.terminal_info().pid (terminal CONNECTÉ à ce robot)
+                    #   3. Aucun PID → pas de taskkill (plus sûr que tuer tout)
+                    terminal_pid = _env_int("MT5_TERMINAL_PID", 0)
+                    if not terminal_pid:
+                        try:
+                            ti = self.mt5.terminal_info()
+                            _pid = getattr(ti, "pid", 0)
+                            terminal_pid = _pid if isinstance(_pid, int) else 0
+                        except Exception as _e:
+                            logger.warning(f"[BROKER] terminal_info indisponible: {_e}")
+                    if terminal_pid:
+                        subprocess.run(["taskkill", "/F", "/PID", str(terminal_pid)], timeout=10)
+                        logger.info(f"[BROKER] Terminal MT5 tué par PID {terminal_pid}")
+                    else:
+                        logger.warning(
+                            "[BROKER] PID terminal introuvable (MT5_TERMINAL_PID non défini et "
+                            "terminal_info indisponible) — pas de taskkill, restart via MT5_TERMINAL_PATH"
+                        )
                     time.sleep(3)
                     # Relancer MT5 via le raccourci
                     mt5_path = os.environ.get("MT5_TERMINAL_PATH", "")
@@ -1173,6 +1218,34 @@ class TradingEngine:
                 return data
         except Exception as e:
             logger.warning(f"State load failed: {e}")
+            # 🐛 FIX 16 Août 2026 (Audit B6): tenter de restaurer le backup .bak.
+            # Une corruption de robot_state.json (écriture interrompue, disque plein,
+            # antivirus) ne doit pas réinitialiser peak_equity/daily_start_equity/
+            # trading_days → protections FTMO perdues silencieusement.
+            bak = Path(str(Path(STATE_FILE).with_suffix(".json.bak")))
+            if bak.exists():
+                try:
+                    data = json.loads(bak.read_text())
+                    logger.warning(
+                        f"State load failed (corruption) — restauration depuis "
+                        f"{bak.name}: {len(data)} clés restaurées"
+                    )
+                    data.setdefault("restart_count", 0)
+                    data.setdefault("restart_timestamps", [])
+                    ds = data.get("daily_stats")
+                    if ds and isinstance(ds.get("day"), str):
+                        try:
+                            ds["day"] = datetime.strptime(ds["day"], "%Y-%m-%d").date()
+                        except (ValueError, TypeError):
+                            ds["day"] = datetime.utcnow().date()
+                    return data
+                except Exception as e2:
+                    logger.critical(f"Backup {bak.name} corrompu aussi: {e2}")
+            else:
+                logger.critical(
+                    "robot_state.json corrompu SANS backup .bak — protections FTMO "
+                    "(peak_equity, daily_start_equity, trading_days) réinitialisées !"
+                )
         return {"restart_count": 0, "restart_timestamps": []}
 
     def start(self):
@@ -1199,7 +1272,28 @@ class TradingEngine:
         return True
 
     def stop(self):
+        # 🔧 FIX M-N3 (Auto-Fixer): stop() rendu IDEMPOTENT. Le signal handler
+        # appelait stop() puis le finally de start() appelait stop() une 2e fois
+        # → double fermeture des ressources (audit.close(), feature_store.close(),
+        # mt5.disconnect()) avec logs dupliqués et risques de RuntimeError sur les
+        # close() déjà effectués. Les appels suivants ne font rien.
+        if getattr(self, "_stopped", False):
+            logger.debug("[STOP] stop() déjà appelé — appel ignoré (idempotent)")
+            return
+        self._stopped = True
         self.running = False
+        # 🐛 FIX 16 Août 2026 (Audit B2): écrire le flag d'arrêt gracieux AVANT
+        # toute fermeture — le watchdog externe (process_watchdog.py) ne doit PAS
+        # ressusciter le robot après un arrêt volontaire (Ctrl+C, taskkill).
+        # Avant: seul robot.ps1 -Stop écrivait runtime/robot.stop.flag → tout autre
+        # arrêt était annulé dans la minute par le watchdog (respawn).
+        try:
+            _stop_flag = Path(HEARTBEAT_FILE).parent / "robot.stop.flag"
+            _stop_flag.parent.mkdir(parents=True, exist_ok=True)
+            _stop_flag.write_text(f"stopped {datetime.utcnow().isoformat()}\n")
+            logger.info(f"[STOP] Flag d'arrêt gracieux écrit: {_stop_flag}")
+        except Exception as e:
+            logger.warning(f"[STOP] Impossible d'écrire le flag d'arrêt: {e}")
         self._save_state()
         # 🐛 FIX 10 Août 2026 (Bug #1): NE PLUS fermer les positions ici.
         # Le `finally:` de run() et le signal handler appelaient stop() sur
@@ -1212,6 +1306,18 @@ class TradingEngine:
         if hasattr(self, "audit"):
             self.audit.log_state_change("robot_stop", "running", "stopped")
             self.audit.close()
+        # 🐛 FIX 16 Août 2026 (Audit B2): terminer le processus watchdog interne
+        # (le spawn de remplacement est DANS ce processus). Le flag robot.stop.flag
+        # désactive déjà le watchdog externe, mais le watchdog de ce processus
+        # continuerait de surveiller un heartbeat gelé.
+        if getattr(self, "_watchdog_process", None) is not None:
+            try:
+                self._watchdog_process.terminate()
+                self._watchdog_process.wait(timeout=5)
+                logger.info("[STOP] Watchdog interne terminé")
+            except Exception as e:
+                logger.warning(f"[STOP] Terminaison watchdog interne: {e}")
+            self._watchdog_process = None
         self.tracker.feature_store.close()
         self.mt5.disconnect()
         _release_lock()
@@ -1286,7 +1392,7 @@ class TradingEngine:
 
             # Watchdog: detect MT5 freeze / stuck cycles (augmenté 120s→180s)
             since_last = time.time() - self._last_cycle_time
-            _wd_threshold = int(os.environ.get("ROBOT_WATCHDOG_SECONDS", "180"))
+            _wd_threshold = _env_int("ROBOT_WATCHDOG_SECONDS", 180)
             if since_last > _wd_threshold:  # Augmenté de 120s → 180s (3 min)
                 self._watchdog_failures += 1
                 logger.error(f"WATCHDOG: {since_last:.0f}s since last cycle (failure #{self._watchdog_failures})")
@@ -1622,7 +1728,7 @@ class TradingEngine:
                     logger.debug(f"[WAL] feature_store checkpoint: {e}")
 
             elapsed = time.time() - cycle_start
-            _min_sleep = int(os.environ.get("ROBOT_MIN_CYCLE_SLEEP", "5"))
+            _min_sleep = _env_int("ROBOT_MIN_CYCLE_SLEEP", 5)
             sleep_time = max(_min_sleep, cfg.CYCLE_SECONDS - elapsed)
             time.sleep(sleep_time)
 
@@ -1727,7 +1833,15 @@ class TradingEngine:
                         logger.debug(f"  [PORTFOLIO] {symbol}: {reason}")
                         continue
                 except Exception as e:
-                    logger.warning(f"  [PORTFOLIO] {symbol}: erreur ({e}) — bypass")
+                    # 🐛 FIX 16 Août 2026 (Audit M-EX5): FAIL-CLOSED. L'ancien code
+                    # faisait "bypass" → une exception dans la vérification de
+                    # corrélation laissait passer le trade SANS protection FTMO.
+                    # Une erreur ici = état douteux → on REFUSE le trade.
+                    logger.warning(
+                        f"  [PORTFOLIO] {symbol}: erreur vérification corrélation ({e}) — "
+                        f"REFUS (fail-closed, protection FTMO prioritaire)"
+                    )
+                    continue
             candidates.append((score, symbol, signal, positions))
 
         # Save signal debug info — seulement tous les 5 cycles (évite I/O excessif)
@@ -1760,7 +1874,13 @@ class TradingEngine:
                         logger.debug(f"  [PORTFOLIO] {symbol}: {pc_reason} (re-vérification exec)")
                         continue
                 except Exception as e:
-                    logger.debug(f"  [PORTFOLIO] {symbol}: re-vérification error ({e}) — bypass")
+                    # 🐛 FIX 16 Août 2026 (Audit M-EX5): FAIL-CLOSED (idem ci-dessus).
+                    # Re-vérification en échec → on REFUSE l'exécution du trade.
+                    logger.warning(
+                        f"  [PORTFOLIO] {symbol}: erreur re-vérification corrélation ({e}) — "
+                        f"REFUS (fail-closed, protection FTMO prioritaire)"
+                    )
+                    continue
             # 🐛 FIX 10 Août 2026 (Bug #3): La limite globale MAX_POSITIONS s'applique
             # TOUJOURS, même en high_confidence. Le veto risk-compliance impose
             # max_pos=8 absolu. Les relaxations high_confidence (par symbole/direction)

@@ -171,6 +171,19 @@ class OrderValidator:
             return "SL ou TP = 0 — REFUSÉ (FTMO VIOLATION: trade sans stop loss)"
         if price == 0:
             return "Price = 0 — REFUSÉ"
+        # 🐛 FIX 16 Août 2026 (Audit M-EX2): vérification du SENS des SL/TP.
+        # L'ancien code utilisait abs() partout → un BUY avec SL au-dessus du prix
+        # et TP en-dessous passait la validation RR tant que les distances étaient
+        # bonnes. Un tel ordre serait rejeté par le broker (invalid stops) — ou
+        # pire, exécuté avec un SL du mauvais côté en cas de retry RETURN.
+        if action == "BUY":
+            if not (sl < price < tp):
+                return f"BUY invalide: SL={sl} doit être < price={price} < TP={tp}"
+        elif action == "SELL":
+            if not (sl > price > tp):
+                return f"SELL invalide: SL={sl} doit être > price={price} > TP={tp}"
+        else:
+            return f"Action inconnue: {action}"
         # 🔧 FIX 21 Juillet 2026: SL trop proche du prix = pas de protection réelle
         # Certains trades avaient SL=entry_price±0 (rows 115-117, 126-128 du log)
         if abs(sl - price) / max(abs(price), 0.0001) < 0.0001:
@@ -546,7 +559,28 @@ class TradeExecutor:
             comment = getattr(result, "comment", "?") or "?"
             logger.warning(f"PlaceOrder FAILED {symbol}: retcode={result.retcode} comment={comment}")
         else:
-            logger.warning(f"PlaceOrder FAILED {symbol}: no result")
+            # 🐛 FIX 16 Août 2026 (Audit A1): timeout order_send (None) — l'ordre a pu
+            # être rempli côté serveur. Vérifier positions_get pour détecter un fill
+            # effectif avant de déclarer l'échec. Sinon le cycle suivant ré-ouvrirait
+            # le même signal (doublon) — le fingerprint n'est jamais enregistré sur None.
+            logger.warning(f"PlaceOrder FAILED {symbol}: no result (timeout ou erreur) — vérification fill effectif...")
+            try:
+                our_positions = self.mt5.get_positions() or []
+                # Cherche une position récente sur ce symbole (moins de 60s)
+                for p in our_positions:
+                    if getattr(p, "symbol", None) == symbol:
+                        pos_time = getattr(p, "time", 0) or 0
+                        if pos_time and (time.time() - pos_time) < 60:
+                            logger.info(
+                                f"  [POST-TIMEOUT] {symbol}: position #{getattr(p, 'ticket', '?')} "
+                                f"ouverte récemment (time={pos_time}) — ordre probablement rempli, "
+                                f"considéré succès pour éviter doublon"
+                            )
+                            result = p  # traité comme succès par l'appelant (fingerprint enregistré)
+                            return result
+                logger.warning(f"  [POST-TIMEOUT] {symbol}: aucune position récente trouvée — échec réel")
+            except Exception as e:
+                logger.warning(f"  [POST-TIMEOUT] {symbol}: vérification positions impossible: {e}")
         return result
 
     # 🐛 FIX 19 Juin: Market-closed cooldown — arrête le flood XAUUSD

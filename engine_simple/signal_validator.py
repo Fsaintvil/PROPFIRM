@@ -149,6 +149,7 @@ class SignalValidator:
         sig_score = signal.get("score", 0)
 
         # MeanReversion adjustment: les signaux MR ont un score bas (0.60) par conception
+        # ⚠️ MR DÉSACTIVÉ 16 Août 2026 — conservé par compatibilité (aucun signal MR ne sera généré)
         if signal.get("_strategy") == "MR":
             effective_min_score = min(effective_min_score, 0.55)
 

@@ -467,6 +467,7 @@ class TestPersistPartialClosed:
                     assert "1001" in written["partial_closed"]
                     assert "1002" in written["partial_closed"]
 
+    # NOTE (16 Août 2026, Vague 5): test "ne doit pas crasher" — valeur = non-propagation
     def test_no_crash_on_write_error(self, trailer):
         """Erreur d'écriture → log warning, pas de crash."""
         trailer.partial_closed.add("1001")

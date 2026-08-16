@@ -1,11 +1,14 @@
 """
-CHECKPOINT QUOTIDIEN — Mode Preuve Strict (06 Aout 2026)
-=========================================================
-Mesure chaque jour l'état de la phase de validation du robot :
+CHECKPOINT QUOTIDIEN — Robot MOM20x3 (16 Août 2026)
+====================================================
+Vue d'ensemble quotidienne de l'état du robot :
   1. Santé du processus (PID, heartbeat, erreurs)
-  2. État FTMO (balance, DD, daily loss, consistance)
-  3. Performance de la PREUVE (trades BUY-only post-redémarrage)
-  4. Critères de validation (WR ≥ 50%, expectancy > 0, PF > 1.2, stabilité 2 fenêtres)
+  2. État du compte (compte DÉMO — challenge FTMO perdu, 0 jour restant)
+  3. 🏆 RÈGLE D'OR (13 Août 2026) : état chargé depuis runtime/golden_rule/state.json
+     — la logique de calcul vit dans scripts/golden_rule.py, ce script ne la duplique PAS
+  4. Historique ARCHIVÉ de l'ancienne phase de preuve (06→13 Août, 5 symboles BUY-only,
+     critères de validation/scaling) — conservé pour la compatibilité des clés JSON
+     (proof / validation / scaling), il ne fait plus foi depuis la RÈGLE D'OR.
 
 Usage :
     python scripts/daily_checkpoint.py            # affiche + écrit le rapport
@@ -18,6 +21,7 @@ Historique lisible dans : runtime/daily_checkpoint/history.json
 import argparse
 import csv
 import json
+import logging
 import sys
 import time
 from datetime import datetime, timedelta
@@ -27,11 +31,16 @@ BASE = Path(__file__).parent.parent
 sys.path.insert(0, str(BASE))
 sys.path.insert(0, str(BASE / "scripts"))  # pour importer golden_rule
 
+logger = logging.getLogger("daily_checkpoint")
+
 # 🏆 RÈGLE D'OR (13 Août 2026) — import du framework de validation 100 trades
 import golden_rule  # noqa: E402
 
-# ── Constantes de la phase de preuve ────────────────────────────────────────
-PROOF_START = datetime(2026, 8, 6, 19, 36)  # redémarrage mode preuve strict
+# ── Constantes de l'ANCIENNE phase de preuve (ARCHIVÉE le 13/08/2026) ──────
+# Conservées pour la compatibilité des clés JSON de sortie (proof/validation/
+# scaling). La référence de validation est désormais la RÈGLE D'OR
+# (scripts/golden_rule.py) — les symboles ci-dessous ont été retirés le 13/08.
+PROOF_START = datetime(2026, 8, 6, 19, 36)  # redémarrage mode preuve strict (06 Août, ARCHIVÉ)
 PROOF_SYMBOLS = ["XAUUSD", "EURUSD", "USDJPY", "EURGBP", "USOIL.cash"]
 VALIDATION = {
     "min_trades": 100,  # échantillon cible pour conclure
@@ -41,11 +50,11 @@ VALIDATION = {
     "windows": 2,  # stabilité sur 2 fenêtres de 50
 }
 
-# ── Critère de scaling par symbole ──────────────────────────────────────────
-# Un symbole devient "éligible au scaling" quand il prouve son edge sur un
+# ── Critère de scaling par symbole (ARCHIVÉ — phase de preuve du 06→13 Août) ─
+# Un symbole devenait "éligible au scaling" quand il prouvait son edge sur un
 # échantillon suffisant : PF ≥ 1.5 ET WR ≥ 50% ET ≥ 30 trades BUY-only.
-# Le scaling (augmentation de lot) est une DÉCISION UTILISATEUR — le checkpoint
-# ne fait que signaler l'éligibilité, il ne modifie jamais les lots.
+# ⚠️ DEPUIS LA RÈGLE D'OR (13 Août) : AUCUN scaling avant 100 trades propres —
+# cette section est conservée pour la compatibilité des clés JSON uniquement.
 SCALING = {
     "min_trades": 30,  # échantillon minimum par symbole
     "pf_target": 1.5,  # profit factor cible par symbole
@@ -77,6 +86,24 @@ def load_trades():
 
 def load_ftmo_report():
     path = BASE / "runtime" / "ftmo_report.json"
+    if not path.exists():
+        return {}
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def load_golden_rule_state():
+    """État RÈGLE D'OR persisté par scripts/golden_rule.py.
+
+    Source de vérité : runtime/golden_rule/state.json (calcul fait par
+    golden_rule.py au checkpoint quotidien / à la demande). Ce script charge
+    l'état existant au lieu de dupliquer la logique de calcul.
+    Retourne {} si le fichier est absent ou illisible.
+    """
+    path = BASE / "runtime" / "golden_rule" / "state.json"
     if not path.exists():
         return {}
     try:
@@ -127,8 +154,10 @@ def check_process():
 
 
 def compute_proof_stats(rows):
-    """Stats de la phase de preuve : trades BUY-only sur les 5 symboles,
-    depuis le redémarrage du mode preuve."""
+    """Stats de l'ANCIENNE phase de preuve (ARCHIVÉE) : trades BUY-only sur
+    les 5 symboles, depuis le redémarrage du mode preuve (06 Août).
+    Conservée pour la compatibilité des clés JSON — n'est plus une référence
+    depuis la RÈGLE D'OR (13 Août)."""
     proof = []
     for row in rows:
         try:
@@ -208,7 +237,11 @@ def compute_proof_stats(rows):
 
 
 def evaluate_validation(stats):
-    """Verdict de validation basé sur les critères de la phase de preuve."""
+    """Verdict de l'ANCIENNE validation de preuve (ARCHIVÉE le 13/08).
+
+    La référence de validation est désormais la RÈGLE D'OR
+    (scripts/golden_rule.py) — ce verdict est conservé pour la compatibilité
+    des clés JSON de sortie uniquement."""
     verdict = {"reached": False, "criteria": {}, "status": "EN_COURS", "message": ""}
     c = VALIDATION
     n = stats["trades"]
@@ -236,14 +269,17 @@ def evaluate_validation(stats):
 
 
 def evaluate_scaling(stats):
-    """Éligibilité au scaling par symbole.
+    """Éligibilité au scaling par symbole — ANCIEN critère (ARCHIVÉ le 13/08).
 
-    Chaque symbole est évalué sur son propre échantillon BUY-only :
+    Chaque symbole était évalué sur son propre échantillon BUY-only :
         - ≥ 30 trades (échantillon suffisant)
         - PF ≥ 1.5
         - WR ≥ 50%
-    Le checkpoint SIGNALE l'éligibilité — la décision d'augmenter le lot
-    appartient à l'utilisateur. Ne modifie jamais les lots automatiquement.
+    ⚠️ Depuis la RÈGLE D'OR : AUCUN scaling avant 100 trades propres
+    (WR ≥ 60% ET PF ≥ 1.1 sur US100/US30/JP225/SOLUSD/BTCUSD). Cette section
+    est conservée pour la compatibilité des clés JSON de sortie uniquement.
+    Le checkpoint SIGNALE — la décision d'augmenter le lot appartient à
+    l'utilisateur. Ne modifie jamais les lots automatiquement.
     """
     sc = SCALING
     result = {"eligible": [], "in_progress": [], "symbols": {}}
@@ -331,9 +367,34 @@ def main():
     verdict = evaluate_validation(stats)
     scaling = evaluate_scaling(stats)
 
-    # 🏆 RÈGLE D'OR — évaluation sur les symboles du repositionnement
-    golden_stats = golden_rule.compute_stats(rows, golden_rule.GOLDEN_RULE_START, golden_rule.GOLDEN_SYMBOLS)
+    # 🏆 RÈGLE D'OR — source de vérité runtime/golden_rule/state.json.
+    # 🐛 FIX 16 Août 2026 (Rapport hebdo Optimizer): le checkpoint RECALCULE et
+    # PERSISTE l'état via golden_rule.write_state() — avant, il se contentait de
+    # charger state.json (qui restait figé au dernier `golden_rule.py` manuel).
+    # Conséquence du bug: l'état officiel affichait 3/100 WR 100% alors que le
+    # réel était 6/100 WR 50% PF 0.72 (données trompeuses pour toute décision).
+    golden_state = load_golden_rule_state()
+    golden_start = golden_state.get("start", golden_rule.GOLDEN_RULE_START)
+    golden_symbols = golden_state.get("symbols", golden_rule.GOLDEN_SYMBOLS)
+    golden_stats = golden_rule.compute_stats(rows, golden_start, golden_symbols)
     golden_verdict = golden_rule.evaluate_golden_rule(golden_stats)
+    if golden_state.get("stats") != golden_stats:
+        # L'état a changé → persister le recalcul (source de vérité à jour).
+        # golden_rule.write_state attend le même format que golden_rule.main().
+        golden_summary = {
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "start": golden_start,
+            "symbols": golden_symbols,
+            "golden_rule": golden_rule.GOLDEN_RULE,
+            "stats": golden_stats,
+            "verdict": golden_verdict,
+        }
+        try:
+            golden_rule.write_state(golden_summary)
+            logger.info(f"[CHECKPOINT] RÈGLE D'OR persistée: {golden_stats['trades']} trades, "
+                        f"WR {golden_stats['wr']:.1%}, PF {golden_stats['pf']:.2f}")
+        except Exception as e:
+            logger.warning(f"[CHECKPOINT] Persistance RÈGLE D'OR échouée: {e}")
 
     summary = {
         "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -343,10 +404,11 @@ def main():
         "validation": verdict,
         "scaling": scaling,
         "golden_rule": {
-            "start": golden_rule.GOLDEN_RULE_START,
-            "symbols": golden_rule.GOLDEN_SYMBOLS,
+            "start": golden_start,
+            "symbols": golden_symbols,
             "stats": golden_stats,
             "verdict": golden_verdict,
+            "source": "recalcul+persistance (FIX 16 Août 2026)",
         },
     }
 
@@ -358,7 +420,7 @@ def main():
 
     # ── Affichage texte ──────────────────────────────────────────────────
     print("=" * 62)
-    print("📊 CHECKPOINT QUOTIDIEN — MODE PREUVE STRICT")
+    print("📊 CHECKPOINT QUOTIDIEN — 13 SYMBOLES ACTIFS + RÈGLE D'OR")
     print(f"   {summary['date']}")
     print("=" * 62)
 
@@ -371,15 +433,17 @@ def main():
     print(f"   Erreurs 24h: {proc.get('errors_24h', 0)}")
 
     # FTMO
-    print("\n🎯 ÉTAT FTMO")
+    print("\n🎯 ÉTAT DU COMPTE (DÉMO — challenge FTMO perdu, 0 jour restant)")
+    print("   ⚠️ Les règles du challenge (consistance, jours min, profit target) ne s'appliquent plus.")
     print(f"   Balance: ${ftmo.get('balance', 0):,.2f} | PnL: ${ftmo.get('pnl', 0):,.2f}")
     print(f"   Progression: {ftmo.get('profit_progress')} | DD peak: {ftmo.get('dd_from_peak')}")
     print(
         f"   Jours: {ftmo.get('trading_days')} | Trades: {ftmo.get('total_trades')} | Pertes conséc.: {ftmo.get('consecutive_losses')}"
     )
 
-    # Preuve
-    print("\n🧪 PHASE DE PREUVE (BUY-only, 5 symboles) — ANCIENNE, dépréciée (retirés le 13/08)")
+    # Preuve (ARCHIVÉE)
+    print("\n🧪 ARCHIVE — ANCIENNE PHASE DE PREUVE (BUY-only, 5 symboles, retirés le 13/08)")
+    print("   ⚠️ Ne fait plus foi — la référence de validation est la RÈGLE D'OR en bas.")
     print(
         f"   Trades: {stats['trades']} | WR: {stats['wr']:.1%} | Expectancy: {stats['expectancy']:+.2f}$ | PF: {stats['pf']:.2f}"
     )
@@ -394,8 +458,8 @@ def main():
         for d, s in sorted(stats["by_day"].items()):
             print(f"     {d}  {s['trades']:3d} trades | {s['pnl']:+8.2f}$")
 
-    # Validation
-    print("\n⚖️ VALIDATION (ANCIENNE phase de preuve — obsolète, voir RÈGLE D'OR en bas)")
+    # Validation (ARCHIVÉE)
+    print("\n⚖️ ARCHIVE — ANCIENNE VALIDATION DE PREUVE (obsolète, la RÈGLE D'OR fait foi)")
     print(f"   Statut: {verdict['status']}")
     for k, v in verdict["criteria"].items():
         mark = "✅" if v["ok"] else ("⏳" if v["ok"] is None else "❌")
@@ -405,8 +469,9 @@ def main():
             print(f"   {mark} {k}: {v['actuel']} (cible {v['cible']})")
     print(f"   → {verdict['message']}")
 
-    # Scaling par symbole
-    print("\n🚀 SCALING PAR SYMBOLE (critère: ≥30 trades + PF≥1.5 + WR≥50%)")
+    # Scaling par symbole (ARCHIVÉ)
+    print("\n🚀 ARCHIVE — ANCIEN CRITÈRE DE SCALING (≥30 trades + PF≥1.5 + WR≥50%)")
+    print("   ⚠️ Depuis la RÈGLE D'OR : AUCUN scaling avant 100 trades propres (WR≥60% + PF≥1.1).")
     if scaling["eligible"]:
         print("   🟢 ÉLIGIBLE(S) AU SCALING:")
         for sym in scaling["eligible"]:
@@ -426,6 +491,10 @@ def main():
 
     # 🏆 RÈGLE D'OR
     print("\n🏆 RÈGLE D'OR (100 trades propres — repositionnement INDICES/CRYPTO)")
+    if golden_state:
+        print("   (état chargé depuis runtime/golden_rule/state.json — calcul: scripts/golden_rule.py)")
+    else:
+        print("   (⚠️ state.json absent — état recalculé depuis le journal, lancez scripts/golden_rule.py)")
     gs = golden_stats
     gv = golden_verdict
     bar_len = 30

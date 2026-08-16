@@ -225,8 +225,18 @@ class PositionTracker:
                 "max_recorded": self._max_recorded,
                 "updated_at": datetime.utcnow().isoformat(),
             }
-            with open(RECORDED_POSITIONS_FILE, "w") as f:
+            # 🐛 FIX 16 Août 2026 (Audit M-EX6): écriture ATOMIQUE (tmp + replace).
+            # Avant: open("w") direct → si crash pendant l'écriture, fichier corrompu →
+            # _load_recorded_positions échoue → réimport des deals ≤48h → DOUBLONS
+            # comptés dans le challenge (daily PnL, consistency, WR).
+            import os as _os
+
+            _tmp = Path(str(RECORDED_POSITIONS_FILE) + ".tmp")
+            with open(_tmp, "w") as f:
                 json.dump(data, f)
+                f.flush()
+                _os.fsync(f.fileno())
+            _tmp.replace(RECORDED_POSITIONS_FILE)
         except OSError as e:
             logger.warning(f"[TRACKER] Sauvegarde recorded_positions échouée: {e}")
 

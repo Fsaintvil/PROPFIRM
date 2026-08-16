@@ -144,9 +144,29 @@ class TestOrderValidator:
         assert "volume_max" in err
 
     def test_sl_tp_invalid(self):
+        """SL == TP == price : invalide (message directionnel OU protection)."""
         err = OrderValidator.validate("EURUSD", "BUY", 0.1, 1.1000, 1.1000, 1.1000, None)
         assert err is not None
-        assert "identique au prix" in err.lower() or "pas de protection" in err.lower() or "bloqué" in err.lower()
+        assert (
+            "identique au prix" in err.lower()
+            or "pas de protection" in err.lower()
+            or "bloqué" in err.lower()
+            or "invalide" in err.lower()
+        )
+
+    def test_buy_sl_above_price_rejected(self):
+        """🐛 FIX 16 Août 2026 (Audit M-EX2): un BUY avec SL au-dessus du prix
+        doit être REJETÉ (l'ancien abs() masquait le sens inversé)."""
+        err = OrderValidator.validate("EURUSD", "BUY", 0.1, 1.1000, 1.1100, 1.1050, None)
+        assert err is not None
+        assert "invalide" in err.lower()
+
+    def test_sell_sl_below_price_rejected(self):
+        """🐛 FIX 16 Août 2026 (Audit M-EX2): un SELL avec SL sous le prix
+        doit être REJETÉ."""
+        err = OrderValidator.validate("EURUSD", "SELL", 0.1, 1.1000, 1.0900, 1.1050, None)
+        assert err is not None
+        assert "invalide" in err.lower()
 
     def test_rr_below_min(self):
         # RR = (1.1260-1.1000) / (1.1000-1.0900) = 0.026/0.01 = 2.6 → OK (>MIN_RR_RATIO=2.5)

@@ -779,6 +779,7 @@ class TestSingleton:
 
 
 class TestEdgeCases:
+    # NOTE (16 Août 2026, Vague 5): test "ne doit pas crasher" — valeur = non-propagation
     def test_record_trade_function_survives_exception(self):
         """record_trade wraps in try/except — should not crash."""
         import engine_simple.performance_monitor as pm_mod
@@ -788,6 +789,7 @@ class TestEdgeCases:
             record_trade("USDCAD", 100.0, "RANGING", "BUY")  # should not raise
         pm_mod._monitor = None
 
+    # NOTE (16 Août 2026, Vague 5): test "ne doit pas crasher" — valeur = non-propagation
     def test_update_challenge_function_survives_exception(self):
         import engine_simple.performance_monitor as pm_mod
 

@@ -27,6 +27,7 @@ import json
 import time
 import logging
 import logging.handlers
+import os
 import threading
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -337,10 +338,15 @@ class Dashboard:
         logger.info("=" * 60)
 
     def save_report(self, status: RobotStatus, path: str = "runtime/dashboard.json"):
-        """Sauvegarde le rapport en JSON."""
+        """Sauvegarde le rapport en JSON (écriture atomique : tmp + replace)."""
         try:
-            with open(path, "w") as f:
+            path = Path(path)
+            tmp = path.with_suffix(".json.tmp")
+            with open(tmp, "w") as f:
                 json.dump(status.to_dict(), f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            tmp.replace(path)
         except Exception as e:
             logger.warning(f"Dashboard save failed: {e}")
 
