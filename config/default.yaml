@@ -1025,6 +1025,7 @@ symbol_limits:
     min_lot: 0.05
     risk_mult: 1.0
     max_spread_points: 120
+    max_spread_atr_ratio: 0.25  # 🔧 16 Août 2026: 0.15→0.25 (défaut) — spread réel 3pts (0.03$), ratio ATR 17.4% dépassait le 15% défaut → SOLUSD bloqué (même pattern BTCUSD/USOIL/UK100). GR PF 1.25, BUY-only, lot 0.05.
     adx_thresh: 20
     allow_buys: true
     allow_shorts: false  # ?? 13 Aout 2026: mode preuve BUY-only (Robot Manager)

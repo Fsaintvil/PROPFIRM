@@ -1,5 +1,16 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 16 Août 2026 (21:35)** : 🔧 **SOLUSD débloqué — `max_spread_atr_ratio` 0.15→0.25**
+> (config/default.yaml:symbol_limits.SOLUSD). SOLUSD était bloqué au PRECHECK par le ratio ATR :
+> spread réel 3pts (0.03 $) mais ratio ATR 17.4% > 15% défaut → `Spread too high`. Le pattern est
+> identique aux fixes BTCUSD (0.25), USOIL (0.22), UK100 (0.25). Limites points déjà OK (0.03 < 1.20).
+> Le robot recharge `symbol_limits` à chaud (refresh_symbol_limits ~15 min). SOLUSD reste BUY-only,
+> lot 0.05, cooldown 20 min, auto_pause 3. **GR : 6/100 trades, WR 50%, PF 0.72** (state.json 16/08 21:01,
+> uniquement US100.cash — US30/JP225/SOLUSD/BTCUSD = 0 trade, marché baissier mom20<0, pas un bug).
+> ✅ Correction d'analyse : le robot N'est PAS gelé — MT5 montre 18 positions fermées + 2 ouvertes
+> (13-14/08) sur 7 symboles (GBPUSD +22.35 $, AUDUSD +8.28 $), mais le compteur GR ne valide que les
+> 5 symboles du repositionnement (décision utilisateur confirmée 16/08). Test `_check_spread` SOLUSD :
+> ratio 16.3% < 25% ✅. Suite de tests : **1175 passed, 33 skipped**.
 > **Mise à jour 14 Août 2026 (14:20)** : 🔥 **XAUUSD + 7 PAIRES PRIMAIRES réactivées** (décision
 > utilisateur). **13 symboles actifs** : US100.cash, US30.cash, JP225.cash, SOLUSD, BTCUSD (repositionnement
 > 13 Août) + **XAUUSD, EURUSD, GBPUSD, USDJPY, USDCAD, AUDUSD, NZDUSD, USDCHF**. Garde-fous :
