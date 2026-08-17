@@ -164,6 +164,10 @@ class SignalPipeline:
             failed = [c["rule"] for c in pre_checks if not c["pass"]]
             reasons = {c["rule"]: c["reason"] for c in pre_checks if not c["pass"]}
             logger.debug(f"  [PRECHECK] {symbol}: echec {failed}, reasons={reasons}")
+            # 🔧 16 Août 2026: compteur observationnel (read-only, aucune logique modifiée)
+            from engine_simple.rejection_tracker import count_rejection
+            for rule, reason in reasons.items():
+                count_rejection(symbol, "pre_trade", f"{rule}: {reason}")
             return None
 
         # Phase 1a: Signal primaire selon Strategy Registry (MOM20x3 par défaut)
@@ -183,6 +187,9 @@ class SignalPipeline:
             logger.debug(f"  [MR] {symbol}: fallback MeanReversion DÉSACTIVÉ (FIX 16 Août 2026)")
 
         if signal is None:
+            # 🔧 16 Août 2026: compteur observationnel "no signal" (read-only)
+            from engine_simple.rejection_tracker import count_rejection
+            count_rejection(symbol, "no_signal", "MOM20x3 pas de signal")
             return None
 
         score = signal.get("score", 0.6)
@@ -195,34 +202,50 @@ class SignalPipeline:
         # Phase 1d: H4 Direction Filter (multi-TF professionnel)
         # Vérifie l'alignement du signal H1 avec la tendance H4.
         if not self._phase1d_h4_direction_filter(symbol, signal):
+            from engine_simple.rejection_tracker import count_rejection
+            count_rejection(symbol, "h4_dir", signal.get("action", "?"))
             return None
 
         # Phase 2: ADX threshold
         if not self._phase2_adx_filter(symbol, signal, cycle_count, log_throttle):
+            from engine_simple.rejection_tracker import count_rejection
+            count_rejection(symbol, "adx", f"ADX={signal.get('adx', 0):.1f}")
             return None
 
         # Phase 3: Session filter
         if not self._phase3_session_filter(symbol, signal):
+            from engine_simple.rejection_tracker import count_rejection
+            count_rejection(symbol, "session", signal.get("action", "?"))
             return None
 
         # Phase 4: News filter
         if not self._phase4_news_filter(symbol):
+            from engine_simple.rejection_tracker import count_rejection
+            count_rejection(symbol, "news", "blocked")
             return None
 
         # Phase 5: Direction = regime rule
         if not self._phase5_regime_rule(signal):
+            from engine_simple.rejection_tracker import count_rejection
+            count_rejection(symbol, "regime_rule", signal.get("action", "?"))
             return None
 
         # Phase 6: Strategy selector
         if not self._phase6_strategy_selector(symbol, signal):
+            from engine_simple.rejection_tracker import count_rejection
+            count_rejection(symbol, "strategy_sel", f"score={signal.get('score', 0):.2f}")
             return None
 
         # Phase 7: Volume Profile
         if not self._phase7_volume_profile(symbol, signal):
+            from engine_simple.rejection_tracker import count_rejection
+            count_rejection(symbol, "volume_profile", signal.get("action", "?"))
             return None
 
         # Phase 7b: RVOL + CMF
         if not self._phase7b_rvol_cmf(symbol, signal):
+            from engine_simple.rejection_tracker import count_rejection
+            count_rejection(symbol, "rvol_cmf", signal.get("action", "?"))
             return None
 
         # Phase 7c: OBV Divergence
