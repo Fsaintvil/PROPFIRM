@@ -64,10 +64,73 @@ RESTART_COOLDOWN_S = int(os.environ.get("ROBOT_WATCHDOG_COOLDOWN_S", "30"))  # m
 RESTART_WINDOW_S = int(os.environ.get("ROBOT_WATCHDOG_WINDOW_S", "600"))  # 10-min window
 MAX_RESTARTS = int(os.environ.get("ROBOT_WATCHDOG_MAX_RESTARTS", "5"))  # restarts allowed in window
 
+# 🔧 FIX 17 Août 2026: le watchdog écrit AUSSI dans un fichier dédié (log durable).
+# Problème observé : quand le robot parent meurt, le handle stderr hérité via Popen
+# (stdout=_wd_err, stderr=_wd_err dans trading_engine) peut devenir invalide → les
+# logs de résurrection "CRITICAL DEAD"/"Spawned" disparaissent dans le vide. On ne
+# peut plus diagnostiquer pourquoi le watchdog n'a pas relancé. Désormais chaque
+# watchdog ouvre SON PROPRE fichier runtime/watchdog_pid.log (append) et loggue en
+# parallèle stderr + fichier. Si un futur crash ne relance pas, la preuve existera.
+_WATCHDOG_LOG_DIR = Path(__file__).resolve().parent.parent / "runtime"
+_WATCHDOG_FILE_HANDLE = None
+_expected_creation_time = None  # 🔧 FIX 17 Août 2026: création attendue du process cible (anti PID reuse)
+
+
+def _get_process_creation_time(pid: int):
+    """Retourne le temps de création (FILETIME) d'un process Windows, ou None."""
+    if os.name != "nt":
+        return None
+    import ctypes
+    from ctypes import wintypes
+
+    PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, wintypes.DWORD(pid))
+    if not handle:
+        return None
+    try:
+        from ctypes import c_ulonglong, byref
+
+        creation = c_ulonglong(0)
+        exit_t = c_ulonglong(0)
+        kernel_t = c_ulonglong(0)
+        user_t = c_ulonglong(0)
+        if kernel32.GetProcessTimes(
+            handle, byref(creation), byref(exit_t), byref(kernel_t), byref(user_t)
+        ):
+            return creation.value
+        return None
+    finally:
+        kernel32.CloseHandle(handle)
+
+
+def _init_file_log() -> None:
+    """Ouvre (append) le fichier de log dédié à CE watchdog (par PID)."""
+    global _WATCHDOG_FILE_HANDLE
+    try:
+        _WATCHDOG_LOG_DIR.mkdir(parents=True, exist_ok=True)
+        _WATCHDOG_FILE_HANDLE = open(
+            _WATCHDOG_LOG_DIR / f"watchdog_{os.getpid()}.log",
+            "a",
+            encoding="utf-8",
+        )
+    except Exception:
+        _WATCHDOG_FILE_HANDLE = None
+
 
 def log(msg: str, level: str = "INFO") -> None:
-    """Simple logging to stderr (never interferes with main process output)."""
-    print(f"[WATCHDOG_PROC] {level} {msg}", file=sys.stderr, flush=True)
+    """Simple logging to stderr AND dedicated file (never interferes with main output)."""
+    line = f"[WATCHDOG_PROC] {level} {msg}"
+    try:
+        print(line, file=sys.stderr, flush=True)
+    except Exception:
+        pass
+    if _WATCHDOG_FILE_HANDLE is not None:
+        try:
+            _WATCHDOG_FILE_HANDLE.write(f"{datetime.now().isoformat(timespec='seconds')} {line}\n")
+            _WATCHDOG_FILE_HANDLE.flush()
+        except Exception:
+            pass
 
 
 def get_process_status(pid: int) -> bool:
@@ -93,12 +156,35 @@ def get_process_status(pid: int) -> bool:
             # code d'erreur Windows (sinon il renvoie 0 → mauvais jugement).
             kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
             handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, wintypes.DWORD(pid))
-            if handle:
-                return True
-            err = ctypes.get_last_error()
-            if err == ERROR_INVALID_PARAMETER:
-                return False  # Le PID n'existe pas → processus mort
-            return True  # Autre erreur → conservateur (assume vivant)
+            if not handle:
+                err = ctypes.get_last_error()
+                if err == ERROR_INVALID_PARAMETER:
+                    return False  # Le PID n'existe pas → processus mort
+                return True  # Autre erreur → conservateur (assume vivant)
+            # 🔧 FIX 17 Août 2026: vérifier l'IDENTITÉ du process derrière le PID.
+            # Scénario observé: le robot 3060 tué à 18:07:49, mais OpenProcess(3060)
+            # retournait VIVANT → le PID avait été RECYCLÉ par Windows vers un autre
+            # process → le watchdog croyait le robot vivant → pas de résurrection.
+            # Un PID recyclé a un temps de création DIFFÉRENT de celui du robot
+            # d'origine: on le détecte via GetProcessTimes.
+            from ctypes import c_ulonglong, byref
+
+            creation = c_ulonglong(0)
+            exit_t = c_ulonglong(0)
+            kernel_t = c_ulonglong(0)
+            user_t = c_ulonglong(0)
+            if kernel32.GetProcessTimes(
+                handle,
+                byref(creation),
+                byref(exit_t),
+                byref(kernel_t),
+                byref(user_t),
+            ):
+                # Comparer avec le temps de création attendu (passé via une var globale)
+                if _expected_creation_time and creation.value != _expected_creation_time:
+                    # PID recyclé: le process derrière ce PID n'est PAS notre robot
+                    return False
+            return True
         except Exception as e:
             log(f"OpenProcess check failed: {e}", "WARN")
             return True  # Assume alive on error (conservative)
@@ -273,7 +359,13 @@ def main():
     timeout = int(sys.argv[3]) if len(sys.argv) > 3 else 300  # Default: 5 min
 
     my_pid = os.getpid()
-    log(f"Started monitoring PID={target_pid} heartbeat={heartbeat_path} timeout={timeout}s")
+    _init_file_log()
+    # 🔧 FIX 17 Août 2026: capturer le temps de création du process cible au
+    # démarrage → permet à get_process_status de détecter le PID reuse (un PID
+    # recyclé a une création différente → considéré mort → résurrection).
+    global _expected_creation_time
+    _expected_creation_time = _get_process_creation_time(target_pid)
+    log(f"Started monitoring PID={target_pid} (created={_expected_creation_time or 'unknown'}) heartbeat={heartbeat_path} timeout={timeout}s")
     log("Auto-resurrection ENABLED (restart on process death; cooldown + budget + stop-flag guards active)")
 
     # If a halt flag survived from a previous crash-run, do not re-resurrect
@@ -296,6 +388,8 @@ def main():
     # NB: une veille machine complète suspend quand même le processus (aucun code
     # ne tourne) — ce fix ne protège que contre la perte du timer APRÈS la reprise.
     _next_check = time.monotonic() + check_interval
+    _loop_count = 0  # 🔧 FIX 17 Août 2026: compteur pour log "alive" périodique
+    _hb_mtime_prev = 0
 
     try:
         while True:
@@ -305,7 +399,6 @@ def main():
                 if _remaining <= 0:
                     break
                 time.sleep(min(5.0, _remaining))
-            _next_check = time.monotonic() + check_interval
 
             if auto_restart_disabled:
                 # Allowed to keep monitoring but never resurrect on our own.
@@ -320,6 +413,16 @@ def main():
                 attempt_restart(heartbeat_path)
                 # attempt_restart exits or spawns; loop continues only if --unreachable path
                 continue
+
+            # 🔧 FIX 17 Août 2026: log périodique "alive" — preuve que la boucle
+            # tourne. Si le watchdog se gèle (10h sans log observé), ce heartbeat
+            # interne révélera le gel dans les 2.5 min au lieu de découvrir la
+            # panne après coup. Loggue toutes les 5 itérations (~2.5 min).
+            _loop_count += 1
+            if _loop_count % 5 == 0:
+                _hb_age = time.time() - heartbeat_path.stat().st_mtime if heartbeat_path.exists() else -1
+                log(f"ALIVE: monitoring PID={target_pid} (hb_age={_hb_age:.0f}s, loop={_loop_count})")
+            _hb_mtime_prev = time.time()
 
             # Second check: is heartbeat recent? (only if process is alive)
             try:

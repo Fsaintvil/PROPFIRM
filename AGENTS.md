@@ -1,5 +1,29 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 17 Août 2026 (18:35)** : 🔧 **FIX WATCHDOG — résurrection fiable + logs durables** —
+> - **Découverte (18:07)** : le watchdog 22048 n'a PAS relancé le robot 3060 tué à 18:07:49. Pendant 10h
+>   (07:59→18:07) le robot tournait normalement, mais au kill le watchdog est resté muet : aucun "CRITICAL
+>   DEAD" dans `watchdog_external.log` (dernier write 07:59:19), aucun update de `watchdog_restarts.txt`.
+>   Le robot est resté down ~4 min jusqu'à l'apparition du PID 6756 (18:12:07, origine indéterminée).
+> - **Cause racine 1 — PID reuse** : après le kill, `OpenProcess(3060)` retournait VIVANT sur un PID
+>   **recyclé** par Windows → `get_process_status` croyait le robot vivant → pas de résurrection.
+> - **Cause racine 2 — logs perdus** : le watchdog écrivait dans le handle stderr hérité du robot parent
+>   (Popen stdout/stderr=_wd_err). Quand le parent meurt, les écritures partent dans le vide → impossible
+>   de diagnostiquer. Le log `watchdog_external.log` n'a plus rien capturé après 07:59:19.
+> - **Fix appliqué** (`scripts/process_watchdog.py`) :
+>   1. **Anti-PID-reuse** : `_get_process_creation_time()` capture le FILETIME du process cible au
+>      démarrage ; `get_process_status()` compare via `GetProcessTimes` à chaque check → PID recyclé = mort.
+>   2. **Log dédié par watchdog** : chaque watchdog ouvre `runtime/watchdog_<pid>.log` (append, en plus de
+>      stderr) → les "CRITICAL DEAD"/"Spawned" survivent à la mort du parent. Diagnostic possible.
+>   3. **Log périodique ALIVE** : toutes les 5 itérations (~2.5 min), preuve que la boucle tourne → un gel
+>      du watchdog devient visible en 2.5 min (au lieu de 10h).
+> - **Validation** : test isolation (fake robot mort → watchdog détecte 3 stalls heartbeat → "CRITICAL" →
+>   "Spawned new main.py" → handoff), log dédié écrit. Tests : **1175 passed, 33 skipped**.
+> - **État actuel** : robot PID 6756 actif (4 positions : BTCUSD/US100/XAUUSD), watchdog 21236 le surveille.
+>   Le watchdog actuel utilise DÉJÀ le code fixé ? Non — le 21236 a été spawné AVANT le fix ; il faudra le
+>   redémarrer au prochain redémarrage du robot pour bénéficier du nouveau code (le fix sera actif au
+>   prochain spawn naturel).
+
 > **Mise à jour 17 Août 2026 (08:05→08:15)** : 🔍 **Consolidation instrumentation + décision GR élargie** —
 > - **Commit `d7c61e903`** : consolidation du compteur de rejets — on garde `engine_simple/reject_counter.py`
 >   (instrumentation signal_pipeline.py + signal_validator.py, flush silencieux → `runtime/reject_counter.json`),
