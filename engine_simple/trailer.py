@@ -40,6 +40,31 @@ from engine_simple.symbol_profile import SymbolInstitutionalProfile, get_profile
 
 logger = logging.getLogger("ftmo.trailer")
 
+# 🔧 FIX 17 Août 2026: paliers du BE progressif (montée PLUS rapide du SL).
+# Problème: le BE s'arrêtait à entry+0.15×ATR dès 1.30×ATR de profit → entre
+# 1.30×ATR et le lock N1 (BTCUSD TREND=2.50×ATR, fallback=1.80×ATR) le SL
+# restait FIXE (zone morte) → les gagnants pouvaient rendre jusqu'à ~2×ATR
+# de profit avant que le trailing ne prenne le relais. Ex: BTCUSD à 2.27×ATR
+# de profit avait encore SL=entry+0.15×ATR (logs 17/08 20:24).
+# Nouveau: paliers fixes tous les 0.30×ATR qui font monter le SL de +0.15×ATR
+# à chaque palier. Le SL suit le profit de façon quasi-linéaire tout en
+# restant TOUJOURS sous le trailing N1 (peak−trail_dist), donc compatible.
+# 1.00×ATR → entry          (BE pur, inchangé)
+# 1.30×ATR → entry+0.15×ATR (inchangé)
+# 1.60×ATR → entry+0.30×ATR
+# 1.90×ATR → entry+0.45×ATR
+# 2.20×ATR → entry+0.60×ATR
+# 2.50×ATR → entry+0.75×ATR  (raccord au lock N1 BTCUSD TREND)
+# Valeurs en (seuil_profit_atr, buffer_sl_atr) — croissantes strictement.
+BE_PROGRESSIVE_LEVELS = [
+    (1.00, 0.00),  # breakeven pur
+    (1.30, 0.15),
+    (1.60, 0.30),
+    (1.90, 0.45),
+    (2.20, 0.60),
+    (2.50, 0.75),
+]
+
 
 class Trailer:
     """ATR-based trailing SL + partial TP + time-stop + structure exit."""
@@ -544,14 +569,21 @@ class Trailer:
     def _check_progressive_be(self, position: Any) -> None:
         """Progressive breakeven: sécurise un profit minimal AVANT le trailing N1.
 
-        - profit > 1.30×ATR → SL = entry + 0.15×ATR (petit gain garanti)
         - profit > 1.00×ATR → SL = entry (breakeven pur, zéro perte)
+        - profit > 1.30×ATR → SL = entry + 0.15×ATR (petit gain garanti)
+        - puis paliers tous les 0.30×ATR → SL + 0.15×ATR à chaque palier
+          (1.60→0.30, 1.90→0.45, 2.20→0.60, 2.50→0.75×ATR)
 
         🔧 FIX 31 Juillet 2026 (Quant Auditor): les seuils précédents (0.80/0.50×ATR)
         coupaient 62% des gagnants à <0.5R avant même le lock N1 (1.20×ATR).
         En repoussant à 1.00/1.30×ATR, les trades faibles ont une chance d'atteindre
         la zone N1 au lieu d'être stoppés net sur le bruit.
 
+        🔧 FIX 17 Août 2026: montée PLUS rapide. Avant, le SL restait fixe à
+        entry+0.15×ATR entre 1.30×ATR et le lock N1 (zone morte pouvant rendre
+        ~2×ATR de profit). Désormais des paliers BE_PROGRESSIVE_LEVELS font monter
+        le SL de +0.15×ATR tous les 0.30×ATR de profit, tout en restant toujours
+        sous le trailing N1 (peak−trail_dist) grâce à la garde sl_improves.
         Ne s'applique QUE si le SL actuel est moins bon (sl_improves).
         Permet de garantir qu'un trade qui atteint +1.00×ATR puis retrace
         ne repars pas à zéro.
@@ -573,10 +605,14 @@ class Trailer:
         if profit_atr <= 1.00:
             return
 
-        if profit_atr > 1.30:
-            target_sl = entry + 0.15 * atr_val if is_buy else entry - 0.15 * atr_val
-        else:
-            target_sl = entry
+        # Choisir le palier le plus haut atteint (croissants strictement)
+        target_buffer = 0.0
+        for thresh, buffer in BE_PROGRESSIVE_LEVELS:
+            if profit_atr > thresh:
+                target_buffer = buffer
+            else:
+                break
+        target_sl = entry + target_buffer * atr_val if is_buy else entry - target_buffer * atr_val
 
         info = self.mt5.get_symbol_info(position.symbol)
         if info is None:

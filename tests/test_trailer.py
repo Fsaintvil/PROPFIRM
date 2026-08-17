@@ -526,13 +526,83 @@ class TestTrailingConfigLock:
             assert get_trailing_for_symbol("GBPUSD", regime) == levels
 
     def test_progressive_be_thresholds(self):
-        """Breakeven progressif : les seuils 1.00/1.30×ATR sont hardcodés dans trailer.py.
-        Ce test verrouille le contrat (AGENTS.md 31 Juillet 2026)."""
-        from engine_simple.trailer import Trailer
+        """Breakeven progressif : les seuils 1.00/1.30×ATR sont dans BE_PROGRESSIVE_LEVELS.
+        Ce test verrouille le contrat (AGENTS.md 31 Juillet 2026 + FIX 17 Août 2026)."""
+        from engine_simple.trailer import BE_PROGRESSIVE_LEVELS
 
-        src = [c for c in Trailer._check_progressive_be.__code__.co_consts if isinstance(c, float)]
-        assert any(abs(c - 1.30) < 1e-9 for c in src), "seuil 1.30×ATR manquant"
-        assert any(abs(c - 1.00) < 1e-9 for c in src), "seuil 1.00×ATR manquant"
+        # La fonction doit référencer BE_PROGRESSIVE_LEVELS (module-level)
+        import engine_simple.trailer as trailer_mod
+
+        src = [c for c in trailer_mod.Trailer._check_progressive_be.__code__.co_names]
+        assert "BE_PROGRESSIVE_LEVELS" in src, "la fonction doit utiliser BE_PROGRESSIVE_LEVELS"
+        thresholds = [lvl[0] for lvl in BE_PROGRESSIVE_LEVELS]
+        assert any(abs(t - 1.30) < 1e-9 for t in thresholds), "seuil 1.30×ATR manquant"
+        assert any(abs(t - 1.00) < 1e-9 for t in thresholds), "seuil 1.00×ATR manquant"
+
+    def test_progressive_be_extra_levels(self):
+        """🔧 FIX 17 Août 2026: paliers supplémentaires — montée PLUS rapide du SL.
+        Les paliers 1.60/1.90/2.20/2.50×ATR doivent exister pour éviter la zone morte
+        entre 1.30×ATR et le lock N1 (le SL restait fixe à entry+0.15×ATR pendant que
+        le profit grimpait jusqu'à ~2×ATR de plus)."""
+        from engine_simple.trailer import BE_PROGRESSIVE_LEVELS
+
+        # Vérifier que la constante contient les paliers attendus, strictement croissants
+        thresholds = [lvl[0] for lvl in BE_PROGRESSIVE_LEVELS]
+        buffers = [lvl[1] for lvl in BE_PROGRESSIVE_LEVELS]
+        assert thresholds == sorted(thresholds), "seuils doivent être croissants"
+        assert 1.30 in thresholds, "palier 1.30×ATR manquant"
+        assert 1.60 in thresholds, "palier 1.60×ATR manquant (zone morte 1.30→N1)"
+        assert 1.90 in thresholds, "palier 1.90×ATR manquant"
+        assert 2.20 in thresholds, "palier 2.20×ATR manquant"
+        assert 2.50 in thresholds, "palier 2.50×ATR manquant (raccord N1 BTCUSD TREND)"
+        # Le buffer SL doit être strictement croissant aussi (le SL ne doit jamais reculer)
+        assert buffers == sorted(buffers), "buffers doivent être croissants"
+        # À 2.50×ATR de profit, le SL doit être au moins à entry+0.75×ATR
+        assert buffers[-1] >= 0.75, f"buffer max attendu ≥0.75×ATR, trouvé {buffers[-1]}"
+
+    def test_progressive_be_fast_rise(self, trailer, mock_mt5):
+        """🔧 FIX 17 Août 2026: le SL monte PLUS VITE avec le profit (pas de zone morte).
+
+        Avant le fix, le SL restait fixe à entry+0.15×ATR entre 1.30×ATR et le lock N1
+        (BTCUSD TREND lock=2.50×ATR) → un trade à 2.27×ATR de profit avait encore
+        SL=entry+0.15×ATR. Après le fix, à chaque palier de 0.30×ATR le SL gagne
+        +0.15×ATR. On vérifie le SL cible à différents niveaux de profit."""
+        from engine_simple.trailer import BE_PROGRESSIVE_LEVELS
+
+        atr = 0.0020  # ATR EURUSD-like
+        trailer._atr_cache["EURUSD"] = (atr, time.time())
+        entry = 1.10000
+
+        # Table: (profit_atr, buffer_atr attendu) dérivé de BE_PROGRESSIVE_LEVELS
+        # On calcule le buffer attendu comme le plus grand buffer dont le seuil < profit
+        expected = {}
+        for profit_atr in (1.05, 1.35, 1.65, 1.95, 2.25, 2.55):
+            buf = 0.0
+            for thresh, buffer in BE_PROGRESSIVE_LEVELS:
+                if profit_atr > thresh:
+                    buf = buffer
+            expected[profit_atr] = buf
+
+        # Le buffer doit être croissant avec le profit (montée rapide)
+        bufs = [expected[p] for p in (1.05, 1.35, 1.65, 1.95, 2.25, 2.55)]
+        assert bufs == sorted(bufs) and bufs[-1] >= 0.75, f"montée attendue, trouvé {bufs}"
+
+        # Vérification fonctionnelle: appeler _check_progressive_be avec un SL très bas
+        # → le SL doit monter au buffer attendu pour un profit de 2.25×ATR
+        pos = _make_position(ticket=7777, symbol="EURUSD", direction=0, entry=entry,
+                             current=entry + 2.25 * atr, sl=1.05000, tp=1.16000)
+        mock_mt5.reset_mock()
+        trailer._check_progressive_be(pos)
+        # Le SL mis à jour doit être au niveau attendu (entry + buffer×ATR)
+        update_sl_args = mock_mt5.update_sl.call_args
+        assert update_sl_args is not None, "update_sl doit avoir été appelé"
+        new_sl = update_sl_args[0][1]
+        expected_sl = round(entry + expected[2.25] * atr, mock_mt5.get_symbol_info.return_value.digits)
+        assert abs(new_sl - expected_sl) < 1e-9, f"SL attendu {expected_sl}, trouvé {new_sl}"
+        # Et il doit être nettement au-dessus de l'entrée (plus rapide qu'avant le fix)
+        assert new_sl > entry, "le SL doit être au-dessus de l'entrée à 2.25×ATR"
+        # tolérance flottante (0.6×ATR - epsilon) pour éviter l'arrondi binaire
+        assert new_sl - entry >= 0.60 * atr - 1e-9, f"montée trop lente: SL={new_sl} vs entry={entry}"
 
     def test_partial_tp_threshold_065(self):
         """Partial TP : progress ≥ 0.65 (65% du TP) — config 31 Juillet R3."""
