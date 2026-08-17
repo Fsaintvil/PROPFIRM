@@ -276,7 +276,8 @@ def evaluate_scaling(stats):
         - PF ≥ 1.5
         - WR ≥ 50%
     ⚠️ Depuis la RÈGLE D'OR : AUCUN scaling avant 100 trades propres
-    (WR ≥ 60% ET PF ≥ 1.1 sur US100/US30/JP225/SOLUSD/BTCUSD). Cette section
+    (WR ≥ 60% ET PF ≥ 1.1 sur les 13 symboles actifs — périmètre élargi 17/08/2026).
+    Cette section
     est conservée pour la compatibilité des clés JSON de sortie uniquement.
     Le checkpoint SIGNALE — la décision d'augmenter le lot appartient à
     l'utilisateur. Ne modifie jamais les lots automatiquement.

@@ -48,6 +48,10 @@ class ChallengeTracker:
         self.max_daily_loss_pct = config.get("MAX_DAILY_LOSS_PCT", 0.02)
         self.profit_target_pct = config.get("PROFIT_TARGET_PCT", 0.10)
         self.consistency_max_pct = config.get("CONSISTENCY_MAX_PCT", 0.30)
+        # 🔧 17 Août 2026 (décision utilisateur): flag pour désactiver le cap de
+        # consistance en mode preuve GR (compte démo, challenge expiré). Le cap
+        # reste disponible pour un vrai challenge (default True).
+        self.consistency_cap_enabled = config.get("CONSISTENCY_CAP_ENABLED", True)
         self.min_trading_days = config.get("MIN_TRADING_DAYS", 10)
         self.symbol_limits = config.get("SYMBOL_LIMITS", {})
 
@@ -569,6 +573,10 @@ class FTMOProtector:
         self.max_daily_loss_pct = config.get("MAX_DAILY_LOSS_PCT", 0.02)
         self.profit_target_pct = config.get("PROFIT_TARGET_PCT", 0.10)
         self.consistency_max_pct = config.get("CONSISTENCY_MAX_PCT", 0.30)
+        # 🔧 17 Août 2026 (décision utilisateur): flag pour désactiver le cap de
+        # consistance en mode preuve GR (compte démo, challenge expiré). Le cap
+        # reste disponible pour un vrai challenge (default True).
+        self.consistency_cap_enabled = config.get("CONSISTENCY_CAP_ENABLED", True)
         self.min_trading_days = config.get("MIN_TRADING_DAYS", 10)
         self.max_trading_days = config.get("MAX_TRADING_DAYS", 0)
         self.max_spread_points = config.get("MAX_SPREAD_POINTS", 30)
@@ -1177,7 +1185,14 @@ class FTMOProtector:
         - Ajout guard `total_positive < MIN_POSITIVE_FOR_CONSISTENCY` ($100)
         - Évite le deadlock quand le PnL total positif est négligeable (< 0.05% du compte)
         - FTMO conçoit la règle de consistance pour des profits significatifs
+
+        🔧 FIX 17 Août 2026 (décision utilisateur):
+        - Flag `CONSISTENCY_CAP_ENABLED` — désactivé en mode preuve GR (démo).
+          Le cap reste actif par défaut (True) pour un vrai challenge FTMO.
         """
+        if not self.consistency_cap_enabled:
+            logger.debug("  [CONSISTENCY SKIP] flag CONSISTENCY_CAP_ENABLED=false (mode preuve GR)")
+            return True, None
         total_positive = sum(v for v in self.daily_pnl_by_date.values() if v > 0)
         positive_days = sum(1 for v in self.daily_pnl_by_date.values() if v > 0)
         if positive_days < 2 or total_positive <= 0:

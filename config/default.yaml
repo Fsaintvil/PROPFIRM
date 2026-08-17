@@ -54,6 +54,7 @@ risk:
   max_dd_pct: 0.1
   profit_target_pct: 0.1
   consistency_max_pct: 0.3
+  consistency_cap_enabled: false  # 17/08/2026: false en mode preuve GR (démo, challenge expiré) — décision utilisateur
   min_trading_days: 10
   max_trading_days: 0
   per_trade_pct: 0.004

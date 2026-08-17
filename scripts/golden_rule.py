@@ -43,12 +43,15 @@ sys.path.insert(0, str(BASE))
 # robot après le repositionnement INDICES/CRYPTO (13/08 20:20 système).
 GOLDEN_RULE_START = "2026-08-13 21:20:00"
 
-# Symboles cibles : ceux qui ont démontré un edge après coûts réels (PF>1.0
-# sur 16 ans de backtest_with_costs : US100 1.20, US30 1.14, JP225 1.23,
-# SOLUSD 1.25, BTCUSD 1.18). Forex retiré (PF<1.0) — non compté dans la règle d'or.
-# BTCUSD ajouté le 13/08/2026 20:35 (décision utilisateur) : groupe CRYPTO
-# indépendant = 2 slots de corrélation libres, accélère la collecte.
-GOLDEN_SYMBOLS = ["US100.cash", "US30.cash", "JP225.cash", "SOLUSD", "BTCUSD"]
+# Symboles cibles : 🔧 17/08/2026 (décision utilisateur) — TOUS les symboles actifs
+# comptent pour la collecte GR (13 symboles). Le périmètre initial (5 symboles avec
+# edge backtest 16 ans) est élargi pour accélérer la collecte des 100 trades.
+# Le cap de consistance est désactivé en mode preuve (consistency_cap_enabled=false),
+# donc XAUUSD/Forex ne bloquent plus la collecte.
+GOLDEN_SYMBOLS = [
+    "US100.cash", "US30.cash", "JP225.cash", "SOLUSD", "BTCUSD",
+    "XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD", "NZDUSD", "USDCHF",
+]
 
 # Critères de la règle d'or (décision utilisateur — 13 Août 2026)
 GOLDEN_RULE = {

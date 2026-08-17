@@ -120,6 +120,10 @@ class RiskConfig(BaseModel):
     max_dd_pct: float = Field(default=0.10, ge=0.02, le=0.15)
     profit_target_pct: float = Field(default=0.10, ge=0.02, le=0.20)
     consistency_max_pct: float = Field(default=0.30, ge=0.1, le=0.5)
+    # 🔧 17 Août 2026 (décision utilisateur): flag pour désactiver le cap de
+    # consistance en mode preuve GR (compte démo, challenge expiré). Le cap
+    # reste disponible pour un vrai challenge (default True).
+    consistency_cap_enabled: bool = Field(default=True)
     min_rr_ratio: float = Field(default=1.5, ge=1.0, le=10.0)  # ↓ 2.0→1.5 (26 Juin)
     atr_multiplier: float = Field(default=1.5, ge=0.5, le=5.0)
     cooldown_minutes: int = Field(default=15, ge=1, le=240)  # ↑ 5→15 (FTMO-safe)

@@ -101,6 +101,8 @@ def _fallback_minimal() -> None:
     _fb_log("PROFIT_TARGET_PCT", 0.10)
     _g["CONSISTENCY_MAX_PCT"] = 0.30
     _fb_log("CONSISTENCY_MAX_PCT", 0.30)
+    _g["CONSISTENCY_CAP_ENABLED"] = True
+    _fb_log("CONSISTENCY_CAP_ENABLED", True)
     _g["MIN_RR_RATIO"] = 2.5
     _fb_log("MIN_RR_RATIO", 2.5)
     _g["ATR_MULTIPLIER"] = 1.5
@@ -215,6 +217,7 @@ try:
     MAX_DD_PCT: float = _cfg.risk.max_dd_pct
     PROFIT_TARGET_PCT: float = _cfg.risk.profit_target_pct
     CONSISTENCY_MAX_PCT: float = _cfg.risk.consistency_max_pct
+    CONSISTENCY_CAP_ENABLED: bool = _cfg.risk.consistency_cap_enabled
     MIN_RR_RATIO: float = _cfg.risk.min_rr_ratio
     ATR_MULTIPLIER: float = _cfg.risk.atr_multiplier
     COOLDOWN_MINUTES: int = _cfg.risk.cooldown_minutes
@@ -377,6 +380,7 @@ def _re_export():
     MAX_DD_PCT = _cfg.risk.max_dd_pct
     PROFIT_TARGET_PCT = _cfg.risk.profit_target_pct
     CONSISTENCY_MAX_PCT = _cfg.risk.consistency_max_pct
+    CONSISTENCY_CAP_ENABLED = _cfg.risk.consistency_cap_enabled
     MIN_RR_RATIO = _cfg.risk.min_rr_ratio
     ATR_MULTIPLIER = _cfg.risk.atr_multiplier
     COOLDOWN_MINUTES = _cfg.risk.cooldown_minutes

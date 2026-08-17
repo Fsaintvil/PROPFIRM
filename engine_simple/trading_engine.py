@@ -425,6 +425,7 @@ class TradingEngine:
                 MAX_DD_PCT=cfg.MAX_DD_PCT,
                 PROFIT_TARGET_PCT=cfg.PROFIT_TARGET_PCT,
                 CONSISTENCY_MAX_PCT=cfg.CONSISTENCY_MAX_PCT,
+                CONSISTENCY_CAP_ENABLED=cfg.CONSISTENCY_CAP_ENABLED,
                 MIN_TRADING_DAYS=cfg.MIN_TRADING_DAYS,
                 MAGIC=cfg.ROBOT_MAGIC,
                 MAX_SPREAD_POINTS=cfg.MAX_SPREAD_POINTS,
