@@ -510,35 +510,98 @@ class PositionTracker:
                 self._pending_closures.pop(ticket, None)
             else:
                 self._pending_closures[ticket] = remaining - 1
-
         self._previous_tickets = current
 
+
     def _find_closing_deal(self, ticket: int) -> Any:
-        """Cherche le deal de fermeture d'un ticket dans l'historique MT5.
+        """Trouve le deal de fermeture d'un ticket dans l'historique MT5.
 
         🔧 FIX 12 Août 2026: extrait de check_closed() pour être réutilisable par
         le retry des fermetures sans historique MT5 (_pending_closures).
+
+        🔧 FIX 17 Août 2026 (Log Analyst): agrège TOUS les deals de fermeture
+        (closes partielles) du ticket. Avant: on ne prenait que le PREMIER deal
+        avec profit != 0 → un partial TP (qui ferme 50% puis le reste en 2-3
+        deals OUT) n'enregistrait QUE le profit de la première close, perdant
+        le PnL du reste (T4 AUDUSD: 3 closes, 1 seule comptée → stats GR fausses).
+        Désormais on somme les profits et volumes de tous les deals OUT du ticket
+        (entry == DEAL_ENTRY_OUT=1, profit != 0).
         """
         since = int(time.time() - cfg.HISTORY_LOOKBACK_DAYS * 86400)
         now_ts = int(time.time())
         history = self.mt5.get_history(since, now_ts) or []
         logger.debug(f"  [TRACKER] query history for ticket {ticket}: {len(history)} deals")
-        for deal in history:
-            if deal.position_id == ticket and deal.magic == cfg.ROBOT_MAGIC and deal.profit != 0:
-                return deal
+        closing_deals = [
+            d
+            for d in history
+            if d.position_id == ticket
+            and d.magic == cfg.ROBOT_MAGIC
+            and d.profit != 0
+            and self._is_out_deal(d)
+        ]
+        if closing_deals:
+            return self._aggregate_closing_deals(closing_deals)
         # Fallback: chercher par position ID directement (plus fiable que time-range)
         try:
             # 🔧 FIX 16 Juillet 2026: Utiliser self.mt5.get_history_by_position() avec timeout
             # au lieu de mt5.history_deals_get(position=...) direct.
             direct = self.mt5.get_history_by_position(ticket)
             if direct and len(direct) > 0:
-                for d in direct:
-                    if d.profit != 0:
-                        logger.info(f"  [TRACKER] Found closing deal via direct lookup: {d.profit:.2f}")
-                        return d
+                direct_closes = [
+                    d for d in direct if d.profit != 0 and self._is_out_deal(d)
+                ]
+                if direct_closes:
+                    logger.info(
+                        f"  [TRACKER] Found closing deal via direct lookup: "
+                        f"{len(direct_closes)} deal(s)"
+                    )
+                    return self._aggregate_closing_deals(direct_closes)
         except Exception as e:
             logger.debug(f"Direct lookup failed for ticket {ticket}: {e}")
         return None
+
+    @staticmethod
+    def _is_out_deal(d: Any) -> bool:
+        """True si le deal est une CLÔTURE (DEAL_ENTRY_OUT), pas un swap/rollover.
+
+        🔧 FIX 17 Août 2026 (Log Analyst): MT5 crée des deals OUT (entry=1) pour
+        chaque close partielle (partial TP) ET la clôture finale. Les swaps/rollovers
+        ont entry=2 (INOUT) ou 0 (IN) — on les EXCLUT pour ne sommer que le vrai PnL.
+        Robustesse tests: si entry n'est pas un int (MagicMock, attribut absent),
+        on garde le deal (comportement historique).
+        """
+        entry = getattr(d, "entry", None)
+        if not isinstance(entry, int):
+            return True  # mock ou attribut absent → compat
+        return entry == 1  # DEAL_ENTRY_OUT
+
+    @staticmethod
+    def _aggregate_closing_deals(closing_deals: list) -> Any:
+        """🔧 FIX 17 Août 2026 (Log Analyst): agrège les closes partielles d'un ticket.
+
+        Un partial TP génère 2-3 deals OUT (50% puis le reste) sur le MÊME
+        position_id. On somme profits et volumes, et on garde les attributs du
+        DERNIER deal (fermeture finale) pour le prix/timestamp/raison.
+        Retourne un objet SimpleNamespace compatible avec le reste du pipeline
+        (symbol, position_id, profit, type, volume, price, time, comment, reason).
+        """
+        from types import SimpleNamespace
+
+        total_profit = sum(d.profit for d in closing_deals)
+        total_volume = sum(d.volume for d in closing_deals)
+        last = closing_deals[-1]  # fermeture finale (ordre chronologique MT5)
+        return SimpleNamespace(
+            symbol=closing_deals[0].symbol,
+            position_id=closing_deals[0].position_id,
+            magic=getattr(closing_deals[0], "magic", cfg.ROBOT_MAGIC),
+            profit=total_profit,
+            volume=total_volume,
+            price=getattr(last, "price", 0.0),
+            time=getattr(last, "time", 0),
+            type=getattr(last, "type", 0),
+            comment=getattr(last, "comment", ""),
+            reason=getattr(last, "reason", 0),
+        )
 
     @staticmethod
     def _deal_timestamp(closing: Any) -> float:

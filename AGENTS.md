@@ -1,5 +1,27 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 18 Août 2026 (00:05)** : 🔧🔧🔧 **TRIO DE FIXES LOG ANALYST — BE sur peak, fermeture pré-weekend, agrégation closes partielles** —
+> - **Contexte** : l'audit de la session précédente (ticket AUDUSD 519685971) a révélé 3 bugs réels
+>   faussant les stats GR et exposant le capital le week-end.
+> - **Fix 1 — BE progressif sur PEAK** (`engine_simple/trailer.py::_check_progressive_be`) : le calcul de
+>   `profit_atr` utilisait `price_current` au lieu du **peak** — même bug que le partial TP avant son fix
+>   du 30 Juillet. Un pic à 1.06×ATR puis retracement sous 1.00×ATR faisait RATER le BE (SL figé à
+>   l'entrée, exposé au week-end — logs TRAIL figés 15/08 01:15 → 16/08 23:08). Fix : `profit_price =
+>   max/min(trailing_peaks[ticket], price_current)` (même pattern que `_check_partial_tp`).
+> - **Fix 2 — fermeture pré-weekend** (`trailer.py::_is_weekend_close_window` + `_check_time_stop`) : le
+>   time-stop échouait en 10018 (marché fermé) pendant le week-end → T3 AUDUSD exposé 52h. Pour les
+>   symboles `weekend_trading=false` (config `symbol_limits`), `max_hours` est réduit à
+>   `WEEKEND_CLOSE_MAX_HOURS` (défaut 2h) pendant la fenêtre du vendredi (≥ `WEEKEND_CLOSE_HOUR_UTC`,
+>   défaut 16h UTC) → fermeture AVANT la clôture. Crypto 24/7 (BTCUSD/SOLUSD, `weekend_trading=true`)
+>   non affectés.
+> - **Fix 3 — agrégation des closes partielles** (`engine_simple/position_tracker.py::_find_closing_deal`) :
+>   un partial TP génère 2-3 deals OUT sur le MÊME position_id → avant, seul le PREMIER deal profit≠0
+>   était compté (T4 AUDUSD : 3 closes, 1 seule comptée → stats GR fausses). Désormais `_is_out_deal`
+>   (filtre entry==1, exclut swaps/rollovers entry=0/2, tolérant aux mocks) + `_aggregate_closing_deals`
+>   (somme profits+volumes, attributs du dernier deal).
+> - **Tests** : +8 (BE peak après retracement ×2, weekend window ×2, agrégation ×2, non-close deals ×2)
+>   → **1183 passed, 33 skipped**. Robot toujours en live (PID 23604 + watchdog 22004).
+
 > **Mise à jour 17 Août 2026 (20:40)** : 🔧 **FIX BE PROGRESSIF — montée PLUS rapide du SL + doc nuance par symbole** —
 > - **Problème** : le SL restait FIXE à entry+0.15×ATR entre 1.30×ATR et le lock N1 → zone morte
 >   pouvant rendre ~2×ATR de profit (ex: BTCUSD à 2.27×ATR avait encore SL=entry+0.15×ATR).

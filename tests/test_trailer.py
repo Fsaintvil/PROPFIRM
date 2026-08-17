@@ -610,3 +610,128 @@ class TestTrailingConfigLock:
 
         src = [c for c in Trailer._check_partial_tp.__code__.co_consts if isinstance(c, float)]
         assert any(abs(c - 0.65) < 1e-9 for c in src), "seuil 0.65 du partial TP manquant"
+
+    def test_progressive_be_uses_peak_after_retracement(self, trailer, mock_mt5):
+        """🔧 FIX 17 Août 2026: le BE progressif utilise le PEAK, pas le prix courant.
+
+        Cas réel ticket AUDUSD 519685971: pic à 1.06×ATR puis retracement sous 1.00×ATR.
+        Avant le fix, profit_atr était calculé sur price_current (retracé) → le BE
+        (seuil 1.00×ATR) ne se déclenchait jamais et le SL restait figé 52h.
+        Après le fix, le peak stocké dans trailing_peaks doit déclencher le BE."""
+        from engine_simple.trailer import BE_PROGRESSIVE_LEVELS
+
+        atr = 0.0020
+        trailer._atr_cache["AUDUSD"] = (atr, time.time())
+        entry = 0.65000
+        # Le prix a atteint un pic à +1.06×ATR puis a RETRACÉ sous le seuil BE
+        peak = entry + 1.06 * atr
+        current = entry + 0.60 * atr  # retracé sous 1.00×ATR
+
+        pos = _make_position(ticket=519685971, symbol="AUDUSD", direction=0, entry=entry,
+                             current=current, sl=None, tp=entry + 4.0 * atr)
+        trailer.trailing_peaks["519685971"] = peak  # peak enregistré par le trailing
+
+        mock_mt5.reset_mock()
+        trailer._check_progressive_be(pos)
+
+        # Le BE doit se déclencher (peak ≥ 1.00×ATR) même si le prix courant est retracé
+        update_sl_args = mock_mt5.update_sl.call_args
+        assert update_sl_args is not None, "update_sl doit avoir été appelé (peak dépassait 1.00×ATR)"
+        new_sl = update_sl_args[0][1]
+        # Palier atteint: profit_atr=1.06 → 1.30 pas atteint → buffer=0.0 → SL = entry
+        assert abs(new_sl - round(entry, 5)) < 1e-9, f"BE attendu à entry, trouvé {new_sl}"
+        # Le SL doit être ≥ entry (protection sécurisée)
+        assert new_sl >= entry - 1e-9
+
+    def test_progressive_be_peak_above_first_level(self, trailer, mock_mt5):
+        """🔧 FIX 17 Août 2026: peak > 1.30×ATR → SL = entry+0.15×ATR même retracé.
+
+        Vérifie qu'avec un peak à 1.45×ATR (mais prix courant retracé à 1.10×ATR),
+        le SL cible le buffer du palier 1.30 (0.15×ATR) au lieu de rester à 0."""
+        atr = 0.0020
+        trailer._atr_cache["AUDUSD"] = (atr, time.time())
+        entry = 0.65000
+        peak = entry + 1.45 * atr
+        current = entry + 1.10 * atr  # retracé mais resté au-dessus du seuil BE
+
+        pos = _make_position(ticket=519685972, symbol="AUDUSD", direction=0, entry=entry,
+                             current=current, sl=None, tp=entry + 4.0 * atr)
+        trailer.trailing_peaks["519685972"] = peak
+
+        mock_mt5.reset_mock()
+        trailer._check_progressive_be(pos)
+
+        update_sl_args = mock_mt5.update_sl.call_args
+        assert update_sl_args is not None, "update_sl doit avoir été appelé"
+        new_sl = update_sl_args[0][1]
+        expected_sl = round(entry + 0.15 * atr, 5)  # palier 1.30 → buffer 0.15×ATR
+        assert abs(new_sl - expected_sl) < 1e-9, f"SL attendu {expected_sl}, trouvé {new_sl}"
+
+    def test_time_stop_weekend_window_reduces_max_hours(self, trailer, mock_mt5, monkeypatch):
+        """🔧 FIX 17 Août 2026: fermeture pré-weekend pour les symboles non-24/7.
+
+        Un trade AUDUSD (weekend_trading=false) dans la fenêtre de clôture du
+        vendredi voit max_hours réduit à WEEKEND_CLOSE_MAX_HOURS (défaut 2h) →
+        le time-stop se déclenche AVANT la fermeture du marché. Sans le fix,
+        un trade de 13h (norme profitable) restait exposé tout le week-end."""
+        from config_simple import SYMBOL_LIMITS as _cfg_symbol_limits
+
+        # Simuler vendredi 16h UTC (dans la fenêtre de clôture)
+        fake_now = datetime(2026, 8, 21, 16, 30, 0)  # vendredi 21/08/2026 16:30 UTC
+        _FakeDatetime._fixed = fake_now
+        friday_ts = fake_now.timestamp()
+        monkeypatch.setattr("engine_simple.trailer.datetime", _FakeDatetime)
+
+        # Config: AUDUSD ne trade pas le week-end
+        monkeypatch.setattr(
+            "engine_simple.trailer.cfg.SYMBOL_LIMITS",
+            {**_cfg_symbol_limits, "AUDUSD": {"weekend_trading": False}},
+        )
+        # AUDUSD pas dans NO_TRAILING_SYMBOLS (pour que le time-stop s'applique normalement)
+
+        # Position ouverte vendredi 14:00 UTC → 2.5h d'ancienneté à 16:30
+        trailer.position_open_times["1001"] = {"open_time": friday_ts - 2.5 * 3600}
+        pos = _make_position(ticket=1001, symbol="AUDUSD", profit=10.0)
+        mock_mt5.reset_mock()
+
+        trailer._check_time_stop(pos)
+
+        # max_hours réduit à 2h → 2.5h > 2h → le time-stop doit tenter la fermeture
+        mock_mt5.order_send.assert_called_once()
+
+    def test_time_stop_weekend_window_crypto_skipped(self, trailer, mock_mt5, monkeypatch):
+        """🔧 FIX 17 Août 2026: crypto 24/7 (BTCUSD, weekend_trading=true) PAS réduit.
+
+        Pendant la fenêtre du vendredi, un BTCUSD reste soumis au max_hours normal
+        (12h profitable) — pas de fermeture anticipée inutile."""
+        fake_now = datetime(2026, 8, 21, 16, 30, 0)  # vendredi 16:30 UTC
+        _FakeDatetime._fixed = fake_now
+        monkeypatch.setattr("engine_simple.trailer.datetime", _FakeDatetime)
+
+        # BTCUSD a weekend_trading=true par défaut (config real)
+        trailer.position_open_times["1001"] = {"open_time": fake_now.timestamp() - 5 * 3600}
+        pos = _make_position(ticket=1001, symbol="BTCUSD", profit=10.0)
+        mock_mt5.reset_mock()
+
+        trailer._check_time_stop(pos)
+
+        # 5h < 12h max → skip (pas de fermeture anticipée pour un symbole 24/7)
+        mock_mt5.order_send.assert_not_called()
+
+
+class _FakeDatetime:
+    """Substitut minimal de datetime pour les tests de fenêtre week-end.
+
+    `utcnow()` retourne une datetime FIXE ; les autres méthodes (utcfromtimestamp)
+    délèguent au vrai datetime pour rester fonctionnelles dans _check_time_stop.
+    """
+
+    @staticmethod
+    def utcnow():
+        return _FakeDatetime._fixed
+
+    @staticmethod
+    def utcfromtimestamp(ts):
+        return datetime.utcfromtimestamp(ts)
+
+    _fixed = datetime(2026, 8, 21, 16, 30, 0)  # vendredi 16:30 UTC (remplacé par les tests)

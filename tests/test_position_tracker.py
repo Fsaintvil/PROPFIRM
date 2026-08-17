@@ -498,3 +498,100 @@ class TestPositionTracker:
         # Mais le FTMO record_trade_result et le journal restent fonctionnels (sauvegarde)
         ftmo.record_trade_result.assert_called()
         journal.record.assert_called_once()
+
+    # ── FIX 17 Août 2026: agrégation des closes partielles ─────────────
+
+    def test_find_closing_deal_aggregates_partial_closes(self):
+        """🐛 FIX 17 Août 2026 (Log Analyst): un partial TP génère 2-3 deals OUT
+        sur le MÊME position_id → _find_closing_deal doit SOMMER les profits et
+        volumes au lieu de ne prendre que le premier deal (perdait le PnL réel,
+        cf. T4 AUDUSD: 3 closes, 1 seule comptée → stats GR fausses)."""
+        tracker, _, _, _, pos_cache, mt5, _ = self.make_tracker()
+        tracker._previous_tickets = {1}
+        pos_cache.get.return_value = []
+
+        # Partial TP: 2 closes sur le même ticket (50% puis 50%)
+        deal1 = MagicMock()
+        deal1.position_id = 1
+        deal1.symbol = "US100.cash"
+        deal1.magic = cfg.ROBOT_MAGIC
+        deal1.profit = 75.0  # première close (50%)
+        deal1.type = 1
+        deal1.volume = 0.05
+        deal1.price = 2455.0
+        deal1.time = int(time.time()) + 3600
+        deal1.entry = 1  # DEAL_ENTRY_OUT
+
+        deal2 = MagicMock()
+        deal2.position_id = 1
+        deal2.symbol = "US100.cash"
+        deal2.magic = cfg.ROBOT_MAGIC
+        deal2.profit = 85.0  # close finale (50%)
+        deal2.type = 1
+        deal2.volume = 0.05
+        deal2.price = 2460.0
+        deal2.time = int(time.time()) + 3700
+        deal2.entry = 1  # DEAL_ENTRY_OUT
+
+        # Un swap/rollover (entry=2) doit être EXCLU de l'agrégation
+        swap = MagicMock()
+        swap.position_id = 1
+        swap.symbol = "US100.cash"
+        swap.magic = cfg.ROBOT_MAGIC
+        swap.profit = 5.0
+        swap.type = 1
+        swap.volume = 0.0
+        swap.price = 2457.0
+        swap.time = int(time.time()) + 3600
+        swap.entry = 2  # DEAL_ENTRY_INOUT → à exclure
+
+        mt5.get_history.return_value = [deal1, swap, deal2]
+
+        closing = tracker._find_closing_deal(1)
+
+        assert closing is not None
+        # Profit TOTAL = somme des 2 closes partielles (75 + 85 = 160), swap exclu
+        assert closing.profit == 160.0, f"profit agrégé attendu 160.0, trouvé {closing.profit}"
+        # Volume total = somme (0.05 + 0.05 = 0.10)
+        assert closing.volume == 0.10, f"volume agrégé attendu 0.10, trouvé {closing.volume}"
+        # Attributs du DERNIER deal (close finale)
+        assert closing.price == 2460.0
+        assert closing.time == deal2.time
+
+    def test_find_closing_deal_ignores_non_out_deals(self):
+        """🐛 FIX 17 Août 2026: un deal avec entry=0 (DEAL_ENTRY_IN) ou entry=2
+        (INOUT/swap) ne doit PAS compter comme clôture. Seuls les entry=1
+        (DEAL_ENTRY_OUT) sont des closes réelles."""
+        tracker, _, _, _, pos_cache, mt5, _ = self.make_tracker()
+        tracker._previous_tickets = {1}
+        pos_cache.get.return_value = []
+
+        # Deal de clôture réel (entry=1)
+        real_close = MagicMock()
+        real_close.position_id = 1
+        real_close.symbol = "US100.cash"
+        real_close.magic = cfg.ROBOT_MAGIC
+        real_close.profit = 120.0
+        real_close.type = 1
+        real_close.volume = 0.1
+        real_close.price = 2458.0
+        real_close.time = int(time.time()) + 3600
+        real_close.entry = 1
+
+        # Deal d'ouverture rejoué (entry=0) → ne doit pas être pris
+        open_deal = MagicMock()
+        open_deal.position_id = 1
+        open_deal.symbol = "US100.cash"
+        open_deal.magic = cfg.ROBOT_MAGIC
+        open_deal.profit = 0.0  # déjà exclu par profit != 0
+        open_deal.entry = 0
+        open_deal.type = 0
+        open_deal.volume = 0.1
+
+        mt5.get_history.return_value = [real_close, open_deal]
+
+        closing = tracker._find_closing_deal(1)
+        assert closing is not None
+        # Seul le profit du real_close est compté (pas l'open ni aucun swap)
+        assert closing.profit == 120.0
+        assert closing.volume == 0.10

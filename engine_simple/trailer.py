@@ -303,6 +303,17 @@ class Trailer:
             if max_profit > 0
             else float(os.environ.get("TIME_STOP_MAX_HOURS_LOSS", "4"))
         )
+        # 🔧 FIX 17 Août 2026 (Log Analyst): fermeture pré-weekend.
+        # Problème: un trade dont le time-stop est dû le vendredi soir restait
+        # exposé tout le week-end (le time-stop échoue avec 10018 marché fermé
+        # → T3 AUDUSD 519685971 ouvert 52h). Pour les symboles qui FERMENT le
+        # week-end (weekend_trading=false), on réduit max_hours pendant la
+        # fenêtre pré-clôture afin de fermer AVANT que le marché ne ferme.
+        if self._is_weekend_close_window(position.symbol):
+            max_hours = min(
+                max_hours,
+                float(os.environ.get("WEEKEND_CLOSE_MAX_HOURS", "2")),
+            )
         if hours < max_hours:
             return
 
@@ -343,6 +354,29 @@ class Trailer:
             )
         elif result and result.retcode != 10009:
             logger.warning(f"TIME STOP FAILED {position.symbol}: retcode={result.retcode}")
+
+    def _is_weekend_close_window(self, symbol: str) -> bool:
+        """🔧 FIX 17 Août 2026 (Log Analyst): détecte la fenêtre pré-weekend.
+
+        Un trade dont le time-stop est dû le vendredi soir ne peut PAS être
+        fermé pendant le week-end (marché fermé → retcode 10018) et reste
+        exposé 48h+ (T3 AUDUSD 519685971, 52h). Pour les symboles qui FERMENT
+        le week-end (weekend_trading=false dans symbol_limits), on réduit
+        max_hours pendant la fenêtre de clôture afin de fermer AVANT.
+
+        Fenêtre: vendredi (weekday=4) après WEEKEND_CLOSE_HOUR_UTC (défaut 16h UTC).
+        """
+        # Symboles 24/7 (crypto BTCUSD/SOLUSD...) → pas de fermeture week-end
+        sym_limits = getattr(cfg, "SYMBOL_LIMITS", {})
+        weekend_ok = sym_limits.get(symbol, {}).get("weekend_trading", True)
+        if weekend_ok:
+            return False
+        try:
+            close_hour = int(os.environ.get("WEEKEND_CLOSE_HOUR_UTC", "16"))
+        except ValueError:
+            close_hour = 16
+        now = datetime.utcnow()
+        return now.weekday() == 4 and now.hour >= close_hour
 
     # ── ATR Trailing ──────────────────────────────────────────────────
 
@@ -597,10 +631,27 @@ class Trailer:
         entry = position.price_open
         is_buy = position.type == 0
 
+        # 🔧 FIX 17 Août 2026 (Log Analyst): utiliser le PEAK (pas price_current)
+        # pour le calcul du profit_atr — même pattern que _check_partial_tp
+        # (FIX 30 Juillet 2026). Avant: un pic à 1.06×ATR puis retracement sous
+        # 1.00×ATR faisait rater le BE (le SL restait au niveau d'entrée d'origine,
+        # exposé au week-end — ticket AUDUSD 519685971, SL figé 52h). Le BE doit
+        # sécuriser le profit DÈS QUE le peak a été atteint, pas quand le prix
+        # est redescendu.
+        ticket_str = str(position.ticket)
+        trailing_peak = self.trailing_peaks.get(ticket_str)
         if is_buy:
-            profit_atr = (position.price_current - entry) / atr_val
+            profit_price = max(
+                trailing_peak if trailing_peak is not None else position.price_current,
+                position.price_current,
+            )
+            profit_atr = (profit_price - entry) / atr_val
         else:
-            profit_atr = (entry - position.price_current) / atr_val
+            profit_price = min(
+                trailing_peak if trailing_peak is not None else position.price_current,
+                position.price_current,
+            )
+            profit_atr = (entry - profit_price) / atr_val
 
         if profit_atr <= 1.00:
             return
