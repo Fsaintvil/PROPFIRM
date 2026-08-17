@@ -1,5 +1,15 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 17 Août 2026 (20:40)** : 🔧 **FIX BE PROGRESSIF — montée PLUS rapide du SL + doc nuance par symbole** —
+> - **Problème** : le SL restait FIXE à entry+0.15×ATR entre 1.30×ATR et le lock N1 → zone morte
+>   pouvant rendre ~2×ATR de profit (ex: BTCUSD à 2.27×ATR avait encore SL=entry+0.15×ATR).
+> - **Fix** : paliers `BE_PROGRESSIVE_LEVELS` (trailer.py) tous les 0.30×ATR → SL +0.15×ATR par palier
+>   (1.60→0.30, 1.90→0.45, 2.20→0.60, 2.50→0.75×ATR). **Uniforme pour tous les symboles** sauf
+>   `NO_TRAILING_SYMBOLS` {US500.cash, US100.cash, JP225.cash} (Solution A). Raccord au trailing N1
+>   automatique via `sl_improves` (le trailing domine dès son lock, toujours > entry+0.75×ATR).
+> - **Tests** : +2 (paliers + montée fonctionnelle) → **1177 passed, 33 skipped**. Robot redémarré pour
+>   activation en live (le code en cours d'exécution avant ce fix ne l'avait pas).
+
 > **Mise à jour 17 Août 2026 (19:00)** : 🔧🔧 **FIX BUG RACINE WATCHDOG (2nd) — boucle TURBO découverte + test résurrection réel réussi** —
 > - **Découverte en test réel (18:45)** : kill du robot 14708 → son watchdog fixé 22112 ne le ressuscite pas
 >   et son log dédié explose (14 MB en 2 min, loop_count=356935, CPU 190s). Cause : **`_next_check` était
@@ -220,15 +230,33 @@ Note : ces valeurs incluent un jitter aléatoire ±10% pour éviter le hunting.
 Exemple : GBPUSD TREND_UP, ATR=0.00096, peak_profit=1.82×ATR (>1.80) → N1: SL = peak − 1.00×ATR = 1.35463
 Pour atteindre N2 (2.50×ATR), le trade doit gagner encore 0.68×ATR (~$0.00065 sur GBPUSD).
 
-### Breakeven progressif (31 Juillet 2026)
-Séquence de sécurisation des profits AVANT que le trailing N1 (1.80×ATR) ne s'active :
+### Breakeven progressif (31 Juillet 2026 + FIX 17 Août 2026)
+Séquence de sécurisation des profits AVANT que le trailing N1 ne s'active :
 ```
 profit > 1.00×ATR → SL = entry (breakeven pur, zéro perte garantie)
 profit > 1.30×ATR → SL = entry ± 0.15×ATR (petit gain garanti)
+profit > 1.60×ATR → SL = entry ± 0.30×ATR
+profit > 1.90×ATR → SL = entry ± 0.45×ATR
+profit > 2.20×ATR → SL = entry ± 0.60×ATR
+profit > 2.50×ATR → SL = entry ± 0.75×ATR   (dernier palier — raccord trailing)
 ```
 > 🔧 FIX 31 Juillet 2026 (Quant Auditor) : les seuils précédents (0.80/0.50×ATR) coupaient
 > 62% des gagnants à <0.5R avant même le lock N1. En repoussant à 1.00/1.30×ATR, les trades
 > faibles ont une chance d'atteindre la zone N1 au lieu d'être stoppés net sur le bruit.
+> 🔧 FIX 17 Août 2026 (montée PLUS rapide) : avant, le SL restait FIXE à entry+0.15×ATR entre
+> 1.30×ATR et le lock N1 (zone morte — un BTCUSD à 2.27×ATR de profit avait encore
+> SL=entry+0.15×ATR). Paliers `BE_PROGRESSIVE_LEVELS` (trailer.py, module-level) ajoutés :
+> +0.15×ATR de buffer tous les 0.30×ATR de profit. La montée est désormais quasi-linéaire.
+
+> ⚠️ **Nuance importante — application par symbole** : les paliers `BE_PROGRESSIVE_LEVELS`
+> sont **UNIFORMES pour tous les symboles** (aucun seuil par symbole). Deux exceptions :
+> 1. **`NO_TRAILING_SYMBOLS` = {US500.cash, US100.cash, JP225.cash}** → BE **désactivé**
+>    (Solution A, indices optimisés FTMO sans trailing, garde `is_trailing_disabled`).
+> 2. **Raccord au trailing N1 varie par symbole** : le dernier palier BE (2.50×ATR) dépasse
+>    le lock N1 de certains symboles (fallback=1.80×ATR, XAUUSD TREND=1.50×ATR). Pas de
+>    conflit : la garde `sl_improves` garde le **meilleur** SL, et le trailing N1
+>    (peak−trail_dist) est toujours ≥ entry+0.75×ATR dès que son lock est atteint
+>    (ex: 1.80−1.00=0.80×ATR > 0.75×ATR) → le trailing domine naturellement.
 
 Fonctionne avec la garde `sl_improves` : ne s'applique QUE si le nouveau SL est meilleur
 que l'actuel (ne réduit jamais la protection déjà en place).
