@@ -1,5 +1,19 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 17 Août 2026 (02:35)** : 🔍 **Surveillance GR automatisée** — Phase 1 du plan
+> « accélérer collecte GR » (feu vert utilisateur 16/08). Outils créés :
+> - `scripts/check_gr_symbols.py` : diagnostic live des 5 symboles GR (rejets, score, seuil, ATR, spread).
+> - `scripts/check_gr_stalled.py` : alerte « 0 trade GR >24h » depuis la borne (13/08 21:20),
+>   `notifier=log` (Telegram non configuré).
+> - `daily_checkpoint.py` : nouvelle section `gr_stall` persistée dans le rapport JSON quotidien
+>   + affichage texte sous la RÈGLE D'OR.
+> - Tâche planifiée `MT5_FTMO_GRStallCheck` : check ponctuel chaque matin 07:00 (ouverture Asie).
+> - Instrumentation rejets (commit `d0031aaef`) : `rejection_tracker.py` compte les rejets par
+>   (symbole, phase, raison) → flush cycle 60 (~15 min) → `runtime/rejections.json`.
+>   Premier flush prod 17/08 02:21 : **357 rejets en 17 min** — US30 = strategy_sel 36× (score 0.54
+>   < 0.60 mais signaux SELL → BUY-only), no_signal sur US100/JP225/BTC/USDJPY/USDCHF, JP225 2×
+>   pre_trade spread (16.54 > limit 12, ratio ATR 8.8% OK). Suivi des rejets = preuve observationnelle
+>   du stall GR (4 symboles bloqués par marché baissier mom20<0, pas un bug).
 > **Mise à jour 16 Août 2026 (21:35)** : 🔧 **SOLUSD débloqué — `max_spread_atr_ratio` 0.15→0.25**
 > (config/default.yaml:symbol_limits.SOLUSD). SOLUSD était bloqué au PRECHECK par le ratio ATR :
 > spread réel 3pts (0.03 $) mais ratio ATR 17.4% > 15% défaut → `Spread too high`. Le pattern est
