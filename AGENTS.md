@@ -1,18 +1,29 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
-> **Mise à jour 17 Août 2026 (08:05)** : 🔍 **Consolidation instrumentation + décision cap consistance** —
+> **Mise à jour 17 Août 2026 (08:05→08:15)** : 🔍 **Consolidation instrumentation + décision GR élargie** —
 > - **Commit `d7c61e903`** : consolidation du compteur de rejets — on garde `engine_simple/reject_counter.py`
 >   (instrumentation signal_pipeline.py + signal_validator.py, flush silencieux → `runtime/reject_counter.json`),
 >   suppression des doublons `rejection_tracker.py` et `scripts/check_gr_stalled.py` (réfs nettoyées dans
 >   trading_engine.py / daily_checkpoint.py). Tests : 205 passed (signal/pipeline/validator).
-> - **Décision utilisateur (17/08) : GARDER le cap de consistance FTMO actif** (option A). Les 100 trades GR
->   doivent rester représentatifs d'un vrai challenge — désactiver le cap pendant la phase de preuve validerait
->   un edge qui ne tiendrait pas en réel. Conséquence : journée du 17/08 bloquée (cap 58.9% > 30%, XAUUSD +$344
->   ce matin), collecte GR reprend à minuit UTC. **Ce n'est pas un bug** — `_check_consistency_cap` (L.1162)
->   protège la consistance FTMO comme prévu.
+> - **DÉCISION UTILISATEUR FINALE (17/08 08:15) : GR élargie à 13 symboles + cap consistance désactivé en preuve** —
+>   1. **Périmètre GR étendu** (`scripts/golden_rule.py`) : les 13 symboles actifs comptent pour la collecte
+>      des 100 trades (US100/US30/JP225/SOLUSD/BTCUSD + XAUUSD/EURUSD/GBPUSD/USDJPY/USDCAD/AUDUSD/NZDUSD/USDCHF),
+>      pas seulement les 5 du repositionnement. Rational : XAUUSD/Forex font des trades réels qui doivent compter.
+>   2. **Flag `CONSISTENCY_CAP_ENABLED=false`** (config/default.yaml risk) : le cap de consistance FTMO est
+>      désactivé en mode preuve GR (compte démo, challenge expiré). Il reste disponible (default True) pour un
+>      vrai challenge. Le cap bloquait TOUTE la collecte car XAUUSD (hors GR) avait fait +$344 = 58.9% du total
+>      positif windowisé > 30% → 0 trade possible. Désormais la collecte continue.
+>   3. Commit `1ad129734` : flag `consistency_cap_enabled` ajouté au schéma (RiskConfig), config_simple.py,
+>      ftmo_protector.py (guard dans `_check_consistency_cap` L.1185), trading_engine.py. Tests : **1175 passed**.
+>   4. **GR state après élargissement** : 16/100 trades (vs 6 avant), WR 68.8%, PF 10.78 (état 17/08 08:00 —
+>      XAUUSD +$344.25 sur 2 trades = 97% du PnL, échantillon encore petit). Avertissement : le PF élevé est
+>      dominé par XAUUSD, la vraie preuve d'edge reste à confirmer sur 100 trades.
 > - **Fix tâche planifiée `MT5_FTMO_GRStallCheck`** : pointait vers `check_gr_stalled.py` (supprimé) → redirigée
 >   vers `scripts/check_gr_symbols.py` (le diagnostic GR complet, run unique compatible). Testé OK.
-> - **Config réelle des 5 symboles GR** (source de vérité = config, pas la doc) : US100.cash min_score=0.5 /
+> - **⚠️ Watchdog** : lors du redémarrage manuel (17/08 07:57), l'ancien watchdog n'a PAS relancé le robot après
+>   kill (aucune entrée "CRITICAL DEAD" dans watchdog_external.log). Robot relancé manuellement (PID 3060), le
+>   nouveau watchdog (PID 22048) surveille correctement. À surveiller : la résurrection automatique du watchdog.
+> - **Config réelle des symboles GR** (source de vérité = config, pas la doc) : US100.cash min_score=0.5 /
 >   US30.cash 0.6 / JP225.cash 0.5 / SOLUSD 0.6 (max_spread_atr_ratio=0.25) / BTCUSD 0.5. Tous BUY-only.
 > **Mise à jour 16 Août 2026 (21:35)** : 🔧 **SOLUSD débloqué — `max_spread_atr_ratio` 0.15→0.25**
 > (config/default.yaml:symbol_limits.SOLUSD). SOLUSD était bloqué au PRECHECK par le ratio ATR :
