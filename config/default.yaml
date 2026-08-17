@@ -395,7 +395,7 @@ symbol_limits:
     news_minutes_after: 5
   AUDUSD:
     timeframe: H1
-    max_lot: 0.13
+    max_lot: 0.05
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.6
@@ -404,6 +404,13 @@ symbol_limits:
     adx_thresh: 22
     allow_buys: true
     allow_shorts: false  # 🔧 14 Aout 2026: BUY-only (mode preuve)
+    # 🔧 17 Aout 2026 (Robot Manager): filtre anti-fin-de-tendance.
+    # AUDUSD = perdant structurel en période GR (8 trades: WR 37.5%, PF 0.34,
+    # asymétrie R: winners +0.58R / losers -0.64R). Les 4 losers du 17/08 ont
+    # été entrés à 0.711-0.712 (achat en fin de tendance après la montée depuis
+    # 0.708) alors que les winners étaient entrés à 0.708. Filtre: BUY rejeté si
+    # prix > EMA20 de plus de 1.5×ATR (momentum épuisé).
+    max_extension_atr: 1.5
     momentum_period: 20
     sl_atr_trending: 2.0
     tp_atr_trending: 5.0

@@ -210,6 +210,17 @@ class SignalPipeline:
             count_reject(symbol, "h4_dir", "H4 forte contre signal")
             return None
 
+        # Phase 1e: Extension filter (anti-fin-de-tendance)
+        # 🔧 17 Août 2026 (Robot Manager): rejette les signaux dont le prix est
+        # trop étendu par rapport à l'EMA20 (momentum épuisé — achats en fin de
+        # tendance). Configurable par symbole via `max_extension_atr` (None=off).
+        # Audit AUDUSD 17/08: 4 losers entrés à 0.711-0.712 après la montée depuis
+        # 0.708 (WR 37.5%, PF 0.34, asymétrie R -0.64/+0.58) → activé à 1.5×ATR.
+        if not self._phase1e_extension_filter(symbol, signal):
+            from engine_simple.reject_counter import count_reject
+            count_reject(symbol, "extension", "prix trop étendu vs EMA20 (fin de tendance)")
+            return None
+
         # Phase 2: ADX threshold
         if not self._phase2_adx_filter(symbol, signal, cycle_count, log_throttle):
             # 🔧 Instrumentation 16 Août 2026 (read-only)
@@ -893,6 +904,75 @@ class SignalPipeline:
         return signal
 
     # ── Phase 2: ADX Threshold Filter ─────────────────────────────────────
+
+    def _phase1e_extension_filter(self, symbol: str, signal: dict) -> bool:
+        """Filtre anti-fin-de-tendance : rejette les signaux trop étendus vs EMA20.
+
+        🔧 17 Août 2026 (Robot Manager): le MOM20x3 est un stratégie momentum qui
+        entre sur breakouts. Quand le prix est DÉJÀ très étendu par rapport à
+        l'EMA20 (plus de max_extension_atr × ATR), la tendance est probablement
+        épuisée — on entre en fin de tendance et le retracement tue le trade.
+
+        Audit AUDUSD 17/08 (8 trades GR): 4 losers entrés à 0.711-0.712 après
+        la montée depuis 0.708 (achat à l'extension) vs winners entrés à 0.708
+        (retracement). WR 37.5%, PF 0.34, asymétrie R: winners +0.58R / losers
+        -0.64R. Le filtre est configurable par symbole (max_extension_atr dans
+        symbol_limits, None = désactivé) pour limiter le sur-ajustement.
+
+        Calcul: distance = (price - ema20) / atr pour BUY, inverse pour SELL.
+        Si distance > max_extension_atr → le prix est TROP étendu → rejet.
+        """
+        max_ext = None
+        try:
+            sym_limits = self.symbol_limits.get(symbol, {})
+            max_ext = sym_limits.get("max_extension_atr")
+        except Exception:
+            max_ext = None
+        if max_ext is None:
+            return True  # filtre désactivé pour ce symbole
+
+        # Récupérer les rates du timeframe du symbole
+        tf = self.symbol_timeframes.get(symbol, "H1")
+        rates = self._get_cached_rates(symbol, tf, count=60)
+        if rates is None or len(rates) < 25:
+            return True  # pas assez de données → laisser passer (fail-open)
+
+        try:
+            close = np.array([r[4] for r in rates], dtype=float)
+            from engine_simple.indicators import ema as _ema
+
+            ema20_arr = _ema(close, 20)
+            if len(ema20_arr) == 0 or np.isnan(ema20_arr[-1]) or ema20_arr[-1] <= 0:
+                return True
+            ema20 = float(ema20_arr[-1])
+            price = float(close[-1])
+            atr_val = signal.get("atr", 0)
+            if atr_val <= 0:
+                return True
+
+            action = signal.get("action")
+            if action == "BUY":
+                extension = (price - ema20) / atr_val
+                if extension > max_ext:
+                    logger.info(
+                        f"  [EXTENSION] BUY {symbol}: extension={extension:.2f}×ATR > "
+                        f"max={max_ext}×ATR (prix {price:.5f} vs EMA20 {ema20:.5f}) "
+                        f"→ fin de tendance, signal rejeté"
+                    )
+                    return False
+            elif action == "SELL":
+                extension = (ema20 - price) / atr_val
+                if extension > max_ext:
+                    logger.info(
+                        f"  [EXTENSION] SELL {symbol}: extension={extension:.2f}×ATR > "
+                        f"max={max_ext}×ATR → fin de tendance, signal rejeté"
+                    )
+                    return False
+            logger.debug(f"  [EXTENSION] {action} {symbol}: ext={extension:.2f}×ATR ≤ {max_ext}×ATR → OK")
+        except Exception as e:
+            logger.debug(f"  [EXTENSION] {symbol}: erreur ({e}) → fail-open")
+            return True
+        return True
 
     def _phase2_adx_filter(self, symbol: str, signal: dict, cycle_count: int, log_throttle: dict) -> bool:
         # MeanReversion bypass: les signaux MR sont déjà filtrés par RSI

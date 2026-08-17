@@ -198,6 +198,17 @@ class SymbolLimit(BaseModel):
     weekend_trading: bool = Field(
         default=True, description="True = 24/7 (BTCUSD, ETHUSD), False = 24/5 (XAUUSD, pas de weekend)"
     )
+    max_extension_atr: float | None = Field(
+        default=None,
+        ge=0.5,
+        le=5.0,
+        description=(
+            "Filtre anti-fin-de-tendance (×ATR): si le prix est à plus de max_extension_atr×ATR "
+            "au-dessus (BUY) / en-dessous (SELL) de l'EMA20, le momentum est épuisé → signal rejeté. "
+            "None = désactivé. Activé pour AUDUSD (perdant structurel: achats en fin de tendance, "
+            "WR 37.5%, PF 0.34 en période GR)."
+        ),
+    )
 
 
 class SecretsConfig(BaseModel):

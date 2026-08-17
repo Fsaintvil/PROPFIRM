@@ -771,3 +771,117 @@ class TestDynamicPositionLimits:
         assert result is not None
         # 🔧 FIX 22 Juillet 2026: score=0.90 + raw_mom=0.90 → central bypass → max=4
         assert result.signal["max_per_symbol"] == 4
+
+
+# ── Phase 1e: Extension Filter (anti-fin-de-tendance) ────────────────────
+
+
+class TestPhase1eExtension:
+    """🔧 17 Août 2026 (Robot Manager): filtre anti-fin-de-tendance.
+
+    Rejette les signaux dont le prix est trop étendu par rapport à l'EMA20
+    (momentum épuisé). Audit AUDUSD: 4 losers entrés à 0.711-0.712 (achat à
+    l'extension, WR 37.5%, PF 0.34) vs winners entrés à 0.708 (pullback).
+    """
+
+    def test_disabled_when_no_config(self, pipeline):
+        """Sans max_extension_atr dans symbol_limits → toujours True (fail-open)."""
+        # XAUUSD n'a pas max_extension_atr dans la fixture
+        signal = {"action": "BUY", "atr": 0.01}
+        assert pipeline._phase1e_extension_filter("XAUUSD", signal) is True
+
+    def test_disabled_when_max_ext_none(self, pipeline):
+        """max_extension_atr=None → filtre désactivé."""
+        pipeline.symbol_limits["AUDUSD"] = {"max_extension_atr": None}
+        signal = {"action": "BUY", "atr": 0.01}
+        assert pipeline._phase1e_extension_filter("AUDUSD", signal) is True
+
+    def test_rejects_buy_extension(self, pipeline, mock_mt5):
+        """BUY trop étendu au-dessus de l'EMA20 → rejet (fin de tendance).
+
+        Prix à +2.0×ATR au-dessus de l'EMA20 > max 1.5×ATR → signal rejeté.
+        Correspond au cas réel AUDUSD: entrées losers à 0.711-0.712 quand
+        l'EMA20 était ~0.7095 (extension 1.67-3.09×ATR)."""
+        pipeline.symbol_limits["AUDUSD"] = {"max_extension_atr": 1.5}
+        # Construire des rates où le dernier close est étendu de 2×ATR au-dessus de l'EMA20
+        # EMA20 ~0.7000, ATR=0.001, dernier close=0.7020 → extension=2.0×ATR
+        base = 0.7000
+        atr = 0.0010
+        rates = []
+        for i in range(60):
+            # bougies stables autour de base → EMA20 ≈ base
+            rates.append((i, base, base + 0.0005, base - 0.0005, base, 100, 0, 0))
+        # dernier close étendu: base + 2×ATR
+        rates[-1] = (59, base, base + 0.0005, base - 0.0005, base + 2 * atr, 100, 0, 0)
+        mock_mt5.get_rates.side_effect = lambda s, tf, count=100: rates
+        signal = {"action": "BUY", "atr": atr}
+        assert pipeline._phase1e_extension_filter("AUDUSD", signal) is False
+
+    def test_allows_buy_pullback(self, pipeline, mock_mt5):
+        """BUY en pullback (prix proche/sous EMA20) → passe.
+
+        Correspond au cas réel AUDUSD: winners entrés à 0.708 quand l'EMA20
+        était ~0.7095 (extension négative = retracement vers la moyenne)."""
+        pipeline.symbol_limits["AUDUSD"] = {"max_extension_atr": 1.5}
+        base = 0.7000
+        atr = 0.0010
+        rates = []
+        for i in range(60):
+            rates.append((i, base, base + 0.0005, base - 0.0005, base, 100, 0, 0))
+        # dernier close en pullback: base - 0.5×ATR (sous l'EMA20)
+        rates[-1] = (59, base, base + 0.0005, base - 0.0005, base - 0.5 * atr, 100, 0, 0)
+        mock_mt5.get_rates.side_effect = lambda s, tf, count=100: rates
+        signal = {"action": "BUY", "atr": atr}
+        assert pipeline._phase1e_extension_filter("AUDUSD", signal) is True
+
+    def test_allows_buy_moderate_extension(self, pipeline, mock_mt5):
+        """BUY à +1.0×ATR (sous le seuil 1.5) → passe."""
+        pipeline.symbol_limits["AUDUSD"] = {"max_extension_atr": 1.5}
+        base = 0.7000
+        atr = 0.0010
+        rates = []
+        for i in range(60):
+            rates.append((i, base, base + 0.0005, base - 0.0005, base, 100, 0, 0))
+        rates[-1] = (59, base, base + 0.0005, base - 0.0005, base + 1.0 * atr, 100, 0, 0)
+        mock_mt5.get_rates.side_effect = lambda s, tf, count=100: rates
+        signal = {"action": "BUY", "atr": atr}
+        assert pipeline._phase1e_extension_filter("AUDUSD", signal) is True
+
+    def test_fail_open_on_insufficient_rates(self, pipeline, mock_mt5):
+        """Pas assez de rates → fail-open (True), ne bloque jamais le pipeline."""
+        pipeline.symbol_limits["AUDUSD"] = {"max_extension_atr": 1.5}
+        mock_mt5.get_rates.return_value = None
+        signal = {"action": "BUY", "atr": 0.01}
+        assert pipeline._phase1e_extension_filter("AUDUSD", signal) is True
+
+    def test_process_rejects_extension(self, pipeline, mock_mt5):
+        """Intégration: le signal étendu est rejeté dans process() avec counter."""
+        pipeline.symbol_limits["AUDUSD"] = {"max_extension_atr": 1.5}
+        # signal MOM20x3 BUY avec atr, et rates étendues
+        base = 0.7000
+        atr = 0.0010
+        rates = []
+        for i in range(200):
+            rates.append((i, base, base + 0.0005, base - 0.0005, base, 100, 0, 0))
+        rates[-1] = (199, base, base + 0.0005, base - 0.0005, base + 2 * atr, 100, 0, 0)
+        mock_mt5.get_rates.side_effect = lambda s, tf, count=100: rates
+        mock_mt5.get_tick.return_value = MagicMock(ask=base + 2 * atr, bid=base + 2 * atr)
+
+        with patch("engine_simple.signal_pipeline.SignalPipeline._phase1_primary_strategy") as mock_p1:
+            mock_p1.return_value = {
+                "action": "BUY", "score": 0.8, "confidence": 0.7,
+                "atr": atr, "_regime": "TREND_UP", "adx": 25,
+                "symbol": "AUDUSD", "timeframe": "H1", "details": "MOM20x3_H1",
+            }
+            result = pipeline.process(
+                symbol="AUDUSD",
+                cycle_count=1,
+                degraded_symbols={},
+                sym_dir_counts={},
+                sym_total_counts={},
+                config_limits={"AUDUSD": 6},
+                last_signals={},
+                log_throttle={},
+            )
+        # Le signal étendu doit être rejeté par la phase 1e
+        assert result is None

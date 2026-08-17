@@ -879,8 +879,21 @@ class TradingEngine:
             # Avant, stderr partait dans le vide (Popen sans redirection) → impossible
             # de diagnostiquer pourquoi un gel de 4h (02:39→06:39, 05 Août) n'a PAS été
             # tué par le watchdog externe. Désormais chaque événement watchdog est tracé.
+            # 🔧 FIX 17 Août 2026 (Robot Manager): rotation simple — si le log dépasse
+            # 10 MB, on le renomme en .1 (et écrase l'ancien .1). Avant: fichier unique
+            # qui grossissait sans limite (20.6 MB observés) — les events "CRITICAL DEAD"
+            # noyaient dans des dizaines de Mo de logs périodiques ALIVE.
             watchdog_log = Path(__file__).resolve().parent.parent / "logs" / "watchdog_external.log"
             watchdog_log.parent.mkdir(exist_ok=True)
+            try:
+                if watchdog_log.exists() and watchdog_log.stat().st_size > 10 * 1024 * 1024:
+                    _rotated = watchdog_log.with_suffix(".log.1")
+                    if _rotated.exists():
+                        _rotated.unlink()
+                    watchdog_log.rename(_rotated)
+                    logger.warning(f"[WATCHDOG PROC] Rotation log {watchdog_log.name} → {_rotated.name}")
+            except Exception:
+                pass  # la rotation ne doit jamais bloquer le démarrage du watchdog
             _wd_err = open(watchdog_log, "a", encoding="utf-8")
             # 🔧 FIX 10 Août 2026: cwd = RACINE du projet (et non engine_simple/).
             # Ancien cwd=os.path.dirname(__file__) = engine_simple/ → le watchdog

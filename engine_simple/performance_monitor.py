@@ -40,6 +40,11 @@ ALERT_THRESHOLDS = {
     "consistency_pct": 0.25,  # 25% jour/total = attention
     "consecutive_losses": 3,  # 3 pertes consécutives
     "low_volume_trades": 5,  # Moins de 5 trades/symbole = échantillon insuffisant
+    # 🔧 17 Août 2026 (Robot Manager): seuil spécifique symbole — PF < 0.7 après
+    # 15 trades = perdant structurel probable (ex: AUDUSD PF 0.34, WR 37.5%).
+    # Détection précoce AVANT que le symbole ne pèse sur la collecte GR.
+    "pf_symbol_below": 0.7,
+    "pf_symbol_min_trades": 15,
 }
 
 
@@ -577,6 +582,33 @@ class PerformanceMonitor:
                             f"(WR {wr:.1f}%, PF {pf_sym:.2f})",
                             "value": sdata["pnl"],
                             "threshold": -50,
+                            "symbol": sym,
+                            "date": today,
+                        }
+                    )
+
+            # 🔧 17 Août 2026 (Robot Manager): PF < 0.7 sur ≥15 trades = perdant
+            # structurel probable. Détection précoce: un symbole à PF<0.7 après
+            # 15 trades a statistiquement peu de chances de revenir au-dessus de
+            # 1.0 sans changement structurel (AUDUSD: PF 0.34, WR 37.5% en GR).
+            if (
+                trades >= ALERT_THRESHOLDS["pf_symbol_min_trades"]
+                and gross_loss > 0
+                and pf_sym < ALERT_THRESHOLDS["pf_symbol_below"]
+            ):
+                metric_key = f"SYMBOL_PF_LOW_{sym}_{today}"
+                if self._dedup_alert(metric_key):
+                    alerts.append(
+                        {
+                            "level": "WARNING",
+                            "metric": "SYMBOL_PF_LOW",
+                            "message": (
+                                f"{sym}: PF {pf_sym:.2f} < {ALERT_THRESHOLDS['pf_symbol_below']} "
+                                f"sur {trades} trades (WR {wr:.1f}%, ${pnl:.0f}) — perdant structurel, "
+                                f"revue requise (réduire max_lot / désactiver)"
+                            ),
+                            "value": pf_sym,
+                            "threshold": ALERT_THRESHOLDS["pf_symbol_below"],
                             "symbol": sym,
                             "date": today,
                         }

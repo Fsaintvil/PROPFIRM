@@ -512,6 +512,37 @@ class TestAlerts:
         sym_alerts = [a for a in alerts if a["metric"] == "SYMBOL_LOSING"]
         assert len(sym_alerts) == 0
 
+    def test_symbol_pf_low_alert_after_15_trades(self, perf_monitor):
+        """🔧 17 Août 2026: PF < 0.7 sur ≥15 trades → alerte SYMBOL_PF_LOW.
+
+        Cas réel AUDUSD: PF 0.34, WR 37.5% en période GR (8 trades) — ce seuil
+        détecte précocement un perdant structurel avant qu'il ne pèse sur la
+        collecte. 15 trades: PF = (5*10)/(10*10) = 50/100 = 0.5 < 0.7 → alerte."""
+        pm, _, _ = perf_monitor
+        _record_trades(pm, wins=5, losses=10, profit_win=10.0, profit_loss=-10.0, symbol="BAD")
+        alerts = pm.check_alerts()
+        sym_alerts = [a for a in alerts if a["metric"] == "SYMBOL_PF_LOW"]
+        assert len(sym_alerts) >= 1, f"alerte SYMBOL_PF_LOW attendue, trouvé {[a['metric'] for a in alerts]}"
+        assert sym_alerts[0]["symbol"] == "BAD"
+        assert sym_alerts[0]["level"] == "WARNING"
+
+    def test_no_pf_low_alert_below_15_trades(self, perf_monitor):
+        """🔧 17 Août 2026: PF<0.7 mais <15 trades → PAS d'alerte SYMBOL_PF_LOW
+        (échantillon trop petit, évite les faux positifs sur 5-10 trades)."""
+        pm, _, _ = perf_monitor
+        _record_trades(pm, wins=1, losses=9, profit_win=10.0, profit_loss=-10.0, symbol="BAD")
+        alerts = pm.check_alerts()
+        sym_alerts = [a for a in alerts if a["metric"] == "SYMBOL_PF_LOW"]
+        assert len(sym_alerts) == 0
+
+    def test_no_pf_low_alert_when_profitable(self, perf_monitor):
+        """🔧 17 Août 2026: PF > 0.7 sur 15 trades → PAS d'alerte SYMBOL_PF_LOW."""
+        pm, _, _ = perf_monitor
+        _record_trades(pm, wins=10, losses=5, profit_win=10.0, profit_loss=-10.0, symbol="GOOD")
+        alerts = pm.check_alerts()
+        sym_alerts = [a for a in alerts if a["metric"] == "SYMBOL_PF_LOW"]
+        assert len(sym_alerts) == 0
+
     def test_challenge_behind_alert(self, perf_monitor):
         """J+15 with < 30% progress → alert."""
         pm, _, _ = perf_monitor

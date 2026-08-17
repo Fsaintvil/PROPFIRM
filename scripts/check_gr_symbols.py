@@ -22,7 +22,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 BASE = Path(__file__).parent.parent
-GR_SYMBOLS = ["US100.cash", "US30.cash", "JP225.cash", "SOLUSD", "BTCUSD"]
+GR_SYMBOLS = [
+    "US100.cash", "US30.cash", "JP225.cash", "SOLUSD", "BTCUSD",
+    "XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD", "NZDUSD", "USDCHF",
+]
 
 GREEN = "\033[92m"
 YELLOW = "\033[93m"
