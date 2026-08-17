@@ -482,6 +482,19 @@ def main():
             except Exception as e:
                 log(f"Error reading heartbeat: {e}", "WARN")
 
+            # 🔧 FIX 17 Août 2026 (2nd): RÉINITIALISER le deadline à chaque itération.
+            # BUG RACINE trouvé en test réel: _next_check était défini UNE SEULE fois
+            # avant la boucle → après la 1ère attente de 30s, il restait dans le passé
+            # → _remaining toujours ≤ 0 → la boucle interne cassait immédiatement →
+            # boucle TURBO (milliers de checks/seconde, CPU 100%+, log de 14 MB en
+            # 2 min, loop_count=356935). En conséquence le watchdog "surveillait"
+            # mais ne DÉTECTAIT rien (détection process faussée par PID reuse +
+            # heartbeat stale jamais atteint car la boucle ne se reposait jamais
+            # assez longtemps). Corrigé: le prochain check est planifié APRÈS chaque
+            # itération. NB: si une itération a consommé beaucoup de temps (spawn),
+            # on rattrape proprement via monotonic.
+            _next_check = time.monotonic() + check_interval
+
     except KeyboardInterrupt:
         log("Received interrupt — exiting")
         sys.exit(0)

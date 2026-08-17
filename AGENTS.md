@@ -1,5 +1,24 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 17 Août 2026 (19:00)** : 🔧🔧 **FIX BUG RACINE WATCHDOG (2nd) — boucle TURBO découverte + test résurrection réel réussi** —
+> - **Découverte en test réel (18:45)** : kill du robot 14708 → son watchdog fixé 22112 ne le ressuscite pas
+>   et son log dédié explose (14 MB en 2 min, loop_count=356935, CPU 190s). Cause : **`_next_check` était
+>   défini UNE SEULE fois avant la boucle → après la 1ère attente de 30s il restait dans le passé → la boucle
+>   interne `_remaining ≤ 0` cassait immédiatement → boucle TURBO (milliers de checks/s)**. Ce bug existait
+>   DÈS AVANT le fix 18:35 (vérifié dans HEAD~1) — c'est LUI la vraie cause racine du watchdog inopérant
+>   observé depuis des semaines : le watchdog vérifiait en continu mais la détection process (faussée par
+>   PID reuse) + heartbeat stale (jamais atteint car la boucle ne se reposait pas) ne déclenchaient jamais.
+> - **Fix 2nd (commit `ab…`)**: `_next_check = time.monotonic() + check_interval` réinitialisé à la FIN de
+>   chaque itération de boucle → le watchdog attend réellement 30s entre les checks.
+> - **Test résurrection RÉEL réussi (18:52)** : watchdog fixé 11060 (timeout 60s) surveille un fake robot
+>   → fake meurt → 1er check détecte (`get_process_status=False`) → `attempt_restart` → **spawn main.py
+>   (PID 13316) → handoff → robot 13316 opérationnel (4 positions récupérées) + watchdog fixé 12280**.
+> - **Race connue (non bloquante)** : au démarrage le robot tue tous les watchdogs orphelins
+>   (`_kill_orphan_watchdogs`) Y COMPRIS le watchdog qui vient de le spawner → les logs "CRITICAL DEAD /
+>   Spawned" du spawner sont perdus (kill entre spawn et flush). La résurrection fonctionne malgré tout.
+> - **État actuel (19:00)** : robot **PID 13316** actif (4 positions), watchdog **12280** (code fixé, log
+>   dédié `runtime/watchdog_12280.log`, création capturée). Tests : **1175 passed, 33 skipped**.
+
 > **Mise à jour 17 Août 2026 (18:35)** : 🔧 **FIX WATCHDOG — résurrection fiable + logs durables** —
 > - **Découverte (18:07)** : le watchdog 22048 n'a PAS relancé le robot 3060 tué à 18:07:49. Pendant 10h
 >   (07:59→18:07) le robot tournait normalement, mais au kill le watchdog est resté muet : aucun "CRITICAL
