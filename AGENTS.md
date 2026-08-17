@@ -1,5 +1,19 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 17 Août 2026 (08:05)** : 🔍 **Consolidation instrumentation + décision cap consistance** —
+> - **Commit `d7c61e903`** : consolidation du compteur de rejets — on garde `engine_simple/reject_counter.py`
+>   (instrumentation signal_pipeline.py + signal_validator.py, flush silencieux → `runtime/reject_counter.json`),
+>   suppression des doublons `rejection_tracker.py` et `scripts/check_gr_stalled.py` (réfs nettoyées dans
+>   trading_engine.py / daily_checkpoint.py). Tests : 205 passed (signal/pipeline/validator).
+> - **Décision utilisateur (17/08) : GARDER le cap de consistance FTMO actif** (option A). Les 100 trades GR
+>   doivent rester représentatifs d'un vrai challenge — désactiver le cap pendant la phase de preuve validerait
+>   un edge qui ne tiendrait pas en réel. Conséquence : journée du 17/08 bloquée (cap 58.9% > 30%, XAUUSD +$344
+>   ce matin), collecte GR reprend à minuit UTC. **Ce n'est pas un bug** — `_check_consistency_cap` (L.1162)
+>   protège la consistance FTMO comme prévu.
+> - **Fix tâche planifiée `MT5_FTMO_GRStallCheck`** : pointait vers `check_gr_stalled.py` (supprimé) → redirigée
+>   vers `scripts/check_gr_symbols.py` (le diagnostic GR complet, run unique compatible). Testé OK.
+> - **Config réelle des 5 symboles GR** (source de vérité = config, pas la doc) : US100.cash min_score=0.5 /
+>   US30.cash 0.6 / JP225.cash 0.5 / SOLUSD 0.6 (max_spread_atr_ratio=0.25) / BTCUSD 0.5. Tous BUY-only.
 > **Mise à jour 16 Août 2026 (21:35)** : 🔧 **SOLUSD débloqué — `max_spread_atr_ratio` 0.15→0.25**
 > (config/default.yaml:symbol_limits.SOLUSD). SOLUSD était bloqué au PRECHECK par le ratio ATR :
 > spread réel 3pts (0.03 $) mais ratio ATR 17.4% > 15% défaut → `Spread too high`. Le pattern est
