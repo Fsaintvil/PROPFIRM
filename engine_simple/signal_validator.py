@@ -155,6 +155,16 @@ class SignalValidator:
 
         # Tolérance floating point 0.001 pour éviter les faux rejets
         if sig_score < effective_min_score - 0.001:
+            # 🔧 Instrumentation 16 Août 2026 (read-only): compteur de rejets
+            try:
+                from engine_simple.reject_counter import count_reject
+                count_reject(
+                    signal.get("symbol", symbol),
+                    "validator",
+                    f"score {sig_score:.2f} < min {effective_min_score:.2f}",
+                )
+            except Exception:
+                pass  # ne jamais casser le pipeline pour une instrumentation
             return (
                 False,
                 f"Signal score too low: {sig_score:.4f} < {effective_min_score} "

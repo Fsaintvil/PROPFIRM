@@ -1651,13 +1651,6 @@ class TradingEngine:
                 # Nécessaire car le hot-reload YAML peut ne pas détecter les changements de mtime
                 if hasattr(self, "ftmo") and hasattr(self.ftmo, "refresh_symbol_limits"):
                     self.ftmo.refresh_symbol_limits()
-                # 🔧 16 Août 2026: flush observationnel des rejets de signaux
-                # (compteur read-only → runtime/rejections.json pour le diagnostic)
-                try:
-                    from engine_simple.rejection_tracker import flush_rejections
-                    flush_rejections()
-                except Exception:
-                    pass
 
             if self.cycle_count - self.last_report_cycle >= 20:
                 self._log_ftmo_report()

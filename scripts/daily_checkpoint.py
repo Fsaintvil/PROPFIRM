@@ -332,42 +332,6 @@ def ftmo_status(report):
     }
 
 
-def build_gr_stall(rows, start, symbols):
-    """Détecte les symboles GR sans trade fermé depuis >24h (depuis la borne GR).
-    Observationnel — n'affecte aucune décision. Retourne {"stalled": [...], "ok": [...]}."""
-    now = datetime.now()
-    stall_hours = 24.0
-    if isinstance(start, str):
-        start = datetime.fromisoformat(start.replace(" ", "T"))
-    last = {}
-    for row in rows:
-        try:
-            ts = datetime.fromisoformat(row[0].replace(" ", "T"))
-        except Exception:
-            continue
-        if ts < start:
-            continue
-        sym = row[1]
-        if sym not in symbols:
-            continue
-        if sym not in last or ts > last[sym]:
-            last[sym] = ts
-    stalled = []
-    ok = []
-    for sym in symbols:
-        if sym not in last:
-            stalled.append({"symbol": sym, "hours_since": None, "note": "aucun trade depuis la borne GR"})
-            continue
-        hours = (now - last[sym]).total_seconds() / 3600
-        entry = {"symbol": sym, "hours_since": round(hours, 1)}
-        if hours > stall_hours:
-            entry["note"] = "stalled >24h"
-            stalled.append(entry)
-        else:
-            ok.append(entry)
-    return {"threshold_h": stall_hours, "stalled": stalled, "ok": ok}
-
-
 def write_report(data):
     out_dir = BASE / "runtime" / "daily_checkpoint"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -446,7 +410,6 @@ def main():
             "verdict": golden_verdict,
             "source": "recalcul+persistance (FIX 16 Août 2026)",
         },
-        "gr_stall": build_gr_stall(rows, golden_start, golden_symbols),
     }
 
     path = write_report(summary)
@@ -546,16 +509,6 @@ def main():
         f"PnL: {gs['pnl_total']:+.2f}$"
     )
     print(f"   Verdict: {gv['status']} — {gv['message']}")
-
-    # 🔍 Surveillance GR — symboles sans trade depuis >24h (observationnel)
-    gr_stall = summary.get("gr_stall", {})
-    if gr_stall.get("stalled"):
-        print("   🔍 GR STALL (0 trade >24h depuis la borne):")
-        for s in gr_stall["stalled"]:
-            if s["hours_since"] is None:
-                print(f"     ⚠️ {s['symbol']:12s} AUCUN trade depuis la borne GR")
-            else:
-                print(f"     ⚠️ {s['symbol']:12s} {s['hours_since']:.0f}h sans trade ({s['note']})")
 
     print(f"\n📁 Rapport écrit: {path}")
 

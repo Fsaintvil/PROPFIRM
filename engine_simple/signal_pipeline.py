@@ -158,16 +158,22 @@ class SignalPipeline:
         Returns:
             SignalResult si le signal passe tous les filtres, None sinon
         """
+        # 🔧 Instrumentation 16 Août 2026 (read-only): persiste les rejets
+        try:
+            from engine_simple.reject_counter import persist_if_stale
+            persist_if_stale()
+        except Exception:
+            pass  # ne jamais casser le pipeline pour une instrumentation
         # Phase 0: Pre-trade check
         pre_ok, pre_checks = self.risk_manager.pre_trade(symbol)
         if not pre_ok:
             failed = [c["rule"] for c in pre_checks if not c["pass"]]
             reasons = {c["rule"]: c["reason"] for c in pre_checks if not c["pass"]}
             logger.debug(f"  [PRECHECK] {symbol}: echec {failed}, reasons={reasons}")
-            # 🔧 16 Août 2026: compteur observationnel (read-only, aucune logique modifiée)
-            from engine_simple.rejection_tracker import count_rejection
+            # 🔧 Instrumentation 16 Août 2026 (read-only): compteur de rejets
+            from engine_simple.reject_counter import count_reject
             for rule, reason in reasons.items():
-                count_rejection(symbol, "pre_trade", f"{rule}: {reason}")
+                count_reject(symbol, "precheck", f"{rule}: {str(reason)[:60]}")
             return None
 
         # Phase 1a: Signal primaire selon Strategy Registry (MOM20x3 par défaut)
@@ -187,9 +193,6 @@ class SignalPipeline:
             logger.debug(f"  [MR] {symbol}: fallback MeanReversion DÉSACTIVÉ (FIX 16 Août 2026)")
 
         if signal is None:
-            # 🔧 16 Août 2026: compteur observationnel "no signal" (read-only)
-            from engine_simple.rejection_tracker import count_rejection
-            count_rejection(symbol, "no_signal", "MOM20x3 pas de signal")
             return None
 
         score = signal.get("score", 0.6)
@@ -202,50 +205,55 @@ class SignalPipeline:
         # Phase 1d: H4 Direction Filter (multi-TF professionnel)
         # Vérifie l'alignement du signal H1 avec la tendance H4.
         if not self._phase1d_h4_direction_filter(symbol, signal):
-            from engine_simple.rejection_tracker import count_rejection
-            count_rejection(symbol, "h4_dir", signal.get("action", "?"))
+            # 🔧 Instrumentation 16 Août 2026 (read-only)
+            from engine_simple.reject_counter import count_reject
+            count_reject(symbol, "h4_dir", "H4 forte contre signal")
             return None
 
         # Phase 2: ADX threshold
         if not self._phase2_adx_filter(symbol, signal, cycle_count, log_throttle):
-            from engine_simple.rejection_tracker import count_rejection
-            count_rejection(symbol, "adx", f"ADX={signal.get('adx', 0):.1f}")
+            # 🔧 Instrumentation 16 Août 2026 (read-only)
+            from engine_simple.reject_counter import count_reject
+            count_reject(symbol, "adx", f"ADX < {signal.get('adx_thresh', 22)}")
             return None
 
         # Phase 3: Session filter
         if not self._phase3_session_filter(symbol, signal):
-            from engine_simple.rejection_tracker import count_rejection
-            count_rejection(symbol, "session", signal.get("action", "?"))
+            # 🔧 Instrumentation 16 Août 2026 (read-only)
+            from engine_simple.reject_counter import count_reject
+            count_reject(symbol, "session", "hors heures préférées")
             return None
 
         # Phase 4: News filter
         if not self._phase4_news_filter(symbol):
-            from engine_simple.rejection_tracker import count_rejection
-            count_rejection(symbol, "news", "blocked")
+            # 🔧 Instrumentation 16 Août 2026 (read-only)
+            from engine_simple.reject_counter import count_reject
+            count_reject(symbol, "news", "fenêtre news")
             return None
 
         # Phase 5: Direction = regime rule
         if not self._phase5_regime_rule(signal):
-            from engine_simple.rejection_tracker import count_rejection
-            count_rejection(symbol, "regime_rule", signal.get("action", "?"))
+            # 🔧 Instrumentation 16 Août 2026 (read-only)
+            from engine_simple.reject_counter import count_reject
+            count_reject(symbol, "regime_rule", "direction interdite par régime")
             return None
 
         # Phase 6: Strategy selector
         if not self._phase6_strategy_selector(symbol, signal):
-            from engine_simple.rejection_tracker import count_rejection
-            count_rejection(symbol, "strategy_sel", f"score={signal.get('score', 0):.2f}")
+            # 🔧 Instrumentation 16 Août 2026 (read-only)
+            from engine_simple.reject_counter import count_reject
+            count_reject(symbol, "strat_sel", "selector refuse")
             return None
 
         # Phase 7: Volume Profile
         if not self._phase7_volume_profile(symbol, signal):
-            from engine_simple.rejection_tracker import count_rejection
-            count_rejection(symbol, "volume_profile", signal.get("action", "?"))
+            # 🔧 Instrumentation 16 Août 2026 (read-only)
+            from engine_simple.reject_counter import count_reject
+            count_reject(symbol, "volume_profile", "profil de volume défavorable")
             return None
 
         # Phase 7b: RVOL + CMF
         if not self._phase7b_rvol_cmf(symbol, signal):
-            from engine_simple.rejection_tracker import count_rejection
-            count_rejection(symbol, "rvol_cmf", signal.get("action", "?"))
             return None
 
         # Phase 7c: OBV Divergence
@@ -993,6 +1001,9 @@ class SignalPipeline:
         )
         if not should_trade:
             logger.debug(f"  [STRAT_SEL] {symbol}: {trade_reason} → skip")
+            # 🔧 Instrumentation 16 Août 2026 (read-only): compteur de rejets
+            from engine_simple.reject_counter import count_reject
+            count_reject(symbol, "strat_sel", trade_reason)
             return False
         signal["strat_params"] = strat_params.to_dict() if hasattr(strat_params, "to_dict") else strat_params
         return True
