@@ -72,7 +72,7 @@ symbol_limits:
   XAUUSD:
     timeframe: H1
     execution_timeframe: M15
-    max_lot: 0.05
+    max_lot: 0.06
     min_lot: 0.01
     risk_mult: 1.0  # 🔧 14 Aout 2026: 0.0→1.0 (bloqueur de trades — réactivé)
     min_score: 0.65  # 🔧 14 Aout 2026: 0.75→0.65 (cohérent mode preuve)
@@ -187,7 +187,7 @@ symbol_limits:
     circuit_breaker_dd_pct_override: 0.06
   EURUSD:
     timeframe: H1
-    max_lot: 0.05
+    max_lot: 0.06
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.6
@@ -239,7 +239,7 @@ symbol_limits:
     news_minutes_after: 5
   GBPUSD:
     timeframe: H1
-    max_lot: 0.15
+    max_lot: 0.17
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.6
@@ -291,7 +291,7 @@ symbol_limits:
     news_minutes_after: 5
   USDJPY:
     timeframe: H1
-    max_lot: 0.05
+    max_lot: 0.06
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.6
@@ -343,7 +343,7 @@ symbol_limits:
     news_minutes_after: 5
   USDCAD:
     timeframe: H1
-    max_lot: 0.05
+    max_lot: 0.06
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.6
@@ -395,7 +395,7 @@ symbol_limits:
     news_minutes_after: 5
   AUDUSD:
     timeframe: H1
-    max_lot: 0.12
+    max_lot: 0.13
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.6
@@ -448,7 +448,7 @@ symbol_limits:
     news_minutes_after: 5
   NZDUSD:
     timeframe: H1
-    max_lot: 0.1
+    max_lot: 0.11
     min_lot: 0.01
     risk_mult: 1.0
     max_spread_points: 40
@@ -604,7 +604,7 @@ symbol_limits:
     min_score: 0.6
   GBPJPY:
     timeframe: H1
-    max_lot: 0.05
+    max_lot: 0.06
     min_lot: 0.05
     risk_mult: 1.0
     max_spread_points: 80
@@ -656,7 +656,7 @@ symbol_limits:
     min_score: 0.6
   EURGBP:
     timeframe: H1
-    max_lot: 0.05
+    max_lot: 0.06
     min_lot: 0.01
     risk_mult: 1.0
     max_spread_points: 40
@@ -761,7 +761,7 @@ symbol_limits:
     min_score: 0.6
   XAGUSD:
     timeframe: H1
-    max_lot: 0.05
+    max_lot: 0.06
     min_lot: 0.05
     risk_mult: 0.0
     max_spread_points: 80
@@ -813,7 +813,7 @@ symbol_limits:
     min_score: 0.6
   USOIL.cash:
     timeframe: H1
-    max_lot: 0.05
+    max_lot: 0.06
     min_lot: 0.01
     risk_mult: 1.0
     max_spread_points: 100
@@ -970,7 +970,7 @@ symbol_limits:
     min_score: 0.6
   ETHUSD:
     timeframe: H1
-    max_lot: 0.05
+    max_lot: 0.06
     min_lot: 0.05
     risk_mult: 0.0
     max_spread_points: 120
@@ -1022,7 +1022,7 @@ symbol_limits:
     min_score: 0.6
   SOLUSD:
     timeframe: H1
-    max_lot: 0.05
+    max_lot: 0.06
     min_lot: 0.05
     risk_mult: 1.0
     max_spread_points: 120
@@ -1165,7 +1165,7 @@ symbol_limits:
     min_score: 0.5
   US30.cash:
     timeframe: H1
-    max_lot: 0.05
+    max_lot: 0.06
     min_lot: 0.05
     risk_mult: 1.0
     max_spread_points: 300

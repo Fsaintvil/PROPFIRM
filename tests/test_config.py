@@ -70,7 +70,7 @@ def test_symbol_limits_defaults():
     cfg = load_config("default")
     assert "XAUUSD" in cfg.symbol_limits
     assert "BTCUSD" in cfg.symbol_limits
-    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.05  # 🔧 MODE PREUVE 06 Aout 2026: 0.10→0.05
+    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.06  # 🔧 MODE PREUVE 06 Aout 2026: 0.10→0.05; 🔧 17 Aout 2026: ×1.10 (décision utilisateur)
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
     # 🔧 14 Aout 2026: XAUUSD REACTIVÉ (décision utilisateur) — risk_mult 0.0→1.0
     assert (
@@ -86,10 +86,11 @@ def test_symbol_limits_defaults():
 def test_usdcad_max_lot_preuve():
     """🐛 FIX 10 Août 2026: USDCAD max_lot 0.15 → 0.05 (plafond mode preuve strict).
     La config PIC 23 Juin (0.15) violait le veto risk-compliance du mode preuve
-    (lignes 43-45 de default.yaml: 'Lots réduits 0.05 max')."""
+    (lignes 43-45 de default.yaml: 'Lots réduits 0.05 max').
+    🔧 17 Août 2026: ×1.10 → 0.06 (décision utilisateur: augmentation lot 10%)."""
     cfg = load_config("default")
     assert "USDCAD" in cfg.symbol_limits
-    assert cfg.symbol_limits["USDCAD"].max_lot == 0.05
+    assert cfg.symbol_limits["USDCAD"].max_lot == 0.06
     assert cfg.symbol_limits["USDCAD"].allow_shorts is False  # mode preuve BUY-only
 
 
