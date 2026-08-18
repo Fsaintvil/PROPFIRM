@@ -66,7 +66,7 @@ class TestFTMOCycle:
         ftmo._atr_cache = {"EURUSD": (0.005, time.time())}
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
-            mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
+            mock_dt.utcnow.return_value = datetime(2026, 5, 27, 14, 0)  # 14h UTC ∈ LDN-NY [13-17]
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
                     "EURUSD",
@@ -111,7 +111,7 @@ class TestFTMOCycle:
         ftmo = make_ftmo(mt5)
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
-            mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
+            mock_dt.utcnow.return_value = datetime(2026, 5, 27, 14, 0)  # 14h UTC ∈ LDN-NY
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
                     "EURUSD",
@@ -182,7 +182,7 @@ class TestFTMOCycle:
         ftmo.consistency_violated = True
         mt5.get_account_info.return_value = MagicMock(equity=220000)
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
-            mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
+            mock_dt.utcnow.return_value = datetime(2026, 5, 27, 14, 0)  # 14h UTC ∈ LDN-NY
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
                     "EURUSD",

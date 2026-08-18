@@ -1,5 +1,16 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 19 Août 2026 (01:30)** : 🧪 **BACKTEST OPTIMISATIONS — SL 3.0× + PTP 75% + session LDN-NY appliqués au forex** (veille externe → validation → config) —
+> - **Processus** : consultation de sources externes (FTMO officiel, études momentum/trailing/session — Claude/ChatGPT non accessibles via API, remplacés par recherche web) → **backtest paramétrique** `scripts/backtest_optimizations.py` sur 7 paires forex H1 2012-2026 avec coûts réels (spread+slippage+commission), moteur replica prod `backtest_full.py` (monkey-patch propre, rapport `runtime/backtest_optimizations.json`).
+> - **Résultats clés** (8971 trades baseline) : **SL 3.0×** → WR 57.4→67.1%, PF 0.73→0.78, pertes −13% (TP scale pour RR≈2.5 constant) ; **PTP 75%** → léger gain (−1.6% pertes, DD −0.2pt) ; **Session LDN-NY [13-17h GMT]** → DD 30.3→9.0% (−70%), pertes −74% mais seulement 26% des trades. **Combo complet** : WR 64.3%, PF 0.78, DD 10.2%, pertes −76%. ⚠️ PF reste < 1.0 → le forex est **structurellement perdant après coûts** (confirme AGENTS.md EURUSD PF 0.74), l'optimisation réduit l'hémorragie sans créer d'edge.
+> - **Décision utilisateur** : « exécute la meilleure solution professionnelle » → **combo complet appliqué**.
+> - **Fix 1 — SL/TP forex élargis** (`engine_simple/strategy.py::SYMBOL_CONFIG` + `config/default.yaml::symbol_limits`) : les 7 paires forex majeures (EURUSD, GBPUSD, USDJPY, USDCAD, USDCHF, AUDUSD, NZDUSD) passent de SL 2.0/TP 5.0 (trending) et 1.5/4.0 (ranging) à **SL 3.0/TP 7.5** et **2.25/6.0** (RR 2.5/2.67 conservé, min_rr 1.5 respecté). Source de vérité = strategy.py (résolu via `SymbolParamManager`), YAML pour cohérence/hot-reload.
+> - **Fix 2 — partial TP 50%→75%** (`engine_simple/trailer.py::_check_partial_tp`) : `close_vol = volume * 0.75` au lieu de `/2`. Quantisation lot_step conservée (0.10→0.075→0.08). Aligné sur la recherche (fraction 75% optimale, arXiv 2604.27150).
+> - **Fix 3 — session LDN-NY** : `preferred_hours` [13,14,15,16,17] GMT sur les 7 paires forex (strategy.py + YAML). Filtre strict dans `ftmo_protector._check_session` (signal ≠ None). Indices (US100/US30/JP225), crypto (BTCUSD/SOLUSD) et XAUUSD restent 24/7. ⚠️ Trade-off : −74% de trades forex → collecte GR plus lente mais trades de meilleure qualité.
+> - **Tests** : +10 (config SL/TP ×6, session blocage/autorisation ×2, partial 75% ×1, RR conservé ×1) + 8 tests existants adaptés (heures mockées 11h/12h→14h UTC pour EURUSD/NZDUSD) → **1203 passed, 33 skipped**.
+> - **Robot redémarré** : PID **13252** (avant 10372), watchdog 18700. Filtre extension AUDUSD actif en live (signaux SELL rejetés à 1.87-2.09×ATR > 1.5×ATR). Balance 199 662, DD 0.3%.
+> - **Backups** : `config/backup_strategy_20260819_*_avant_opt_backtest.yaml` (strategy.py), `config/default.yaml` versionné par git.
+
 > **Mise à jour 18 Août 2026 (00:30)** : 🔧 **SOLUTION PRO AUDUSD — max_lot réduit + filtre anti-fin-de-tendance + alerte PF symbole** (commit `5214d9ff6`) —
 > - **Contexte** : AUDUSD est le pire symbole de la collecte GR (8 trades : WR 37,5 %, PF 0,34, PnL −38,34 $).
 >   Asymétrie R : winners +0,58R / losers −0,64R → il faut WR ≥ 52,5 % juste pour le breakeven. Pattern

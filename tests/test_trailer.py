@@ -187,7 +187,9 @@ class TestCheckPartialTP:
         mock_mt5.order_send.assert_called_once()
         args = mock_mt5.order_send.call_args[0][0]
         assert args["action"] == 1  # TRADE_ACTION_DEAL
-        assert args["volume"] == pytest.approx(0.05, rel=0.01)
+        # 🔧 19 Août: 50%→75% (PTP_75pct). 0.10×0.75=0.075 → quantisé au lot_step 0.01
+        # (fix 16 Août: arrondi demi-vers-le-haut) → 8×0.01 = 0.08
+        assert args["volume"] == pytest.approx(0.08, rel=0.01)
         assert args["comment"] == "PARTIAL_TP"
         assert "1001" in trailer.partial_closed
 

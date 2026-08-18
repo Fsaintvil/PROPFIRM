@@ -226,17 +226,21 @@ SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
     "EURUSD": {
         "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
+        # 🔧 19 Août 2026 (Backtest Optimizations): SL 2.0→3.0 / TP 5.0→7.5 (trending)
+        # et 1.5→2.25 / 4.0→6.0 (ranging). RR 2.5 conservé. WR backtest 57→67%, pertes −13%.
+        "sl_atr_trending": 3.0,
+        "tp_atr_trending": 7.5,
+        "sl_atr_ranging": 2.25,
+        "tp_atr_ranging": 6.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
         "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        "preferred_hours": list(range(24)),
+        # 🔧 19 Août 2026 (Backtest Optimizations): session LDN-NY overlap 13-17h GMT
+        # (DD backtest 30.3%→9.0%, pertes −74%). Voir rapport runtime/backtest_optimizations.json.
+        "preferred_hours": [13, 14, 15, 16, 17],
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         "min_score": 0.60,  # 🔧 10 Juil 2026: ↑ 0.80→0.85 — symbole réactivé, sélectif max
@@ -248,17 +252,20 @@ SYMBOL_CONFIG = {
     },
     "USDJPY": {
         "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
+        # 🔧 19 Août 2026 (Backtest Optimizations): SL 2.0→3.0 / TP 5.0→7.5 (trending)
+        # et 1.5→2.25 / 4.0→6.0 (ranging). RR 2.5 conservé. WR backtest 57→67%.
+        "sl_atr_trending": 3.0,
+        "tp_atr_trending": 7.5,
+        "sl_atr_ranging": 2.25,
+        "tp_atr_ranging": 6.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
         "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        "preferred_hours": list(range(24)),
+        # 🔧 19 Août 2026: session LDN-NY overlap 13-17h GMT (DD −66%, pertes −74%)
+        "preferred_hours": [13, 14, 15, 16, 17],
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         "min_score": 0.60,  # 🔧 10 Juil 2026: ↓ 0.85→0.80 — trop restrictif, scores plafonnent à 0.61
@@ -270,17 +277,20 @@ SYMBOL_CONFIG = {
     },
     "NZDUSD": {
         "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
+        # 🔧 19 Août 2026 (Backtest Optimizations): SL 2.0→3.0 / TP 5.0→7.5 (trending)
+        # et 1.5→2.25 / 4.0→6.0 (ranging). RR 2.5 conservé.
+        "sl_atr_trending": 3.0,
+        "tp_atr_trending": 7.5,
+        "sl_atr_ranging": 2.25,
+        "tp_atr_ranging": 6.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
         "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        "preferred_hours": list(range(24)),
+        # 🔧 19 Août 2026: session LDN-NY overlap 13-17h GMT (DD −66%, pertes −74%)
+        "preferred_hours": [13, 14, 15, 16, 17],
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
@@ -774,6 +784,17 @@ DEFAULT_SYMBOL_CONFIG = {
 _MISSING_SYMBOLS = [
     'GBPUSD', 'USDCAD', 'AUDUSD', 'USDCHF', 'EURJPY', 'AUDJPY'
 ]
+# 🔧 19 Août 2026 (Backtest Optimizations): optimisation SL/TP + session LDN-NY pour
+# les paires forex majeures. SL 2.0→3.0 / TP 5.0→7.5 (trending), 1.5→2.25 / 4.0→6.0
+# (ranging), RR 2.5 conservé. preferred_hours 13-17h GMT (London-NY overlap).
+# Backtest 7 paires H1 2012-2026: WR 57.4→64.3%, DD 30.3→10.2%, pertes −76%.
+_FOREX_OPT_20260819 = {
+    'sl_atr_trending': 3.0,
+    'tp_atr_trending': 7.5,
+    'sl_atr_ranging': 2.25,
+    'tp_atr_ranging': 6.0,
+    'preferred_hours': [13, 14, 15, 16, 17],
+}
 for _sym in _MISSING_SYMBOLS:
     if _sym not in SYMBOL_CONFIG:
         SYMBOL_CONFIG[_sym] = DEFAULT_SYMBOL_CONFIG.copy()
@@ -781,6 +802,8 @@ for _sym in _MISSING_SYMBOLS:
             'timeframe': 'H1',
             'preferred_hours': list(range(24)),
         })
+    if _sym in ('GBPUSD', 'USDCAD', 'AUDUSD', 'USDCHF'):
+        SYMBOL_CONFIG[_sym].update(_FOREX_OPT_20260819)
 
 
 # Compatibilité avec l'ancien code (momentum periods)
