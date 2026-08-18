@@ -1,5 +1,35 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 18 Août 2026 (00:30)** : 🔧 **SOLUTION PRO AUDUSD — max_lot réduit + filtre anti-fin-de-tendance + alerte PF symbole** (commit `5214d9ff6`) —
+> - **Contexte** : AUDUSD est le pire symbole de la collecte GR (8 trades : WR 37,5 %, PF 0,34, PnL −38,34 $).
+>   Asymétrie R : winners +0,58R / losers −0,64R → il faut WR ≥ 52,5 % juste pour le breakeven. Pattern
+>   identifié : les 4 losers du 17/08 entrés à 0,711-0,712 (achat en fin de tendance après montée depuis
+>   0,708), les 3 winners entrés à ~0,708 (extension négative = bon pullback). La tendance H1 AUDUSD était
+>   ascendante mais le prix était DÉJÀ étendu au-delà de l'EMA20 → momentum épuisé.
+> - **Fix 1 — max_lot AUDUSD 0.13→0.05** (`config/default.yaml`) : un perdant structurel ne doit pas scaler
+>   au même niveau que les gagnants. Aligné sur les autres paires à risque (EURUSD/USDJPY/USDCAD/XAUUSD
+>   0.05-0.06). Backups : `config/backup_*_20260818_000656_avant_filtre_extension.yaml`.
+> - **Fix 2 — nouveau filtre phase 1e anti-fin-de-tendance** (`signal_pipeline.py::_phase1e_extension_filter`) :
+>   rejette les signaux BUY dont le prix est étendu de plus de `max_extension_atr` ×ATR au-dessus de l'EMA20
+>   (achat en fin de tendance = momentum épuisé). Configurable par symbole (nouveau champ `max_extension_atr`
+>   dans `config/schema.py::SymbolLimit`, défaut None = filtre inactif), activé AUDUSD à **1.5×ATR**.
+>   Validation empirique sur les 7 trades GR AUDUSD : **4/4 losers rejetés** (extensions 1.67-3.09×ATR),
+>   **3/3 winners conservés** (extension négative). Fail-open par défaut (si pas de rates → pas de rejet).
+>   Rejet compté via `reject_counter` (clé `extension`). Log `[EXTENSION]`.
+> - **Fix 3 — alerte SYMBOL_PF_LOW** (`performance_monitor.py`) : PF < 0.7 sur ≥ 15 trades par symbole →
+>   alerte WARNING (perdant structurel probable, détection précoce avant qu'il ne pèse sur la collecte GR).
+>   Seuils `pf_symbol_below=0.7`, `pf_symbol_min_trades=15`.
+> - **Fix 4 — hygiène** : `check_gr_symbols.py::GR_SYMBOLS` porté à **13 symboles** (aligné sur
+>   `golden_rule.py`, la source de vérité — il restait bloqué sur les 5 du repositionnement) ; rotation du
+>   log `watchdog_external.log` (> 10 MB → `.log.1`) dans `trading_engine.py`.
+> - **Tests** : +10 (6 filtre phase 1e, 3 alerte PF, 1 non-déclenchement) → **1193 passed, 33 skipped**.
+> - **Robot redémarré** : PID 10372 (avant : 21956), watchdog 8188 (code fixé, log dédié `watchdog_8188.log`),
+>   rotation vérifiée (`watchdog_external.log` 0 MB + `.log.1` 20,6 MB). La config est chargée au démarrage ;
+>   le hot-reload (~15 min) propage les changements de symbol_limits au pipeline (même dict partagé).
+> - **État GR** : 31/100 trades, WR 48,4 %, PF 1,993 — la cible Règle d'Or (WR ≥ 60 %, PF ≥ 1,1) reste
+>   inchangée (contrat utilisateur), la solution pro surveille honnêtement et réduit l'exposition du pire
+>   contributeur au lieu de déplacer la cible.
+
 > **Mise à jour 18 Août 2026 (00:05)** : 🔧🔧🔧 **TRIO DE FIXES LOG ANALYST — BE sur peak, fermeture pré-weekend, agrégation closes partielles** —
 > - **Contexte** : l'audit de la session précédente (ticket AUDUSD 519685971) a révélé 3 bugs réels
 >   faussant les stats GR et exposant le capital le week-end.
