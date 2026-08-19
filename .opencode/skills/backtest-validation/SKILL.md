@@ -89,6 +89,8 @@ python scripts/backtest_all_symbols.py
 
 ## Performances réelles vs Backtest
 
+> 📌 **MISE À JOUR 19 Août 2026** : la « preuve d'edge » en cours est la **collecte Règle d'Or** (`scripts/golden_rule.py`, état dans `runtime/golden_rule/state.json`) : ≥ 100 trades sur 13 symboles avec WR ≥ 60% ET PF ≥ 1.1. Les tableaux ci-dessous (Juin) restent valides comme historique, mais les données actuelles sont dans `state.json` + `runtime/ftmo_report.json`.
+
 ### Comparaison live (Excel 47 trades) vs historique (967 trades) vs backtest (2657 trades)
 
 | Source | Trades | WR | PnL | PF | Fiabilité |

@@ -1,6 +1,6 @@
 ---
 name: monitoring-health
-description: Surveillance 24/7 du robot — watchdog ai-manager.ps1, performance monitor, alertes WR/PF/DD, logs, PID lock, rapport FTMO. Utilise performance_monitor.py et daily_report.py.
+description: Surveillance 24/7 du robot — watchdog process_watchdog.py (anti-PID-reuse, log dédié), performance monitor, alertes WR/PF/DD, logs, PID lock, rapport FTMO. Utilise performance_monitor.py et daily_report.py.
 ---
 
 # Monitoring & Health Skill
@@ -16,30 +16,34 @@ Expert en surveillance 24/7 du robot : logs, métriques, alertes, watchdog, perf
 
 ## Architecture
 
-### Watchdog (ai-manager.ps1)
+### Watchdog (scripts/process_watchdog.py — FIX 17 Août 2026)
 ```
-Boucle 2 min :
-  1. Vérifier processus pythonw.exe
-  2. Vérifier PID lock (runtime/robot.pid)
-  3. Vérifier logs récents (pas de figé > 5 min)
-  4. Vérifier DD < 8%
-  5. Redémarrer si nécessaire
+Boucle 30s (check_interval) :
+  1. Vérifier le process cible (anti-PID-reuse : compare le FILETIME de création
+     via GetProcessTimes → un PID recyclé par Windows = mort)
+  2. Vérifier le heartbeat (stale > timeout → mort)
+  3. Vérifier le PID lock (runtime/robot.pid)
+  4. Si mort → CRITICAL DEAD + attempt_restart (spawn main.py → handoff)
+  5. Log périodique ALIVE toutes les 5 itérations (~2.5 min)
 ```
+
+**Points clés du watchdog fixé :**
+- **Anti-PID-reuse** : `_get_process_creation_time()` capture le FILETIME au démarrage ; `get_process_status()` compare à chaque check → un PID recyclé n'est PAS considéré vivant
+- **Log dédié par watchdog** : `runtime/watchdog_<pid>.log` (append, en plus de stderr) — les "CRITICAL DEAD"/"Spawned" survivent à la mort du parent (avant, les écritures partaient dans le vide car stderr hérité du robot parent)
+- **Boucle fixée** : `_next_check = time.monotonic() + check_interval` réinitialisé à la FIN de chaque itération (avant, la boucle TURBO faisait des milliers de checks/s et le watchdog n'attendait jamais)
+- **Race connue (non bloquante)** : au démarrage le robot tue les watchdogs orphelins (`_kill_orphan_watchdogs`) Y COMPRIS celui qui vient de le spawner → les logs "CRITICAL DEAD/Spawned" du spawner peuvent être perdus
+- **Résurrection RÉELLE testée (17/08 18:52)** : watchdog 11060 → fake robot mort → détecté → spawn main.py (PID 13316) → handoff → robot opérationnel
 
 **Commandes :**
 ```powershell
-.\scripts\ai-manager.ps1         # Démarrer le daemon
-.\scripts\ai-manager.ps1 -Status # État du watchdog
-.\scripts\ai-manager.ps1 -Stop   # Arrêter le daemon
+.\scripts\robot.ps1            # Démarre robot + watchdog
+.\scripts\robot.ps1 -Status    # Voir l'état (robot + FTMO report)
+.\scripts\robot.ps1 -Logs      # Voir les logs
+.\scripts\robot.ps1 -Stop      # Arrêter tout
+.\scripts\robot.ps1 -LaunchMT5 # Lancer MT5
 ```
 
-> **Recommandé** : Utiliser `robot.ps1` pour gérer le robot (start, stop, status, logs).
-> ```powershell
-> .\scripts\robot.ps1            # Démarre robot + daemon
-> .\scripts\robot.ps1 -Status    # Voir l'état
-> .\scripts\robot.ps1 -Logs      # Voir les logs
-> .\scripts\robot.ps1 -Stop      # Arrêter tout
-> ```
+> ⚠️ **Vérifier le watchdog actif** : `Get-Process python -ErrorAction SilentlyContinue` → 2 processus attendus (robot + watchdog). Le log dédié `runtime/watchdog_<pid>.log` contient la preuve d'activité. Si un seul PID python tourne, le watchdog est mort → redémarrer via `robot.ps1`.
 
 ### Performance Monitor (intégré dans le robot)
 **Métriques trackées :**
@@ -124,19 +128,26 @@ python -c "import psutil; print(f'RAM: {psutil.Process().memory_info().rss/1024/
 | **Council CRITICAL** | Un agent signale CRITICAL | Investigation immédiate |
 
 ## Pièges connus
-- Le PID lock peut rester orphelin si le robot crashe sans cleanup → `ai-manager.ps1` nettoie automatiquement
+- Le PID lock peut rester orphelin si le robot crashe sans cleanup → le watchdog nettoie automatiquement
+- **PID reuse Windows** : après un kill, `OpenProcess(pid)` peut retourner VIVANT sur un PID recyclé → le watchdog compare le FILETIME de création pour détecter le recyclage
+- **Logs watchdog** : si `watchdog_external.log` n'a plus d'écriture depuis longtemps, le watchdog écrit désormais aussi dans `runtime/watchdog_<pid>.log` (dédié, append) — toujours vérifier les DEUX
+- **Boucle TURBO** : si le log watchdog dédié explose (>10 MB en minutes) avec loop_count élevé → `_next_check` non réinitialisé (bug fixé 17/08, vérifier que le code actuel le fait bien)
 - `performance_history.json` a été reset en Juin 2026 (suppression des 17K backtest signals) — l'état runtime est maintenant propre et ne contient que des trades réels
-- Les logs ne sont pas rotés automatiquement — à configurer si le robot tourne > 30 jours
+- Le log `watchdog_external.log` est roté (> 10 MB → `.log.1`) dans `trading_engine.py` (FIX 18 Août)
+- Les logs principaux ne sont pas rotés automatiquement — à configurer si le robot tourne > 30 jours
 - Un processus `pythonw.exe` zombie peut bloquer le redémarrage → `taskkill /F /IM pythonw.exe`
 - Ne pas modifier les fichiers de runtime (`state.json`, `performance_history.json`) manuellement pendant que le robot tourne — risque de corruption
+- **Fuseau horaire** : les logs `simple_robot.log` utilisent l'heure locale (UTC+3), les timestamps `audit_trail` en UTC → un écart de +3h est NORMAL
 
 ## Fichiers clés
-- `scripts/ai-manager.ps1` — watchdog continu
+- `scripts/process_watchdog.py` — watchdog continu (anti-PID-reuse, log dédié, résurrection)
 - `scripts/robot.ps1` — gestion du robot (start/stop/status/logs)
-- `engine_simple/performance_monitor.py` — monitoring intégré
+- `engine_simple/performance_monitor.py` — monitoring intégré + alerte SYMBOL_PF_LOW (PF < 0.7 sur ≥ 15 trades, FIX 18 Août)
+- `engine_simple/trading_engine.py` — rotation watchdog_external.log
 - `main.py` — boucle 15s, logging, ftmo_report
 - `logs/simple_robot.log` — log principal
 - `runtime/robot.pid` — PID lock
+- `runtime/golden_rule/state.json` — état Règle d'Or (13 symboles, WR ≥ 60%, PF ≥ 1.1, 100 trades)
 
 ## Tests
 ```powershell

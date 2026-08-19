@@ -320,4 +320,4 @@ if abs(mom) < 1e-10:
 - `engine_simple/signal_pipeline.py` — 12 phases de filtrage, profiling essentiel
 - `engine_simple/adaptive_intelligence.py` — OnlineLearner, optimisation mémoire
 - `engine_simple/ftmo_protector.py` — Règles FTMO, beaucoup de edge cases
-- `tests/` — 649 tests, fixtures dans `tests/conftest.py`
+- `tests/` — 1236 tests (19 Août 2026), fixtures dans `tests/conftest.py`

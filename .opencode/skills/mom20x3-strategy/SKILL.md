@@ -42,18 +42,29 @@ if mom < -thresh → SELL signal
 5. **Score** > `min_score` par symbole (0.60)
 6. **RR** ≥ 2.0 (vérifié avant execution)
 
-### Périodes par symbole
-| Symbole     | Period | Min Score |
-|-------------|--------|-----------|
-| XAUUSD      | 30     | 0.60      |
-| BTCUSD      | 20     | 0.60      |
-| ETHUSD      | 24     | 0.60      |
-| US500.cash  | 24     | 0.60      |
+### Périodes et seuils par symbole (source de vérité : strategy.py::SYMBOL_CONFIG)
+Momentum period = **20 pour tous les symboles** (il n'y a plus de période par symbole — les anciennes valeurs XAUUSD=30/BTCUSD=20/ETHUSD=24 sont obsolètes).
+
+| Symbole | Min Score | SL trending | TP trending | SL ranging | TP ranging | Min RR |
+|---------|:---------:|:-----------:|:-----------:|:----------:|:----------:|:------:|
+| US100.cash | 0.50 | 1.5 | 6.0 | 1.5 | 6.0 | 2.0 |
+| US30.cash | 0.60 | 1.5 | 4.5 | 1.2 | 3.0 | 1.5 |
+| JP225.cash | 0.50 | 1.5 | 6.0 | 1.5 | 6.0 | 2.0 |
+| SOLUSD | 0.60 | 2.5 | 5.0 | 2.0 | 4.0 | 1.8 |
+| BTCUSD | 0.50 | 1.5 | 6.0 | 1.5 | 6.0 | 2.0 |
+| XAUUSD | 0.65 | 1.5 | 6.0 | 1.5 | 6.0 | 2.0 |
+| **7 paires forex** (EURUSD/GBPUSD/USDJPY/USDCAD/AUDUSD/USDCHF) | 0.60 | **3.0** | **7.5** | **2.25** | **6.0** | 1.5 |
+| NZDUSD | 0.60 | **3.0** | **7.5** | **2.25** | **6.0** | 1.3 |
+
+> 🔧 **19 Août 2026 (Backtest Optimizations)** : les 7 paires forex majeures sont passées de SL 2.0/TP 5.0 (trending) et 1.5/4.0 (ranging) à **SL 3.0/TP 7.5** et **2.25/6.0** (RR 2.5/2.67 conservé). Backtest 7 paires H1 2012-2026 : WR 57.4→64.3%, DD 30.3→10.2%, pertes −76%. ⚠️ PF reste < 1.0 après coûts (forex structurellement perdant).
+> 🔧 **19 Août 2026** : `preferred_hours` [13-17h GMT] filtrés par `ftmo_protector._check_session` sur les 7 paires forex (session LDN-NY).
+> 🔧 **18 Août 2026** : filtre phase 1e `_phase1e_extension_filter` (signal_pipeline.py) — rejette BUY si prix étendu > `max_extension_atr` (activé AUDUSD à 1.5×ATR).
 
 ### Seuils de signal
 - ADX ≥ 22 → trending → thresh = 2.5×ATR
 - ADX < 22 → ranging → thresh = 2.0×ATR
 - Plafonné à 2.5×ATR max, plancher à 1.5×ATR
+- Min RR par symbole (voir tableau) — signal_validator L.235 vérifie que `tp-sl ≥ min_rr × sl_dist`
 
 ## Performances live
 Voir `runtime/performance_history.json` pour les métriques live actualisées (WR, PnL, PF, drawdown par symbole et par fenêtre glissante).
@@ -64,10 +75,13 @@ Per-symbol parameters are in `engine_simple/strategy.py` (SYMBOL_CONFIG dict) an
 ## Pièges connus
 - `if not self.rates:` plante sur numpy array — TOUJOURS utiliser `if self.rates is None`
 - Le backtest multi-TF utilise une version simplifiée (pas de ADX slope, pas de DI filter) → surestime les performances
-- Un score < 0.60 coupe le signal même si MOM20x3 est valide
-- **Corrélation crypto** : BTC/ETH sont fortement corrélés (>0.75). Le contrôle via matrice Pearson + max 1 trade/direction/groupe limite les pertes simultanées
+- Le min_score coupe le signal même si MOM20x3 est valide — le seuil varie par symbole (0.50-0.65, voir tableau)
+- **Corrélation crypto** : BTC/ETH sont fortement corrélés (>0.75). Le contrôle via matrice Pearson + max 2 trades/direction/groupe (YAML) limite les pertes simultanées
 - **NaN/Inf guard** : si un momentum est NaN ou Inf, le signal est ignoré silencieusement (log debug)
 - **XAUUSD H4** gagnant depuis 2021 mais a subi -71% WR sur 2013-2020 (bear market or). Surveillance active du DD
+- **Forex structurellement perdant après coûts** : même optimisé (SL 3.0, session LDN-NY), PF ≈ 0.78 en backtest avec coûts réels → le forex est collectionné pour la Règle d'Or (13 symboles) mais l'edge vient des indices/crypto/XAUUSD
+- **SL/TP forex depuis le 19 Août** : 3.0/7.5 (trending) et 2.25/6.0 (ranging) — NE PAS revenir à 2.0/5.0 sans nouveau backtest
+- **Filtre session LDN-NY** : les signaux forex générés hors [13-17h GMT] sont rejetés par `_check_session` (pas de signal forex hors session) → ne pas s'étonner de l'absence de trades forex le matin
 
 ## Fichiers clés
 - `engine_simple/strategy.py` — MOM20x3 pur avec filtres complets

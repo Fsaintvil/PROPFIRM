@@ -82,7 +82,9 @@ def place_order(max_retries=3):
 
 ### PerSymbolRateLimiter
 - **Max 1 trade/min/symbole** (FIX #22, était 3)
-- **Intervalle minimum 5 min entre deux trades sur le même symbole**
+- **Intervalle minimum 30s entre deux trades sur le même symbole** (`MIN_SYMBOL_INTERVAL_S = 30`)
+- Fenêtre de nettoyage = max(window_seconds, min_interval) pour éviter que le nettoyage ne contourne le check d'intervalle (bug doublons Juin 2026)
+- `release()` annule le timestamp si l'ordre a échoué après `allow()`
 - Cause racine résolue des RATE LIMIT permanents (FIX #5+#8)
 
 ### PID Lock
@@ -153,7 +155,7 @@ L'ancien code supposait `list` et plantait sur `'numpy.ndarray' object has no at
 | Composant | Limite | Remplace |
 |-----------|--------|----------|
 | `PerSymbolRateLimiter` | 1 trade/min/symbole | PerSymbolRateLimiter |
-| Intervalle min | 5 min entre 2 trades sur même symbole | - |
+| Intervalle min | 30s entre 2 trades sur même symbole | - |
 | Max retries | 3 tentatives par ordre | - |
 | Pause après échec | 30s (cooldown MT5) | - |
 
