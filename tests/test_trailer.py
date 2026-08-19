@@ -358,6 +358,17 @@ class TestCheckStepTrailing:
         # Doit forcer BE car retracement > 1 ATR
         mock_mt5.update_sl.assert_called()
 
+    def test_sell_retracement_forces_breakeven(self, trailer, mock_mt5):
+        """🔧 FIX 20 Août 2026 (symétrie BUY/SELL): un SELL qui retrace > 1 ATR
+        doit aussi forcer le BE. Avant, seul le BUY avait cette protection."""
+        trailer._atr_cache["EURUSD"] = (0.0020, time.time())
+        # SELL: peak (creux) atteint 1.09800, retrace à 1.10150 (retracement ~1.75 ATR)
+        pos = _make_position(direction=1, ticket=1002, current=1.10150, entry=1.10500, sl=1.10800)
+        trailer.trailing_peaks["1002"] = 1.09800  # creux précédent
+        trailer._check_step_trailing(pos)
+        # Doit forcer BE car retracement > 1 ATR et SL au-dessus de l'entrée
+        mock_mt5.update_sl.assert_called()
+
     def test_regime_affects_trailing_distance(self, trailer, mock_mt5):
         """Régime TREND_UP → N1 à 1.80×ATR → trail=1.00 → SL=1.10700 (31 Juil 2026)."""
         trailer._atr_cache["EURUSD"] = (0.0020, time.time())

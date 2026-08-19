@@ -491,6 +491,13 @@ class Trailer:
                 retrace_atr = (current_price - peak) / max(atr_val, 1e-10)
                 if retrace_atr > 1.5:
                     self.trailing_peaks[ticket] = current_price
+                # 🔧 FIX 20 Août 2026 (Robot Manager): symétrie BUY/SELL — force BE.
+                # Avant, le SELL ne forçait JAMAIS le breakeven sur retracement > 1 ATR
+                # (le BUY le faisait L.479-480) → un SELL qui retraçait fort restait
+                # exposé avec SL sous l'entrée. Impact actuel nul (BUY-only config),
+                # mais dette défensive si les shorts sont réactivés.
+                if retrace_atr > 1.0 and (position.sl is None or position.sl > position.price_open):
+                    self._force_breakeven(position)
                 return
             lower = current_price + min_gap
             upper = entry_price
@@ -562,7 +569,16 @@ class Trailer:
     # ── Peak reconstruction ───────────────────────────────────────────
 
     def _reconstruct_peak(self, position: Any) -> float:
-        """Trouve le vrai peak depuis l'ouverture du trade (H1, 48 bars = ~2 jours)."""
+        """Trouve le vrai peak depuis l'ouverture du trade (H1, 48 bars = ~2 jours).
+
+        ⚠️ Divergence documentée (20 Août 2026, Robot Manager) : la reconstruction
+        utilise H1 en dur alors que `_get_atr` utilise le timeframe du symbole
+        (H4 pour XAUUSD). C'est INTENTIONNEL : le peak H1 est plus fin (capture
+        les wicks H1 dans une bougie H4), ce qui donne un peak plus précis pour
+        le trailing. ATR H4 reste la référence pour les multiplicateurs. Impact
+        mesuré : XAUUSD H4 ATR ≈ $37, les wicks H1 sont typiquement < $10 → le
+        peak H1 est légèrement plus haut que le peak H4, ce qui favorise la
+        protection (SL un peu plus loin du prix)."""
         try:
             rates = self.mt5.get_rates(position.symbol, "H1", count=120)  # ~5 jours (fix M9: 48→120)
             if rates is not None and len(rates) > 5:
