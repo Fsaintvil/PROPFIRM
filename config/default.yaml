@@ -198,7 +198,7 @@ symbol_limits:
     news_minutes_after: 5
   GBPUSD:
     timeframe: H1
-    max_lot: 0.17
+    max_lot: 0.06
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.6
@@ -332,7 +332,7 @@ symbol_limits:
     news_minutes_after: 5
   NZDUSD:
     timeframe: H1
-    max_lot: 0.11
+    max_lot: 0.05
     min_lot: 0.01
     risk_mult: 1.0
     max_spread_points: 40
