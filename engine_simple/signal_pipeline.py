@@ -1076,10 +1076,21 @@ class SignalPipeline:
         strat_params = self.strategy_selector.get_params(
             symbol, adjusted_regime, adx=signal_adx, atr_pct=signal.get("atr_pct", 0.5)
         )
+        # 🔧 FIX 19 Août 2026 (Council): suppression de la DOUBLE PORTE de score.
+        # Avant, la phase 6 rejetait les signaux score < min_score par régime
+        # (0.55-0.60) PUIS le signal_validator ré-appliquait son propre plancher
+        # (MIN_SIGNAL_SCORE 0.60 + cfg_score par symbole 0.65 XAUUSD/SOLUSD +
+        # dyn_score WR). Deux portes redondantes : la phase 6 ne bloquait jamais
+        # un signal que le validator n'aurait pas bloqué de toute façon (sa porte
+        # est TOUJOURS ≥ celle de la phase 6). Résultat : 352 rejets "strat_sel"
+        # en 6h = bruit inutile, double logique confuse.
+        # → Le signal_validator est désormais la SEULE porte de score.
+        # La phase 6 conserve UNIQUEMENT le filtre de risque HIGH_VOL/ADX>35
+        # (le validator n'a pas ce garde-fou d'exécution).
         should_trade, trade_reason = self.strategy_selector.should_trade(
             symbol, adjusted_regime, signal_score, signal_adx
         )
-        if not should_trade:
+        if not should_trade and "ADX" in (trade_reason or ""):
             logger.debug(f"  [STRAT_SEL] {symbol}: {trade_reason} → skip")
             # 🔧 Instrumentation 16 Août 2026 (read-only): compteur de rejets
             from engine_simple.reject_counter import count_reject

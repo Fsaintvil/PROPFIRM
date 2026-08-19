@@ -179,6 +179,22 @@ class TestCheckPartialTP:
         trailer._check_partial_tp(pos)
         mock_mt5.order_send.assert_not_called()
 
+    def test_xauusd_partial_tp_at_55_progress(self, trailer, mock_mt5):
+        """🔧 FIX 19 Août 2026 (Council): XAUUSD partial_tp_progress=0.55 → déclenche
+        à 60% du chemin (défaut 65% ne déclencherait pas). Sécurise les gains plus tôt
+        sur un symbole WR 28.6% mais gros winners."""
+        # TP=1.11500, entry=1.10500 → 60% = 1.11100. current=1.11100 → progress=0.60.
+        pos = _make_position(ticket=1001, symbol="XAUUSD", current=1.11100, entry=1.10500, tp=1.11500, sl=1.10200, volume=0.10)
+        trailer._check_partial_tp(pos)
+        mock_mt5.order_send.assert_called_once()
+
+    def test_eurusd_keeps_65_threshold(self, trailer, mock_mt5):
+        """🔧 FIX 19 Août 2026: EURUSD sans override garde le seuil 65%."""
+        # progress=0.60 (< 0.65) → pas de partial pour EURUSD
+        pos = _make_position(ticket=1001, symbol="EURUSD", current=1.11100, entry=1.10500, tp=1.11500, sl=1.10200, volume=0.10)
+        trailer._check_partial_tp(pos)
+        mock_mt5.order_send.assert_not_called()
+
     def test_partial_close_at_65_progress(self, trailer, mock_mt5):
         """Progress ≥ 65% → ordre de fermeture partielle (seuil 31 Juil 2026)."""
         # TP=1.11500, entry=1.10500 → 65% = 1.11150. current=1.11200 → progress=0.70
@@ -253,6 +269,23 @@ class TestCheckTimeStop:
         pos = _make_position(profit=-30.0)
         trailer._check_time_stop(pos)
         mock_mt5.order_send.assert_called_once()
+
+    def test_xauusd_profit_closes_at_8h_not_12h(self, trailer, mock_mt5):
+        """🔧 FIX 19 Août 2026 (Council): time-stop profit XAUUSD = 8h (défaut 12h).
+        XAUUSD WR 28.6% (7 trades GR) mais gros winners — sécuriser les gains plus vite."""
+        trailer.position_open_times["1001"] = {"open_time": (datetime.utcnow() - timedelta(hours=9)).timestamp()}
+        pos = _make_position(ticket=1001, symbol="XAUUSD", profit=80.0)
+        with patch.object(Trailer, "_is_weekend_close_window", return_value=False):
+            trailer._check_time_stop(pos)
+        mock_mt5.order_send.assert_called_once()
+
+    def test_default_symbol_still_12h(self, trailer, mock_mt5):
+        """🔧 FIX 19 Août 2026: les symboles SANS override gardent le défaut 12h."""
+        trailer.position_open_times["1001"] = {"open_time": (datetime.utcnow() - timedelta(hours=9)).timestamp()}
+        pos = _make_position(ticket=1001, symbol="EURUSD", profit=50.0)
+        with patch.object(Trailer, "_is_weekend_close_window", return_value=False):
+            trailer._check_time_stop(pos)
+        mock_mt5.order_send.assert_not_called()
 
 
 # ── ATR Trailing (Core) ────────────────────────────────────────────────────

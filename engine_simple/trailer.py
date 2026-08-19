@@ -197,7 +197,16 @@ class Trailer:
         # sur TP 5×ATR), la moitié close est déjà en zone rentable ET la moitié restante a
         # une vraie chance d'atteindre le TP 4-6×ATR. Le backtest 158K trades (PF>1.1)
         # n'avait PAS de partial TP à 40% — cette valeur n'a jamais été validée.
-        if progress < 0.65:
+        # 🔧 19 Août 2026 (Council): seuil du partial TP configurable par symbole.
+        # XAUUSD: partial_tp_progress=0.55 (verrouille 75% du volume PLUS tôt —
+        # WR 28.6% mais gros winners, il faut sécuriser les gains avant retracement).
+        # Défaut global: 0.65 (R3 31 Juillet — laisser la course vers le TP).
+        sym_limits = getattr(cfg, "SYMBOL_LIMITS", {})
+        partial_progress = 0.65
+        sym_pp = sym_limits.get(position.symbol, {}).get("partial_tp_progress")
+        if isinstance(sym_pp, (int, float)) and 0.30 <= sym_pp <= 0.95:
+            partial_progress = float(sym_pp)
+        if progress < partial_progress:
             return
         # 🔧 19 Août 2026 (Backtest Optimizations): fraction fermée 50%→75%
         # (PTP_75pct: fermer 75% au partial, garder 25% pour la course vers le TP).
@@ -307,6 +316,14 @@ class Trailer:
             if max_profit > 0
             else float(os.environ.get("TIME_STOP_MAX_HOURS_LOSS", "4"))
         )
+        # 🔧 FIX 19 Août 2026 (Council): time-stop profit configurable par symbole.
+        # XAUUSD: time_stop_max_hours_profit=8.0 (défaut 12h) → sécurise les gains
+        # plus vite sur un symbole à WR faible (28.6% GR) mais gros winners.
+        if max_profit > 0:
+            sym_limits = getattr(cfg, "SYMBOL_LIMITS", {})
+            sym_ts = sym_limits.get(position.symbol, {}).get("time_stop_max_hours_profit")
+            if isinstance(sym_ts, (int, float)) and 1.0 <= sym_ts <= 48.0:
+                max_hours = min(max_hours, float(sym_ts))
         # 🔧 FIX 17 Août 2026 (Log Analyst): fermeture pré-weekend.
         # Problème: un trade dont le time-stop est dû le vendredi soir restait
         # exposé tout le week-end (le time-stop échoue avec 10018 marché fermé

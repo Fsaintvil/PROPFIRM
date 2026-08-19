@@ -87,10 +87,12 @@ def test_usdcad_max_lot_preuve():
     """🐛 FIX 10 Août 2026: USDCAD max_lot 0.15 → 0.05 (plafond mode preuve strict).
     La config PIC 23 Juin (0.15) violait le veto risk-compliance du mode preuve
     (lignes 43-45 de default.yaml: 'Lots réduits 0.05 max').
-    🔧 17 Août 2026: ×1.10 → 0.06 (décision utilisateur: augmentation lot 10%)."""
+    🔧 17 Août 2026: ×1.10 → 0.06 (décision utilisateur: augmentation lot 10%).
+    🔧 19 Août 2026 (Council): 0.06 → 0.04 — USDCAD perdant structurel en période
+    GR (PF 0.034 sur 3 trades), aligné sur le pattern AUDUSD (réduction des perdants)."""
     cfg = load_config("default")
     assert "USDCAD" in cfg.symbol_limits
-    assert cfg.symbol_limits["USDCAD"].max_lot == 0.06
+    assert cfg.symbol_limits["USDCAD"].max_lot == 0.04
     assert cfg.symbol_limits["USDCAD"].allow_shorts is False  # mode preuve BUY-only
 
 

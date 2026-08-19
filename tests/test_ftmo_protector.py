@@ -477,9 +477,12 @@ class TestReconcilePositions:
         assert abs((datetime.utcnow() - ot).total_seconds()) < 60
 
     def test_no_server_time_falls_back_zero(self):
-        """Sans temps serveur fiable → offset=0 (fail-open, comportement historique)."""
-        p = make_protector()  # get_tick → time=time.time() (pas d'offset) → 0.0
-        assert p._server_offset_s == 0.0
+        """Sans temps serveur fiable → offset≈0 (fail-open, comportement historique).
+        Tolérance ±1s : la mesure tick vs time.time() peut avoir un micro-décalage
+        de latence (~2ms) — un offset < 1s est négligeable et ne décale AUCUN
+        time-stop (les seuils sont en heures)."""
+        p = make_protector()  # get_tick → time=time.time() (pas d'offset) → ≈0.0
+        assert abs(p._server_offset_s) < 1.0
 
     def test_check_invariants_server_offset(self):
         """check_invariants doit aussi corriger l'offset serveur."""

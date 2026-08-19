@@ -209,6 +209,25 @@ class SymbolLimit(BaseModel):
             "WR 37.5%, PF 0.34 en période GR)."
         ),
     )
+    # 🔧 FIX 19 Août 2026 (Council): sécurisation des gains par symbole.
+    # XAUUSD WR 28.6% (7 trades GR) mais asymétrie positive (gros winners) →
+    # verrouiller les gains PLUS tôt: partial TP à 55% du chemin (défaut 65%)
+    # et time-stop profit à 8h (défaut 12h). Laisser un gagnant XAUUSD courir
+    # 12h rendait les gains (ex: time_stop −28.7$ le 18/08).
+    partial_tp_progress: float | None = Field(
+        default=None,
+        ge=0.30,
+        le=0.95,
+        description="Seuil de déclenchement du partial TP (fraction du chemin vers TP). "
+        "None = défaut global 0.65. XAUUSD: 0.55 (verrouille plus tôt).",
+    )
+    time_stop_max_hours_profit: float | None = Field(
+        default=None,
+        ge=1.0,
+        le=48.0,
+        description="Durée max d'une position profitable avant time-stop (heures). "
+        "None = défaut global 12h. XAUUSD: 8h (sécurise les gains plus vite).",
+    )
 
 
 class SecretsConfig(BaseModel):

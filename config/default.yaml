@@ -61,6 +61,10 @@ symbol_limits:
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.65
+    # 🔧 19 Août 2026 (Council): sécurisation des gains XAUUSD.
+    # WR GR 28.6% mais asymétrie positive (gros winners) → verrouiller plus tôt.
+    partial_tp_progress: 0.55
+    time_stop_max_hours_profit: 8.0
     max_spread_points: 60
     adx_thresh: 22
     cooldown_minutes: 30
@@ -264,7 +268,7 @@ symbol_limits:
     news_minutes_after: 5
   USDCAD:
     timeframe: H1
-    max_lot: 0.06
+    max_lot: 0.04
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.6
@@ -918,7 +922,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 0
     news_minutes_after: 0
-    min_score: 0.6
+    min_score: 0.65
   BNBUSD:
     timeframe: H1
     max_lot: 0.01
