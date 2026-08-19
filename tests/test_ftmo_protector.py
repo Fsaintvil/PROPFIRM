@@ -460,6 +460,41 @@ class TestReconcilePositions:
         p._reconcile_positions([pos])
         assert p.position_regime["99997"] == "RANGING"
 
+    def test_server_offset_subtracted(self):
+        """🔧 FIX 19 Août 2026: pos.time (temps serveur, +3h) doit être corrigé."""
+        # Tick serveur en avance de 3h (source primaire de la mesure)
+        mt5_mock_local = MagicMock()
+        mt5_mock_local.get_tick.return_value = MagicMock(ask=1.1, bid=1.099, time=time.time() + 3 * 3600)
+        mt5_mock_local.get_symbol_info.return_value = MagicMock(point=1e-4, ask=1.1, bid=1.099)
+        p = FTMOProtector(mt5_mock_local, make_config())
+        assert abs(p._server_offset_s - 3 * 3600) < 2  # ~3h mesuré
+
+        # Position ouverte "maintenant" en temps serveur → open_time ≈ utcnow
+        pos = MagicMock(ticket=99998, comment="ADAPT_TRE_001", symbol="EURUSD")
+        pos.time = time.time() + 3 * 3600  # temps serveur = local + 3h
+        p._reconcile_positions([pos])
+        ot = p.position_open_times["99998"]["open_time"]
+        assert abs((datetime.utcnow() - ot).total_seconds()) < 60
+
+    def test_no_server_time_falls_back_zero(self):
+        """Sans temps serveur fiable → offset=0 (fail-open, comportement historique)."""
+        p = make_protector()  # get_tick → time=time.time() (pas d'offset) → 0.0
+        assert p._server_offset_s == 0.0
+
+    def test_check_invariants_server_offset(self):
+        """check_invariants doit aussi corriger l'offset serveur."""
+        mt5_mock_local = MagicMock()
+        mt5_mock_local.get_tick.return_value = MagicMock(ask=1.1, bid=1.099, time=time.time() - 2 * 3600)
+        mt5_mock_local.get_symbol_info.return_value = MagicMock(point=1e-4, ask=1.1, bid=1.099)
+        p = FTMOProtector(mt5_mock_local, make_config())
+        assert abs(p._server_offset_s + 2 * 3600) < 2
+
+        pos = MagicMock(ticket=99999, comment="ADAPT_TRE_001", symbol="EURUSD")
+        pos.time = time.time() - 2 * 3600  # temps serveur = local − 2h
+        p.check_invariants(pos)
+        ot = p.position_open_times["99999"]["open_time"]
+        assert abs((datetime.utcnow() - ot).total_seconds()) < 60
+
 
 class TestParseCommentRegime:
     def _make_protector(self):

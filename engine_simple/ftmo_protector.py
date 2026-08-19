@@ -650,6 +650,15 @@ class FTMOProtector:
         self._auto_stop_paused = False
         self._auto_stop_until = None
 
+        # ── Offset temps serveur MT5 vs UTC local ────────────────────
+        # 🔧 FIX 19 Août 2026 (Audit Council): pos.time (API MT5) est en TEMPS
+        # SERVEUR (FTMO-Demo décalé de ~3h). Sans correction, les time-stops se
+        # déclenchent 3h EN RETARD (limite 4h réelle → ~7h, 12h → ~15h). C'est la
+        # fuite n°1 de la collecte GR : 9 trades time_stop, 0% WR, −69,93$ = 18%
+        # des pertes brutes. On mesure l'offset une fois au démarrage et on le
+        # soustrait à l'ingestion dans position_open_times.
+        self._server_offset_s = self._measure_server_offset()
+
         # ── Trailer (delegated) ──────────────────────────────────────
         self.trailer = Trailer(mt5, config, shared_lock=self._shared_lock)
         self.trailer.partial_closed = self.partial_closed
@@ -667,6 +676,56 @@ class FTMOProtector:
         self.trailer.position_meta = self.position_meta
         self.trailer.position_open_times = self.position_open_times
         self.trailer.peak_profit = self.peak_profit
+
+    def _measure_server_offset(self) -> float:
+        """Mesure l'écart temps serveur MT5 vs UTC local (une seule fois).
+
+        🔧 FIX 19 Août 2026 (Audit Council): pos.time (API MT5) est en TEMPS
+        SERVEUR (FTMO-Demo décalé de ~3h). Les time-stops comparaient ce
+        timestamp brut à datetime.utcnow() → fermeture 3h trop tard (limite
+        4h réelle → ~7h). On retourne l'offset en secondes (serveur − local)
+        à soustraire du timestamp brut pour obtenir l'heure UTC réelle.
+        Fail-open : si le temps serveur n'est pas disponible ou absurde,
+        offset = 0 (comportement historique).
+
+        Mesure via le tick EURUSD (pattern identique à check_price_staleness) :
+        account_info() n'a PAS d'attribut .time dans l'API Python MT5, mais le
+        tick.time EST le timestamp serveur. Source primaire = tick (précision
+        seconde), fallback = account_info si le tick est indisponible. La barre
+        H1 n'est PAS utilisée : son timestamp est l'ouverture de la bougie (0-1h
+        dans le passé) → offset sous-estimé.
+        """
+        try:
+            tick = self.mt5.get_tick("EURUSD")
+            if tick is not None:
+                tick_time = getattr(tick, "time", None)
+                if isinstance(tick_time, (int, float)) and tick_time > 0:
+                    offset = float(tick_time) - time.time()
+                    return self._finalize_server_offset(offset)
+        except Exception as e:
+            logger.debug(f"[SERVER_OFFSET] tick EURUSD indisponible: {e}")
+        # Fallback: account_info (certaines versions exposent .time)
+        try:
+            account = self.mt5.get_account_info()
+            if account is not None:
+                server_time = getattr(account, "time", None)
+                if isinstance(server_time, (int, float)) and server_time > 0:
+                    return self._finalize_server_offset(float(server_time) - time.time())
+        except Exception:
+            pass
+        return 0.0
+
+    def _finalize_server_offset(self, offset: float) -> float:
+        """Garde-fous communs pour la mesure d'offset serveur."""
+        if abs(offset) > 24 * 3600:
+            logger.warning(f"[SERVER_OFFSET] offset absurde ({offset/3600:.1f}h) ignoré")
+            return 0.0
+        if abs(offset) >= 1:
+            logger.info(
+                f"[SERVER_OFFSET] temps serveur MT5 décalé de {offset/3600:+.2f}h "
+                f"vs UTC — time-stops/BE corrigés"
+            )
+        return offset
 
     def check_price_staleness(self, symbol: str, max_age: int = 60) -> bool:
         tick = self.mt5.get_tick(symbol)
@@ -694,7 +753,10 @@ class FTMOProtector:
                 if raw is None:
                     open_time = datetime.utcnow()
                 elif isinstance(raw, (int, float)):
-                    open_time = datetime.utcfromtimestamp(raw)
+                    # 🔧 FIX 19 Août 2026: pos.time est en temps serveur MT5 (~3h
+                    # d'avance) → soustraire l'offset pour avoir l'heure UTC réelle.
+                    # Sans ça les time-stops fermaient 3h trop tard (4h→~7h).
+                    open_time = datetime.utcfromtimestamp(raw - self._server_offset_s)
                 else:
                     open_time = raw
                 self.position_open_times[ticket_key] = {"open_time": open_time, "symbol": p.symbol}
@@ -1881,7 +1943,15 @@ class FTMOProtector:
         with self._shared_lock:
             ticket_key = str(position.ticket)
             if ticket_key not in self.position_open_times:
-                open_time = getattr(position, "time", None) or datetime.utcnow()
+                raw_ot = getattr(position, "time", None)
+                if raw_ot is None:
+                    open_time = datetime.utcnow()
+                elif isinstance(raw_ot, (int, float)):
+                    # 🔧 FIX 19 Août 2026: pos.time est en temps serveur MT5 (~3h
+                    # d'avance) → soustraire l'offset pour l'heure UTC réelle.
+                    open_time = datetime.utcfromtimestamp(raw_ot - self._server_offset_s)
+                else:
+                    open_time = raw_ot
                 self.position_open_times[ticket_key] = {"open_time": open_time, "symbol": position.symbol}
             if ticket_key not in self.position_regime:
                 comment = getattr(position, "comment", "") or ""

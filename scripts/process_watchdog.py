@@ -256,8 +256,16 @@ def flag_path(heartbeat_path: Path, name: str) -> Path:
 
 def is_graceful_stop_requested(heartbeat_path: Path) -> bool:
     """True if robot.ps1 -Stop wrote a shutdown flag (intentional stop)."""
-    flag = flag_path(heartbeat_path, "robot.stop.flag")
-    return flag.exists()
+    # 🔧 FIX 19 Août 2026 (Kill Switch): respecter AUSSI stop_for_day.flag.
+    # Le kill-switch (arrêt d'urgence) et ai-manager.ps1 écrivent
+    # runtime/stop_for_day.flag puis tuent le robot. Avant ce fix, seul
+    # robot.stop.flag était respecté → le watchdog ressuscitait le robot
+    # ~2.5 min après un arrêt d'urgence (DD>10%, daily loss>1.8%), annulant
+    # la décision de stop. Tout flag d'arrêt volontaire = pas de respawn.
+    for _name in ("robot.stop.flag", "stop_for_day.flag"):
+        if flag_path(heartbeat_path, _name).exists():
+            return True
+    return False
 
 
 def mark_halt(heartbeat_path: Path) -> None:
