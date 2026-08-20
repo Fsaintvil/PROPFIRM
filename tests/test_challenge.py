@@ -323,15 +323,21 @@ class TestCurrentDDPct:
         dd = t.current_dd_pct()
         assert dd == pytest.approx(0.05, rel=0.01)
 
-    def test_returns_1_on_no_account(self):
-        t = make_position_tracker()
+    def test_returns_last_known_on_no_account(self):
+        # 🔧 FIX 20 Août 2026: le fallback 1.0 (=100% DD) déclenchait de fausses
+        # alertes dd_warning à chaque blip MT5. Désormais on retourne le dernier DD mesuré.
+        t = make_position_tracker(equity=195_000)
+        t.peak_equity = 200_000
+        assert t.current_dd_pct() == pytest.approx(0.025, rel=0.01)  # 2.5% mesuré
         t.mt5.get_account_info.return_value = None
-        assert t.current_dd_pct() == 1.0
+        assert t.current_dd_pct() == pytest.approx(0.025, rel=0.01)  # dernier connu
 
-    def test_returns_1_on_exception(self):
-        t = make_position_tracker()
+    def test_returns_last_known_on_exception(self):
+        t = make_position_tracker(equity=195_000)
+        t.peak_equity = 200_000
+        assert t.current_dd_pct() == pytest.approx(0.025, rel=0.01)  # 2.5% mesuré
         t.mt5.get_account_info.side_effect = RuntimeError("MT5 crash")
-        assert t.current_dd_pct() == 1.0
+        assert t.current_dd_pct() == pytest.approx(0.025, rel=0.01)  # dernier connu
 
     def test_zero_peak_equity(self):
         t = make_position_tracker(equity=0)

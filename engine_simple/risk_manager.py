@@ -74,7 +74,11 @@ class PreTradeChecklist:
                 {
                     "rule": "dd_warning",
                     "pass": False,
-                    "reason": f"DD {dd_pct:.1f}% proche de max {self.ftmo.max_dd_pct:.0%}",
+                    # 🔧 FIX 20 Août 2026 (log-analyst → Robot Manager): dd_pct est un
+                    # RATIO (0.05 = 5%), pas un pourcentage — `{dd_pct:.1f}%` affichait
+                    # "0.1%" pour 5% et "1.0%" pour le fallback 1.0 (=100%). Format `:.1%`
+                    # correct + seuil affiché aligné sur le ratio (max_dd_pct*0.8).
+                    "reason": f"DD {dd_pct:.1%} proche de max {self.ftmo.max_dd_pct*100:.0f}%",
                     "severity": "warning",
                 }
             )

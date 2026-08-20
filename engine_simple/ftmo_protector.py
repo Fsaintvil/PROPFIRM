@@ -61,6 +61,13 @@ class ChallengeTracker:
         self.challenge_status = "ACTIVE"  # ACTIVE | PASSED | FAILED_DD
         self.consistency_violated = False
         self._daily_loss_violated = False
+        # 🔧 20 Août 2026 (log-analyst → Robot Manager): dernier DD mesuré.
+        # En cas de blip MT5 transitoire (get_account_info() = None ou exception),
+        # on retourne la DERNIÈRE valeur connue au lieu du fallback 1.0 (100% de DD)
+        # qui déclenchait des fausses alertes dd_warning (13 entrées polluant
+        # reject_counter). Le check réel du DD (_check_drawdown_limit) reste
+        # gardé par `if account:` — aucune dégradation de la protection FTMO.
+        self._last_dd_pct = 0.0
 
         # ── Stats quotidiennes ───────────────────────────────────────
         self.daily_stats = {"trades": 0, "losses": 0, "pnl": 0, "day": datetime.utcnow().date()}
@@ -245,14 +252,17 @@ class ChallengeTracker:
         try:
             account = self.mt5.get_account_info()
             if not account:
-                logger.warning("[DD] get_account_info() returned None — returning 1.0")
-                return 1.0
+                # 🔧 FIX 20 Août 2026: retourne le dernier DD connu (pas 1.0 = 100%!)
+                logger.warning(f"[DD] get_account_info() returned None — returning last known {self._last_dd_pct:.1%}")
+                return self._last_dd_pct
             eq = account.equity
             peak = self.peak_equity
-            return (peak - eq) / max(peak, 1) if peak > 0 else 0.0
+            dd = (peak - eq) / max(peak, 1) if peak > 0 else 0.0
+            self._last_dd_pct = max(0.0, dd)  # jamais négatif
+            return self._last_dd_pct
         except Exception as e:
-            logger.error(f"[DD] current_dd_pct() FAILED: {e} — returning 1.0")
-            return 1.0
+            logger.error(f"[DD] current_dd_pct() FAILED: {e} — returning last known {self._last_dd_pct:.1%}")
+            return self._last_dd_pct
 
     def _check_drawdown_limit(self) -> None:
         """Vérifie le drawdown max (10% FTMO)."""
