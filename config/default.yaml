@@ -169,7 +169,7 @@ symbol_limits:
     circuit_breaker_dd_pct_override: 0.06
   EURUSD:
     timeframe: H1
-    max_lot: 0.06
+    max_lot: 0.04
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.6
