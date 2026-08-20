@@ -325,6 +325,98 @@ class TestTradeExecutor:
         assert result is not None  # still returns the result object
         assert result.retcode == 10014
 
+    def test_price_dedup_blocks_persistent_signal_5min(self):
+        """🔧 FIX 20 Août 2026: price-dedup bloque un doublon rejoué ~5 min après.
+        L'ancienne fenêtre (120s) laissait passer un signal MOM20x3 identique
+        rejoué à 5 min (XAUUSD BUY 02:02 + 02:07 → 2 SL = -338$ le 20/08).
+        Nouvelle fenêtre : <0.05% d'écart ET age < 600s → considéré doublon.
+        🔧🔧 FIX 20/08 (2nd): pos.time est en TEMPS SERVEUR (+3h) → on simule
+        un offset serveur de +10800s comme en production (ftmo._server_offset_s)."""
+        ex = self.make_executor()
+        ex.ftmo._server_offset_s = 10800.0  # FTMO-Demo : serveur décalé de +3h
+        pos = MagicMock()
+        pos.symbol = "XAUUSD"
+        pos.type = 0  # BUY
+        pos.price_open = 4515.49
+        pos.ticket = 999
+        pos.time = time.time() + 10800 - 300  # temps serveur : ouverte il y a 5 min
+        ex.mt5.get_positions.return_value = [pos]
+        signal = {
+            "action": "BUY",
+            "entry_price": 4515.12,  # diff 0.008% < 0.05% → doublon
+            "sl": 4510.0,
+            "tp": 4540.0,
+            "high_confidence": True,  # le price-dedup s'applique AUSSI aux high_confidence
+        }
+        result = ex.execute("XAUUSD", signal)
+        assert result is None
+
+    def test_price_dedup_blocks_with_server_offset_realistic(self):
+        """🔧🔧 FIX 20/08 (2nd): SANS l'offset serveur, le price-dedup est inerte
+        (0 < age toujours faux car pos.time ~ +3h). Avec l'offset appliqué, un
+        doublon rejoué à 5 min est bien bloqué. C'était le bug exact du 20/08 :
+        les doublons XAUUSD 04:53 et 08:28 (2 SL = -338$ / 2 SL = -113$) sont
+        passés car la garde 0 < age < 600 était TOUJOURS fausse en production."""
+        ex = self.make_executor()
+        ex.ftmo.calculate_lot.return_value = 0.1
+        # Pas d'offset défini sur le mock → offset = 0 → pas de faux rejet (fix 10/08)
+        pos = MagicMock()
+        pos.symbol = "XAUUSD"
+        pos.type = 0
+        pos.price_open = 4515.49
+        pos.ticket = 777
+        pos.time = time.time() + 10800  # temps serveur : "futur" local de +3h
+        ex.mt5.get_positions.return_value = [pos]
+        signal = {
+            "action": "BUY",
+            "entry_price": 4515.12,
+            "sl": 4510.0,
+            "tp": 4540.0,
+            "high_confidence": True,
+        }
+        mock_result = MagicMock()
+        mock_result.retcode = 10009
+        ex.mt5.order_send.return_value = mock_result
+        # offset absent → age ≈ -10800 → pas de blocage (préserve le fix 10/08)
+        with patch("engine_simple.trade_executor.OrderValidator.validate", return_value=None):
+            result = ex.execute("XAUUSD", signal)
+        assert result is not None
+
+        # Même scénario MAIS avec l'offset serveur présent (production) :
+        # pos.time = now + 10800 (serveur) - 300 (ouverte il y a 5 min)
+        ex.ftmo._server_offset_s = 10800.0
+        pos.time = time.time() + 10800 - 300
+        result = ex.execute("XAUUSD", signal)
+        assert result is None  # bloqué : l'age corrigé = 300s ∈ (0, 600)
+
+    def test_price_dedup_negative_age_not_blocked(self):
+        """🐛 FIX 10 Août 2026 (conservé): age NÉGATIF (offset serveur ~3h)
+        → PAS de faux rejet. La garde 0 < age < 600s reste en place."""
+        ex = self.make_executor()
+        pos = MagicMock()
+        pos.symbol = "USDJPY"
+        pos.type = 0  # BUY
+        pos.price_open = 152.00
+        pos.ticket = 888
+        pos.time = time.time() + 10800  # futur (temps serveur FTMO-Demo +3h)
+        ex.mt5.get_positions.return_value = [pos]
+        signal = {
+            "action": "BUY",
+            "entry_price": 152.01,  # diff 0.007% < 0.05% MAIS age négatif → pas un doublon
+            "sl": 151.50,
+            "tp": 153.50,
+            "high_confidence": True,  # saute le comptage de positions → atteint le price-dedup
+        }
+        ex.ftmo.calculate_lot.return_value = 0.1
+        mock_result = MagicMock()
+        mock_result.retcode = 10009
+        ex.mt5.order_send.return_value = mock_result
+        with patch("engine_simple.trade_executor.OrderValidator.validate", return_value=None):
+            result = ex.execute("USDJPY", signal)
+        # Non bloqué par le price-dedup → l'ordre est passé
+        assert result is not None
+        assert result.retcode == 10009
+
     def test_regime_to_short(self):
         assert TradeExecutor.REGIME_TO_SHORT["TREND_UP"] == "TRE"
         assert TradeExecutor.REGIME_TO_SHORT["TREND_DOWN"] == "DOW"

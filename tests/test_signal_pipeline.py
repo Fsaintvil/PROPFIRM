@@ -683,6 +683,51 @@ class TestDynamicPositionLimits:
         assert result.signal["max_per_symbol"] == 4
 
     @patch("engine_simple.strategy.MOM20x3")
+    def test_bypass_cap_per_symbol_xauusd_capped(self, mock_mom, pipeline):
+        """🔧 FIX 20 Août 2026: le cap du bypass central est PAR SYMBOLE.
+        XAUUSD plafonné à 1 (SL 1.5×ATR serré → doublon = risque doublé,
+        2 SL le 20/08 = -338$), les autres symboles conservent le défaut 4."""
+        mock_mom.return_value = _make_mock_mom20x3(
+            {
+                "action": "BUY",
+                "score": 0.95,
+                "confidence": 0.95,
+                "adx": 25,
+                "atr": 0.01,
+                "_regime": "TREND_UP",
+                "plus_di": 30,
+                "minus_di": 15,
+                "adx_slope": 5,
+            }
+        )
+        # XAUUSD → plafonné à 1 position par signal malgré le bypass
+        res_xau = pipeline.process(
+            symbol="XAUUSD",
+            cycle_count=1,
+            degraded_symbols={},
+            sym_dir_counts={},
+            sym_total_counts={},
+            config_limits={"XAUUSD": 4},
+            last_signals={},
+            log_throttle={},
+        )
+        assert res_xau is not None
+        assert res_xau.signal["max_per_symbol"] == 1
+        # USDJPY → non plafonné, défaut 4 conservé
+        res_usd = pipeline.process(
+            symbol="USDJPY",
+            cycle_count=2,
+            degraded_symbols={},
+            sym_dir_counts={},
+            sym_total_counts={},
+            config_limits={"USDJPY": 4},
+            last_signals={},
+            log_throttle={},
+        )
+        assert res_usd is not None
+        assert res_usd.signal["max_per_symbol"] == 4
+
+    @patch("engine_simple.strategy.MOM20x3")
     def test_low_confidence_gets_one_position(self, mock_mom, pipeline):
         """conf < 0.70 → max_per_symbol = 1"""
         mock_mom.return_value = _make_mock_mom20x3(

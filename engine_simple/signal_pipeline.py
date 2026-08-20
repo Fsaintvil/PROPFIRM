@@ -30,6 +30,7 @@ import pandas as _pd
 import numpy as np
 
 from engine_simple.indicators import chaikin_money_flow, obv_divergence, relative_volume
+from engine_simple.ftmo_config import BYPASS_MAX_PER_SYMBOL
 
 logger = logging.getLogger("signal_pipeline")
 
@@ -291,12 +292,16 @@ class SignalPipeline:
 
         # Dynamic position limits based on confidence (simplifié 1er Juillet 2026)
         # 🔧 FIX 22 Juillet 2026: central bypass override — très fort signal contourne les limites
+        # 🔧 FIX 20 Août 2026 (Auto-Fixer): cap PAR SYMBOLE au lieu du hardcode 4.
+        # Avant, le bypass autorisait jusqu'à 4 positions du même signal → doublons
+        # intra-symbole (XAUUSD BUY 02:02+02:07 → 2 SL = -338$). Plafond configurable
+        # dans ftmo_config.BYPASS_MAX_PER_SYMBOL (XAUUSD=1, défaut=4).
         if signal.get("_central_bypass", False):
             signal["high_confidence"] = True
-            signal["max_per_symbol"] = 4
+            signal["max_per_symbol"] = BYPASS_MAX_PER_SYMBOL.get(symbol, 4)
             logger.debug(
                 f"  [BYPASS] {symbol} {signal.get('action', '?')}: central bypass actif "
-                f"— limite contournée (max=4/symbole)"
+                f"— limite contournée (max={signal['max_per_symbol']}/symbole)"
             )
         else:
             sig_conf = signal.get("confidence", 0.0)

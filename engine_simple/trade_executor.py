@@ -279,9 +279,13 @@ class TradeExecutor:
                 return None
 
         # 🔧 FIX 28 Juillet 2026: Price-dedup pour TOUS les signaux (y compris high_confidence)
-        # Vérifie si une position existe avec un prix d'entrée quasi-identique (<0.03%, age<120s).
+        # Vérifie si une position existe avec un prix d'entrée quasi-identique (<0.05%, age<600s).
         # Les doublons XAUUSD (9 trades en 30s) avaient des prix à ±0.01-0.02%.
-        # 0.03% couvre toutes les entrées quasi-identiques.
+        # 🔧 FIX 20 Août 2026 (Auto-Fixer): fenêtre élargie 0.03%→0.05% / 120s→600s.
+        # Les signaux MOM20x3 PERSISTENT tant qu'ils sont actifs (rejoués chaque cycle 15s) :
+        # XAUUSD BUY 02:02 + 02:07 (prix 4515.49/4515.12, diff 0.008%) → 2 SL = -338$.
+        # À 5 min d'écart, l'ancienne fenêtre 120s ne bloquait pas → 600s couvre le replay
+        # d'un même signal (le MOM20x3 reste valide jusqu'à la fermeture de la bougie).
         price = self._get_signal_value(signal, "entry_price")
         if price is not None and price > 0 and existing:
             sig_type = 0 if action == "BUY" else 1
@@ -291,17 +295,27 @@ class TradeExecutor:
             for pos in existing:
                 if pos.type == sig_type:
                     price_diff_pct = abs(pos.price_open - price) / max(price, 0.0001) * 100
-                    if price_diff_pct < 0.03:  # 0.03% d'écart max
-                        # Vérifier aussi l'age de la position (ouverte < 120s = doublon probable)
+                    if price_diff_pct < 0.05:  # 0.05% d'écart max (FIX 20/08: était 0.03%)
+                        # Vérifier aussi l'age de la position (ouverte < 600s = doublon probable)
                         # 🐛 FIX 10 Août 2026: pos.time (API MT5) est en TEMPS SERVEUR (FTMO-Demo
                         # décalé de ~3h vs time.time() local) → age NÉGATIF permanent → le
                         # price-dedup bloquait TOUS les signaux high_confidence du symbole
                         # (65 faux rejets USDJPY en 15 min le 10/08). On n'applique le price-dedup
-                        # QUE si l'age est cohérent (0 < age < 120s). Les vrais doublons restent
-                        # protégés par le rate limiter par symbole + le fingerprint _recent_trades
-                        # (qui utilisent time.time() de façon cohérente des deux côtés).
-                        pos_age = _now - getattr(pos, "time", 0)
-                        if 0 < pos_age < 120:
+                        # QUE si l'age est cohérent.
+                        # 🔧🔧 FIX 20 Août 2026 (2nd, Robot Manager): la garde 0 < age < 600
+                        # ajoutée le 10/08 a rendu le price-dedup TOTALEMENT INERTE : pos.time
+                        # étant en temps serveur (+3h), pos_age = now - pos.time ≈ -10800s →
+                        # 0 < age TOUJOURS FAUX → JAMAIS de blocage (0 occurrence "DOUBLON"
+                        # dans les logs malgré les doublons XAUUSD 04:53 et 08:28 du 20/08,
+                        # chacun -338$ / -113$). Fix : on soustrait l'offset serveur mesuré
+                        # (_server_offset_s, fix time-stop du 19/08) AVANT de calculer l'age.
+                        # Si offset = 0 (non mesuré/fail-open), le comportement est identique
+                        # au fix 10/08 (pas de faux rejet).
+                        server_offset = getattr(getattr(self, "ftmo", None), "_server_offset_s", None)
+                        if not isinstance(server_offset, (int, float)):
+                            server_offset = 0
+                        pos_age = _now - (getattr(pos, "time", 0) - server_offset)
+                        if 0 < pos_age < 600:
                             logger.warning(
                                 f"[DOUBLON] {symbol}: entrée {price:.5f} identique "
                                 f"à pos #{pos.ticket} ({pos.price_open:.5f}, diff={price_diff_pct:.3f}%, "

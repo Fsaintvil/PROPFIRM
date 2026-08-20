@@ -529,14 +529,6 @@ symbol_limits:
     obv_div_penalty_high: 0.7
     obv_div_penalty_low: 0.85
     preferred_hours:
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
-    - 7
     - 8
     - 9
     - 10
@@ -547,12 +539,6 @@ symbol_limits:
     - 15
     - 16
     - 17
-    - 18
-    - 19
-    - 20
-    - 21
-    - 22
-    - 23
     weekend_trading: true
     news_minutes_before: 5
     news_minutes_after: 5
@@ -738,14 +724,6 @@ symbol_limits:
     obv_div_penalty_high: 0.7
     obv_div_penalty_low: 0.85
     preferred_hours:
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
-    - 7
     - 8
     - 9
     - 10
@@ -760,8 +738,6 @@ symbol_limits:
     - 19
     - 20
     - 21
-    - 22
-    - 23
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
@@ -790,19 +766,6 @@ symbol_limits:
     obv_div_penalty_high: 0.7
     obv_div_penalty_low: 0.85
     preferred_hours:
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
-    - 7
-    - 8
-    - 9
-    - 10
-    - 11
-    - 12
     - 13
     - 14
     - 15
@@ -812,8 +775,6 @@ symbol_limits:
     - 19
     - 20
     - 21
-    - 22
-    - 23
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
@@ -1037,19 +998,6 @@ symbol_limits:
     obv_div_penalty_high: 0.7
     obv_div_penalty_low: 0.85
     preferred_hours:
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
-    - 7
-    - 8
-    - 9
-    - 10
-    - 11
-    - 12
     - 13
     - 14
     - 15
@@ -1059,8 +1007,6 @@ symbol_limits:
     - 19
     - 20
     - 21
-    - 22
-    - 23
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
@@ -1165,14 +1111,6 @@ symbol_limits:
     obv_div_penalty_high: 0.7
     obv_div_penalty_low: 0.85
     preferred_hours:
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
-    - 7
     - 8
     - 9
     - 10
@@ -1183,12 +1121,6 @@ symbol_limits:
     - 15
     - 16
     - 17
-    - 18
-    - 19
-    - 20
-    - 21
-    - 22
-    - 23
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
@@ -1218,14 +1150,6 @@ symbol_limits:
     obv_div_penalty_high: 0.7
     obv_div_penalty_low: 0.85
     preferred_hours:
-    - 0
-    - 1
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
-    - 7
     - 8
     - 9
     - 10
@@ -1236,12 +1160,6 @@ symbol_limits:
     - 15
     - 16
     - 17
-    - 18
-    - 19
-    - 20
-    - 21
-    - 22
-    - 23
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15

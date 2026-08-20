@@ -68,6 +68,39 @@ def _clean_orphan_tmp_files(glob_pattern="*.tmp"):
                 logger.debug(f"[CLEAN] Orphelin runtime/{f.name} ignoré: {e}")
 
 
+# ── Nettoyage des flags watchdog (pré-démarrage) ──────────────────────
+def _clean_watchdog_flags():
+    """Nettoie les flags d'arrêt laissés par la session précédente.
+
+    Un robot.stop.flag / robot.halt.flag résiduel désactive le watchdog
+    externe (scripts/process_watchdog.py → "Auto-restart disabled, monitoring
+    only"), l'empêchant de ressusciter le robot en cas de gel/crash
+    (gel 1h52 le 20/08 : 05:21→07:13 sans résurrection car robot.stop.flag
+    datait de 19/08 23:52).
+
+    Pattern aligné sur scripts/robot.ps1 (L.197-205) : on nettoie
+    robot.stop.flag ET robot.halt.flag — un démarrage = volonté explicite de
+    relancer (comme un lancement via robot.ps1).
+
+    ⚠️ stop_for_day.flag N'EST PAS nettoyé : il est écrit par le kill-switch /
+    ai-manager pour arrêter le trading pour la journée. Le nettoyer ici
+    annulerait une décision de stop d'urgence (DD>10%, daily loss>1.8%) si le
+    robot était relancé manuellement (Start-Process python main.py). C'est le
+    watchdog/ai-manager qui le retire quand la condition de stop est levée.
+    """
+    runtime_dir = Path("runtime")
+    if not runtime_dir.exists():
+        return
+    for name in ("robot.stop.flag", "robot.halt.flag"):
+        flag = runtime_dir / name
+        try:
+            if flag.exists():
+                flag.unlink(missing_ok=True)
+                logger.info(f"[CLEAN] Flag watchdog résiduel supprimé: {flag}")
+        except Exception as e:
+            logger.debug(f"[CLEAN] Flag watchdog ignoré: {flag} ({e})")
+
+
 # ── Signal handler for graceful shutdown ──────────────────────────────
 _shutdown_requested = False
 _robot_instance: "FTMO_SIMPLE | None" = None
@@ -107,6 +140,11 @@ def main():
     Path("logs").mkdir(exist_ok=True)
     Path("runtime").mkdir(exist_ok=True)
     _clean_orphan_tmp_files()
+    # 🔧 FIX 20 Août 2026 (Auto-Fixer): nettoyer les flags watchdog résiduels
+    # AVANT robot.start() — un robot.stop.flag daté désactiverait la
+    # résurrection du watchdog externe (gel 1h52 le 20/08). Ne nettoie PAS
+    # stop_for_day.flag (décision kill-switch conservée).
+    _clean_watchdog_flags()
 
     # 🐛 FIX C3: Enregistrer les handlers SIGTERM/SIGINT pour arrêt propre
     signal.signal(signal.SIGTERM, _signal_handler)

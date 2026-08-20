@@ -262,6 +262,19 @@ MAX_POS_PER_SYMBOL = {
 }
 
 # ============================================================================
+# CENTRAL BYPASS — Cap max_per_symbol par symbole
+# ============================================================================
+# 🔧 FIX 20 Août 2026 (Auto-Fixer): le bypass central du signal_pipeline
+# (score ≥ 0.90 + raw_mom ≥ 0.85) hardcodait max_per_symbol = 4 → jusqu'à 4
+# positions du MÊME signal sur le MÊME symbole. Les signaux MOM20x3 persistent
+# tant qu'ils sont actifs (rejoués chaque cycle 15s) → doublons intra-symbole
+# → pertes multipliées (XAUUSD BUY 02:02 + 02:07 → 2 SL = -338$ le 20/08).
+# Ce dict plafonne le bypass par symbole. Défaut = 4 (comportement historique).
+BYPASS_MAX_PER_SYMBOL = {
+    "XAUUSD": 1,  # SL 1.5×ATR serré → 1 position max par signal (doublon = risque doublé)
+}
+
+# ============================================================================
 # DD THRESHOLDS — Risk reduction levels
 # ============================================================================
 DD_REDUCE_THRESHOLD = 0.05  # 5% DD → risk × (1 - dd_peak)
