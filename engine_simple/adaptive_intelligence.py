@@ -235,9 +235,26 @@ class OnlineLearner:
             # 🐛 FIX 31 Juillet 2026: Purger les adapted_params des symboles contaminés
             # (leurs params sont dérivés des 200 trades synthétiques → non fiables)
             cal_adapted = data.get("adapted_params", {})
+            valid_regimes = {"RANGING", "TREND_UP", "TREND_DOWN", "HIGH_VOL", "LOW_VOL"}
+            min_trades = max(10, self.window // 10)
             for sym in list(cal_adapted.keys()):
                 if sym not in self.history:
                     logger.warning(f"[OnlineLearner] {sym}: adapted_params purgés (history absente/contaminée)")
+                    del cal_adapted[sym]
+                    continue
+                # 🔧 FIX 20 Août 2026 (Robot Manager): même garde que _update_params
+                # (L.418 min_trades valides). Sans elle, les params pré-GR (NZDUSD/
+                # USDJPY/US30.cash/GBPJPY/USOIL, 10-17 trades < 20) étaient restaurés
+                # depuis ol_state.json à chaque redémarrage — purge du 19/08 annulée.
+                n_valid = sum(
+                    1 for t in self.history[sym]
+                    if t.get("regime", "") in valid_regimes and abs(t.get("r", 0)) >= 0.1
+                )
+                if n_valid < min_trades:
+                    logger.warning(
+                        f"[OnlineLearner] {sym}: adapted_params purgés "
+                        f"(history insuffisante {n_valid} valid < {min_trades} — params pré-GR)"
+                    )
                     del cal_adapted[sym]
             self.adapted_params = cal_adapted
             n_trades = sum(len(h) for h in self.history.values())
@@ -679,6 +696,24 @@ class AdaptiveEngine:
                     if not skip and contaminated:
                         skip = True
                         reason = "history contaminée/absente (params dérivés du bruit)"
+                    # 🔧 FIX 20 Août 2026 (Robot Manager): même garde que l'apprentissage
+                    # (_update_params L.418 min_trades) appliquée à la RESTAURATION.
+                    # Sans elle, les adapted_params pré-GR (ex: NZDUSD thresh=2.62,
+                    # USDJPY 2.75, US30.cash 2.67 — tous < 20 trades) étaient restaurés
+                    # à chaque redémarrage, contournant la purge du 19/08 23:55 et
+                    # filtrant les signaux avec des thresh périmés. On laisse l'OL
+                    # recalculer proprement une fois ≥20 trades valides accumulés.
+                    if not skip:
+                        hist = list(self.learner.history.get(sym, []))
+                        valid_regimes = {"RANGING", "TREND_UP", "TREND_DOWN", "HIGH_VOL", "LOW_VOL"}
+                        n_valid = sum(
+                            1 for t in hist
+                            if t.get("regime", "") in valid_regimes and abs(t.get("r", 0)) >= 0.1
+                        )
+                        min_trades = max(10, self.learner.window // 10)
+                        if n_valid < min_trades:
+                            skip = True
+                            reason = f"history insuffisante ({n_valid} valid < {min_trades}) — purge des params pré-GR"
                     if skip:
                         n_skipped += 1
                         logger.debug(f"  [CAL] Skip {sym}: {reason} — let OL recalc from real data")

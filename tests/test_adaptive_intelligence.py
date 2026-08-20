@@ -574,6 +574,78 @@ class TestAdaptiveEngine:
         # 🔧 FIX M-S3: fichier corrompu → le moteur reste utilisable
         assert ae.learner is not None, "le learner doit rester initialisé après un chargement corrompu"
 
+    def test_load_calibration_purges_pre_gr_params(self, tmp_path):
+        """🔧 FIX 20 Août 2026 (Robot Manager): les adapted_params restaurés depuis
+        la calibration avec une history < min_trades (20) doivent être PURGÉS.
+        C'était le contournement de la garde _update_params L.418 : les params
+        pré-GR (NZDUSD/USDJPY/US30.cash thresh 2.6-2.75, 10-17 trades) étaient
+        restaurés à chaque redémarrage, annulant la purge du 19/08 23:55."""
+        import json
+
+        cal_path = str(tmp_path / "cal.json")
+        # History et params pré-GR du scénario réel (10-17 trades < 20 min_trades)
+        pre_gr_history = [
+            {"r": 0.5, "regime": "TREND_UP"} for _ in range(12)  # NZDUSD-like: 12 trades
+        ]
+        cal = {
+            "online_history": {
+                "NZDUSD": pre_gr_history,
+            },
+            "adapted_params": {
+                "NZDUSD": {"thresh": 2.6176, "risk_mult": 1.0, "sl_mult": 2.0, "tp_mult": 5.0},
+                "US30.cash": {"thresh": 2.6667, "risk_mult": 1.0, "sl_mult": 2.0, "tp_mult": 5.0},
+                "USDJPY": {"thresh": 2.75, "risk_mult": 1.0, "sl_mult": 2.0, "tp_mult": 5.0},
+            },
+        }
+        with open(cal_path, "w") as f:
+            json.dump(cal, f)
+
+        ae = AdaptiveEngine(MagicMock(), calibration_path=cal_path)
+        ae._load_calibration(cal_path)
+
+        # Les params pré-GR avec history insuffisante doivent être purgés
+        assert "NZDUSD" not in ae.learner.adapted_params, (
+            "NZDUSD <20 trades valides → params pré-GR doivent être purgés"
+        )
+        assert "US30.cash" not in ae.learner.adapted_params
+        assert "USDJPY" not in ae.learner.adapted_params
+        # L'history reste restaurée (elle n'est pas contaminée — juste insuffisante)
+        assert len(ae.learner.history.get("NZDUSD", [])) == 12
+
+    def test_load_state_purges_pre_gr_params(self, tmp_path):
+        """🔧 FIX 20 Août 2026 (Robot Manager): OnlineLearner._load_state doit
+        appliquer la MÊME garde min_trades que la calibration. ol_state.json
+        contenait aussi les 5 params pré-GR (NZDUSD/USDJPY/US30/GBPJPY/USOIL
+        10-17 trades) — ils étaient restaurés via ce chemin, pas seulement
+        via _load_calibration."""
+        import json
+
+        state_path = str(tmp_path / "ol_state.json")
+        pre_gr_history = [
+            {"r": 0.5, "regime": "TREND_UP"} for _ in range(12)  # NZDUSD-like
+        ]
+        state = {
+            "window": 200,
+            "history": {
+                "NZDUSD": pre_gr_history,
+                # Un symbole avec history SUFFISANTE doit être conservé
+                "BTCUSD": [{"r": 0.5, "regime": "TREND_UP"} for _ in range(25)],
+            },
+            "adapted_params": {
+                "NZDUSD": {"thresh": 2.6176, "risk_mult": 1.0, "sl_mult": 2.0, "tp_mult": 5.0},
+                "BTCUSD": {"thresh": 2.0, "risk_mult": 1.0, "sl_mult": 2.0, "tp_mult": 5.0},
+            },
+        }
+        with open(state_path, "w") as f:
+            json.dump(state, f)
+
+        ol = OnlineLearner(window=200, state_path=state_path)
+
+        # NZDUSD: history 12 < 20 → params purgés ; BTCUSD: history 25 ≥ 20 → conservé
+        assert "NZDUSD" not in ol.adapted_params, "NZDUSD <20 trades → params pré-GR purgés"
+        assert "BTCUSD" in ol.adapted_params, "BTCUSD ≥20 trades → params conservés"
+        assert len(ol.history.get("NZDUSD", [])) == 12
+
     @patch("engine_simple.adaptive_intelligence.datetime")
     @pytest.mark.skip(reason="P7: DL supprimé (code mort)")
     def test_analyze_meta_recalibrate(self, mock_dt):
