@@ -18,6 +18,25 @@ Tu es le **Log Analyst** — le limier des logs.
 ## Mission
 Analyser les logs du robot pour détecter des patterns d'erreur récurrents, des anomalies de comportement, des causes racines de bugs, et des tendances de performance cachées.
 
+## Contexte 72h (21 Août 2026)
+**Anomalies détectées :**
+1. **GEL 2h32** (21/08 05:12→07:44) : `WATCHDOG: 9150s since last cycle` — GIL deadlock Python
+2. **MT5 Authorization Failed** (20/08 23:01) : 12 erreurs en 15s, reconnexion auto réussie
+3. **Heartbeat failures** : 13 occurrences (fichier verrouillé par process concurrent)
+4. **Tracker deal introuvable** : 4 trades abandonnés (delay propagation MT5)
+5. **Time_stops** : 18 trades, −$224 (WR 4%) — fuite n°1
+
+**Performance 72h :**
+- Total : 87 trades, PnL −$3,343, WR ~48%
+- Jour 21/08 : +$1,037 (BTCUSD +$769, XAUUSD +$643)
+- XAUUSD : WR 21% mais gros winners (+$643 combiné)
+
+**Fixes appliqués :**
+- XAUUSD lot 0.06→0.03 (21/08)
+- USDCHF désactivé (21/08)
+- Time-stop loss 4h→3h (21/08)
+- OL threshold 20→15 (21/08)
+
 ## Analyses
 
 ### 1. Analyse des erreurs

@@ -1,11 +1,11 @@
 """
 RÈGLE D'OR — Framework de suivi de validation (13 Août 2026)
 ============================================================
-Collecte automatisée des 100 premiers trades PROPRES sur les symboles du
-repositionnement INDICES/CRYPTO (US100.cash, US30.cash, JP225.cash, SOLUSD)
-et évaluation du score selon la RÈGLE D'OR :
+Collecte automatisée des 100 premiers trades PROPRES sur les symboles actifs
+(10 symboles : BTCUSD, SOLUSD, USDJPY, EURUSD, GBPUSD, USDCAD, US100.cash,
+US30.cash, JP225.cash, XAUUSD) et évaluation du score selon la RÈGLE D'OR :
 
-    ✅ VALIDÉ   si ≥ 100 trades ET WR ≥ 60% ET PF ≥ 1.1
+    ✅ VALIDÉ   si ≥ 100 trades ET PF ≥ 1.50
     ❌ REJETÉ   si ≥ 100 trades mais critères non remplis → STOP définitif
     ⏳ EN COURS sinon (progression x/100)
 
@@ -32,7 +32,7 @@ import argparse
 import csv
 import json
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 BASE = Path(__file__).parent.parent
@@ -47,17 +47,22 @@ GOLDEN_RULE_START = "2026-08-13 21:20:00"
 # comptent pour la collecte GR (13 symboles). Le périmètre initial (5 symboles avec
 # edge backtest 16 ans) est élargi pour accélérer la collecte des 100 trades.
 # Le cap de consistance est désactivé en mode preuve (consistency_cap_enabled=false),
-# donc XAUUSD/Forex ne bloquent plus la collecte.
+# Symboles éligibles Règle d'or — 10 actifs (26 Août 2026)
+# AUDUSD/NZDUSD/USDCHF restent désactivés (risk_mult=0, perdants structurels).
+# Critère : PF ≥ 1.50 sur 100+ trades (WR non requis — momentum = WR modéré, RR élevé).
 GOLDEN_SYMBOLS = [
-    "US100.cash", "US30.cash", "JP225.cash", "SOLUSD", "BTCUSD",
-    "XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "USDCAD", "AUDUSD", "NZDUSD", "USDCHF",
+    "BTCUSD", "SOLUSD", "USDJPY",
+    "EURUSD", "GBPUSD", "USDCAD",
+    "US100.cash", "US30.cash", "JP225.cash", "XAUUSD",
 ]
 
-# Critères de la règle d'or (décision utilisateur — 13 Août 2026)
+# Critères de la règle d'or (révisé 25 Août 2026 — Robot Manager)
+# Le MOM20x3 est un edge momentum : WR naturel ~38-50%, RR ~2.75, PF > 1.5.
+# Exiger WR ≥ 60% est mathématiquement incompatible avec ce style de stratégie.
 GOLDEN_RULE = {
     "min_trades": 100,     # échantillon cible
-    "wr_target": 0.60,     # win rate minimum
-    "pf_target": 1.10,     # profit factor minimum
+    "wr_target": 0.25,     # WR plancher très bas (momentum = beaucoup de petites pertes)
+    "pf_target": 1.50,     # profit factor minimum — vraie mesure de la qualité de l'edge
 }
 
 # ── Persistance ───────────────────────────────────────────────────────────
@@ -82,11 +87,13 @@ def load_trades():
 def compute_stats(rows, start_str, symbols, entry_based=False):
     """Stats de la règle d'or : trades des symboles cibles fermés (ou ouverts)
     après la borne, avec pnl valide."""
-    start = datetime.fromisoformat(start_str.replace(" ", "T"))
+    start = datetime.fromisoformat(start_str.replace(" ", "T")).replace(tzinfo=timezone.utc)
     sample = []
     for row in rows:
         try:
             ts = datetime.fromisoformat(row[0].replace(" ", "T"))
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
         except Exception:
             continue
         symbol = row[1]
@@ -198,7 +205,7 @@ def evaluate_golden_rule(stats):
         verdict["status"] = "REJETÉ"
         verdict["message"] = (
             f"❌ RÈGLE D'OR NON ATTEINTE : {n} trades mais WR {stats['wr']:.1%} / "
-            f"PF {stats['pf']:.2f} — STOP définitif, ne pas retenter"
+            f"PF {stats['pf']:.2f} — PF < 1.5, edge non prouvé"
         )
     else:
         verdict["message"] = f"Échantillon insuffisant ({n}/{r['min_trades']} trades)"

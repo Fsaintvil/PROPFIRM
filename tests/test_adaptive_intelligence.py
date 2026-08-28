@@ -273,12 +273,6 @@ class TestAdaptiveEngine:
         ae = AdaptiveEngine(MagicMock())
         assert ae.regime is not None
         assert ae.learner is not None
-        # Meta-Learner activé si LightGBM disponible (Phase 2)
-        if ae.lgb is not None and ae.lgb.available:
-            assert ae.meta is not None  # LGB présent → Meta actif
-        else:
-            assert ae.meta is None  # Pas de LGB → Meta désactivé
-        assert ae.ml is None  # ML ensemble disabled
 
     def test_vigilance_returns_none_without_h1(self):
         ae = AdaptiveEngine(MagicMock())
@@ -783,14 +777,10 @@ class TestAdaptiveEngine:
 
     def test_get_validation_report(self):
         ae = AdaptiveEngine(MagicMock())
-        # validator may be None if WalkForwardValidator is unavailable
-        if ae.validator is not None:
-            ae.validator.get_report = MagicMock(return_value={"accuracy": 0.6})
-            report = ae.get_validation_report()
-            assert report == {"accuracy": 0.6}
-        else:
-            # WalkForwardValidator unavailable (module moved to retired)
-            assert ae.validator is None
+        # 🔧 FIX 28 Août 2026: validator supprimé (archivé dans retired/)
+        # Ce test vérifie que get_report fonctionne sans validator
+        report = ae.get_report("EURUSD")
+        assert isinstance(report, dict)
 
     @patch("engine_simple.adaptive_intelligence.datetime")
     @pytest.mark.skip(reason="P7: DL supprimé (code mort)")

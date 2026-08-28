@@ -297,9 +297,7 @@ def trend_follow_signal(
         "is_trending": is_trending,
         # Métadonnées
         "_regime": regime,
-        "_ml_agrees": None,
         "_model_predictions": {"TrendFollow": action},
-        "_dl_score": None,
         # Structure
         "structure_trend": structure_trend,
         "structure_score": 0.0,

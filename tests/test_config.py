@@ -80,7 +80,7 @@ def test_symbol_limits_defaults():
         cfg.symbol_limits["XAUUSD"].min_score == 0.65
     )  # 🔧 14 Aout 2026: 0.75→0.65 (cohérent mode preuve)
     assert cfg.symbol_limits["XAUUSD"].allow_buys is True
-    assert cfg.symbol_limits["XAUUSD"].allow_shorts is False  # 🔧 MODE PREUVE 06 Aout: SELL banni
+    assert cfg.symbol_limits["XAUUSD"].allow_shorts is True  # 🔧 FIX 28 Août 2026: SELL sélectif réactivé
 
 
 def test_usdcad_max_lot_preuve():
@@ -93,7 +93,7 @@ def test_usdcad_max_lot_preuve():
     cfg = load_config("default")
     assert "USDCAD" in cfg.symbol_limits
     assert cfg.symbol_limits["USDCAD"].max_lot == 0.04
-    assert cfg.symbol_limits["USDCAD"].allow_shorts is False  # mode preuve BUY-only
+    assert cfg.symbol_limits["USDCAD"].allow_shorts is True  # 🔧 FIX 28 Août 2026: SELL sélectif réactivé
 
 
 def test_symbol_limits_new_portfolio():
@@ -104,13 +104,10 @@ def test_symbol_limits_new_portfolio():
     btc = cfg.symbol_limits.get("BTCUSD", {})
     assert btc.risk_mult == 1.0  # 🔓 DÉBLOQUÉ 13 Août 2026 (décision utilisateur — groupe CRYPTO indépendant)
     assert btc.allow_buys is True
-    assert btc.allow_shorts is False  # mode preuve BUY-only (aligné US30/JP225/SOLUSD)
+    assert btc.allow_shorts is True  # 🔧 FIX 28 Août 2026: SELL sélectif réactivé (marché baissier)
     assert btc.max_lot == 0.03  # lot minimal
-    # 🛡️ 13 Août 2026: min_score aligné sur la config réelle (default.yaml + strategy.py
-    # ont tous deux min_score=0.50 pour BTCUSD). Le test attendait 0.60 (valeur "pic"
-    # historique jamais alignée sur la config) → échec permanent depuis l'activation
-    # de la config réelle. 0.50 est la source de vérité (default.yaml ligne ~105).
-    assert btc.min_score == 0.50
+    # 🔧 28 Août 2026: min_score unifié à 0.65 pour tous les symboles
+    assert btc.min_score == 0.65
 
 
 def test_env_interpolation():

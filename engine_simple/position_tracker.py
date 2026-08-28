@@ -12,7 +12,7 @@ import json
 import logging
 import time
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -192,7 +192,8 @@ class PositionTracker:
         return self.performance[symbol]
 
     def init_tickets(self) -> None:
-        our = [p for p in self.positions_cache.get() if p.magic == cfg.ROBOT_MAGIC]
+        positions = self.positions_cache.get() or []  # 🔧 FIX: None → []
+        our = [p for p in positions if p.magic == cfg.ROBOT_MAGIC]
         self._previous_tickets = {p.ticket for p in our}
 
     def _load_recorded_positions(self) -> None:
@@ -223,7 +224,7 @@ class PositionTracker:
                 "recorded_position_ids": list(self._recorded_position_ids.keys()),
                 "recorded_deals": list(self._recorded_deals.keys()),
                 "max_recorded": self._max_recorded,
-                "updated_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
             }
             # 🐛 FIX 16 Août 2026 (Audit M-EX6): écriture ATOMIQUE (tmp + replace).
             # Avant: open("w") direct → si crash pendant l'écriture, fichier corrompu →
@@ -267,11 +268,14 @@ class PositionTracker:
 
                     try:
                         if isinstance(trade_dt, (int, float)):
-                            trade_age = time.time() - trade_dt
+                            # 🔧 FIX AUDIT H8: Soustraire offset serveur (~3h) pour trade_age correct.
+                            # d.time = temps serveur MT5 (+3h vs UTC local). Sans correction,
+                            # trade_age est 3h trop petit → trades 45-48h passent à tort.
+                            trade_age = time.time() - trade_dt - 10800  # −3h server offset
                         else:
                             # ⚠️ MT5 peut retourner datetime ou int selon version
                             trade_ts = trade_dt.timestamp() if hasattr(trade_dt, "timestamp") else float(trade_dt)
-                            trade_age = time.time() - trade_ts
+                            trade_age = time.time() - trade_ts - 10800  # −3h server offset
                         if trade_age > 48 * 3600:
                             continue
                     except Exception as e:
@@ -333,7 +337,7 @@ class PositionTracker:
                     pass
 
     def track_new(self) -> None:
-        our = [p for p in self.positions_cache.get() if p.magic == cfg.ROBOT_MAGIC]
+        our = [p for p in (self.positions_cache.get() or []) if p.magic == cfg.ROBOT_MAGIC]
         for p in our:
             # P3: Filtrer par whitelist — ignorer les symboles inactifs
             if p.symbol not in cfg.SYMBOLS:
@@ -395,9 +399,6 @@ class PositionTracker:
                         logger.debug(
                             f"  [TRACK] {p.symbol} #{p.ticket}: restauré _meta_extra: {set(meta_extra.keys())}"
                         )
-                    # Compatibilité ascendante : dl_features → _features
-                    if "dl_features" in saved and "_features" not in meta:
-                        meta["_features"] = saved["dl_features"]
                     restored_keys = set(saved.keys()) & {
                         "_features",
                         "predictions",
@@ -416,7 +417,7 @@ class PositionTracker:
                 logger.debug(f"  [TRACK] {p.symbol} #{p.ticket} regime={regime}")
 
     def check_closed(self) -> None:
-        current = {p.ticket for p in self.positions_cache.get() if p.magic == cfg.ROBOT_MAGIC}
+        current = {p.ticket for p in (self.positions_cache.get() or []) if p.magic == cfg.ROBOT_MAGIC}
         # 🔧 FIX 12 Août 2026: Annuler les retries des tickets réapparus en position.
         # Un ticket mis en file _pending_closures car "fermé sans historique MT5" peut
         # en réalité être un glitch MT5 (position restaurée au cycle suivant). Dans ce
@@ -705,10 +706,14 @@ class PositionTracker:
         pos_dir = "BUY" if closing.type == 1 else "SELL"
         # 🐛 FIX 31 Juillet 2026: Calculer la VRAIE raison de sortie au lieu de "closed" codé en dur.
         exit_reason = self._extract_exit_reason(closing)
-        # durée réelle du trade: opened_at (epoch) → timestamp de fermeture MT5
+        # durée réelle du trade: opened_at (epoch local UTC) → timestamp de fermeture MT5
+        # 🔧 FIX 28 Août 2026: deal_ts est en temps serveur MT5 (+3h offset vs UTC local).
+        #    Soustraire le server_offset pour corriger la durée affichée.
         try:
             opened_ts = float(meta.get("opened_at", 0) or 0)
-            duration_min = int(max(0, (deal_ts - opened_ts) / 60.0)) if opened_ts > 0 else 0
+            server_offset = getattr(self.ftmo, "_server_offset_s", 0.0) or 0.0
+            corrected_deal_ts = deal_ts - server_offset if server_offset else deal_ts
+            duration_min = int(max(0, (corrected_deal_ts - opened_ts) / 60.0)) if opened_ts > 0 else 0
         except (TypeError, ValueError):
             duration_min = 0
         try:
@@ -724,7 +729,7 @@ class PositionTracker:
                     profit=closing.profit,
                     time_open=str(datetime.fromtimestamp(meta.get("opened_at", closing.time))),
                     # 🐛 FIX 03 Aout 2026: timestamp de fermeture = vrai deal MT5 (deal_ts),
-                    time_close=str(datetime.utcfromtimestamp(deal_ts)) if deal_ts > 0 else str(datetime.utcnow()),
+                    time_close=str(datetime.fromtimestamp(deal_ts, tz=timezone.utc)) if deal_ts > 0 else str(datetime.now(timezone.utc)),
                     reason=exit_reason,
                     duration_min=duration_min,
                     # 🐛 FIX 4 Juillet 2026: ATR multiples pour analyse post-trade
@@ -739,7 +744,6 @@ class PositionTracker:
         regime = meta.get("regime", "UNKNOWN")
         r1 = meta.get("r1_usd", 1)
         r_mul = round(closing.profit / r1, 2) if r1 > 0 else 0
-        dl_features = meta.get("dl_features")
         # 🔧 FIX 28 Juillet 2026: Guard anti-contamination historique
         # is_historical = True quand le trade a été fermé avant le démarrage du robot.
         # Sans ce guard, un cache MT5 vide (timeout) transforme TOUTES les positions
@@ -747,7 +751,7 @@ class PositionTracker:
         # avec des centaines de faux trades en une seconde.
         if not is_historical:
             self.adaptive.record_result(
-                closing.symbol, r_mul, regime, dl_features, profit=closing.profit, win=closing.profit > 0
+                closing.symbol, r_mul, regime, profit=closing.profit, win=closing.profit > 0
             )
         else:
             logger.debug(
@@ -773,13 +777,8 @@ class PositionTracker:
         # Fallback: si pas de prédictions stockées, MOM20x3 est le seul modèle
         if not saved_predictions:
             saved_predictions = {"MOM20x3": {"action": pos_dir, "score": 0.5}}
-        if saved_predictions and regime not in ("?", "LIMIT"):
-            pred_outcomes = {}
-            for mname, maction in saved_predictions.items():
-                # maction peut être un dict {"action":"BUY",...} ou une string "BUY"
-                action = maction.get("action", "HOLD") if isinstance(maction, dict) else maction
-                pred_outcomes[mname] = (action == pos_dir) if pos_correct else (action != pos_dir)
-            self.adaptive.record_meta_result(closing.symbol, regime, pred_outcomes)
+        # 🔧 FIX 28 Août 2026: record_meta_result supprimé (DL code mort)
+        # Les prédictions sont déjà enregistrées dans trade_journal et performance_monitor
 
 
     # MT5 DEAL_REASON codes (définition Python MT5)

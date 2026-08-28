@@ -27,11 +27,14 @@ _STATE_LOCK = threading.RLock()
 
 
 def _atomic_write(path: Path, data: dict) -> None:
-    """Écriture atomique JSON : temp → rename. Évite la corruption si crash."""
+    """Écriture atomique JSON : temp → fsync → rename. Évite la corruption si crash."""
+    import os
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(data, default=str))
+    with tmp.open("w", encoding="utf-8") as f:
+        json.dump(data, f, default=str)
+        f.flush()
+        os.fsync(f.fileno())  # 🔧 FIX C8: garantir l'écriture disque avant replace
     # 🐛 FIX 16 Août 2026 (Audit B6): backup du fichier actuel AVANT replace.
-    # Permet à _load_state de restaurer l'état précédent si le nouveau est corrompu.
     try:
         if path.exists():
             bak = path.with_suffix(".json.bak")

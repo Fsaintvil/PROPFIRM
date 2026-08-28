@@ -95,7 +95,7 @@ class Broker:
         self._last_connect_time: float = 0.0
         self._rate_limits: dict = {}
         self._max_calls_per_second: int = 10
-        self._call_timestamps: deque = deque()
+        self._call_timestamps: deque = deque(maxlen=1000)  # 🔧 FIX 28 Août: limiter la croissance
 
     @property
     def is_connected(self) -> bool:
@@ -157,6 +157,7 @@ class Broker:
             logger.warning(f"[BROKER] {self._consecutive_failures} echecs consecutifs — tentative reconnexion")
             # Tentative de reconnexion mais n'escalade pas l'échec
             if self.reconnect():
+                self._consecutive_failures = 0  # 🔧 FIX AUDIT H7: reset après reconnect réussi
                 return True
         return False
 

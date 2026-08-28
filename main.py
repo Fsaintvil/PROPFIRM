@@ -156,8 +156,16 @@ def main():
         robot = FTMO_SIMPLE()
         _robot_instance = robot
         robot.start()
-    finally:
-        _release_lock()
+    except Exception:
+        # 🔧 FIX AUDIT C2: stop() libère déjà le lock. Pas de double release.
+        # Si start() crash AVANT d'acquérir le lock interne, on nettoie ici.
+        try:
+            robot.stop()
+        except Exception:
+            pass
+        raise
+    # robot.start() bloque jusqu'à l'arrêt. stop() dans le finally de start()
+    # appelle déjà _release_lock(). PAS de release ici (évite double release).
 
 
 if __name__ == "__main__":

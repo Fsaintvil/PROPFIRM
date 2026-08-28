@@ -303,7 +303,14 @@ class RiskManager:
         self.kelly = KellySizing()
         self.var_estimator = VaREstimator()
         self.stress_tester = StressTester()
-        self.circuit_breaker = CircuitBreaker()
+        # 🔧 FIX 27 Août 2026: CircuitBreaker respecte AUTO_PAUSE_LOSSES du config
+        # (était hardcodé à 5, ignorait auto_pause_losses=999 en collecte démo)
+        try:
+            import config_simple as _cfg
+            max_consec = getattr(_cfg, "AUTO_PAUSE_LOSSES", 5)
+        except Exception:
+            max_consec = 5
+        self.circuit_breaker = CircuitBreaker(max_consecutive=max_consec)
         self._last_circuit_check: float = 0
 
     def pre_trade(

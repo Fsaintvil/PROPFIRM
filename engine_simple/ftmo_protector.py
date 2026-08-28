@@ -4,7 +4,7 @@ import logging
 import re
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 import MetaTrader5 as mt5
@@ -70,7 +70,7 @@ class ChallengeTracker:
         self._last_dd_pct = 0.0
 
         # ── Stats quotidiennes ───────────────────────────────────────
-        self.daily_stats = {"trades": 0, "losses": 0, "pnl": 0, "day": datetime.utcnow().date()}
+        self.daily_stats = {"trades": 0, "losses": 0, "pnl": 0, "day": datetime.now(timezone.utc).date()}
         self._daily_trades_per_symbol: dict[str, int] = {}
         self._opened_today = 0
         self._daily_profit_reduced = False
@@ -98,16 +98,18 @@ class ChallengeTracker:
         direction: Optional[str] = None,
     ) -> None:
         """Enregistre le résultat d'un trade fermé."""
-        now = trade_time or datetime.utcnow()
+        now = trade_time or datetime.now(timezone.utc)
 
         # 🔒 FIX #2: Pour les trades historiques, ne garder que les 48 dernières heures
         add_to_history = True
         if historical and trade_time is not None:
             if isinstance(trade_time, (int, float)):
-                trade_dt = datetime.fromtimestamp(trade_time)
+                trade_dt = datetime.fromtimestamp(trade_time, tz=timezone.utc)
             else:
                 trade_dt = trade_time
-            age = (datetime.utcnow() - trade_dt).total_seconds()
+            if trade_dt.tzinfo is None:
+                trade_dt = trade_dt.replace(tzinfo=timezone.utc)
+            age = (datetime.now(timezone.utc) - trade_dt).total_seconds()
             if age > 48 * 3600:  # plus de 48h
                 add_to_history = False
 
@@ -124,21 +126,24 @@ class ChallengeTracker:
                     action=direction,
                 )
             )
-        if len(self._trade_history) > 1000:
-            self._trade_history[:] = self._trade_history[-1000:]
+        # 🔧 FIX 28 Août 2026 (R6): Limiter trade_history à 500 en mémoire (était 1000)
+        # Réduit la taille de robot_state.json (~60% moins de données écrites toutes les 15s)
+        # tout en gardant suffisamment de trades pour le calcul de DD/daily loss.
+        if len(self._trade_history) > 500:
+            self._trade_history[:] = self._trade_history[-500:]
 
         if not historical:
             self.daily_stats["trades"] += 1
             self._daily_trades_per_symbol[symbol] = self._daily_trades_per_symbol.get(symbol, 0) + 1
             self.daily_stats["pnl"] += profit
             self._symbol_daily_pnl[symbol] = self._symbol_daily_pnl.get(symbol, 0) + profit
-            today = datetime.utcnow().date()
+            today = datetime.now(timezone.utc).date()
             self.trading_days.add(today)
             self.daily_pnl_by_date[today] = self.daily_pnl_by_date.get(today, 0) + profit
             # Per-symbol trade history (rolling window 50 trades)
             if symbol not in self._symbol_trade_history:
                 self._symbol_trade_history[symbol] = []
-            self._symbol_trade_history[symbol].append(dict(profit=profit, time=datetime.utcnow()))
+            self._symbol_trade_history[symbol].append(dict(profit=profit, time=datetime.now(timezone.utc)))
             if len(self._symbol_trade_history[symbol]) > 50:
                 self._symbol_trade_history[symbol] = self._symbol_trade_history[symbol][-50:]
 
@@ -156,7 +161,7 @@ class ChallengeTracker:
                     cd_minutes = self.symbol_limits.get(symbol, {}).get(
                         "cooldown_minutes", getattr(self, "cooldown_minutes", 15)
                     )
-                self.cooldowns[symbol] = datetime.utcnow() + timedelta(minutes=cd_minutes)
+                self.cooldowns[symbol] = datetime.now(timezone.utc) + timedelta(minutes=cd_minutes)
                 logger.info(f"  [COOLDOWN] {symbol}: {sym_losses} perte(s) consecutive(s) → {cd_minutes}min")
             elif profit > 0:
                 self.consecutive_losses = 0
@@ -172,39 +177,47 @@ class ChallengeTracker:
 
     def _check_consistency(self) -> None:
         """FTMO consistency rule: aucun jour ne doit dépasser 30% du profit RÉEL."""
-        self.consistency_violated = False
         total_net = sum(self.daily_pnl_by_date.values())
         positive_days = [v for v in self.daily_pnl_by_date.values() if v > 0]
         if len(self.daily_pnl_by_date) < 2 or total_net <= 0:
+            self.consistency_violated = False
             return
         # 🔧 FIX 24 Juillet 2026: Besoin d'au moins 2 jours POSITIFS
         # pour que la règle de consistance ait un sens.
         # Avec 1 seul jour positif, best_day = positive_total = 100% toujours → faux positif.
         if len(positive_days) < 2:
+            self.consistency_violated = False
             return
         # 🔧 FIX 24 Juillet 2026: PnL total positif trop faible → consistency non applicable
         # FTMO conçoit la règle pour des profits significatifs. < $100 = bruit statistique.
         if sum(positive_days) < 100:
+            self.consistency_violated = False
             return
         positive_total = sum(positive_days)
         max_per_day = positive_total * self.consistency_max_pct
+        any_violation = False
         for day, day_pnl in sorted(self.daily_pnl_by_date.items()):
             if day_pnl <= 0:
                 continue
             if day_pnl > max_per_day:
-                self.consistency_violated = True
+                any_violation = True
                 day_pct_of_net = day_pnl / positive_total if positive_total > 0 else 0
                 logger.warning(
                     f"FTMO CONSISTENCY VIOLATED: {day} = ${day_pnl:.0f} "
                     f"({day_pct_of_net:.1%} du PnL net ${total_net:.0f}) "
                     f"> max {self.consistency_max_pct:.0%} du PnL net — flag info, trading continue"
                 )
+        # 🔧 FIX AUDIT M3: consistency_violated reflète l'état réel (pas de reset aveugle).
+        old = self.consistency_violated
+        self.consistency_violated = any_violation
+        if old and not any_violation:
+            logger.info("[FTMO] Consistency violation résolue par dilution — flag reset")
 
     def _check_daily_loss_limit(self, symbol: Optional[str] = None) -> None:
         """Vérifie la daily loss avec coordination et caching."""
         self._reset_daily()
         try:
-            account = self.mt5.get_account_info()
+            account = self.mt5.get_account_info()  # ChallengeTracker: pas de cache (appels directs)
             equity_val = getattr(account, "equity", None)
             if equity_val is not None and isinstance(equity_val, (int, float)):
                 daily_equity_change = equity_val - self.daily_start_equity
@@ -250,7 +263,7 @@ class ChallengeTracker:
     def current_dd_pct(self) -> float:
         """Retourne le drawdown actuel en ratio (0.0 = pas de DD, 1.0 = 100%)."""
         try:
-            account = self.mt5.get_account_info()
+            account = self.mt5.get_account_info()  # ChallengeTracker: pas de cache
             if not account:
                 # 🔧 FIX 20 Août 2026: retourne le dernier DD connu (pas 1.0 = 100%!)
                 logger.warning(f"[DD] get_account_info() returned None — returning last known {self._last_dd_pct:.1%}")
@@ -267,7 +280,7 @@ class ChallengeTracker:
     def _check_drawdown_limit(self) -> None:
         """Vérifie le drawdown max (10% FTMO)."""
         try:
-            account = self.mt5.get_account_info()
+            account = self.mt5.get_account_info()  # ChallengeTracker: pas de cache
             if account:
                 dd_pct = (self.peak_equity - account.equity) / max(self.peak_equity, 1)
                 if dd_pct >= self.max_dd_pct:
@@ -280,7 +293,7 @@ class ChallengeTracker:
 
     def get_progress_report(self) -> dict:
         """Génère le rapport de progression du challenge."""
-        account = self.mt5.get_account_info()
+        account = self.mt5.get_account_info()  # ChallengeTracker: pas de cache
         equity = account.equity if account else self.peak_equity
         balance = account.balance if account else self.initial_balance
 
@@ -352,18 +365,18 @@ class ChallengeTracker:
         self._symbol_consecutive_losses = {}
         self.global_cooldown_until = None
         self.cooldowns = {}
-        self.daily_stats = {"trades": 0, "losses": 0, "pnl": 0, "day": datetime.utcnow().date()}
+        self.daily_stats = {"trades": 0, "losses": 0, "pnl": 0, "day": datetime.now(timezone.utc).date()}
         self._daily_trades_per_symbol = {}
         self._opened_today = 0
         self._trade_history = []
         self._symbol_trade_history = {}
         self.daily_pnl_by_date = {}
         self.trading_days = set()
-        self.trading_days.add(datetime.utcnow().date())
+        self.trading_days.add(datetime.now(timezone.utc).date())
         self._daily_profit_reduced = False
         if new_initial_balance is not None:
             self.initial_balance = new_initial_balance
-        account = self.mt5.get_account_info()
+        account = self.mt5.get_account_info()  # ChallengeTracker: pas de cache
         if account:
             self.peak_equity = account.equity
             self.daily_start_equity = account.equity
@@ -374,7 +387,7 @@ class ChallengeTracker:
 
     def _reset_daily(self) -> None:
         """Reset les stats quotidiennes à minuit UTC."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if now.date() != self.daily_stats.get("day"):
             old_dse = self.daily_start_equity
             self.daily_stats = {"trades": 0, "losses": 0, "pnl": 0, "day": now.date()}
@@ -385,18 +398,26 @@ class ChallengeTracker:
             # 🐛 FIX 16 Août 2026 (Audit A3): reset du latch daily loss au minuit
             # UTC (le latch est arme en intraday par _check_daily_loss_limit).
             self._daily_loss_violated = False
-            account = self.mt5.get_account_info()
+            account = self.mt5.get_account_info()  # ChallengeTracker: pas de cache
             if account:
                 self.daily_start_equity = account.equity
             else:
-                self.daily_start_equity = old_dse if old_dse > 0 else self.initial_balance
+                # 🔧 FIX C2: MT5 indisponible à minuit — NE PAS utiliser old_dse
+                # (hier) comme baseline car la daily_loss serait fausse.
+                # Utiliser peak_equity comme fallback conservateur (loss ≥ 0 garantie).
+                logger.critical(
+                    f"[RESET_DAILY] MT5 indisponible à minuit — daily_start_equity "
+                    f"fallback = peak_equity ${self.peak_equity:.2f} (old_dse=${old_dse:.2f})"
+                )
+                self.daily_start_equity = self.peak_equity
 
     # ── Pruning ──────────────────────────────────────────────────────
 
     def _prune_histories(self) -> None:
         """Nettoie les historiques pour limiter la mémoire."""
-        if len(self._trade_history) > 1000:
-            self._trade_history[:] = self._trade_history[-1000:]
+        # 🔧 FIX 28 Août 2026 (R6): Limiter à 500 (était 1000)
+        if len(self._trade_history) > 500:
+            self._trade_history[:] = self._trade_history[-500:]
 
     # ── State sync helpers (for FTMOProtector) ───────────────────────
 
@@ -443,7 +464,7 @@ class ChallengeTracker:
         # 🔧 FIX 7 Juillet 2026: Sanity check — si FAILED_DD mais DD réel < 10%, reset
         if self.challenge_status == "FAILED_DD":
             try:
-                account = self.mt5.get_account_info()
+                account = self.mt5.get_account_info()  # ChallengeTracker: pas de cache
                 if account:
                     current_dd = (self.peak_equity - account.equity) / max(self.peak_equity, 1)
                     if current_dd < self.max_dd_pct:
@@ -614,6 +635,11 @@ class FTMOProtector:
         self._symbol_daily_pnl = self.challenge._symbol_daily_pnl
         self._opened_today = self.challenge._opened_today
         self._daily_profit_reduced = self.challenge._daily_profit_reduced
+        # 🔧 FIX AUDIT H1: Cache get_account_info() 1×/cycle (35→3 appels/cycle).
+        # 14 appels redondants par cycle = risque rate-limit MT5 + latence inutile.
+        self._account_info_cache: Any = None
+        self._account_info_cache_time: float = 0.0
+        self._ACCOUNT_INFO_CACHE_TTL: float = 10.0  # 10 secondes
         self._symbol_trade_history = self.challenge._symbol_trade_history
         self.global_cooldown_until = None  # trading control, not challenge tracking
         # 🐛 FIX 10 Août 2026 (Bug #4): Mémorise le palier de circuit breaker déjà servi.
@@ -681,18 +707,42 @@ class FTMOProtector:
             symbol_limits=self.symbol_limits,
             symbol_trade_history=self._symbol_trade_history,
             staleness_check_fn=self.check_price_staleness,
+            symbol_consecutive_losses=self._symbol_consecutive_losses,
         )
         self.trailer.position_regime = self.position_regime
         self.trailer.position_meta = self.position_meta
         self.trailer.position_open_times = self.position_open_times
         self.trailer.peak_profit = self.peak_profit
 
+    def _get_cached_account_info(self) -> Any:
+        """Retourne get_account_info() avec cache 10s pour éviter 14 appels/cycle.
+
+        🔧 FIX AUDIT H1: 14 appels redondants par cycle = risque rate-limit MT5.
+        Cache TTL = 10s (1 cycle complet = 15s, donc 1 refresh garantit fraîcheur).
+        """
+        now = time.time()
+        if (
+            self._account_info_cache is not None
+            and (now - self._account_info_cache_time) < self._ACCOUNT_INFO_CACHE_TTL
+        ):
+            return self._account_info_cache
+        try:
+            info = self.mt5.get_account_info()  # 🔧 FIX: appel direct, PAS récursion
+        except Exception:
+            info = None
+        if info is not None:
+            self._account_info_cache = info
+            self._account_info_cache_time = now
+            return info
+        # Si None, retourner le cache stale (fail-open, pas de crash)
+        return self._account_info_cache
+
     def _measure_server_offset(self) -> float:
         """Mesure l'écart temps serveur MT5 vs UTC local (une seule fois).
 
         🔧 FIX 19 Août 2026 (Audit Council): pos.time (API MT5) est en TEMPS
         SERVEUR (FTMO-Demo décalé de ~3h). Les time-stops comparaient ce
-        timestamp brut à datetime.utcnow() → fermeture 3h trop tard (limite
+        timestamp brut à datetime.now(timezone.utc) → fermeture 3h trop tard (limite
         4h réelle → ~7h). On retourne l'offset en secondes (serveur − local)
         à soustraire du timestamp brut pour obtenir l'heure UTC réelle.
         Fail-open : si le temps serveur n'est pas disponible ou absurde,
@@ -716,7 +766,7 @@ class FTMOProtector:
             logger.debug(f"[SERVER_OFFSET] tick EURUSD indisponible: {e}")
         # Fallback: account_info (certaines versions exposent .time)
         try:
-            account = self.mt5.get_account_info()
+            account = self._get_cached_account_info()
             if account is not None:
                 server_time = getattr(account, "time", None)
                 if isinstance(server_time, (int, float)) and server_time > 0:
@@ -761,7 +811,7 @@ class FTMOProtector:
             if ticket_key not in self.position_open_times:
                 raw = getattr(p, "time", None)
                 if raw is None:
-                    open_time = datetime.utcnow()
+                    open_time = datetime.now(timezone.utc)
                 elif isinstance(raw, (int, float)):
                     # 🔧 FIX 19 Août 2026: pos.time est en temps serveur MT5 (~3h
                     # d'avance) → soustraire l'offset pour avoir l'heure UTC réelle.
@@ -954,9 +1004,12 @@ class FTMOProtector:
         """🔒 Global cooldown: pause après AUTO_PAUSE_LOSSES pertes consécutives."""
         if self.global_cooldown_until is None:
             return True, None
-        now = datetime.utcnow()
-        if now < self.global_cooldown_until:
-            remaining = int((self.global_cooldown_until - now).total_seconds() // 60)
+        now = datetime.now(timezone.utc)
+        gcd = self.global_cooldown_until
+        if gcd.tzinfo is None:
+            gcd = gcd.replace(tzinfo=timezone.utc)
+        if now < gcd:
+            remaining = int((gcd - now).total_seconds() // 60)
             return False, f"Global cooldown: {remaining}min (after {self.consecutive_losses} consecutive losses)"
         # 🐛 FIX 10 Août 2026 (Bug #4): Cooldown expiré → on vide le cooldown MAIS
         # on NE RESET PLUS consecutive_losses à 0. Ce reset (avec celui de chaque
@@ -1021,7 +1074,7 @@ class FTMOProtector:
                 return False, f"Volatility spike: ATR%={atr_pct:.3f} vs median={atr_median:.3f} (>3x)"
 
         # Account info
-        account = self.mt5.get_account_info()
+        account = self._get_cached_account_info()
         if account is None:
             return False, "Cannot get account info"
         current_equity = account.equity
@@ -1076,7 +1129,7 @@ class FTMOProtector:
         # sans avoir encore de `losses` comptabilisé (losses incrémenté APRÈS fermeture).
         if daily_loss >= zone3:
             # 🔧 13 Juillet 2026: Global cooldown jusqu'à la fin de la journée
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             end_of_day = now.replace(hour=23, minute=59, second=59)
             remaining = (end_of_day - now).total_seconds() / 60
             self.global_cooldown_until = now + timedelta(minutes=max(remaining, 1))
@@ -1111,7 +1164,7 @@ class FTMOProtector:
         # (_circuit_stage_served) pour ne pas re-déclencher le même palier en boucle,
         # et on n'escalade que lorsque consecutive_losses franchit le seuil supérieur.
         consec = self.consecutive_losses
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # Déterminer le palier courant selon le nombre de pertes consécutives
         if consec >= 10:
@@ -1157,9 +1210,14 @@ class FTMOProtector:
             self.global_cooldown_until = None
 
         # Per-symbol cooldown
-        if symbol in self.cooldowns and datetime.utcnow() < self.cooldowns[symbol]:
-            remaining = (self.cooldowns[symbol] - datetime.utcnow()).seconds // 60
-            return False, f"Cooldown: {remaining}min"
+        if symbol in self.cooldowns:
+            cd = self.cooldowns[symbol]
+            if cd.tzinfo is None:
+                cd = cd.replace(tzinfo=timezone.utc)
+            now_utc = datetime.now(timezone.utc)
+            if now_utc < cd:
+                remaining = (cd - now_utc).seconds // 60
+                return False, f"Cooldown: {remaining}min"
 
         return True, None
 
@@ -1177,10 +1235,6 @@ class FTMOProtector:
             allow_ranging = sym_cfg.get("allow_ranging")
             if allow_ranging is False and signal.get("_regime") == "RANGING":
                 return False, f"{symbol}: ranging trades not allowed (per-symbol config)"
-
-        # DL required
-        if sym_cfg.get("dl_required", False) and signal.get("_ml_agrees") is not True:
-            return False, f"{symbol}: DL agreement required but not confirmed"
 
         # Per-symbol max daily trades
         max_daily = sym_cfg.get("max_daily_trades")
@@ -1209,7 +1263,14 @@ class FTMOProtector:
         if news_blocked:
             return False, f"News: {news_reason}"
 
-        utc_hour = datetime.utcnow().hour
+        utc_hour = datetime.now(timezone.utc).hour
+        utc_dow = datetime.now(timezone.utc).weekday()  # 0=Monday
+
+        # 🔧 FIX 28 Août 2026: Monday 00:00-09:00 UTC = session morte
+        # Données: Monday −$2,150 total, WR 34.2% (152 trades, pire jour)
+        # 00:00-09:00 UTC = −$1,975 combiné (Asian pre-open, liquidité faible)
+        if utc_dow == 0 and 0 <= utc_hour < 9:
+            return False, f"Monday session block: {utc_hour}h UTC (Monday 00-09 = -$2,150, WR 34%)"
 
         # 🔧 FIX #5: DANGER_HOURS — PLUS AUCUN BYPASS
         # Le bypass par score≥0.80+ADX≥15 est supprimé.
@@ -1234,7 +1295,7 @@ class FTMOProtector:
 
         # Per-symbol weekend block (XAUUSD = 24/5, BTC/ETH = 24/7)
         weekend_ok = self.symbol_limits.get(symbol, {}).get("weekend_trading", True)
-        if not weekend_ok and datetime.utcnow().weekday() >= 5:
+        if not weekend_ok and datetime.now(timezone.utc).weekday() >= 5:
             return False, f"{symbol}: weekend block (24/5 — pas de trading samedi/dimanche)"
 
         return True, None
@@ -1281,7 +1342,7 @@ class FTMOProtector:
             )
             return True, None
 
-        today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
         today_pnl = self.daily_pnl_by_date.get(today, 0)
 
         if today_pnl <= 0:
@@ -1472,6 +1533,13 @@ class FTMOProtector:
         if total < 10:
             return True, None
 
+        # 🔧 FIX 28 Août 2026: si AUCUN SELL dans l'historique, c'est un héritage
+        # de la période BUY-only (allow_shorts=false). Le check directionnel est
+        # inutile et bloquerait tous les BUY. On attend d'avoir des données
+        # bidirectionnelles réelles avant d'appliquer la règle.
+        if sells == 0:
+            return True, None
+
         buy_ratio = buys / total
         sell_ratio = sells / total
 
@@ -1533,7 +1601,7 @@ class FTMOProtector:
             (2026, 12, 16),
         ]
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         today = now.date()
         current_hour = now.hour
 
@@ -1597,7 +1665,7 @@ class FTMOProtector:
                 mult *= 0.85  # WR médiocre → lots -15%
 
         # 2. Drawdown progressif
-        account = self.mt5.get_account_info()
+        account = self._get_cached_account_info()
         if account:
             dd = (self.peak_equity - account.equity) / max(self.peak_equity, 1)
             if dd > 0.07:
@@ -1645,28 +1713,17 @@ class FTMOProtector:
         return 1.0
 
     def _get_symbol_perf_risk_mult(self, symbol: str) -> float:
-        """Multiplicateur de risque par symbole basé sur WR + RR des 20 derniers trades.
+        """Multiplicateur de risque par symbole basé sur Kelly criterion.
 
-        Principe : chaque symbole a sa propre dynamique. Au lieu d'un risk_mult
-        fixe dans la config, on l'ajuste dynamiquement selon le WR récent
-        ET le RR réalisé (ratio gain/perte moyen).
+        Utilise le vrai Kelly: kelly = WR - (1-WR)/RR
+        puis applique un fractionnel (25% du Kelly) pour lisser le sizing.
 
         Fenêtre : 20 derniers trades du symbole (ou moins si pas assez de données).
 
-        Règles WR :
-          WR > 70% → x1.35
-          WR > 60% → x1.10
-          WR 50-60% → x1.00
-          WR 40-50% → x0.80
-          WR < 40% → x0.50
+        Règles :
           < 5 trades → x1.00 (pas assez de données, neutre)
-
-        Règles RR (appliquées APRÈS le WR, multiplicateur composé) :
-          RR < 0.6 → ×0.50 (pertes 2x + grosses que gains → risk divisé par 2)
-          RR < 0.8 → ×0.70 (pertes 25% + grosses → risk -30%)
-          RR < 1.0 → ×0.85 (pertes plus grosses que gains → risk -15%)
-          RR > 2.0 → ×1.15 (gains 2x + gros que pertes → bonus +15%)
-          Sinon → ×1.00 (RR neutre, pas d'ajustement)
+          Kelly < 0 → x0.50 (edge négatif, réduire le risque)
+          Kelly > 0 → x(1 + kelly * 0.25) avec cap x1.50
         """
         sym_trades = self._symbol_trade_history.get(symbol, [])
         if len(sym_trades) < 5:
@@ -1675,49 +1732,44 @@ class FTMOProtector:
         # Derniers 20 trades du symbole
         recent = sym_trades[-20:] if len(sym_trades) >= 20 else sym_trades
         wins = sum(1 for t in recent if t.get("profit", 0) > 0)
+        losses_n = len(recent) - wins
         wr = wins / len(recent)
 
-        if wr > 0.70:
-            mult = 1.35
-        elif wr > 0.60:
-            mult = 1.10
-        elif wr > 0.50:
-            mult = 1.00
-        elif wr > 0.40:
-            mult = 0.80
+        if wins == 0 or losses_n == 0:
+            return 1.0
+
+        # Calcul du RR moyen réalisé
+        gross_profit = sum(t["profit"] for t in recent if t.get("profit", 0) > 0)
+        gross_loss = abs(sum(t["profit"] for t in recent if t.get("profit", 0) < 0))
+        avg_win = gross_profit / wins if wins > 0 else 0
+        avg_loss = gross_loss / losses_n if losses_n > 0 else 0
+        rr = avg_win / avg_loss if avg_loss > 0 else 1.0
+
+        # 🔧 FIX 28 Août 2026: Kelly criterion au lieu de step function
+        # Kelly optimal = WR - (1-WR) / RR
+        # Fractionnel 25% pour lisser (full Kelly = trop agressif)
+        kelly = wr - (1 - wr) / rr if rr > 0 else 0
+        kelly = max(-0.5, min(kelly, 0.5))  # Clamp [-0.5, 0.5]
+
+        if kelly <= 0:
+            # Edge négatif: réduire le risque
+            mult = 0.50 + kelly  # kelly=-0.2 → mult=0.30, kelly=0 → mult=0.50
+            mult = max(0.30, mult)
         else:
-            mult = 0.50
+            # Edge positif: augmenter le risque (fractionnel 25%)
+            kelly_fractional = kelly * 0.25
+            mult = 1.0 + kelly_fractional
+            mult = min(mult, 1.50)  # Cap x1.50
 
-        # 🔧 FIX 29 Juillet 2026: RR-based penalty
-        # Un symbole avec bon WR mais mauvais RR (pertes > gains) DOIT être pénalisé.
-        # Ex: XAUUSD WR=55% mais RR=0.44 → les pertes sont 2.3× plus grosses que les gains.
-        if len(recent) >= 5:
-            gross_profit = sum(t["profit"] for t in recent if t.get("profit", 0) > 0)
-            gross_loss = abs(sum(t["profit"] for t in recent if t.get("profit", 0) < 0))
-            losses = len(recent) - wins
-            if wins > 0 and losses > 0 and gross_profit > 0 and gross_loss > 0:
-                avg_win = gross_profit / wins
-                avg_loss = gross_loss / losses
-                realized_rr = avg_win / avg_loss if avg_loss > 0 else 1.0
+        # RR penalty bonus (pour les cas extrêmes)
+        if rr < 0.5:
+            mult *= 0.50
+        elif rr > 3.0:
+            mult = min(mult * 1.10, 1.50)
 
-                if realized_rr < 0.6:
-                    mult *= 0.50
-                    logger.debug(
-                        f"  [RR-PENALTY] {symbol}: RR={realized_rr:.2f} < 0.6 → mult ×0.50 (pertes {1 / realized_rr:.1f}× > gains)"
-                    )
-                elif realized_rr < 0.8:
-                    mult *= 0.70
-                    logger.debug(f"  [RR-PENALTY] {symbol}: RR={realized_rr:.2f} < 0.8 → mult ×0.70")
-                elif realized_rr < 1.0:
-                    mult *= 0.85
-                    logger.debug(f"  [RR-PENALTY] {symbol}: RR={realized_rr:.2f} < 1.0 → mult ×0.85")
-                elif realized_rr > 2.0:
-                    mult *= 1.15
-                    logger.debug(
-                        f"  [RR-BONUS] {symbol}: RR={realized_rr:.2f} > 2.0 → mult ×1.15 (gains {realized_rr:.1f}× > pertes)"
-                    )
-
-        logger.debug(f"  [SYM-PERF] {symbol}: {wins}/{len(recent)} WR={wr:.0%} → risk_mult={mult:.3f}")
+        logger.debug(
+            f"  [KELLY] {symbol}: WR={wr:.0%} RR={rr:.2f} kelly={kelly:.3f} → risk_mult={mult:.3f}"
+        )
         return mult
 
     def _get_wr_based_max_lot(self, symbol: str) -> float:
@@ -1743,7 +1795,7 @@ class FTMOProtector:
         direction: int = 0,
         signal_risk_mult: Optional[float] = None,
     ) -> float:
-        account = self.mt5.get_account_info()
+        account = self._get_cached_account_info()
         if account is None:
             # 🐛 FIX 16 Août 2026 (Audit M-EX1): retournait 0.05 fixe (trade SANS
             # contrôle de risque si MT5 down). Désormais REFUS (0.0) — un trade
@@ -1870,6 +1922,15 @@ class FTMOProtector:
         # Adaptive lot multiplier (performance-based)
         adaptive_mult = self._adaptive_lot_mult()
         lot *= adaptive_mult
+
+        # 🔧 21 Août 2026 (Robot Manager): Safety clamp AFTER adaptive_mult
+        # Le calcul risk_amount/risk_per_01 peut produire des lots absurdement élevés
+        # pour les symboles à faible prix (NZDUSD $0.60, SOLUSD $150) quand risk_per_01
+        # est très petit. Le MAX_LOT_ABSURDITY_FACTOR ci-dessous attrape les cas extrêmes,
+        # mais on ajoute un clamp plus précoce pour éviter les logs d'anomalie.
+        if lot > max_lot:
+            lot = max_lot
+
         logger.debug(
             f"  [ADAPTIVE LOT] {symbol}: lot pré-clamp={lot:.3f} "
             f"(sl_profit brut=${sl_profit if sl_profit is not None else 0:.2f} → "
@@ -1935,10 +1996,10 @@ class FTMOProtector:
 
             # Met à jour symbol_limits depuis le frais
             fresh_limits = {sym: lim.model_dump(exclude_none=True) for sym, lim in cfg.symbol_limits.items()}
-            # 🐛 FIX 29 Juillet 2026: update IN-PLACE pour que SignalValidator et
-            # autres références voient les changements (au lieu de remplacer le dict)
-            self.symbol_limits.clear()
-            self.symbol_limits.update(fresh_limits)
+            # 🔧 FIX AUDIT M2: Remplacement atomique au lieu de clear()+update().
+            # L'ancien pattern n'était pas atomique — entre clear() et update(),
+            # un autre thread pouvait voir un dict vide → signaux sans limites.
+            self.symbol_limits = fresh_limits
             logger.info(f"[CONFIG] symbol_limits rechargées (frais): {len(fresh_limits)} symboles")
 
             # Met à jour DANGER_HOURS depuis cfg
@@ -1955,7 +2016,7 @@ class FTMOProtector:
             if ticket_key not in self.position_open_times:
                 raw_ot = getattr(position, "time", None)
                 if raw_ot is None:
-                    open_time = datetime.utcnow()
+                    open_time = datetime.now(timezone.utc)
                 elif isinstance(raw_ot, (int, float)):
                     # 🔧 FIX 19 Août 2026: pos.time est en temps serveur MT5 (~3h
                     # d'avance) → soustraire l'offset pour l'heure UTC réelle.

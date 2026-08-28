@@ -75,7 +75,7 @@ class TradingConfig(BaseModel):
     )
     max_positions: int = Field(default=40, ge=1, le=100)  # 27 symboles
     max_positions_per_symbol: int = Field(default=6, ge=1, le=15)  # 3 BUY + 3 SELL en HIGH CONF
-    max_trades_per_day: int = Field(default=200, ge=1, le=500)
+    max_trades_per_day: int = Field(default=200, ge=1, le=99999)  # Désactivé par défaut à 99999
     max_signals_per_cycle: int = Field(default=25, ge=1, le=25)
     max_orders_per_minute: int = Field(default=25, ge=1, le=25)
     lot_size: float = Field(default=0.01, ge=0.01, le=10)
@@ -131,7 +131,7 @@ class RiskConfig(BaseModel):
     max_trading_days: int = Field(default=0, ge=0)
     max_risk_amount: float = Field(default=800.0, ge=0.0)
     max_spread_points: int = Field(default=120, ge=10, le=2000)  # 🐛 FIX #16: 300→2000 (JP225 spread=1000pts)
-    auto_pause_losses: int = Field(default=5, ge=1, le=20)  # ↓ 10→5 (FTMO-safe)
+    auto_pause_losses: int = Field(default=5, ge=1, le=999)  # 🔧 26 Août: le=20→999 pour désactiver pendant collecte (999=jamais)
     recalibration_frequency: int = Field(default=50, ge=10, le=500)
     max_correlated_exposure: float = Field(
         default=1.5,
@@ -227,6 +227,20 @@ class SymbolLimit(BaseModel):
         le=48.0,
         description="Durée max d'une position profitable avant time-stop (heures). "
         "None = défaut global 12h. XAUUSD: 8h (sécurise les gains plus vite).",
+    )
+    time_stop_max_hours_loss: float | None = Field(
+        default=None,
+        ge=1.0,
+        le=48.0,
+        description="Durée max d'une position perdante avant time-stop (heures). "
+        "None = défaut global 2h. BTCUSD/SOLUSD/USDJPY: 4h (laisse le temps au momentum).",
+    )
+    # 🔧 FIX 28 Août 2026: filtrage H4 par symbole
+    skip_h4_filter: bool = Field(
+        default=False,
+        description="True = désactive le filtre direction H4 (phase 1d). "
+        "BTCUSD: True — le filtre H4 rejeteait 107 signaux H1 valides "
+        "(l'edge WF BTCUSD est sur H1, pas H4).",
     )
 
 

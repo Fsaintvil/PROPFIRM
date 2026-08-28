@@ -15,7 +15,7 @@ import os
 import sys
 import tempfile
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch, PropertyMock
 
 import numpy as np
@@ -170,6 +170,7 @@ class TestFullSignalPipelineCycle:
         patch_dt = patch("engine_simple.ftmo_protector.datetime")
         mock_dt = patch_dt.start()
         mock_dt.utcnow.return_value = datetime(2026, 7, 5, 14, 0)  # 14h UTC ∈ LDN-NY [13-17]
+        mock_dt.now.return_value = datetime(2026, 7, 5, 14, 0, tzinfo=timezone.utc)  # 🔧 FIX
 
         patch_news = patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, []))
         patch_news.start()
@@ -191,6 +192,7 @@ class TestFullSignalPipelineCycle:
         patch_dt = patch("engine_simple.ftmo_protector.datetime")
         mock_dt = patch_dt.start()
         mock_dt.utcnow.return_value = datetime(2026, 7, 5, 12, 0)
+        mock_dt.now.return_value = datetime(2026, 7, 5, 12, 0, tzinfo=timezone.utc)  # 🔧 FIX
 
         patch_news = patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, []))
         patch_news.start()
@@ -288,6 +290,7 @@ class TestMultiSymbolCorrelation:
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 14, 0)  # 14h UTC ∈ LDN-NY [13-17]
+            mock_dt.now.return_value = datetime(2026, 7, 5, 14, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
                     "NZDUSD",
@@ -309,6 +312,7 @@ class TestMultiSymbolCorrelation:
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 12, 0)
+            mock_dt.now.return_value = datetime(2026, 7, 5, 12, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
                     "NZDUSD",
@@ -330,6 +334,7 @@ class TestMultiSymbolCorrelation:
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 14, 0)  # 14h UTC ∈ LDN-NY [13-17]
+            mock_dt.now.return_value = datetime(2026, 7, 5, 14, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
                     "NZDUSD",
@@ -349,6 +354,7 @@ class TestMultiSymbolCorrelation:
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 12, 0)
+            mock_dt.now.return_value = datetime(2026, 7, 5, 12, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
                     "SOLUSD",
@@ -372,6 +378,7 @@ class TestMultiSymbolCorrelation:
             mock_dt.utcnow.return_value = datetime(
                 2026, 7, 6, 12, 0
             )  # lundi — évite le blocage week-end XAUUSD (garde-fous)
+            mock_dt.now.return_value = datetime(2026, 7, 6, 12, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
                     "XAUUSD",
@@ -562,6 +569,7 @@ class TestMT5DisconnectRecovery:
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 14, 0)  # 14h UTC ∈ LDN-NY [13-17]
+            mock_dt.now.return_value = datetime(2026, 7, 5, 14, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
                     "EURUSD",
@@ -631,6 +639,7 @@ class TestRiskManagerIntegration:
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 12, 0)
+            mock_dt.now.return_value = datetime(2026, 7, 5, 12, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, checks = risk.pre_trade("EURUSD")
                 assert isinstance(ok, bool)
@@ -711,6 +720,7 @@ class TestPositionLimits:
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 5, 14, 0)  # 14h UTC ∈ LDN-NY [13-17]
+            mock_dt.now.return_value = datetime(2026, 7, 5, 14, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 # 1ère position EURUSD → OK
                 ok1, _ = ftmo.can_trade("EURUSD", {"action": "BUY", "score": 0.80, "sl": 1.09, "tp": 1.12})

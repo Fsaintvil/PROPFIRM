@@ -249,11 +249,13 @@ class TestCheckTimeStop:
         mock_mt5.order_send.assert_not_called()
 
     def test_old_position_closes(self, trailer, mock_mt5):
-        """Position > 12h profitable → close."""
+        """🔧 FIX 28 Août 2026: position profitable > 12h NE ferme PLUS (trailing gère).
+        Seule exception: weekend close window."""
         trailer.position_open_times["1001"] = {"open_time": (datetime.utcnow() - timedelta(hours=13)).timestamp()}
         pos = _make_position(profit=50.0)
-        trailer._check_time_stop(pos)
-        mock_mt5.order_send.assert_called_once()
+        with patch.object(Trailer, "_is_weekend_close_window", return_value=False):
+            trailer._check_time_stop(pos)
+        mock_mt5.order_send.assert_not_called()  # Profitable → trailing gère
 
     def test_respects_cooldown(self, trailer, mock_mt5):
         """Cooldown 5min entre tentatives."""
@@ -271,13 +273,13 @@ class TestCheckTimeStop:
         mock_mt5.order_send.assert_called_once()
 
     def test_xauusd_profit_closes_at_8h_not_12h(self, trailer, mock_mt5):
-        """🔧 FIX 19 Août 2026 (Council): time-stop profit XAUUSD = 8h (défaut 12h).
-        XAUUSD WR 28.6% (7 trades GR) mais gros winners — sécuriser les gains plus vite."""
+        """🔧 FIX 28 Août 2026: XAUUSD profitable > 8h NE ferme PLUS (trailing gère).
+        Le time-stop profit est désormais inutile — le trailing stop N1-N5 gère les trades gagnants."""
         trailer.position_open_times["1001"] = {"open_time": (datetime.utcnow() - timedelta(hours=9)).timestamp()}
         pos = _make_position(ticket=1001, symbol="XAUUSD", profit=80.0)
         with patch.object(Trailer, "_is_weekend_close_window", return_value=False):
             trailer._check_time_stop(pos)
-        mock_mt5.order_send.assert_called_once()
+        mock_mt5.order_send.assert_not_called()  # Profitable → trailing gère
 
     def test_default_symbol_still_12h(self, trailer, mock_mt5):
         """🔧 FIX 19 Août 2026: les symboles SANS override gardent le défaut 12h."""
@@ -493,33 +495,27 @@ class TestCalcSLTP:
 
 class TestPersistPartialClosed:
     def test_writes_to_state_file(self, trailer):
-        """Persist: les données sont correctement sérialisées."""
+        """Persist: les données sont correctement sérialisées via state_manager."""
         trailer.partial_closed.add("1001")
         trailer.partial_closed.add("1002")
 
-        # Patcher pathlib.Path.exists et read_text au niveau du module
-        with patch("pathlib.Path.exists", return_value=True):
-            with patch("pathlib.Path.read_text", return_value="{}"):
-                with patch("pathlib.Path.with_suffix") as mock_suffix:
-                    mock_tmp = MagicMock()
-                    mock_suffix.return_value = mock_tmp
+        with patch("engine_simple.trailer.update_state_field") as mock_update:
+            trailer._persist_partial_closed()
 
-                    trailer._persist_partial_closed()
-
-                    # Vérifier le JSON écrit
-                    mock_tmp.write_text.assert_called_once()
-                    written = json.loads(mock_tmp.write_text.call_args[0][0])
-                    assert "partial_closed" in written
-                    assert "1001" in written["partial_closed"]
-                    assert "1002" in written["partial_closed"]
+            mock_update.assert_called_once()
+            args = mock_update.call_args
+            # Premier arg = state_path, deuxième = field, troisième = value
+            assert args[0][1] == "partial_closed"
+            value = args[0][2]
+            assert "1001" in value
+            assert "1002" in value
 
     # NOTE (16 Août 2026, Vague 5): test "ne doit pas crasher" — valeur = non-propagation
     def test_no_crash_on_write_error(self, trailer):
-        """Erreur d'écriture → log warning, pas de crash."""
+        """Erreur d'écriture → log debug, pas de crash."""
         trailer.partial_closed.add("1001")
-        with patch.object(Path, "exists", return_value=True):
-            with patch.object(Path, "read_text", side_effect=OSError("Permission denied")):
-                trailer._persist_partial_closed()  # ne doit pas planter
+        with patch("engine_simple.trailer.update_state_field", side_effect=OSError("Permission denied")):
+            trailer._persist_partial_closed()  # ne doit pas planter
 
 
 # ── Structure Exit ─────────────────────────────────────────────────────────
@@ -768,13 +764,30 @@ class TestTrailingConfigLock:
 class _FakeDatetime:
     """Substitut minimal de datetime pour les tests de fenêtre week-end.
 
-    `utcnow()` retourne une datetime FIXE ; les autres méthodes (utcfromtimestamp)
+    `now()` et `utcnow()` retournent une datetime FIXE ; les autres méthodes (fromtimestamp)
     délèguent au vrai datetime pour rester fonctionnelles dans _check_time_stop.
     """
 
     @staticmethod
     def utcnow():
         return _FakeDatetime._fixed
+
+    @staticmethod
+    def now(tz=None):
+        """🔧 FIX AUDIT: support datetime.now(timezone.utc)."""
+        from datetime import timezone as _tz
+        if tz is not None:
+            return _FakeDatetime._fixed.replace(tzinfo=_tz.utc)
+        return _FakeDatetime._fixed
+
+    @staticmethod
+    def fromtimestamp(ts, tz=None):
+        from datetime import timezone as _tz
+        from datetime import datetime as _dt
+        dt = _dt.fromtimestamp(ts)
+        if tz is not None:
+            dt = dt.replace(tzinfo=_tz.utc)
+        return dt
 
     @staticmethod
     def utcfromtimestamp(ts):

@@ -21,6 +21,32 @@ Tu es l'**Optimizer** — l'analyste de performance du robot MT5 FTMO.
 ## Mission
 Analyser les métriques du robot et suggérer des optimisations concrètes.
 
+## Contexte 72h (21 Août 2026)
+**Performance globale :**
+- Total : 87 trades, PnL −$3,343, WR ~48%, DD max 2.74%
+- Jour 21/08 : +$1,037 (meilleure journée)
+- Jour 20/08 : −$428 (pire journée)
+
+**Performance par symbole (72h) :**
+| Symbole | PnL | WR | Trades | Verdict |
+|---------|-----|-----|--------|---------|
+| BTCUSD | +$769 | 77% | 26 | 🟢 Edge confirmé |
+| SOLUSD | +$25 | 45% | 29 | 🟡 Acceptable |
+| XAUUSD | −$112 | 21% | 14 | 🔴 WR faible |
+| USDCHF | −$2 | 12.5% | — | ❌ Désactivé |
+
+**Raisons de sortie (72h) :**
+- SL : 63 trades, +$560 (WR 51%)
+- Time_stop : 18 trades, −$224 (WR 4%)
+- TP : 6 trades, +$348 (WR 100%)
+
+**Fixes récents :**
+- XAUUSD lot 0.06→0.03
+- USDCHF désactivé
+- Time-stop loss 4h→3h
+- OL threshold 20→15
+- BTCUSD lot 0.03→0.06
+
 ## Métriques à analyser
 
 ### Performances globales

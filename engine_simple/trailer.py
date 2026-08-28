@@ -2,8 +2,8 @@
 
 Handles:
 - ATR-based trailing SL (progressive levels by regime)
-- Partial TP (50% at 60% of TP → BE)
-- Time-stop (12h if profitable, 4h if breakeven)
+- Partial TP (75% at 65% of TP → BE) — config R3 31 Juillet 2026
+- Time-stop (12h if profitable default, 8h XAUUSD, 4h BTCUSD/SOLUSD/USDJPY loss)
 - Structure exit (BOS/CHoCH invalidation)
 - Peak reconstruction from H1 history
 
@@ -17,7 +17,7 @@ import logging
 import os
 import random
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -247,6 +247,13 @@ class Trailer:
         )
         result = self.mt5.order_send(req)
         if result and result.retcode == 10009:
+            # 🔧 FIX C4: Vérifier volume réellement fermé
+            filled_vol = getattr(result, "volume", close_vol)
+            if isinstance(filled_vol, (int, float)) and abs(filled_vol - close_vol) > 0.001:
+                logger.warning(
+                    f"[PARTIAL FILL] {position.symbol}: demandé close {close_vol} lot, "
+                    f"fillé {filled_vol} lot. Position restante plus grosse que prévu."
+                )
             logger.info(
                 f"TP Partiel: {position.symbol} ferme "
                 f"{close_vol}/{position.volume} a {price:.5f} "
@@ -303,27 +310,51 @@ class Trailer:
             return
         ot = self.position_open_times[ticket]["open_time"]
         if isinstance(ot, (int, float)):
-            ot = datetime.utcfromtimestamp(ot)
-        elapsed = datetime.utcnow() - ot
+            ot = datetime.fromtimestamp(ot, tz=timezone.utc)
+        # 🔧 FIX AUDIT: Gérer les datetimes naïves (compat legacy) en ajoutant UTC timezone.
+        if ot.tzinfo is None:
+            ot = ot.replace(tzinfo=timezone.utc)
+        elapsed = datetime.now(timezone.utc) - ot
         hours = elapsed.total_seconds() / 3600
 
         max_profit = self.position_meta.get(ticket, {}).get("max_profit", position.profit)
         if position.profit > max_profit:
             self.position_meta.setdefault(ticket, {})["max_profit"] = position.profit
             max_profit = position.profit
+        # 🔧 21 Août 2026 (Robot Manager P0): time-stop loss 3h→2h — les trades perdants
+        # sont déjà perdants à 2h, pas besoin d'attendre 3h (−$224 sur 18 time_stops, WR 4%)
+        # Le momentum MOM20x3 est un signal court terme — si pas de profit après 2h, très peu
+        # de chances de redevenir gagnant.
+        # 🔧 FIX 28 Août 2026: time-stop conditionnel — ne fire QUE si profit < 0
+        # Données: time_stop WR = 4.9% (58/61 = losers). Les trades profitables
+        # sont gérés par le trailing stop (N1-N5). Le time-stop sur trades profitables
+        # les ferme trop tôt (ex: SOLUSD +$356 fermé à 5h au lieu de laisser courir).
+        # SEULE exception: fermeture pré-weekend (déjà gérée ci-dessus).
+        if position.profit > 0 and not self._is_weekend_close_window(position.symbol):
+            return  # le trailing stop gère les trades profitables (sauf weekend)
+
         max_hours = (
             float(os.environ.get("TIME_STOP_MAX_HOURS_PROFIT", "12"))
             if max_profit > 0
-            else float(os.environ.get("TIME_STOP_MAX_HOURS_LOSS", "4"))
+            else float(os.environ.get("TIME_STOP_MAX_HOURS_LOSS", "2"))
         )
         # 🔧 FIX 19 Août 2026 (Council): time-stop profit configurable par symbole.
         # XAUUSD: time_stop_max_hours_profit=8.0 (défaut 12h) → sécurise les gains
         # plus vite sur un symbole à WR faible (28.6% GR) mais gros winners.
+        sym_limits = getattr(cfg, "SYMBOL_LIMITS", {})
         if max_profit > 0:
-            sym_limits = getattr(cfg, "SYMBOL_LIMITS", {})
             sym_ts = sym_limits.get(position.symbol, {}).get("time_stop_max_hours_profit")
             if isinstance(sym_ts, (int, float)) and 1.0 <= sym_ts <= 48.0:
                 max_hours = min(max_hours, float(sym_ts))
+        # 🔧 24 Août 2026 (Robot Manager P5): time-stop loss configurable par symbole.
+        # XAUUSD: time_stop_max_hours_loss=4.0 (défaut 2h) → laisse plus de temps
+        # aux trades perdants sur un symbole à volatilité élevée (ATR H4=$36.95).
+        # 🔧 FIX C5: min() pour les pertes (SERRER le timeout, pas l'étendre).
+        # max() étendait le timeout — un XAUUSD à 4.0h tenait les perdants 2× trop longtemps.
+        if max_profit <= 0:
+            sym_ts_loss = sym_limits.get(position.symbol, {}).get("time_stop_max_hours_loss")
+            if isinstance(sym_ts_loss, (int, float)) and 1.0 <= sym_ts_loss <= 48.0:
+                max_hours = min(max_hours, float(sym_ts_loss))
         # 🔧 FIX 17 Août 2026 (Log Analyst): fermeture pré-weekend.
         # Problème: un trade dont le time-stop est dû le vendredi soir restait
         # exposé tout le week-end (le time-stop échoue avec 10018 marché fermé
@@ -396,7 +427,7 @@ class Trailer:
             close_hour = int(os.environ.get("WEEKEND_CLOSE_HOUR_UTC", "16"))
         except ValueError:
             close_hour = 16
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         return now.weekday() == 4 and now.hour >= close_hour
 
     # ── ATR Trailing ──────────────────────────────────────────────────
@@ -531,7 +562,11 @@ class Trailer:
             return
         rc = result.retcode if result else -1
         if rc == 10016:
-            retry_gap = trail_distance + 2 * atr_val * jitter
+            # 🔧 FIX AUDIT H2: retry_gap = trail_distance AU LIEU DE +2×ATR.
+            # L'ancien code ajoutait 2×ATR au gap → SL encore plus loin du peak →
+            # $74+ de profit rendu sur XAUUSD. Le retry 10016 = "SL trop proche du prix"
+            # → on recule SL de trail_distance (pas de 2×ATR supplémentaire).
+            retry_gap = trail_distance
             retry_sl = peak - retry_gap if position.type == 0 else peak + retry_gap
             # 🐛 FIX 10 Août 2026: le chemin retry 10016 n'avait AUCUNE garde sl_improves.
             # retry_sl = peak - retry_gap pouvait passer SOUS l'entrée (profit non sécurisé)

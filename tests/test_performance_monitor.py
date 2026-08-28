@@ -51,6 +51,7 @@ def perf_monitor(request):
         patch("engine_simple.performance_monitor.datetime") as mock_dt,
     ):
         mock_dt.utcnow.return_value = FAKE_NOW
+        mock_dt.now.return_value = FAKE_NOW  # 🔧 FIX: datetime.now(timezone.utc) support
         mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
         pm = PerformanceMonitor()
         yield pm, hist_file, rpt_file
@@ -269,6 +270,7 @@ class TestRecordTrade:
         # Day 1
         with patch("engine_simple.performance_monitor.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 6, 6, 12, 0, 0)
+            mock_dt.now.return_value = datetime(2026, 6, 6, 12, 0, 0)  # 🔧 FIX: now() support
             mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
             pm.record_trade("USDCAD", 100.0, "TREND_UP", "BUY")
         # Day 2 (uses fixture's FAKE_NOW = 2026-06-07)
@@ -335,6 +337,7 @@ class TestRecordTrade:
             for day_offset in range(400):
                 d = datetime(2025, 1, 1) + timedelta(days=day_offset)
                 mock_dt.utcnow.return_value = d
+                mock_dt.now.return_value = d  # 🔧 FIX: now() support
                 pm.record_trade("USDCAD", 10.0, "RANGING", "BUY")
         assert len(pm.history["daily"]) <= 365
 
@@ -612,6 +615,7 @@ class TestReport:
             for i in range(10):
                 d = datetime(2026, 6, 1) + timedelta(days=i)
                 mock_dt.utcnow.return_value = d
+                mock_dt.now.return_value = d  # 🔧 FIX: now() support
                 pm.record_trade("USDCAD", 10.0, "RANGING", "BUY")
         report = pm.generate_report()
         assert len(report["daily_recent"]) <= 7
@@ -656,6 +660,7 @@ class TestGetDailyPnl:
         pm, _, _ = perf_monitor
         with patch("engine_simple.performance_monitor.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 6, 6, 12, 0, 0)
+            mock_dt.now.return_value = datetime(2026, 6, 6, 12, 0, 0)  # 🔧 FIX
             mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
             pm.record_trade("USDCAD", 50.0, "RANGING", "BUY")
         result = pm.get_daily_pnl("2026-06-06")
@@ -744,6 +749,7 @@ class TestRecommendations:
             for i in range(10):
                 d = datetime(2026, 5, 28) + timedelta(days=i)
                 mock_dt.utcnow.return_value = d
+                mock_dt.now.return_value = d  # 🔧 FIX: now() support
                 pm.record_trade("USDCAD", 100.0, "RANGING", "BUY")
         report = pm.generate_report()
         pace_recs = [r for r in report["recommendations"] if "Rythme" in r["action"] or "augmenter" in r["action"]]
@@ -905,6 +911,7 @@ class TestPersistence:
                 patch("engine_simple.performance_monitor.datetime") as mock_dt,
             ):
                 mock_dt.utcnow.return_value = FAKE_NOW
+                mock_dt.now.return_value = FAKE_NOW  # 🔧 FIX: now() support
                 mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
                 pm1 = PerformanceMonitor()
                 pm1.record_trade("USDCAD", 100.0, "TREND_UP", "BUY")
@@ -946,6 +953,7 @@ class TestChallengeSummary:
             for i in range(5):
                 d = datetime(2026, 6, 2) + timedelta(days=i)
                 mock_dt.utcnow.return_value = d
+                mock_dt.now.return_value = d  # 🔧 FIX: now() support
                 pm.record_trade("USDCAD", 200.0, "RANGING", "BUY")
         s = pm._challenge_summary()
         # 🐛 FIX 31 Juillet 2026: $200/j × 25j = $5K < $18K restants (besoin $720/j)
@@ -965,6 +973,7 @@ class TestChallengeSummary:
             for i in range(5):
                 d = datetime(2026, 6, 2) + timedelta(days=i)
                 mock_dt.utcnow.return_value = d
+                mock_dt.now.return_value = d  # 🔧 FIX: now() support
                 pm.record_trade("USDCAD", 1000.0, "RANGING", "BUY")
         s = pm._challenge_summary()
         # $1000/j × 25j = $25K > $18K → on_track = True
@@ -990,6 +999,7 @@ class TestChallengeSummary:
             for i in range(5):
                 d = datetime(2026, 6, 2) + timedelta(days=i)
                 mock_dt.utcnow.return_value = d
+                mock_dt.now.return_value = d  # 🔧 FIX: now() support
                 pm.record_trade("USDCAD", -200.0, "RANGING", "BUY")
         s = pm._challenge_summary()
         # avg_daily_pnl negative → estimated_days = "∞"

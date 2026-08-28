@@ -92,10 +92,11 @@ SYMBOL_CONFIG = {
         # Backtest H4 2012-2026: PF=1.31, DD=0.29%, +$2,606 ✅✅ FTMO-safe
         # ═══════════════════════════════════════════════════════════════════
         "momentum_period": 20,
-        "sl_atr_trending": 1.5,
-        "tp_atr_trending": 6.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 6.0,
+        # 🔧 28 Août 2026: SL 1.5→2.5×ATR (uniformisé partout). TP 6.0→7.5 (RR 3.0 conservé).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 7.5,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 7.5,
         "threshold_trending": 2.5,  # 🔧 ALIGNÉ 06 Aout 2026: 4.0→2.5 (le pipeline réel utilise déjà 2.5 via OL base_thresh — le 4.0 était inerte/incohérent, calé sur backtest H4 mais robot en H1)
         "threshold_ranging": 2.0,  # 🔧 ALIGNÉ 06 Aout 2026: 4.0→2.0 (même logique, aligné OL base_thresh=2.5 trending / 2.0 ranging)
         "adx_slope_threshold": -9.0,
@@ -144,10 +145,11 @@ SYMBOL_CONFIG = {
         #   RÈGLE D'OR → revenir à 3.5 ou plafonner contribution ≤ 25%
         # ═══════════════════════════════════════════════════════════════════
         "momentum_period": 20,
-        "sl_atr_trending": 1.5,
-        "tp_atr_trending": 6.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 6.0,
+        # 🔧 28 Août 2026: SL 1.5→2.5×ATR (uniformisé partout). TP 6.0→5.0 (RR 2.0 conservé).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 5.0,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 5.0,
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
         "adx_slope_threshold": -8.0,  # 🔧 29 Juil: assoupli ×1.3 (était -6.0) — dégelé
@@ -163,7 +165,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.50,
+        "min_score": 0.65,
         "adx_thresh": 20,
         "min_rr": 2.0,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 13 Août 2026 (décision utilisateur): PF backtest 1.18, groupe CRYPTO indépendant
@@ -190,12 +192,11 @@ SYMBOL_CONFIG = {
     "US30.cash": {
         # Momentum 20 périodes H1 = 20h (standard MOM20x3)
         "momentum_period": 20,
-        # SL/TP trending: 1.5/4.5 (RR 3.0 — SL serré, Dow moins volatile)
-        "sl_atr_trending": 1.5,
-        "tp_atr_trending": 4.5,
-        # SL/TP ranging: 1.2/3.0 (RR 2.5)
-        "sl_atr_ranging": 1.2,
-        "tp_atr_ranging": 3.0,
+        # 🔧 28 Août 2026: SL 1.5/1.2→2.5×ATR (uniformisé). TP 4.5/3.0→10.0 (RR 4.0 conservé).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 10.0,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 10.0,
         # Seuils ATR standard
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
@@ -212,7 +213,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         # 🔒 RENFORCÉ 1er Juillet 2026 — WR 28.6% live
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -226,12 +227,11 @@ SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
     "EURUSD": {
         "momentum_period": 20,
-        # 🔧 19 Août 2026 (Backtest Optimizations): SL 2.0→3.0 / TP 5.0→7.5 (trending)
-        # et 1.5→2.25 / 4.0→6.0 (ranging). RR 2.5 conservé. WR backtest 57→67%, pertes −13%.
-        "sl_atr_trending": 3.0,
-        "tp_atr_trending": 7.5,
-        "sl_atr_ranging": 2.25,
-        "tp_atr_ranging": 6.0,
+        # 🔧 28 Août 2026: SL 3.0/2.25→2.5×ATR (uniformisé). TP 7.5/6.0→6.25/6.67 (RR 2.5/2.67).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.25,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 6.67,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
@@ -243,7 +243,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17],
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 10 Juil 2026: ↑ 0.80→0.85 — symbole réactivé, sélectif max
+        "min_score": 0.65,  # 🔧 10 Juil 2026: ↑ 0.80→0.85 — symbole réactivé, sélectif max
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
@@ -252,12 +252,11 @@ SYMBOL_CONFIG = {
     },
     "USDJPY": {
         "momentum_period": 20,
-        # 🔧 19 Août 2026 (Backtest Optimizations): SL 2.0→3.0 / TP 5.0→7.5 (trending)
-        # et 1.5→2.25 / 4.0→6.0 (ranging). RR 2.5 conservé. WR backtest 57→67%.
-        "sl_atr_trending": 3.0,
-        "tp_atr_trending": 7.5,
-        "sl_atr_ranging": 2.25,
-        "tp_atr_ranging": 6.0,
+        # 🔧 28 Août 2026: SL 3.0/2.25→2.5×ATR (uniformisé). TP 7.5/6.0→6.25/6.67 (RR 2.5/2.67).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.25,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 6.67,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
@@ -268,7 +267,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17],
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 10 Juil 2026: ↓ 0.85→0.80 — trop restrictif, scores plafonnent à 0.61
+        "min_score": 0.65,  # 🔧 10 Juil 2026: ↓ 0.85→0.80 — trop restrictif, scores plafonnent à 0.61
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,  # 🔓 DÉGELÉ 29 Juillet 2026 — backtest 68.3% WR, +$542K
@@ -277,12 +276,11 @@ SYMBOL_CONFIG = {
     },
     "NZDUSD": {
         "momentum_period": 20,
-        # 🔧 19 Août 2026 (Backtest Optimizations): SL 2.0→3.0 / TP 5.0→7.5 (trending)
-        # et 1.5→2.25 / 4.0→6.0 (ranging). RR 2.5 conservé.
-        "sl_atr_trending": 3.0,
-        "tp_atr_trending": 7.5,
-        "sl_atr_ranging": 2.25,
-        "tp_atr_ranging": 6.0,
+        # 🔧 28 Août 2026: SL 3.0/2.25→2.5×ATR (uniformisé). TP 7.5/6.0→6.25/6.67 (RR 2.5/2.67).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.25,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 6.67,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
@@ -293,7 +291,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17],
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.3,
         "risk_mult": 1.0,
@@ -302,10 +300,11 @@ SYMBOL_CONFIG = {
     },
     "ETHUSD": {
         "momentum_period": 20,
-        "sl_atr_trending": 2.0,
+        # 🔧 28 Août 2026: SL 2.0/1.5→2.5×ATR (uniformisé). TP 5.0/4.0→5.0 (RR 2.0 conservé).
+        "sl_atr_trending": 2.5,
         "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 5.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
@@ -325,7 +324,7 @@ SYMBOL_CONFIG = {
         # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 29.4% live, -$139
         # risk_mult=0.05 = 95% de réduction de risque, micro-lot 0.05 (×5)
         # min_score=0.90 = seuls les signaux exceptionnels passent
-        "min_score": 0.60,  # très sélectif
+        "min_score": 0.65,  # très sélectif
         "adx_thresh": 20,
         "min_rr": 2.0,
         "risk_mult": 0.0,  # 🔴 GEL TEMPORAIRE par automation: freeze symbol due to large losses
@@ -350,10 +349,11 @@ SYMBOL_CONFIG = {
         # Validation 2024-2026: PF=1.24, DD=5.1%, +$24,434
         # ═══════════════════════════════════════════════════════════════════
         "momentum_period": 20,
-        "sl_atr_trending": 1.5,
-        "tp_atr_trending": 6.0,  # ↑ 5.0→6.0 (Solution A)
-        "sl_atr_ranging": 1.5,  # ↑ 1.2→1.5 (unifié avec trending)
-        "tp_atr_ranging": 6.0,  # ↑ 5.0→6.0 (unifié avec trending)
+        # 🔧 28 Août 2026: SL 1.5→2.5×ATR (uniformisé). TP 6.0→10.0 (RR 4.0 conservé).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 10.0,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 10.0,
         "threshold_trending": 3.0,  # 🔧 ↓ 4.0→3.0 (Robot Manager 28 Juillet — plus de signaux)
         "threshold_ranging": 3.0,  # 🔧 ↓ 4.0→3.0 (unifié)
         "adx_slope_threshold": -9.0,
@@ -363,7 +363,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.50,  # ↓ 0.60→0.50 (threshold 3.0×ATR assez sélectif)
+        "min_score": 0.65,  # ↓ 0.60→0.50 (threshold 3.0×ATR assez sélectif)
         "adx_thresh": 22,
         "min_rr": 2.0,  # ↑ 1.5→2.0 (TP 6.0 / SL 1.5 = RR 4.0)
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
@@ -383,10 +383,11 @@ SYMBOL_CONFIG = {
         # Validation 2024-2026: PF=1.33, DD=3.5%, +$28,882
         # ═══════════════════════════════════════════════════════════════════
         "momentum_period": 20,
-        "sl_atr_trending": 1.5,
-        "tp_atr_trending": 6.0,  # ↑ 4.5→6.0 (Solution A)
-        "sl_atr_ranging": 1.5,  # ↑ 1.2→1.5 (unifié)
-        "tp_atr_ranging": 6.0,  # ↑ 4.5→6.0 (unifié)
+        # 🔧 28 Août 2026: SL 1.5→2.5×ATR (uniformisé). TP 6.0→10.0 (RR 4.0 conservé).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 10.0,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 10.0,
         "threshold_trending": 3.0,  # 🔧 ↓ 4.0→3.0 (Robot Manager 28 Juillet — plus de signaux)
         "threshold_ranging": 3.0,  # 🔧 ↓ 4.0→3.0 (unifié)
         "adx_slope_threshold": -8.0,
@@ -396,7 +397,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.50,
+        "min_score": 0.65,
         "adx_thresh": 22,
         "min_rr": 2.0,
         "risk_mult": 1.0,
@@ -405,10 +406,11 @@ SYMBOL_CONFIG = {
     },
     "XAGUSD": {
         "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
+        # 🔧 28 Août 2026: SL 2.0/1.5→2.5×ATR (uniformisé). TP 5.0/4.0→6.25/6.67 (RR 2.5/2.67).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.25,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 6.67,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
@@ -423,7 +425,7 @@ SYMBOL_CONFIG = {
         # min_score=0.90 = seuls les signaux exceptionnels passent
         # Si les signaux redeviennent bons, l'OL détectera la guérison
         # 🔧 FIX_SUPREME_COUNCIL 2 Juillet 2026: ADX 22→25 pour réduire faux signaux
-        "min_score": 0.60,  # très sélectif
+        "min_score": 0.65,  # très sélectif
         "adx_thresh": 25,
         "min_rr": 2.0,
         "risk_mult": 0.0,  # 🔴 GEL TEMPORAIRE par automation: freeze symbol due to large losses
@@ -437,10 +439,11 @@ SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
     "GBPJPY": {
         "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
+        # 🔧 28 Août 2026: SL 2.0/1.5→2.5×ATR (uniformisé). TP 5.0/4.0→6.25/6.67 (RR 2.5/2.67).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.25,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 6.67,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
@@ -450,7 +453,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 10 Juil 2026: débloqué min_score=0.85 — 11 trades, -$1, test progressif
+        "min_score": 0.65,  # 🔧 10 Juil 2026: débloqué min_score=0.85 — 11 trades, -$1, test progressif
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -472,10 +475,11 @@ SYMBOL_CONFIG = {
         # risk_mult=0.7 pour garder DD sous 10%
         # ═══════════════════════════════════════════════════════════════════
         "momentum_period": 20,
-        "sl_atr_trending": 1.5,  # ↓ 2.0→1.5 (Solution A)
-        "tp_atr_trending": 6.0,  # ↑ 5.0→6.0 (Solution A)
-        "sl_atr_ranging": 1.5,  # = 1.5 (inchangé)
-        "tp_atr_ranging": 6.0,  # ↑ 4.0→6.0 (Solution A)
+        # 🔧 28 Août 2026: SL 1.5→2.5×ATR (uniformisé). TP 6.0→10.0 (RR 4.0 conservé).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 10.0,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 10.0,
         "threshold_trending": 3.0,  # 🔧 ↓ 4.0→3.0 (Robot Manager 28 Juillet — plus de signaux)
         "threshold_ranging": 3.0,  # 🔧 ↓ 4.0→3.0 (unifié)
         "adx_slope_threshold": -9.0,
@@ -485,7 +489,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8],  # Asian session
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.50,  # ↓ 0.60→0.50
+        "min_score": 0.65,  # ↓ 0.60→0.50
         "adx_thresh": 22,
         "min_rr": 2.0,  # ↑ 1.5→2.0
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -499,10 +503,11 @@ SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
     "USOIL.cash": {
         "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
+        # 🔧 28 Août 2026: SL 2.0/1.5→2.5×ATR (uniformisé). TP 5.0/4.0→6.25/6.67 (RR 2.5/2.67).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.25,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 6.67,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
@@ -537,7 +542,7 @@ SYMBOL_CONFIG = {
         ],  # 24/7 (↑ 30 Juin: débloquer Asie)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.70,  # 🔧 13 Juil 2026: ↓ 0.75→0.70 — débloque signaux TrendFollow (score stabilisé à 0.74, backtest 68.4% WR)
+        "min_score": 0.65,  # 🔧 13 Juil 2026: ↓ 0.75→0.70 — débloque signaux TrendFollow (score stabilisé à 0.74, backtest 68.4% WR)
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -552,10 +557,11 @@ SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
     "EURGBP": {
         "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 4.0,  # TP plus court (basse volatilité)
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 3.0,  # TP court en range (RR 2.0)
+        # 🔧 28 Août 2026: SL 2.0/1.5→2.5×ATR (uniformisé). TP 4.0/3.0→6.25/6.67 (RR 2.5/2.67).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.25,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 6.67,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,  # 🔧 29 Juil: assoupli ×2 (était -4.0)
@@ -565,7 +571,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres seulement
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.5,
         "risk_mult": 1.0,  # 🔧 ↑ 0.8→1.0 (bon performer)
@@ -579,10 +585,11 @@ SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
     "SOLUSD": {
         "momentum_period": 20,
+        # 🔧 28 Août 2026: SL 2.5/2.0→2.5×ATR (uniformisé). TP 5.0/4.0→5.0 (RR 2.0 conservé).
         "sl_atr_trending": 2.5,
         "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 2.0,
-        "tp_atr_ranging": 4.0,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 5.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5  # crypto: seuils abaissés
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
@@ -592,7 +599,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 24/7
         "news_minutes_before": 0,
         "news_minutes_after": 0,
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.8,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -605,10 +612,11 @@ SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
     "BNBUSD": {
         "momentum_period": 20,
+        # 🔧 28 Août 2026: SL 2.5/2.0→2.5×ATR (uniformisé). TP 5.0/4.0→5.0 (RR 2.0 conservé).
         "sl_atr_trending": 2.5,
         "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 2.0,
-        "tp_atr_ranging": 4.0,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 5.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
@@ -618,7 +626,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 0,
         "news_minutes_after": 0,
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.8,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -631,10 +639,11 @@ SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
     "GER40.cash": {
         "momentum_period": 20,
-        "sl_atr_trending": 1.5,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.2,
-        "tp_atr_ranging": 4.0,
+        # 🔧 28 Août 2026: SL 1.5/1.2→2.5×ATR (uniformisé). TP 5.0/4.0→10.0 (RR 4.0 conservé).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 10.0,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 10.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
@@ -644,7 +653,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -657,10 +666,11 @@ SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
     "UK100.cash": {
         "momentum_period": 20,
-        "sl_atr_trending": 1.5,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.2,
-        "tp_atr_ranging": 4.0,
+        # 🔧 28 Août 2026: SL 1.5/1.2→2.5×ATR (uniformisé). TP 5.0/4.0→10.0 (RR 4.0 conservé).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 10.0,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 10.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
@@ -670,7 +680,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -683,10 +693,11 @@ SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
     "UKOIL.cash": {
         "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 4.0,
+        # 🔧 28 Août 2026: SL 2.0/1.5→2.5×ATR (uniformisé). TP 5.0/4.0→6.25/6.67 (RR 2.5/2.67).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.25,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 6.67,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
@@ -696,7 +707,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -709,10 +720,11 @@ SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
     "NATGAS.cash": {
         "momentum_period": 20,
-        "sl_atr_trending": 2.0,
-        "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 1.5,
-        "tp_atr_ranging": 3.5,
+        # 🔧 28 Août 2026: SL 2.0/1.5→2.5×ATR (uniformisé). TP 5.0/3.5→6.25/6.67 (RR 2.5/2.67).
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.25,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 6.67,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)
         "adx_slope_threshold": -8.0,
@@ -722,7 +734,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],  # NY session
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.8,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -739,10 +751,10 @@ DEFAULT_SYMBOL_CONFIG = {
     "strategy": "MOM20x3",  # Stratégie par défaut pour tous les symboles
     # ── Trading ────────────────────────────────────────────────────────
     "momentum_period": 20,
-    "sl_atr_trending": 2.0,
-    "tp_atr_trending": 5.0,
-    "sl_atr_ranging": 1.5,
-    "tp_atr_ranging": 4.0,  # 🔧 29 Juil: unifié forex (était 5.0)
+    "sl_atr_trending": 2.5,
+    "tp_atr_trending": 6.25,
+    "sl_atr_ranging": 2.5,
+    "tp_atr_ranging": 6.67,  # 🔧 28 Août 2026: SL 2.0/1.5→2.5×ATR, TP aligné (RR 2.5/2.67)
     "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5: Ultra-conservateur (était 2.5)
     "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!): Ultra-conservateur (était 2.0)
     "adx_slope_threshold": -8.0,  # 🔧 29 Juil: unifié forex (était -9.0)
@@ -755,7 +767,7 @@ DEFAULT_SYMBOL_CONFIG = {
     "news_minutes_before": 5,
     "news_minutes_after": 5,
     # ── Filtres & Score ───────────────────────────────────────────────
-    "min_score": 0.60,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+    "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
     "conf": 0.85,  # seuil HIGH_CONF confidence
     "adx_thresh": 22,  # ADX minimum pour régime TREND
     "min_rr": 1.5,  # RR minimum exigé
@@ -789,10 +801,10 @@ _MISSING_SYMBOLS = [
 # (ranging), RR 2.5 conservé. preferred_hours 13-17h GMT (London-NY overlap).
 # Backtest 7 paires H1 2012-2026: WR 57.4→64.3%, DD 30.3→10.2%, pertes −76%.
 _FOREX_OPT_20260819 = {
-    'sl_atr_trending': 3.0,
-    'tp_atr_trending': 7.5,
-    'sl_atr_ranging': 2.25,
-    'tp_atr_ranging': 6.0,
+    'sl_atr_trending': 2.5,
+    'tp_atr_trending': 6.25,
+    'sl_atr_ranging': 2.5,
+    'tp_atr_ranging': 6.67,
     'preferred_hours': [13, 14, 15, 16, 17],
 }
 for _sym in _MISSING_SYMBOLS:
@@ -1223,9 +1235,7 @@ def mom20x3_signal(
             if is_trending and action == "SELL"
             else "RANGING"
         ),
-        "_ml_agrees": None,
         "_model_predictions": {"MOM20x3": action},
-        "_dl_score": None,
         # Market structure data (ICT/SMC)
         "structure_trend": _struct_trend,
         "structure_score": _struct_score,

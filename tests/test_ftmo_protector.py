@@ -5,7 +5,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 from engine_simple.ftmo_protector import FTMOProtector
@@ -226,6 +226,7 @@ class TestCanTrade:
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 31, 12, 0)  # Sunday
+            mock_dt.now.return_value = datetime(2026, 5, 31, 12, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = p.can_trade("EURUSD")
                 # Mode 24/7 — le weekend n'est plus bloqué
@@ -239,6 +240,7 @@ class TestCanTrade:
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)  # Wednesday 11h UTC
+            mock_dt.now.return_value = datetime(2026, 5, 27, 11, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 # SL/TP obligatoires (FIX #3)
                 ok, reason = p.can_trade(
@@ -689,6 +691,7 @@ class TestCircuitBreaker:
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
+            mock_dt.now.return_value = datetime(2026, 5, 27, 11, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = p.can_trade(
                     "EURUSD",
@@ -711,6 +714,7 @@ class TestCircuitBreaker:
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
+            mock_dt.now.return_value = datetime(2026, 5, 27, 11, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = p.can_trade(
                     "EURUSD",
@@ -733,6 +737,7 @@ class TestCircuitBreaker:
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
+            mock_dt.now.return_value = datetime(2026, 5, 27, 11, 0, tzinfo=timezone.utc)  # 🔧 FIX
             p.daily_stats["pnl"] = -4000  # 2% >= 1.5%
             p.daily_stats["losses"] = 1
             p.daily_stats["day"] = datetime(2026, 5, 27, 11, 0).date()
@@ -754,6 +759,7 @@ class TestCircuitBreaker:
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
+            mock_dt.now.return_value = datetime(2026, 5, 27, 11, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = p.can_trade(
                     "EURUSD",
@@ -778,6 +784,7 @@ class TestCircuitBreaker:
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
+            mock_dt.now.return_value = datetime(2026, 5, 27, 11, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = p.can_trade(
                     "EURUSD",
@@ -821,6 +828,7 @@ class TestConsistencyCap:
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 6, 11, 0)
+            mock_dt.now.return_value = datetime(2026, 7, 6, 11, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = p.can_trade(
                     "EURUSD",
@@ -852,6 +860,7 @@ class TestConsistencyCap:
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 6, 11, 0)
+            mock_dt.now.return_value = datetime(2026, 7, 6, 11, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = p.can_trade(
                     "EURUSD",
@@ -879,6 +888,7 @@ class TestConsistencyCap:
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 6, 14, 0)
+            mock_dt.now.return_value = datetime(2026, 7, 6, 14, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = p.can_trade(
                     "EURUSD",
@@ -904,6 +914,7 @@ class TestConsistencyCap:
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 6, 14, 0)
+            mock_dt.now.return_value = datetime(2026, 7, 6, 14, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = p.can_trade(
                     "EURUSD",
@@ -933,6 +944,7 @@ class TestConsistencyCap:
         p.mt5.get_positions.return_value = []
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 7, 22, 14, 0)
+            mock_dt.now.return_value = datetime(2026, 7, 22, 14, 0, tzinfo=timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = p.can_trade(
                     "EURUSD",

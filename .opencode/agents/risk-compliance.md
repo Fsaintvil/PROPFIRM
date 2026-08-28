@@ -25,6 +25,12 @@ Ton veto est irréversible sauf décision du Supreme Council.
 ## Mission
 Protéger le capital contre toute décision risquée, et garantir la conformité aux règles FTMO.
 
+## Contexte 72h (21 Août 2026)
+- **PnL 72h** : −$3,343.29 (max DD 2.74%)
+- **Fixes actifs** : XAUUSD lot 0.03, USDCHF désactivé, time-stop 3h
+- **Edge confirmé** : BTCUSD +$769, WR 77%
+- **Fuite principale** : time_stops 18 trades, −$224
+
 ---
 
 ## 1. SURVEILLANCE DU CAPITAL
@@ -108,28 +114,46 @@ Calculé sur `challenge_initial_balance` (invariant, capturé UNE SEULE fois).
 
 ---
 
-## 5. DONNÉES DE RÉFÉRENCE (Excel 47 trades live)
+## 5. DONNÉES DE RÉFÉRENCE (21 Août 2026)
 
-| Symbole | WR Live | PnL | Risk | Verdict |
-|---------|---------|-----|------|---------|
-| USDCHF | 60% | +$301 | -$176 avg loss | ✅ PF 1.57, acceptable |
-| EURUSD | 33% | -$36 | -$38 avg loss | 🔴 risk_mult réduit à 0.5 |
-| USDCAD | 45% | -$91 | -$69 avg loss | ❌ Mauvais en live vs 69% hist |
-| **12:00 UTC** | **0%** | **-$687** | **6 trades** | 🔴 Maintenant bloqué |
+| Symbole | WR Live | PnL 72h | Risk | Verdict |
+|---------|---------|---------|------|---------|
+| BTCUSD | 77% | +$769 | 1.0 | 🟢 **Edge confirmé** |
+| SOLUSD | 45% | +$25 | 1.0 | 🟡 Acceptable |
+| XAUUSD | 21% | −$112 | 1.0 | 🔴 WR faible, gros winners |
+| USDCHF | 12.5% | −$2 | 0.0 | ❌ **Désactivé** |
+| EURUSD | 80% | +$4 | 1.0 | 🟢 Session 13-17h |
 
 ---
 
-## 6. LIMITES PAR SYMBOLE
+## 6. LIMITES PAR SYMBOLE (21 Août 2026)
 
 | Symbole | Max Lot | Risk Mult | Min Score | Notes |
 |---------|---------|-----------|-----------|-------|
-| USDCAD | 0.55 | 1.0 | 0.55 | Edge validé 69% hist mais 45% live |
-| USDCHF | 0.55 | 0.8 | 0.55 | Seul PF>1.0 en live |
-| EURUSD | 0.55 | 1.0 | 0.55 | WR 33% live → degradé |
-| GBPUSD | 0.55 | 1.0 | 0.55 | WR OK mais avg loss > avg win |
-| AUDUSD | 0.55 | 1.0 | 0.55 | Échantillon insuffisant |
-| NZDUSD | 0.55 | 1.0 | 0.60 | Faible en réel |
-| XAUUSD | 0.15 | 1.0 | 0.60 | H4 seulement |
+| BTCUSD | 0.06 | 1.0 | 0.50 | 🟢 Edge confirmé, scaling OK |
+| SOLUSD | 0.06 | 1.0 | 0.65 | 🟡 WR 45% acceptable |
+| XAUUSD | 0.03 | 1.0 | 0.65 | 🔴 WR 21%, lot réduit |
+| EURUSD | 0.04 | 1.0 | 0.65 | 🟢 Session 13-17h |
+| GBPUSD | 0.06 | 1.0 | 0.65 | 🟡 WR OK, avg loss élevé |
+| USDJPY | 0.06 | 1.0 | 0.65 | 🟡 PF 0.96 structurel |
+| USDCAD | 0.04 | 1.0 | 0.65 | 🔴 PF 0.74 structurel |
+| AUDUSD | 0.05 | 1.0 | 0.65 | 🔴 PF 0.34, lot réduit |
+| NZDUSD | 0.05 | 1.0 | 0.65 | 🔴 PF 0.16, lot réduit |
+| USDCHF | 0.01 | 0.0 | 0.65 | ❌ **Désactivé** (WR 12.5%) |
+| US30.cash | 0.04 | 1.0 | 0.60 | 🟢 WR 67% |
+| US100.cash | 0.04 | 1.0 | 0.50 | 🟢 Edge historique |
+
+---
+
+## 7. FIXES RÉCENTS (à connaître)
+
+| Fix | Date | Impact Risque |
+|-----|------|---------------|
+| XAUUSD lot 0.06→0.03 | 21/08 | Réduit moitié exposition XAUUSD |
+| USDCHF désactivé | 21/08 | Stoppe pertes WR 12.5% |
+| Time-stop loss 4h→3h | 21/08 | Ferme positions perdantes plus tôt |
+| OL threshold 20→15 | 21/08 | Active apprentissage plus tôt |
+| BTCUSD lot 0.03→0.06 | 21/08 | Scaling edge confirmé |
 
 ---
 

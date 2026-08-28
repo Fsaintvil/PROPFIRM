@@ -77,8 +77,8 @@ def _fallback_minimal() -> None:
     _fb_log("MIN_TRADE_INTERVAL_SEC", 300)
     _g["BATCH_INTERVAL_SEC"] = 1
     _fb_log("BATCH_INTERVAL_SEC", 1)
-    _g["MIN_SIGNAL_SCORE"] = 0.50
-    _fb_log("MIN_SIGNAL_SCORE", 0.50)
+    _g["MIN_SIGNAL_SCORE"] = 0.65  # Aligné production.yaml
+    _fb_log("MIN_SIGNAL_SCORE", 0.65)
     _g["MAX_SIGNALS_PER_CYCLE"] = 10
     _fb_log("MAX_SIGNALS_PER_CYCLE", 10)
     _g["MAX_ORDERS_PER_MINUTE"] = 6
@@ -103,8 +103,8 @@ def _fallback_minimal() -> None:
     _fb_log("CONSISTENCY_MAX_PCT", 0.30)
     _g["CONSISTENCY_CAP_ENABLED"] = True
     _fb_log("CONSISTENCY_CAP_ENABLED", True)
-    _g["MIN_RR_RATIO"] = 2.5
-    _fb_log("MIN_RR_RATIO", 2.5)
+    _g["MIN_RR_RATIO"] = 2.0  # Aligné production.yaml (était 2.5 — trop strict en fallback)
+    _fb_log("MIN_RR_RATIO", 2.0)
     _g["ATR_MULTIPLIER"] = 1.5
     _fb_log("ATR_MULTIPLIER", 1.5)
     _g["COOLDOWN_MINUTES"] = 15
@@ -287,14 +287,30 @@ try:
 except (ValueError, TypeError) as e:
     # 🔧 FIX M-N5 (Auto-Fixer): erreurs de CONVERSION uniquement (valeur non
     # numérique, type inattendu dans le YAML) → fallback avec warning.
+    # 🔧 FIX AUDIT C11: Préserver les credentials valides au lieu de wipe.
+    _saved_creds = {
+        "MT5_LOGIN": globals().get("MT5_LOGIN"),
+        "MT5_PASSWORD": globals().get("MT5_PASSWORD"),
+        "MT5_SERVER": globals().get("MT5_SERVER"),
+    }
     logger.warning(f"Erreur de conversion config YAML: {e}")
     logger.warning("Fallback: valeurs hardcodees minimales — ⚠️ RISQUE les valeurs YAML sont perdues")
     _fallback_minimal()
+    # Restaurer les credentials si它们 étaient valides
+    if _saved_creds.get("MT5_LOGIN"):
+        globals().update(_saved_creds)
+        logger.info("[CONFIG] Credentials MT5 préservés malgré l'erreur de conversion")
 except Exception as e:
     # 🔧 FIX M-N5 (Auto-Fixer): échec RÉEL de chargement (YAML corrompu, schéma
     # invalide, clé manquante, bug de code) → message CRITIQUE IMPOSSIBLE à
     # manquer (avant: warning silencieux). Le fallback reste fonctionnel pour ne
     # pas bloquer le démarrage, mais l'opérateur DOIT corriger la config.
+    # 🔧 FIX AUDIT C11: Préserver les credentials valides au lieu de wipe.
+    _saved_creds2 = {
+        "MT5_LOGIN": globals().get("MT5_LOGIN"),
+        "MT5_PASSWORD": globals().get("MT5_PASSWORD"),
+        "MT5_SERVER": globals().get("MT5_SERVER"),
+    }
     logger.critical(
         f"⛔ ERREUR CRITIQUE CHARGEMENT CONFIG YAML: {e!r}\n"
         f"Le robot démarre avec le FALLBACK MINIMAL — les valeurs YAML sont PERDUES "
@@ -302,6 +318,9 @@ except Exception as e:
         f"CORRIGE config/default.yaml et config/production.yaml AVANT de trader !"
     )
     _fallback_minimal()
+    if _saved_creds2.get("MT5_LOGIN"):
+        globals().update(_saved_creds2)
+        logger.info("[CONFIG] Credentials MT5 préservés malgré l'erreur critique")
 
 
 def reload_config() -> bool:

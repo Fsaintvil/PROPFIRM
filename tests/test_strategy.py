@@ -130,13 +130,14 @@ class TestMom20x3Signal:
     def test_edge_single_close(self):
         assert mom20x3_signal(np.array([1.0]), np.array([1.0]), np.array([1.0])) is None
 
-    def test_ml_agrees_is_none(self):
+    def test_model_predictions_is_mom20x3(self):
         close = np.arange(1.0, 1.5, 0.005)
         high = close + 0.005
         low = close - 0.005
         result = mom20x3_signal(close, high, low, period=20)
         if result:
-            assert result["_ml_agrees"] is None
+            assert "_model_predictions" in result
+            assert "MOM20x3" in result["_model_predictions"]
 
 
 class TestMOM20x3Wrapper:

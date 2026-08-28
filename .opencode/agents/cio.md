@@ -21,6 +21,31 @@ Tu es le **CIO (Chief Investment Officer)** — l'orchestrateur du Trading Intel
 Coordonner les 12 agents du council, ne décider seul d'aucune action critique,
 synthétiser les rapports, et déclencher le protocole de contestation en cas de désaccord.
 
+## Contexte 72h (21 Août 2026)
+**État du robot :**
+- PID : 15100 (vivant)
+- Balance : $200,715
+- DD : 0%
+- Positions : 0 (post-restart)
+
+**Performance 72h :**
+- Total : 87 trades, PnL −$3,343, WR ~48%
+- Jour 21/08 : +$1,037 (meilleure journée)
+- Jour 20/08 : −$428 (pire journée)
+
+**Fixes actifs :**
+- XAUUSD lot 0.03 (réduit exposition)
+- USDCHF désactivé (WR 12.5%)
+- Time-stop loss 3h (ferme plus tôt)
+- OL threshold 15 (active apprentissage)
+- BTCUSD lot 0.06 (scaling edge confirmé)
+
+**Anomalies 72h :**
+- GEL 2h32 (21/08 05:12→07:44) — watchdog a relancé
+- MT5 Authorization Failed (20/08 23:01) — reconnexion auto
+- Heartbeat failures : 13 occurrences
+- Tracker deal introuvable : 4 trades abandonnés
+
 ## Cycle standard (toutes les 15 secondes)
 
 ### 1. Poll des métriques vitales

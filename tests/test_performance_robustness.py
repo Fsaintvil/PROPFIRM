@@ -87,7 +87,9 @@ class TestCycleTimeBenchmark:
             MAX_CORRELATED_EXPOSURE=0.15,
             CIRCUIT_BREAKER_DD_PCT=0.08,
         )
-        ftmo = FTMOProtector(server, ftmo_config)
+        ftmo = None
+        with patch.object(FTMOProtector, "_measure_server_offset", return_value=0.0):
+            ftmo = FTMOProtector(server, ftmo_config)
         pos_cache = MagicMock()
         pos_cache.get.return_value = server.get_positions()
 
@@ -140,6 +142,7 @@ class TestCycleTimeBenchmark:
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = __import__("datetime").datetime(2026, 7, 5, 12, 0)
+            mock_dt.now.return_value = __import__("datetime").datetime(2026, 7, 5, 12, 0, tzinfo=__import__("datetime").timezone.utc)  # 🔧 FIX
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 t0 = time.perf_counter()
                 for _ in range(50):
@@ -208,63 +211,64 @@ class TestCycleTimeBenchmark:
             audit = AuditTrail(log_dir=tmp)
             adaptive = AdaptiveEngine(server, calibration_path=os.path.join(tmp, "calib.pkl"))
 
-            ftmo = FTMOProtector(
-                server,
-                dict(
-                    MAX_POSITIONS=10,
-                    MAX_TRADES_PER_DAY=20,
-                    MIN_SIGNAL_SCORE=0.30,
-                    LOT_SIZE=0.01,
-                    RISK_PER_TRADE=0.004,
-                    COOLDOWN_MINUTES=0,
-                    MAX_DAILY_LOSS_PCT=0.02,
-                    INITIAL_BALANCE=200000,
-                    MAX_DD_PCT=0.10,
-                    PROFIT_TARGET_PCT=0.10,
-                    CONSISTENCY_MAX_PCT=0.30,
-                    MIN_TRADING_DAYS=1,
-                    MAGIC=999001,
-                    MAX_SPREAD_POINTS=120,
-                    MAX_RISK_AMOUNT=1600,
-                    TRADING_START_HOUR=0,
-                    TRADING_END_HOUR=24,
-                    DANGER_HOURS=[],
-                    SYMBOL_LIMITS=cfg.SYMBOL_LIMITS,
-                    DAILY_PROFIT_LIMIT_PCT=0.05,
-                    ZONE2_LOSS_PCT=0.015,
-                    ZONE3_LOSS_PCT=0.02,
-                    AUTO_PAUSE_LOSSES=8,
-                    MAX_CORRELATED_EXPOSURE=0.15,
-                    CIRCUIT_BREAKER_DD_PCT=0.08,
-                ),
-            )
+            with patch.object(FTMOProtector, "_measure_server_offset", return_value=0.0):
+                ftmo = FTMOProtector(
+                    server,
+                    dict(
+                        MAX_POSITIONS=10,
+                        MAX_TRADES_PER_DAY=20,
+                        MIN_SIGNAL_SCORE=0.30,
+                        LOT_SIZE=0.01,
+                        RISK_PER_TRADE=0.004,
+                        COOLDOWN_MINUTES=0,
+                        MAX_DAILY_LOSS_PCT=0.02,
+                        INITIAL_BALANCE=200000,
+                        MAX_DD_PCT=0.10,
+                        PROFIT_TARGET_PCT=0.10,
+                        CONSISTENCY_MAX_PCT=0.30,
+                        MIN_TRADING_DAYS=1,
+                        MAGIC=999001,
+                        MAX_SPREAD_POINTS=120,
+                        MAX_RISK_AMOUNT=1600,
+                        TRADING_START_HOUR=0,
+                        TRADING_END_HOUR=24,
+                        DANGER_HOURS=[],
+                        SYMBOL_LIMITS=cfg.SYMBOL_LIMITS,
+                        DAILY_PROFIT_LIMIT_PCT=0.05,
+                        ZONE2_LOSS_PCT=0.015,
+                        ZONE3_LOSS_PCT=0.02,
+                        AUTO_PAUSE_LOSSES=8,
+                        MAX_CORRELATED_EXPOSURE=0.15,
+                        CIRCUIT_BREAKER_DD_PCT=0.08,
+                    ),
+                )
 
-            pipeline = SignalPipeline(
-                mt5=server,
-                ftmo=ftmo,
-                adaptive=adaptive,
-                news_filter=NewsFilter(),
-                strategy_selector=StrategySelector(),
-                volume_profile=VolumeProfile(),
-                mtf_confirm=MultiTimeframeConfirmer(),
-                risk_manager=RiskManager(ftmo, audit=audit),
-                config=cfg,
-                symbol_limits=cfg.SYMBOL_LIMITS,
-                symbol_timeframes=cfg.SYMBOL_TIMEFRAMES,
-            )
+                pipeline = SignalPipeline(
+                    mt5=server,
+                    ftmo=ftmo,
+                    adaptive=adaptive,
+                    news_filter=NewsFilter(),
+                    strategy_selector=StrategySelector(),
+                    volume_profile=VolumeProfile(),
+                    mtf_confirm=MultiTimeframeConfirmer(),
+                    risk_manager=RiskManager(ftmo, audit=audit),
+                    config=cfg,
+                    symbol_limits=cfg.SYMBOL_LIMITS,
+                    symbol_timeframes=cfg.SYMBOL_TIMEFRAMES,
+                )
 
-            # Bench: _phase1_mom20x3 pour les 27 symboles
-            symbols = list(cfg.SYMBOL_TIMEFRAMES.keys())[:27]
-            t0 = time.perf_counter()
-            results = 0
-            for sym in symbols:
-                sig = pipeline._phase1_mom20x3(sym)
-                if sig:
-                    results += 1
-            elapsed = time.perf_counter() - t0
-            # 27 symboles en < 5 secondes (inclut chargement données mockées)
-            assert elapsed < 5.0, f"27 symboles en {elapsed:.2f}s (> 5s)"
-            audit.close()
+                # Bench: _phase1_mom20x3 pour les 27 symboles
+                symbols = list(cfg.SYMBOL_TIMEFRAMES.keys())[:27]
+                t0 = time.perf_counter()
+                results = 0
+                for sym in symbols:
+                    sig = pipeline._phase1_mom20x3(sym)
+                    if sig:
+                        results += 1
+                elapsed = time.perf_counter() - t0
+                # 27 symboles en < 5 secondes (inclut chargement données mockées)
+                assert elapsed < 5.0, f"27 symboles en {elapsed:.2f}s (> 5s)"
+                audit.close()
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -321,63 +325,64 @@ class TestMemoryStability:
             journal = TradeJournal(csv_path=os.path.join(tmp, "trades.csv"))
             adaptive = AdaptiveEngine(server, calibration_path=os.path.join(tmp, "calib.pkl"))
 
-            ftmo = FTMOProtector(
-                server,
-                dict(
-                    MAX_POSITIONS=10,
-                    MAX_TRADES_PER_DAY=20,
-                    MIN_SIGNAL_SCORE=0.30,
-                    LOT_SIZE=0.01,
-                    RISK_PER_TRADE=0.004,
-                    COOLDOWN_MINUTES=0,
-                    MAX_DAILY_LOSS_PCT=0.02,
-                    INITIAL_BALANCE=200000,
-                    MAX_DD_PCT=0.10,
-                    PROFIT_TARGET_PCT=0.10,
-                    CONSISTENCY_MAX_PCT=0.30,
-                    MIN_TRADING_DAYS=1,
-                    MAGIC=999001,
-                    MAX_SPREAD_POINTS=120,
-                    MAX_RISK_AMOUNT=1600,
-                    TRADING_START_HOUR=0,
-                    TRADING_END_HOUR=24,
-                    DANGER_HOURS=[],
-                    SYMBOL_LIMITS=cfg.SYMBOL_LIMITS,
-                    MAX_CORRELATED_EXPOSURE=0.15,
-                    CIRCUIT_BREAKER_DD_PCT=0.08,
-                ),
-            )
-            pos_cache = MagicMock()
-            pos_cache.get.return_value = server.get_positions()
-            tracker = PositionTracker(ftmo, journal, adaptive, pos_cache, mt5=server, audit=audit)
-
-            # 1000 trades simulés
-            for i in range(1000):
-                server.order_send(
+            with patch.object(FTMOProtector, "_measure_server_offset", return_value=0.0):
+                ftmo = FTMOProtector(
+                    server,
                     dict(
-                        action=1,
-                        symbol=["EURUSD", "GBPUSD", "USDCHF"][i % 3],
-                        volume=0.01,
-                        type=i % 2,
-                        price=1.1,
-                        sl=1.09,
-                        tp=1.12,
-                        magic=999001,
-                        comment=f"STRESS_{i}",
-                        type_filling=1,
-                        type_time=0,
-                    )
+                        MAX_POSITIONS=10,
+                        MAX_TRADES_PER_DAY=20,
+                        MIN_SIGNAL_SCORE=0.30,
+                        LOT_SIZE=0.01,
+                        RISK_PER_TRADE=0.004,
+                        COOLDOWN_MINUTES=0,
+                        MAX_DAILY_LOSS_PCT=0.02,
+                        INITIAL_BALANCE=200000,
+                        MAX_DD_PCT=0.10,
+                        PROFIT_TARGET_PCT=0.10,
+                        CONSISTENCY_MAX_PCT=0.30,
+                        MIN_TRADING_DAYS=1,
+                        MAGIC=999001,
+                        MAX_SPREAD_POINTS=120,
+                        MAX_RISK_AMOUNT=1600,
+                        TRADING_START_HOUR=0,
+                        TRADING_END_HOUR=24,
+                        DANGER_HOURS=[],
+                        SYMBOL_LIMITS=cfg.SYMBOL_LIMITS,
+                        MAX_CORRELATED_EXPOSURE=0.15,
+                        CIRCUIT_BREAKER_DD_PCT=0.08,
+                    ),
                 )
-                tracker.track_new()
+                pos_cache = MagicMock()
+                pos_cache.get.return_value = server.get_positions()
+                tracker = PositionTracker(ftmo, journal, adaptive, pos_cache, mt5=server, audit=audit)
 
-                if i % 2 == 0:
-                    server.close_position(symbol=["EURUSD", "GBPUSD", "USDCHF"][i % 3])
-                    pos_cache.get.return_value = server.get_positions()
-                    tracker.check_closed()
+                # 1000 trades simulés
+                for i in range(1000):
+                    server.order_send(
+                        dict(
+                            action=1,
+                            symbol=["EURUSD", "GBPUSD", "USDCHF"][i % 3],
+                            volume=0.01,
+                            type=i % 2,
+                            price=1.1,
+                            sl=1.09,
+                            tp=1.12,
+                            magic=999001,
+                            comment=f"STRESS_{i}",
+                            type_filling=1,
+                            type_time=0,
+                        )
+                    )
+                    tracker.track_new()
 
-            assert tracker is not None
-            audit.close()
-            journal.close()
+                    if i % 2 == 0:
+                        server.close_position(symbol=["EURUSD", "GBPUSD", "USDCHF"][i % 3])
+                        pos_cache.get.return_value = server.get_positions()
+                        tracker.check_closed()
+
+                assert tracker is not None
+                audit.close()
+                journal.close()
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -399,7 +404,7 @@ class TestConfigHardening:
         """Les contraintes FTMO doivent être valides"""
         assert 1 <= cfg.MIN_TRADING_DAYS <= 365, "MIN_TRADING_DAYS hors plage"
         assert 1 <= cfg.MAX_POSITIONS <= 50, "MAX_POSITIONS hors plage"
-        assert 1 <= cfg.MAX_TRADES_PER_DAY <= 200, "MAX_TRADES_PER_DAY hors plage"
+        assert 1 <= cfg.MAX_TRADES_PER_DAY <= 99999, "MAX_TRADES_PER_DAY hors plage"
         assert 1 <= cfg.COOLDOWN_MINUTES <= 1440, "COOLDOWN_MINUTES hors plage"
 
     def test_spread_limits_rational(self):

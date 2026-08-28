@@ -465,10 +465,13 @@ class TradingEngine:
             self.ftmo.peak_profit.update(self._state["peak_profit"])
         # M16: Restore cooldowns per-symbol
         if self._state.get("cooldowns"):
-            _now = datetime.utcnow()
+            _now = datetime.now(timezone.utc)
             for k, v in self._state["cooldowns"].items():
                 with contextlib.suppress(ValueError):
                     cd = datetime.fromisoformat(v)
+                    # 🔧 FIX: Naïve → UTC aware pour éviter TypeError
+                    if cd.tzinfo is None:
+                        cd = cd.replace(tzinfo=timezone.utc)
                     # 🔧 FIX M5: Ne pas restaurer les cooldowns de >2h (périmés après restart)
                     if (_now - cd).total_seconds() < 7200:  # 2h
                         self.ftmo.cooldowns[k] = cd
@@ -504,7 +507,9 @@ class TradingEngine:
         if self._state.get("global_cooldown_until"):
             try:
                 gcu = datetime.fromisoformat(self._state["global_cooldown_until"])
-                if gcu > datetime.utcnow():
+                if gcu.tzinfo is None:
+                    gcu = gcu.replace(tzinfo=timezone.utc)
+                if gcu > datetime.now(timezone.utc):
                     self.ftmo.global_cooldown_until = gcu
                     logger.info(f"[STATE] Restored global_cooldown_until: {gcu}")
                 else:
@@ -617,7 +622,7 @@ class TradingEngine:
             self.ftmo.daily_pnl_by_date.clear()
             historical_count = 0
             stale_pnl_skipped = 0
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             for t in self.ftmo._trade_history:
                 if t.get("historical"):
                     historical_count += 1
@@ -744,10 +749,15 @@ class TradingEngine:
                     # ce qui bypass toutes les limites de duplication.
                     if fresh is not None and len(fresh) > 0:
                         self._cache = fresh
+                    # 🔧 FIX 25 Août 2026: premier fetch avec 0 positions →
+                    # initialiser _cache à [] (pas None) pour éviter les crashes
+                    # "NoneType is not iterable" dans tout le code qui itère.
                     elif self._cache is None:
-                        self._cache = fresh  # only on first ever fetch
+                        self._cache = []
+                    # 🔧 FIX AUDIT H10: Ne JAMAIS ré-écrire [] si le cache
+                    # contient déjà des positions (évite de perdre les positions).
                     self._last_fetch = now
-                return self._cache
+                return self._cache or []
 
             def invalidate(self):
                 self._cache = None
@@ -894,7 +904,7 @@ class TradingEngine:
                     logger.warning(f"[WATCHDOG PROC] Rotation log {watchdog_log.name} → {_rotated.name}")
             except Exception:
                 pass  # la rotation ne doit jamais bloquer le démarrage du watchdog
-            _wd_err = open(watchdog_log, "a", encoding="utf-8")
+            self._wd_err = open(watchdog_log, "a", encoding="utf-8")
             # 🔧 FIX 10 Août 2026: cwd = RACINE du projet (et non engine_simple/).
             # Ancien cwd=os.path.dirname(__file__) = engine_simple/ → le watchdog
             # tournait dans le mauvais répertoire. Aujourd'hui inoffensif (chemins
@@ -905,8 +915,8 @@ class TradingEngine:
             self._watchdog_process = subprocess.Popen(
                 [sys.executable, str(watchdog_script), str(pid), heartbeat_file, str(timeout)],
                 cwd=str(project_root),
-                stdout=_wd_err,
-                stderr=_wd_err,
+                stdout=self._wd_err,
+                stderr=self._wd_err,
             )
             logger.info(
                 f"[WATCHDOG PROC] Démarré (PID={self._watchdog_process.pid}, timeout={timeout}s, log={watchdog_log.name})"
@@ -995,7 +1005,7 @@ class TradingEngine:
                 tick_time = getattr(tick, "time", None)
                 if tick_time is not None:
                     # 🔧 FIX M-N2 (Auto-Fixer): datetime.fromtimestamp() sans tz
-                    # produit une heure LOCALE naïve comparée à datetime.utcnow()
+                    # produit une heure LOCALE naïve comparée à datetime.now(timezone.utc)
                     # → faux avertissement permanent d'horloge décalée sur les
                     # machines en TZ≠UTC. MT5 tick time est UTC : on construit
                     # directement un datetime aware UTC.
@@ -1152,7 +1162,7 @@ class TradingEngine:
             # file empty" ou timestamp corrompu → false positive "stale".
             _hb_path = Path(HEARTBEAT_FILE)
             _tmp = _hb_path.with_suffix(".tmp")
-            _tmp.write_text(datetime.utcnow().isoformat())
+            _tmp.write_text(datetime.now(timezone.utc).isoformat())
             _tmp.replace(_hb_path)  # atomique sur Windows (même volume)
         except Exception as e:
             logger.warning(f"Heartbeat write failed: {e}")
@@ -1228,7 +1238,15 @@ class TradingEngine:
                     try:
                         ds["day"] = datetime.strptime(ds["day"], "%Y-%m-%d").date()
                     except (ValueError, TypeError):
-                        ds["day"] = datetime.utcnow().date()
+                        ds["day"] = datetime.now(timezone.utc).date()
+                # 🔧 FIX 28 Août 2026 (R5): Valider les champs critiques FTMO.
+                # Si un champ critique manque, logger WARNING et tenter le fallback .bak
+                # au lieu de retourner un état incomplet qui désactiverait les protections.
+                _critical_fields = ["peak_equity", "trading_days_list", "daily_pnl_by_date"]
+                _missing = [f for f in _critical_fields if f not in data]
+                if _missing:
+                    logger.warning(f"Champs critiques manquants: {_missing} — tentative fallback .bak")
+                    raise ValueError(f"Missing critical fields: {_missing}")
                 return data
         except Exception as e:
             logger.warning(f"State load failed: {e}")
@@ -1251,7 +1269,7 @@ class TradingEngine:
                         try:
                             ds["day"] = datetime.strptime(ds["day"], "%Y-%m-%d").date()
                         except (ValueError, TypeError):
-                            ds["day"] = datetime.utcnow().date()
+                            ds["day"] = datetime.now(timezone.utc).date()
                     return data
                 except Exception as e2:
                     logger.critical(f"Backup {bak.name} corrompu aussi: {e2}")
@@ -1304,7 +1322,7 @@ class TradingEngine:
         try:
             _stop_flag = Path(HEARTBEAT_FILE).parent / "robot.stop.flag"
             _stop_flag.parent.mkdir(parents=True, exist_ok=True)
-            _stop_flag.write_text(f"stopped {datetime.utcnow().isoformat()}\n")
+            _stop_flag.write_text(f"stopped {datetime.now(timezone.utc).isoformat()}\n")
             logger.info(f"[STOP] Flag d'arrêt gracieux écrit: {_stop_flag}")
         except Exception as e:
             logger.warning(f"[STOP] Impossible d'écrire le flag d'arrêt: {e}")
@@ -1332,6 +1350,13 @@ class TradingEngine:
             except Exception as e:
                 logger.warning(f"[STOP] Terminaison watchdog interne: {e}")
             self._watchdog_process = None
+        # 🔧 FIX AUDIT E5: Fermer le handle du log watchdog pour éviter les fuites.
+        if getattr(self, "_wd_err", None) is not None:
+            try:
+                self._wd_err.close()
+            except Exception:
+                pass
+            self._wd_err = None
         self.tracker.feature_store.close()
         self.mt5.disconnect()
         _release_lock()
@@ -1350,7 +1375,7 @@ class TradingEngine:
         # Évite le bypass de MAX_TRADES_PER_DAY après redémarrage :
         # les positions déjà ouvertes ne comptaient pas dans _opened_today,
         # permettant d'ouvrir 75 NOUVEAUX trades en plus des existants.
-        today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
         today_positions = 0
         for p in self._pos_cache.get():
             if p.magic == cfg.ROBOT_MAGIC and getattr(p, "time", 0) >= today_start:
@@ -1435,9 +1460,18 @@ class TradingEngine:
                         # main.py introuvable (FileNotFoundError) → la résurrection interne
                         # était MORTA. Même logique que le watchdog externe (process_watchdog.py)
                         # et le watchdog interne (ligne 883 : project_root = parent.parent).
+                        # 🔧 FIX AUDIT C4: Handshake au lieu de sleep(5).
+                        # L'ancien sleep(5) créait une fenêtre de 5s où 2 instances tradeaient.
+                        # Maintenant: le nouveau processus attend que le flag soit nettoyé.
+                        _respawn_flag = Path("runtime/robot.respawn.flag")
+                        _respawn_flag.write_text(str(os.getpid()))
                         _sp.Popen([sys.executable, "main.py"], cwd=str(Path(__file__).resolve().parent.parent))
-                        time.sleep(5)  # 🔧 FIX_SUPREME_COUNCIL: 5s (était 1.5s) pour éviter race condition
                         _release_lock()
+                        # Attendre que le nouveau processus prenne le lock (max 10s)
+                        for _wait_i in range(20):
+                            time.sleep(0.5)
+                            if not _respawn_flag.exists():
+                                break
                         sys.exit(1)
                     self._save_state()
                     # SPAWN d'abord, PUIS libérer le lock
@@ -1445,9 +1479,14 @@ class TradingEngine:
 
                     # 🛡️ FIX P0-2 (13 Août 2026, Robot Manager): cwd = racine projet.
                     # Ancien cwd=engine_simple/ → main.py introuvable → résurrection morte.
+                    _respawn_flag2 = Path("runtime/robot.respawn.flag")
+                    _respawn_flag2.write_text(str(os.getpid()))
                     _sp.Popen([sys.executable, "main.py"], cwd=str(Path(__file__).resolve().parent.parent))
-                    time.sleep(5)  # 🔧 FIX_SUPREME_COUNCIL: 5s (était 1.5s) pour éviter race condition
                     _release_lock()
+                    for _wait_i in range(20):
+                        time.sleep(0.5)
+                        if not _respawn_flag2.exists():
+                            break
                     logger.warning("Watchdog: spawn nouveau processus, arrêt de l'ancien")
                     sys.exit(0)
 
@@ -1508,6 +1547,12 @@ class TradingEngine:
                 floating = account.equity - account.balance
                 dd = max(0, self.ftmo.initial_balance - account.equity)
                 dd_pct = dd / max(self.ftmo.initial_balance, 1) * 100
+                # 🔧 FIX H3: DD check continu (pas seulement sur fermeture de trade)
+                # Si l'equity droppe entre 2 trades, le kill-switch doit réagir.
+                try:
+                    self.ftmo._check_drawdown_limit()
+                except Exception:
+                    pass
                 pos_count = len(self._pos_cache.get())
                 pos_info = f"{pos_count}pos"
                 logger.info(
@@ -1653,8 +1698,7 @@ class TradingEngine:
                             logger.error("[MUTEX] CreateMutexW a échoué — mutex perdu?")
                     except Exception as e:
                         logger.debug(f"[MUTEX] Vérification impossible: {e}")
-                # Calibration persistante + DL si disponible (auto-gardé interne)
-                self.adaptive.train_dl_if_ready()
+                # Calibration persistante
                 self.adaptive.save_calibration()
                 perf = self.tracker.performance_summary()
                 if perf:
@@ -1672,6 +1716,23 @@ class TradingEngine:
 
                 # ── Phase 16: Dashboard Report ──
                 try:
+                    # 🔧 21 Août 2026 (Robot Manager P2): régime en temps réel pour dashboard
+                    # Détecte le régime pour BTCUSD (symbole le plus actif) comme proxy
+                    _dash_regime = "UNKNOWN"
+                    try:
+                        _ref_sym = "BTCUSD"
+                        # 🔧 FIX AUDIT M4: self.mt5 est un Broker, pas le module mt5.
+                        # mt5.TIMEFRAME_H1 causait NameError. Utiliser la constante directe (60=min).
+                        _rates = self.mt5.get_rates(_ref_sym, 60, 50)  # 60 = MT5.TIMEFRAME_H1
+                        if _rates is not None and len(_rates) >= 30:
+                            import numpy as _np
+                            _hh = _np.array([r[2] for r in _rates], dtype=float)
+                            _ll = _np.array([r[3] for r in _rates], dtype=float)
+                            _cc = _np.array([r[4] for r in _rates], dtype=float)
+                            _dash_regime, _ = self._regime_detector.detect(_hh, _ll, _cc, symbol=_ref_sym)
+                    except Exception:
+                        pass
+
                     robot_state = {
                         "balance": account.balance if account else 0,
                         "equity": account.equity if account else 0,
@@ -1684,6 +1745,7 @@ class TradingEngine:
                         "max_dd": 0,
                         "daily_pnl": self.ftmo.daily_pnl_by_date.get(datetime.now(timezone.utc).date(), 0),
                         "daily_loss_limit": self.ftmo.initial_balance * 0.02,
+                        "regime": _dash_regime,
                     }
                     positions_data = []
                     for pos in self._pos_cache.get():

@@ -210,15 +210,12 @@ class TestPositionTracker:
         mt5.calc_profit.return_value = 100.0
         pos_cache.get.return_value = [mock_pos]
 
-        saved = {"dl_features": [0.1, 0.2, 0.3], "predictions": {"MOM20x3": "BUY"}}
+        saved = {"predictions": {"MOM20x3": "BUY"}}
 
         with patch.object(tracker.feature_store, "load", return_value=saved):
             tracker.track_new()
 
         meta = tracker._position_meta[102]
-        # Compatibilité ascendante : dl_features → _features
-        assert "_features" in meta, f"Expected _features in meta keys: {list(meta.keys())}"
-        assert meta["_features"] == [0.1, 0.2, 0.3]
         assert meta["predictions"] == {"MOM20x3": "BUY"}
 
     def test_get_active_count(self):

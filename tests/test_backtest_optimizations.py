@@ -1,7 +1,7 @@
 """Tests des optimisations du 19 Août 2026 (Backtest Optimizations).
 
 Valide :
-  1. SL 3.0x / TP 7.5x (trending) + 2.25/6.0 (ranging) sur les 7 paires forex
+  1. SL 2.5x / TP 6.25x (trending) + 2.5/6.67 (ranging) sur les 7 paires forex
   2. preferred_hours LDN-NY [13-17] sur les 7 paires forex
   3. Partial TP 75% (PTP_75pct) dans trailer.py
 
@@ -19,21 +19,21 @@ FOREX_MAJORS = ["EURUSD", "GBPUSD", "USDJPY", "USDCAD", "USDCHF", "AUDUSD", "NZD
 class TestForexSLTPOpt:
     """Test 1: SL/TP élargis (RR conservé ~2.5)."""
 
-    def test_forex_sl_trending_is_3x(self):
+    def test_forex_sl_trending_is_25x(self):
         for s in FOREX_MAJORS:
-            assert SYMBOL_CONFIG[s]["sl_atr_trending"] == 3.0, f"{s} sl_atr_trending != 3.0"
+            assert SYMBOL_CONFIG[s]["sl_atr_trending"] == 2.5, f"{s} sl_atr_trending != 2.5"
 
-    def test_forex_tp_trending_is_75x(self):
+    def test_forex_tp_trending_is_625x(self):
         for s in FOREX_MAJORS:
-            assert SYMBOL_CONFIG[s]["tp_atr_trending"] == 7.5, f"{s} tp_atr_trending != 7.5"
+            assert SYMBOL_CONFIG[s]["tp_atr_trending"] == 6.25, f"{s} tp_atr_trending != 6.25"
 
-    def test_forex_sl_ranging_is_225x(self):
+    def test_forex_sl_ranging_is_25x(self):
         for s in FOREX_MAJORS:
-            assert SYMBOL_CONFIG[s]["sl_atr_ranging"] == 2.25, f"{s} sl_atr_ranging != 2.25"
+            assert SYMBOL_CONFIG[s]["sl_atr_ranging"] == 2.5, f"{s} sl_atr_ranging != 2.5"
 
-    def test_forex_tp_ranging_is_6x(self):
+    def test_forex_tp_ranging_is_667x(self):
         for s in FOREX_MAJORS:
-            assert SYMBOL_CONFIG[s]["tp_atr_ranging"] == 6.0, f"{s} tp_atr_ranging != 6.0"
+            assert SYMBOL_CONFIG[s]["tp_atr_ranging"] == 6.67, f"{s} tp_atr_ranging != 6.67"
 
     def test_rr_conserved_min_2_5_trending(self):
         for s in FOREX_MAJORS:
@@ -43,9 +43,9 @@ class TestForexSLTPOpt:
 
     def test_non_forex_unchanged(self):
         """Les symboles hors forex ne doivent PAS être affectés."""
-        assert SYMBOL_CONFIG["XAUUSD"]["sl_atr_trending"] < 3.0
-        assert SYMBOL_CONFIG["BTCUSD"]["sl_atr_trending"] < 3.0
-        assert SYMBOL_CONFIG["US100.cash"]["sl_atr_trending"] == 1.5  # Solution A
+        assert SYMBOL_CONFIG["XAUUSD"]["sl_atr_trending"] == 2.5
+        assert SYMBOL_CONFIG["BTCUSD"]["sl_atr_trending"] == 2.5
+        assert SYMBOL_CONFIG["US100.cash"]["sl_atr_trending"] == 2.5
 
 
 class TestForexSessionOpt:
@@ -72,6 +72,7 @@ class TestForexSessionOpt:
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 11, 0)
+            mock_dt.now.return_value = datetime(2026, 5, 27, 11, 0, tzinfo=timezone.utc)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
                     "EURUSD",
@@ -95,6 +96,7 @@ class TestForexSessionOpt:
 
         with patch("engine_simple.ftmo_protector.datetime") as mock_dt:
             mock_dt.utcnow.return_value = datetime(2026, 5, 27, 14, 0)
+            mock_dt.now.return_value = datetime(2026, 5, 27, 14, 0, tzinfo=timezone.utc)
             with patch("engine_simple.ftmo_protector.is_news_blocked", return_value=(False, [])):
                 ok, reason = ftmo.can_trade(
                     "EURUSD",

@@ -144,7 +144,8 @@ class PortfolioController:
             # (artefact partiel, mais le stacking EURUSD BUY réel a été observé — 4 entrées sur
             # 2 symboles le 03/08). Principe: jamais 2 positions même direction/même symbole.
             sym_dir_positions = [p for p in sym_positions if self._get_dir(p) == direction]
-            hc_max_per_dir = MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION * 1  # = 1, même en high confidence
+            # 🔧 FIX 28 Août 2026: Nettoyage dead code — * 1 était un no-op
+            hc_max_per_dir = MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION  # = 1, même en high confidence
             if len(sym_dir_positions) >= hc_max_per_dir:
                 return (
                     False,

@@ -110,18 +110,23 @@ class SignalPipeline:
             self._last_rates_purge = now
 
         # LRU-like eviction si le cache dépasse la taille max
+        # 🔧 FIX 28 Août 2026: Éviction basée sur le DERNIER ACCÈS, pas l'insertion.
+        # L'ancien code évinçait les symboles actifs (insertion ancienne mais accès fréquent)
+        # au profit de symboles inactifs (insertion récente mais jamais relus).
         if len(self._rates_cache) >= self._rates_cache_max_size:
-            # Supprimer les 25% les plus vieux (basé sur timestamp d'insertion)
-            sorted_keys = sorted(self._rates_cache.keys(), key=lambda k: self._rates_cache[k][0])
+            # Trier par dernier accès (index 1) au lieu de timestamp insertion (index 0)
+            sorted_keys = sorted(self._rates_cache.keys(), key=lambda k: self._rates_cache[k][1])
             evict_count = max(1, len(self._rates_cache) // 4)
             for k in sorted_keys[:evict_count]:
                 del self._rates_cache[k]
 
         cached = self._rates_cache.get(key)
         if cached and (now - cached[0]) < self.RATES_CACHE_TTL:
-            return cached[1]
+            # 🔧 FIX 28 Août 2026: Mettre à jour le timestamp d'accès pour LRU
+            self._rates_cache[key] = (cached[0], now, cached[2])
+            return cached[2]
         rates = self.mt5.get_rates(symbol, tf, count=count)
-        self._rates_cache[key] = (now, rates)
+        self._rates_cache[key] = (now, now, rates)
         return rates
 
     def _to_dataframe(self, rates, cols=None):
@@ -649,6 +654,13 @@ class SignalPipeline:
             False si le signal doit être rejeté (conflit majeur avec H4)
         """
         try:
+            # 🔧 FIX 28 Août 2026: skip par symbole (BTCUSD: l'edge WF est H1, pas H4)
+            sym_cfg = self.symbol_limits.get(symbol, {})
+            if sym_cfg.get("skip_h4_filter", False):
+                signal["_h4_dir"] = "SKIPPED"
+                signal["_h4_conf"] = 1.0
+                return True
+
             h4_rates = self._get_cached_rates(symbol, "H4", count=100)
             if h4_rates is None or len(h4_rates) < 30:
                 return True  # pas assez de données H4 → laisser passer
@@ -992,10 +1004,12 @@ class SignalPipeline:
         # Ancien: les signaux score>=0.80 bypassaient ADX, créant un trou dans le filtre.
         # Maintenant: TOUS les signaux passent par ADX. Le bypass central (process(), ligne 218)
         # permet aux très bons signaux (score_final>=0.90 ET raw_mom>=0.85) de sauter TOUS les filtres.
-        regime = "RANGING" if signal_adx < 22 else signal.get("_regime", "RANGING")
-        adx_thresh = sym_cfg.get("adx_thresh", 20)
+        # 🔧 FIX AUDIT H3: ADX per-symbol au lieu de hardcoded 22.
+        # BTCUSD adx_thresh=20 mais < 22 → classifié RANGING à tort (seuil 2.0 au lieu de 2.5).
+        adx_thresh = sym_cfg.get("adx_thresh", 22)
+        regime = "RANGING" if signal_adx < adx_thresh else signal.get("_regime", "RANGING")
         if regime in ("RANGING", "LOW_VOL"):
-            adx_thresh = min(adx_thresh, 12)
+            adx_thresh = min(adx_thresh, 20)  # Aligné validator RANGING gate (ADX<20 → rejeté)
         if signal_adx < adx_thresh:
             logger.info(f"  [ADX] {symbol}: ADX={signal_adx:.1f} < {adx_thresh} → skip")
             return False
@@ -1028,12 +1042,14 @@ class SignalPipeline:
     # Nouveaux seuils: plancher à 0.90 sauf contre-tendance. Bonus ADX si ADX>25
     # et -DI > +DI×1.5 (le momentum baissier est fort).
     # Note: Les SELL en TREND_DOWN ne sont jamais pénalisés.
+    # 🔧 FIX 28 Août 2026: SELL sélectif — les symboles allow_shorts=true
+    # ne sont PLUS bloqués en contre-tendance, juste pénalisés (0.70).
     SELL_PENALTY_BY_REGIME = {
         "TREND_DOWN": 1.00,  # ✅ SELL avec la tendance → pas de pénalité
         "HIGH_VOL": 0.95,  # 🟡 Haute volatilité → pénalité 5% (était 10%)
         "RANGING": 0.90,  # 🟢 Range → pénalité 10% (était 15%)
         "LOW_VOL": 0.85,  # 🟡 Basse volatilité → pénalité 15% (était 25%)
-        "TREND_UP": 0.0,  # 🔴 BLOCKÉ (contre-tendance)
+        "TREND_UP": 0.0,  # 🔴 BLOCKÉ (contre-tendance) — sauf allow_shorts=true
     }
 
     def _phase5_regime_rule(self, signal: dict) -> bool:
@@ -1041,19 +1057,43 @@ class SignalPipeline:
 
         Depuis le FIX du 16 Juillet 2026 : les SELL hors TREND_DOWN sont
         systématiquement pénalisés car 37.2% WR global (77% des pertes).
+        🔧 FIX 28 Août 2026: les symboles allow_shorts=true (SOLUSD, BTCUSD)
+        ne sont PLUS bloqués en contre-tendance — pénalité 0.70 au lieu de 0.0.
         """
         regime = signal.get("_regime", "RANGING")
         action = signal.get("action")
         symbol = signal.get("symbol", "?")
+        sym_cfg = self.symbol_limits.get(symbol, {})
+        allow_shorts = sym_cfg.get("allow_shorts", True)
 
-        # Vérification contre-tendance (inchangé)
-        if (action == "BUY" and regime == "TREND_DOWN") or (action == "SELL" and regime == "TREND_UP"):
+        # Vérification contre-tendance — sauf allow_shorts=true
+        if action == "SELL" and regime == "TREND_UP":
+            if not allow_shorts:
+                logger.debug(f"  [RÈGLE DIR] {symbol}: {action} en {regime} → contre-tendance, skip (allow_shorts=false)")
+                return False
+            else:
+                # SELL sélectif: pénalité 0.70 au lieu de blocage
+                old_score = signal.get("score", 0.6)
+                new_score = max(0.30, old_score * 0.70)
+                signal["score"] = new_score
+                signal["sell_penalty"] = 0.70
+                logger.info(
+                    f"  [SELL SELECTIF] {symbol}: {action} en {regime} "
+                    f"→ contre-tendance MAIS allow_shorts=true → score ×0.70 ({old_score:.2f} → {new_score:.2f})"
+                )
+                return True
+        if action == "BUY" and regime == "TREND_DOWN":
             logger.debug(f"  [RÈGLE DIR] {symbol}: {action} en {regime} → contre-tendance, skip")
             return False
 
         # 🔧 FIX 16 Juillet: Pénalité SELL par régime
+        # 🔧 FIX 28 Août 2026: pénalités allégées pour allow_shorts=true
+        # (SOLUSD/BTCUSD) — ces symboles ont prouvé leur edge SELL.
         if action == "SELL":
             sell_mult = self.SELL_PENALTY_BY_REGIME.get(regime, 0.80)
+            if allow_shorts and sell_mult < 1.0:
+                # Pénalité réduite de 50% pour allow_shorts (ex: 0.90 → 0.95)
+                sell_mult = 1.0 - (1.0 - sell_mult) * 0.5
             if sell_mult < 1.0:
                 old_score = signal.get("score", 0.6)
                 new_score = max(0.30, old_score * sell_mult)

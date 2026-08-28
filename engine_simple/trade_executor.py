@@ -99,8 +99,14 @@ class GlobalRateLimiter:
         return True
 
     def release(self) -> None:
-        """Annule le dernier timestamp si l'ordre a échoué."""
-        self._last_order_time = 0.0
+        """Annule le dernier timestamp si l'ordre a échoué.
+
+        🔧 FIX AUDIT H9: Ne PAS reset à 0.0 (bypass rate limit MT5).
+        Si l'échec était dû au rate limit MT5 (10018/10025), un reset à 0
+        permet un retry immédiat → storm contre MT5. On garde le timestamp
+        précédent pour que le cooldown min_interval_s s'applique au retry.
+        """
+        pass  # Ne rien faire — le prochain allow() respectera le cooldown
 
 
 class ExecutionStats:
@@ -251,6 +257,10 @@ class TradeExecutor:
         # Vérifié juste avant _place_order() pour bloquer un même signal relancé
         # dans les 60s (même fingerprint = même trade).
         self._recent_trades: dict[tuple, float] = {}
+        # 🔧 FIX 28 Août 2026: Initialiser _last_signal_per_symbol dans __init__
+        # au lieu du lazy init (hasattr) qui n'est pas thread-safe.
+        self._last_signal_per_symbol: dict[tuple, float] = {}
+        self._last_cleanup_time: float = 0.0  # pour cleanup périodique
 
     def _get_signal_value(self, signal, key, default=None):
         if isinstance(signal, dict):
@@ -309,19 +319,23 @@ class TradeExecutor:
                         # dans les logs malgré les doublons XAUUSD 04:53 et 08:28 du 20/08,
                         # chacun -338$ / -113$). Fix : on soustrait l'offset serveur mesuré
                         # (_server_offset_s, fix time-stop du 19/08) AVANT de calculer l'age.
-                        # Si offset = 0 (non mesuré/fail-open), le comportement est identique
-                        # au fix 10/08 (pas de faux rejet).
                         server_offset = getattr(getattr(self, "ftmo", None), "_server_offset_s", None)
-                        if not isinstance(server_offset, (int, float)):
-                            server_offset = 0
-                        pos_age = _now - (getattr(pos, "time", 0) - server_offset)
-                        if 0 < pos_age < 600:
-                            logger.warning(
-                                f"[DOUBLON] {symbol}: entrée {price:.5f} identique "
-                                f"à pos #{pos.ticket} ({pos.price_open:.5f}, diff={price_diff_pct:.3f}%, "
-                                f"age={pos_age:.0f}s) → skip (high_confidence={high_confidence})"
+                        if not isinstance(server_offset, (int, float)) or server_offset == 0:
+                            # 🔧 FIX 28 Août 2026: si offset=0 (non mesuré), logger un warning
+                            # et skip le price-dedup proprement au lieu de le rendre inerte silencieusement.
+                            logger.debug(
+                                f"[DOUBLON] {symbol}: server_offset non mesuré (={server_offset}), "
+                                f"price-dedup désactivé pour cette itération"
                             )
-                            return None
+                        else:
+                            pos_age = _now - (getattr(pos, "time", 0) - server_offset)
+                            if 0 < pos_age < 600:
+                                logger.warning(
+                                    f"[DOUBLON] {symbol}: entrée {price:.5f} identique "
+                                    f"à pos #{pos.ticket} ({pos.price_open:.5f}, diff={price_diff_pct:.3f}%, "
+                                    f"age={pos_age:.0f}s) → skip (high_confidence={high_confidence})"
+                                )
+                                return None
 
         price = self._get_signal_value(signal, "entry_price")
         if price is None or price == 0:
@@ -406,19 +420,46 @@ class TradeExecutor:
                 logger.warning(f"[RATE LIMIT] {symbol}: fréquence max atteinte, skip")
                 return None
 
-        # 🔧 FIX 28 Juillet 2026: Signal fingerprint — dernière ligne anti-doublon
-        # Vérifie si le même (symbol, action, price_arrondi) a déjà été exécuté dans les 60s
-        fingerprint = (symbol, action, round(price, 5))
+        # 🔧 FIX 28 Juillet 2026 + FIX 27 Août 2026: Signal fingerprint — anti-doublon
+        # Vérifie si le même (symbol, action, price_arrondi) a déjà été exécuté dans les 120s.
+        # 🔧 FIX 27 Août: arrondi 5→2 décimales. Les doublons XAUUSD avaient des prix
+        # à 0.001%-0.12% d'écart — le signal cooldown 120s (ci-dessous) est la vraie
+        # protection. Le fingerprint est un filet de sécurité secondaire.
+        fingerprint = (symbol, action, round(price, 2))
         _now = time.time()
         last_fp_time = self._recent_trades.get(fingerprint)
-        if last_fp_time is not None and (_now - last_fp_time) < 60:
+        if last_fp_time is not None and (_now - last_fp_time) < 120:
             logger.warning(
-                f"[FINGERPRINT] {symbol} {action}: même signal déjà exécuté il y a "
-                f"{_now - last_fp_time:.0f}s (price={price:.5f}) — skip"
+                f"[FINGERPRINT] {symbol} {action}: signal similaire déjà exécuté il y a "
+                f"{_now - last_fp_time:.0f}s (price={price:.2f}) — skip"
             )
             return None
-        # Nettoyage périodique des fingerprints vieux de > 300s (5 min)
-        if len(self._recent_trades) > 100:
+        # 🔧 FIX 27 Août 2026: Cooldown par symbole — 2ème couche anti-doublon
+        # Même si le fingerprint échoue (prix légèrement différents), ce cooldown
+        # bloque tout trade sur le même symbole dans les 120s.
+        # Protège contre les signaux MOM20x3 rejoués chaque cycle 15s.
+        _sig_key = (symbol, action)
+        _last_sig_time = self._last_signal_per_symbol.get(_sig_key, 0)
+        if (_now - _last_sig_time) < 120:
+            logger.warning(
+                f"[SIGNAL COOLDOWN] {symbol} {action}: dernier signal il y a "
+                f"{_now - _last_sig_time:.0f}s (< 120s) — skip"
+            )
+            return None
+        self._last_signal_per_symbol[_sig_key] = _now
+
+        # 🔧 FIX 28 Août 2026: Nettoyage périodique basé sur le TEMPS, pas la taille.
+        # L'ancien code (len>100) ne nettoyait jamais en trading lent → memory leak.
+        # Nouveau : nettoyage toutes les 60s, supprime les entrées > 300s.
+        if _now - self._last_cleanup_time > 60:
+            stale = [k for k, ts in self._recent_trades.items() if _now - ts > 300]
+            for k in stale:
+                del self._recent_trades[k]
+            # Nettoyer aussi les signal cooldowns > 300s
+            stale_sig = [k for k, ts in self._last_signal_per_symbol.items() if _now - ts > 300]
+            for k in stale_sig:
+                del self._last_signal_per_symbol[k]
+            self._last_cleanup_time = _now
             stale = [k for k, ts in self._recent_trades.items() if _now - ts > 300]
             for k in stale:
                 del self._recent_trades[k]
@@ -430,6 +471,14 @@ class TradeExecutor:
             result = self._place_order(symbol, action, lot, price, sl, tp, regime)
             # Enregistrer le fingerprint si l'ordre a réussi
             if result is not None and getattr(result, "retcode", None) == 10009:
+                # 🔧 FIX C4: Vérifier partial fill — result.volume doit correspondre
+                requested_vol = lot
+                filled_vol = getattr(result, "volume", requested_vol)
+                if isinstance(filled_vol, (int, float)) and abs(filled_vol - requested_vol) > 0.001:
+                    logger.warning(
+                        f"[PARTIAL FILL] {symbol}: demandé {requested_vol} lot, "
+                        f"fillé {filled_vol} lot (retcode=10009). Risque réel < calculé."
+                    )
                 self._recent_trades[fingerprint] = time.time()
             # Stocker sl_atr/tp_atr/atr dans le meta pour le logging post-trade
             if (
@@ -472,17 +521,18 @@ class TradeExecutor:
             return 0.0
         # lot > 0: clamping sécurité
         try:
-            import config_simple as _cfg
+            # 🔧 FIX 28 Août 2026: import supprimé — config_simple déjà importé en haut du fichier
+            # (line 13). L'import dans la méthode créait un overhead à chaque appel.
 
             # 🔧 FIX 10 Juillet 2026: global_max_lot appliqué comme plafond absolu
-            _max = min(getattr(_cfg, "GLOBAL_MAX_LOT", 10.0), 10.0)
+            _max = min(getattr(cfg, "GLOBAL_MAX_LOT", 10.0), 10.0)
             _min = 0.01  # minimum absolu (lots min pour data collection)
             if lot > _max:
                 logger.warning(f"[LOT SAFETY] {symbol}: lot={lot:.3f} > {_max} (global_max_lot clamp)")
                 lot = _max
             if lot < _min:
                 lot = _min
-        except (ImportError, AttributeError, Exception) as _e:
+        except (AttributeError, Exception) as _e:
             logger.debug(f"[LOT SAFETY] config_simple non disponible: {_e}")
         return lot
 

@@ -108,12 +108,22 @@ class TestCheck:
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_ranging_adx_boundary_20_allowed(self, mock_params):
-        """ADX=20 exact est la frontière: autorisé (garde stricte <20)."""
+        """ADX=20 exact avec adx_thresh=20: autorisé (garde stricte < thresh)."""
+        mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
+        v = make_validator(symbol_limits={"BTCUSD": {"adx_thresh": 20}})
+        sig = make_signal(symbol="BTCUSD", adx=20.0, _regime="RANGING", score=0.95)
+        ok, reason = v.check("BTCUSD", sig, [])
+        assert ok is True
+
+    @patch("engine_simple.signal_validator.get_symbol_params")
+    def test_ranging_adx_below_per_symbol_thresh_rejected(self, mock_params):
+        """ADX=18 avec adx_thresh=22: rejeté (18 < 22)."""
         mock_params.return_value = {"cfg_score": 0.60, "min_rr": 1.5}
         v = make_validator()
-        sig = make_signal(adx=20.0, _regime="RANGING", score=0.95)
+        sig = make_signal(adx=18.0, _regime="RANGING", score=0.95)
         ok, reason = v.check("EURUSD", sig, [])
-        assert ok is True
+        assert ok is False
+        assert "RANGING" in reason
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_score_too_low_rejected(self, mock_params):
@@ -126,11 +136,29 @@ class TestCheck:
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_score_boundary_accepted(self, mock_params):
-        mock_params.return_value = {"cfg_score": 0.70, "min_rr": 1.5}
+        mock_params.return_value = {"cfg_score": 0.80, "min_rr": 1.5}
         v = make_validator()
-        sig = make_signal(score=0.6995)
+        sig = make_signal(score=0.7995)
         ok, reason = v.check("EURUSD", sig, [])
         assert ok is True  # floating point tolerance (score ≈ cfg_score)
+
+    @patch("engine_simple.signal_validator.get_symbol_params")
+    def test_solusd_exception_floor_065(self, mock_params):
+        """🔧 Fix 27 Août 2026: PER_SYMBOL_MIN_SCORE['SOLUSD']=0.65.
+
+        Un signal à 0.63 doit être REJETÉ, un signal à 0.68 doit PASSER.
+        """
+        mock_params.return_value = {"cfg_score": 0.65, "min_rr": 1.8}
+        v = make_validator()
+        # Signal SOLUSD à 0.63 (< 0.65) — rejeté
+        sig = make_signal(score=0.63)
+        ok, reason = v.check("SOLUSD", sig, [])
+        assert ok is False
+        assert "Signal score too low" in reason
+        # Signal SOLUSD à 0.68 (>= 0.65) — passe
+        sig2 = make_signal(score=0.68)
+        ok2, reason2 = v.check("SOLUSD", sig2, [])
+        assert ok2 is True
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_mr_strategy_lowers_threshold(self, mock_params):
@@ -154,26 +182,33 @@ class TestCheck:
     @patch("engine_simple.signal_validator.get_symbol_params")
     @patch("engine_simple.signal_validator.update_dyn_score")
     def test_update_dyn_score_called(self, mock_update, mock_params):
-        mock_params.return_value = {"cfg_score": 0.70, "min_rr": 1.5}
-        # 7/15 wins = 46.7% < 50% → dyn_score = 0.70 + (0.50-0.467)*0.5 = 0.7167
+        mock_params.return_value = {"cfg_score": 0.80, "min_rr": 1.5}
+        # 🔧 27 Août 2026: PER_SYMBOL_MIN_SCORE["EURUSD"]=0.65 Prime sur le mock.
+        # 7/15 wins = 46.7% < 50% → dyn_score = 0.65 + (0.50-0.467)*0.5 = 0.6667
         trades = [{"profit": -100} for _ in range(8)] + [{"profit": 50} for _ in range(7)]
         v = make_validator(trade_history={"EURUSD": trades})
-        sig = make_signal(score=0.80)
+        sig = make_signal(score=0.85)
         v.check("EURUSD", sig, [])
-        # 🔧 31 Juil: cfg_score=0.70, WR=46.7% → dyn_score = 0.70 + (0.50-0.467)*0.5 = 0.7167
-        mock_update.assert_called_once_with("EURUSD", 0.7166666666666666)
+        mock_update.assert_called_once()
+        call_args = mock_update.call_args
+        assert call_args[0][0] == "EURUSD"
+        assert call_args[0][1] == pytest.approx(0.6667, abs=0.001)
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     @patch("engine_simple.signal_validator.update_dyn_score")
     def test_update_dyn_score_low_wr_raises_more(self, mock_update, mock_params):
         """WR très bas → min_score doit monter plus haut."""
-        mock_params.return_value = {"cfg_score": 0.70, "min_rr": 1.5}
-        # 4/15 wins = 26.7% < 50% → dyn_score = 0.70 + (0.50-0.267)*0.5 = 0.8167
+        mock_params.return_value = {"cfg_score": 0.80, "min_rr": 1.5}
+        # 🔧 27 Août 2026: PER_SYMBOL_MIN_SCORE["EURUSD"]=0.65 Prime sur le mock.
+        # 4/15 wins = 26.7% < 50% → dyn_score = 0.65 + (0.50-0.267)*0.5 = 0.7667
         trades = [{"profit": -100} for _ in range(11)] + [{"profit": 50} for _ in range(4)]
         v = make_validator(trade_history={"EURUSD": trades})
-        sig = make_signal(score=0.80)
+        sig = make_signal(score=0.92)
         v.check("EURUSD", sig, [])
-        mock_update.assert_called_once_with("EURUSD", 0.8166666666666666)
+        mock_update.assert_called_once()
+        call_args = mock_update.call_args
+        assert call_args[0][0] == "EURUSD"
+        assert call_args[0][1] == pytest.approx(0.7667, abs=0.001)
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_sl_tp_auto_calculated_when_missing(self, mock_params):
@@ -247,21 +282,21 @@ class TestCheck:
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_small_trade_history_ignores_dynamic_score(self, mock_params):
-        mock_params.return_value = {"cfg_score": 0.70, "min_rr": 1.5}
-        # Seulement 10 trades (< 15) → pas de dyn_score → effective = cfg_score = 0.70
+        mock_params.return_value = {"cfg_score": 0.80, "min_rr": 1.5}
+        # Seulement 10 trades (< 15) → pas de dyn_score → effective = cfg_score = 0.80
         trades = [{"profit": -100} for _ in range(10)]
         v = make_validator(trade_history={"EURUSD": trades})
-        sig = make_signal(score=0.70)
+        sig = make_signal(score=0.80)
         ok, reason = v.check("EURUSD", sig, [])
         assert ok is True
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     def test_wr_above_50_no_dynamic_score(self, mock_params):
-        mock_params.return_value = {"cfg_score": 0.70, "min_rr": 1.5}
-        # 8/15 = 53% > 50% → pas de dyn_score → effective = cfg_score = 0.70
+        mock_params.return_value = {"cfg_score": 0.80, "min_rr": 1.5}
+        # 8/15 = 53% > 50% → pas de dyn_score → effective = cfg_score = 0.80
         trades = [{"profit": 50} for _ in range(8)] + [{"profit": -30} for _ in range(7)]
         v = make_validator(trade_history={"EURUSD": trades})
-        sig = make_signal(score=0.70)
+        sig = make_signal(score=0.80)
         ok, reason = v.check("EURUSD", sig, [])
         assert ok is True
 
@@ -318,3 +353,63 @@ class TestAdjustSLForOB:
         v.check("EURUSD", sig, [])
         # Pas d'OB → SL inchangé
         assert sig["sl"] == 1.10000
+
+
+# ============================================================================
+# Test: Consecutive Loss Penalty (28 Août 2026)
+# ============================================================================
+
+
+class TestConsecutiveLossPenalty:
+    """Test: +0.05 min_score après 3 pertes consécutives par symbole."""
+
+    @patch("engine_simple.signal_validator.get_symbol_params")
+    def test_3_consecutive_losses_adds_penalty(self, mock_params):
+        """3 pertes consécutives → min_score +0.05."""
+        mock_params.return_value = {"cfg_score": 0.65, "min_rr": 1.5}
+        consec = {"BTCUSD": 3}
+        v = make_validator(trade_history={"BTCUSD": []})
+        v._symbol_consecutive_losses = consec
+        # Signal avec score=0.65 — devrait être rejeté avec penalty (0.65+0.05=0.70)
+        sig = make_signal(score=0.65)
+        ok, reason = v.check("BTCUSD", sig, [])
+        assert not ok
+        assert "min" in reason.lower() or "score" in reason.lower()
+
+    @patch("engine_simple.signal_validator.get_symbol_params")
+    def test_2_consecutive_losses_no_penalty(self, mock_params):
+        """2 pertes consécutives → pas de penalty (seuil = 3)."""
+        mock_params.return_value = {"cfg_score": 0.65, "min_rr": 1.5}
+        consec = {"BTCUSD": 2}
+        v = make_validator(trade_history={"BTCUSD": []})
+        v._symbol_consecutive_losses = consec
+        # Signal avec score=0.65 — devrait être accepté (pas de penalty)
+        sig = make_signal(score=0.65)
+        ok, reason = v.check("BTCUSD", sig, [])
+        assert ok
+
+    @patch("engine_simple.signal_validator.get_symbol_params")
+    def test_5_consecutive_losses_stronger_penalty(self, mock_params):
+        """5 pertes consécutives → toujours +0.05 (pas d'escalade)."""
+        mock_params.return_value = {"cfg_score": 0.65, "min_rr": 1.5}
+        consec = {"BTCUSD": 5}
+        v = make_validator(trade_history={"BTCUSD": []})
+        v._symbol_consecutive_losses = consec
+        # Signal avec score=0.65 → rejeté (0.65+0.05=0.70)
+        sig = make_signal(score=0.65)
+        ok, reason = v.check("BTCUSD", sig, [])
+        assert not ok
+        # Signal avec score=0.70 → accepté
+        sig2 = make_signal(score=0.70)
+        ok2, _ = v.check("BTCUSD", sig2, [])
+        assert ok2
+
+    @patch("engine_simple.signal_validator.get_symbol_params")
+    def test_no_consecutive_losses_no_penalty(self, mock_params):
+        """0 pertes consécutives → pas de penalty."""
+        mock_params.return_value = {"cfg_score": 0.65, "min_rr": 1.5}
+        v = make_validator(trade_history={"BTCUSD": []})
+        # Pas de consec_losses dict
+        sig = make_signal(score=0.65)
+        ok, reason = v.check("BTCUSD", sig, [])
+        assert ok

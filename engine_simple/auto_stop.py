@@ -23,7 +23,7 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -288,7 +288,9 @@ def decision(force_check: bool = False, mt5_connector: Any = None) -> tuple[str,
     if paused_at:
         try:
             paused_dt = datetime.fromisoformat(paused_at)
-            if (datetime.utcnow() - paused_dt).total_seconds() > STATE_TTL:
+            if paused_dt.tzinfo is None:
+                paused_dt = paused_dt.replace(tzinfo=timezone.utc)
+            if (datetime.now(timezone.utc) - paused_dt).total_seconds() > STATE_TTL:
                 state["auto_paused"] = False
                 state["auto_paused_until"] = None
                 state["auto_paused_at"] = None
@@ -301,7 +303,9 @@ def decision(force_check: bool = False, mt5_connector: Any = None) -> tuple[str,
         if pause_until:
             try:
                 pause_dt = datetime.fromisoformat(pause_until)
-                if datetime.utcnow() < pause_dt:
+                if pause_dt.tzinfo is None:
+                    pause_dt = pause_dt.replace(tzinfo=timezone.utc)
+                if datetime.now(timezone.utc) < pause_dt:
                     save_state(state)
                     return "WAIT", state
             except (ValueError, TypeError):
@@ -326,7 +330,7 @@ def decision(force_check: bool = False, mt5_connector: Any = None) -> tuple[str,
             return "RESUME", state
         else:
             # Pas assez de symboles OK → prolonger la pause de 15 min
-            new_until = datetime.utcnow() + timedelta(minutes=15)
+            new_until = datetime.now(timezone.utc) + timedelta(minutes=15)
             state["auto_paused_until"] = new_until.isoformat()
             save_state(state)
             return "WAIT", state
@@ -355,9 +359,9 @@ def decision(force_check: bool = False, mt5_connector: Any = None) -> tuple[str,
 
     if ratio >= RATIO_STOP:
         # STOP le trading
-        pause_until = datetime.utcnow() + timedelta(seconds=PAUSE_MIN_DURATION)
+        pause_until = datetime.now(timezone.utc) + timedelta(seconds=PAUSE_MIN_DURATION)
         state["auto_paused"] = True
-        state["auto_paused_at"] = datetime.utcnow().isoformat()
+        state["auto_paused_at"] = datetime.now(timezone.utc).isoformat()
         state["auto_paused_until"] = pause_until.isoformat()
         save_state(state)
         low_str = ", ".join(f"{s}={d['adx']}" for s, d in details.items() if d["low"])

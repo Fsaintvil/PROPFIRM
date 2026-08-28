@@ -28,10 +28,15 @@ trading:
   batch_interval_sec: 1
   trading_start_hour: 0
   trading_end_hour: 24
-  danger_hours: []
+  # 🔧 FIX 28 Août 2026: heures destructrices ajoutées
+  # 05:00 = -$1,186 (75 trades, WR 45% mais gros losers)
+  # 06:00 = -$171 (35 trades, WR 34%)
+  # 07:00 = -$401 (28 trades, WR 36%)
+  # 17:00 = -$385 (61 trades, WR 34%)
+  danger_hours: [5, 6, 7, 17]
   history_lookback_days: 3
 signal:
-  min_score: 0.6
+  min_score: 0.65
   daily_profit_limit_pct: 0.008
   enable_m15_confirmation: false
 risk:
@@ -69,12 +74,12 @@ symbol_limits:
     adx_thresh: 22
     cooldown_minutes: 30
     allow_buys: true
-    allow_shorts: false
+    allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 1.5
-    tp_atr_trending: 6.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 6.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 7.5
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 7.5
     adx_slope_threshold: -6.0
     adx_slope_threshold_strong: -10.0
     threshold_trending: 2.5
@@ -118,20 +123,24 @@ symbol_limits:
     max_lot: 0.03
     min_lot: 0.01
     risk_mult: 1.0
-    min_score: 0.5
+    min_score: 0.65
     max_spread_points: 150
-    adx_thresh: 20
+    adx_thresh: 18
     allow_buys: true
-    allow_shorts: false
+    allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 1.5
-    tp_atr_trending: 6.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 6.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 5.0
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 5.0
     adx_slope_threshold: -3.0
     adx_slope_threshold_strong: -6.0
     threshold_trending: 2.5
     threshold_ranging: 2.0
+    # 🔧 FIX 28 Août 2026: le filtre H4 rejeteait 107 signaux H1 valides.
+    # L'edge WF BTCUSD est prouvé sur H1 (OOS WR 61.6%, PF 1.33, p=0.0012).
+    # Les pullback BUY sur H1 contre-tendance H4 sont le cœur de la stratégie MOM20x3.
+    skip_h4_filter: true
     pullback_band_trending: 0.8
     pullback_band_ranging: 0.5
     cmf_threshold: 0.2
@@ -172,16 +181,16 @@ symbol_limits:
     max_lot: 0.04
     min_lot: 0.01
     risk_mult: 1.0
-    min_score: 0.6
-    max_spread_points: 40
+    min_score: 0.65
+    max_spread_points: 45
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: false
+    allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 3.0
-    tp_atr_trending: 7.5
-    sl_atr_ranging: 2.25
-    tp_atr_ranging: 6.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -205,16 +214,16 @@ symbol_limits:
     max_lot: 0.06
     min_lot: 0.01
     risk_mult: 1.0
-    min_score: 0.6
+    min_score: 0.65
     max_spread_points: 50
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: false
+    allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 3.0
-    tp_atr_trending: 7.5
-    sl_atr_ranging: 2.25
-    tp_atr_ranging: 6.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -238,16 +247,16 @@ symbol_limits:
     max_lot: 0.06
     min_lot: 0.01
     risk_mult: 1.0
-    min_score: 0.6
+    min_score: 0.65
     max_spread_points: 45
-    adx_thresh: 22
+    adx_thresh: 14
     allow_buys: true
-    allow_shorts: false
+    allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 3.0
-    tp_atr_trending: 7.5
-    sl_atr_ranging: 2.25
-    tp_atr_ranging: 6.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -271,16 +280,16 @@ symbol_limits:
     max_lot: 0.04
     min_lot: 0.01
     risk_mult: 1.0
-    min_score: 0.6
+    min_score: 0.65
     max_spread_points: 45
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: false
+    allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 3.0
-    tp_atr_trending: 7.5
-    sl_atr_ranging: 2.25
-    tp_atr_ranging: 6.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -304,7 +313,7 @@ symbol_limits:
     max_lot: 0.05
     min_lot: 0.01
     risk_mult: 1.0
-    min_score: 0.6
+    min_score: 0.65
     max_spread_points: 45
     max_spread_atr_ratio: 0.15
     adx_thresh: 22
@@ -312,10 +321,10 @@ symbol_limits:
     allow_shorts: false
     max_extension_atr: 1.5
     momentum_period: 20
-    sl_atr_trending: 3.0
-    tp_atr_trending: 7.5
-    sl_atr_ranging: 2.25
-    tp_atr_ranging: 6.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -344,10 +353,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: false
     momentum_period: 20
-    sl_atr_trending: 3.0
-    tp_atr_trending: 7.5
-    sl_atr_ranging: 2.25
-    tp_atr_ranging: 6.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -366,7 +375,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 5
     news_minutes_after: 5
-    min_score: 0.6
+    min_score: 0.65
   USDCHF:
     timeframe: H1
     max_lot: 0.01
@@ -377,10 +386,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: false
     momentum_period: 20
-    sl_atr_trending: 3.0
-    tp_atr_trending: 7.5
-    sl_atr_ranging: 2.25
-    tp_atr_ranging: 6.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -399,7 +408,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 5
     news_minutes_after: 5
-    min_score: 0.6
+    min_score: 0.65
   EURJPY:
     timeframe: H1
     max_lot: 0.01
@@ -410,10 +419,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 2.0
-    tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -451,7 +460,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 5
     news_minutes_after: 5
-    min_score: 0.6
+    min_score: 0.65
   GBPJPY:
     timeframe: H1
     max_lot: 0.06
@@ -462,10 +471,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 2.0
-    tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -503,7 +512,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 5
     news_minutes_after: 5
-    min_score: 0.6
+    min_score: 0.65
   EURGBP:
     timeframe: H1
     max_lot: 0.06
@@ -515,10 +524,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: false
     momentum_period: 20
-    sl_atr_trending: 2.0
-    tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -542,7 +551,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 5
     news_minutes_after: 5
-    min_score: 0.6
+    min_score: 0.65
   AUDJPY:
     timeframe: H1
     max_lot: 0.03
@@ -553,10 +562,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 2.0
-    tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -594,7 +603,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 5
     news_minutes_after: 5
-    min_score: 0.6
+    min_score: 0.65
   XAGUSD:
     timeframe: H1
     max_lot: 0.06
@@ -605,10 +614,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 2.0
-    tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -646,7 +655,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 5
     news_minutes_after: 5
-    min_score: 0.6
+    min_score: 0.65
   USOIL.cash:
     timeframe: H1
     max_lot: 0.06
@@ -658,10 +667,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: false
     momentum_period: 20
-    sl_atr_trending: 2.0
-    tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -699,7 +708,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
-    min_score: 0.7
+    min_score: 0.65
   UKOIL.cash:
     timeframe: H1
     max_lot: 0.01
@@ -710,10 +719,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 2.0
-    tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -741,7 +750,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
-    min_score: 0.6
+    min_score: 0.65
   NATGAS.cash:
     timeframe: H1
     max_lot: 0.01
@@ -752,10 +761,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 2.0
-    tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 6.25
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 6.67
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -778,7 +787,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
-    min_score: 0.6
+    min_score: 0.65
   ETHUSD:
     timeframe: H1
     max_lot: 0.06
@@ -789,10 +798,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 2.0
+    sl_atr_trending: 2.5
     tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 5.0
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -830,7 +839,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 0
     news_minutes_after: 0
-    min_score: 0.6
+    min_score: 0.65
   SOLUSD:
     timeframe: H1
     max_lot: 0.06
@@ -840,16 +849,17 @@ symbol_limits:
     max_spread_atr_ratio: 0.25
     adx_thresh: 20
     allow_buys: true
-    allow_shorts: false
+    allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 2.0
+    sl_atr_trending: 2.5
     tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 5.0
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
     threshold_ranging: 2.0
+    skip_h4_filter: true
     pullback_band_trending: 0.5
     pullback_band_ranging: 0.3
     cmf_threshold: 0.2
@@ -894,10 +904,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 2.0
+    sl_atr_trending: 2.5
     tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 5.0
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -935,7 +945,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 0
     news_minutes_after: 0
-    min_score: 0.6
+    min_score: 0.65
   US500.cash:
     timeframe: H1
     execution_timeframe: M15
@@ -947,10 +957,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 1.5
-    tp_atr_trending: 6.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 6.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 10.0
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 10.0
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 3.0
@@ -973,7 +983,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
-    min_score: 0.5
+    min_score: 0.65
   US30.cash:
     timeframe: H1
     max_lot: 0.06
@@ -982,12 +992,12 @@ symbol_limits:
     max_spread_points: 300
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: false
+    allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 1.5
-    tp_atr_trending: 4.5
-    sl_atr_ranging: 1.2
-    tp_atr_ranging: 3.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 10.0
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 10.0
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -1010,7 +1020,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
-    min_score: 0.6
+    min_score: 0.65
   US100.cash:
     timeframe: H1
     execution_timeframe: M15
@@ -1020,12 +1030,12 @@ symbol_limits:
     max_spread_points: 200
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: false
+    allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 1.5
-    tp_atr_trending: 6.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 6.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 10.0
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 10.0
     adx_slope_threshold: -6.0
     adx_slope_threshold_strong: -10.0
     threshold_trending: 3.0
@@ -1048,7 +1058,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
-    min_score: 0.5
+    min_score: 0.65
   JP225.cash:
     timeframe: H1
     execution_timeframe: M15
@@ -1058,12 +1068,12 @@ symbol_limits:
     max_spread_points: 1200
     adx_thresh: 22
     allow_buys: true
-    allow_shorts: false
+    allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 1.5
-    tp_atr_trending: 6.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 6.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 10.0
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 10.0
     adx_slope_threshold: -6.0
     adx_slope_threshold_strong: -10.0
     threshold_trending: 3.0
@@ -1086,7 +1096,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
-    min_score: 0.5
+    min_score: 0.65
   GER40.cash:
     timeframe: H1
     max_lot: 0.01
@@ -1097,10 +1107,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 2.0
-    tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 10.0
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 10.0
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -1124,7 +1134,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
-    min_score: 0.6
+    min_score: 0.65
   UK100.cash:
     timeframe: H1
     max_lot: 0.01
@@ -1136,10 +1146,10 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 2.0
-    tp_atr_trending: 5.0
-    sl_atr_ranging: 1.5
-    tp_atr_ranging: 4.0
+    sl_atr_trending: 2.5
+    tp_atr_trending: 10.0
+    sl_atr_ranging: 2.5
+    tp_atr_ranging: 10.0
     adx_slope_threshold: -5.0
     adx_slope_threshold_strong: -8.0
     threshold_trending: 2.5
@@ -1163,7 +1173,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
-    min_score: 0.6
+    min_score: 0.65
 market_regime:
   adx_trend_enter_default: 22
   adx_trend_exit_default: 18

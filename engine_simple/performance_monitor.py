@@ -17,7 +17,7 @@ import json
 import logging
 import os
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +54,8 @@ class PerformanceMonitor:
     def __init__(self) -> None:
         self.history = self._load_history()
         self._ensure_structure()
+        # 🔧 FIX 28 Août 2026: _lock AVANT _import_from_csv() pour éviter crash
+        # si _import_from_csv() utilise self._lock.
         self._lock = (
             threading.RLock()
         )  # C-02: protection race condition (RLock pour réentrance _save() dans record_trade())
@@ -122,7 +124,7 @@ class PerformanceMonitor:
                 return
             # 🐛 FIX 14 Août 2026: ne garder que les 7 derniers jours (désync récent)
             try:
-                cutoff = datetime.utcnow() - timedelta(days=7)
+                cutoff = datetime.now(timezone.utc) - timedelta(days=7)
                 cutoff_str = cutoff.strftime("%Y-%m-%d")
             except Exception:
                 cutoff_str = None
@@ -278,8 +280,11 @@ class PerformanceMonitor:
             try:
                 RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
                 tmp = HISTORY_FILE.with_suffix(".tmp")  # écriture atomique
+                import os
                 with open(tmp, "w") as f:
                     json.dump(self.history, f, indent=2, default=str)
+                    f.flush()
+                    os.fsync(f.fileno())  # 🔧 FIX C8: garantir écriture disque
                 tmp.replace(HISTORY_FILE)
             except OSError as e:
                 logger.error(f"Impossible de sauvegarder l'historique: {e}")
@@ -287,7 +292,7 @@ class PerformanceMonitor:
     def record_trade(self, symbol: str, profit: float, regime: str = "UNKNOWN", direction: str = "BUY") -> None:
         """Enregistre un trade fermé dans l'historique."""
         with self._lock:
-            today = datetime.utcnow().strftime("%Y-%m-%d")
+            today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
             # === DAILY ===
             if today not in self.history["daily"]:
@@ -373,7 +378,7 @@ class PerformanceMonitor:
                     "symbol": symbol,
                     "regime": regime,
                     "direction": direction,
-                    "ts": datetime.utcnow().isoformat(),
+                    "ts": datetime.now(timezone.utc).isoformat(),
                 }
             )
             MAX_RECENT = 500
@@ -431,7 +436,7 @@ class PerformanceMonitor:
         """
         with self._lock:
             c = self.history["challenge"]
-            c["last_update"] = datetime.utcnow().isoformat()
+            c["last_update"] = datetime.now(timezone.utc).isoformat()
             for key in [
                 "balance",
                 "equity",
@@ -466,12 +471,12 @@ class PerformanceMonitor:
         metric_key format: "TYPE_SYMBOL_YYYY-MM-DD" (ex: "SYMBOL_LOSING_AUDUSD_2026-07-03")
         ou "TYPE_YYYY-MM-DD" pour les alertes globales.
         Le cache mémoire évite de rescanner le JSON à chaque cycle."""
-        now = datetime.utcnow().timestamp()
+        now = datetime.now(timezone.utc).timestamp()
         last = self._last_alert_time.get(metric_key, 0)
         if now - last < 86400:  # 24h de cooldown — une alerte par jour maximum
             return False
 
-        today = datetime.utcnow().strftime("%Y-%m-%d")
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
         # 🔧 FIX M-ML4 (16 Août 2026): Comparaison sur la clé COMPLÈTE (base sans date)
         # au lieu de `metric_key.startswith(existing_type)`.
@@ -502,7 +507,7 @@ class PerformanceMonitor:
     def check_alerts(self) -> list[dict[str, Any]]:
         """Vérifie les seuils d'alerte et retourne les alertes actives."""
         alerts = []
-        today = datetime.utcnow().strftime("%Y-%m-%d")
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
         # 1. WR decline sur 50 trades
         r50 = self.history["rolling"].get("last_50", {})
@@ -655,7 +660,7 @@ class PerformanceMonitor:
     def generate_report(self) -> dict[str, Any]:
         """Génère un rapport complet de performance."""
         report = {
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "challenge": self._challenge_summary(),
             "rolling": self._rolling_summary(),
             "symbols": self._symbol_summary(),
@@ -882,7 +887,7 @@ class PerformanceMonitor:
     def get_daily_pnl(self, date_str: str | None = None) -> dict[str, Any]:
         """Récupère le PnL d'un jour spécifique ou d'aujourd'hui."""
         if date_str is None:
-            date_str = datetime.utcnow().strftime("%Y-%m-%d")
+            date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         d = self.history["daily"].get(date_str, {})
         return {
             "pnl": d.get("pnl", 0),
@@ -898,7 +903,7 @@ class PerformanceMonitor:
         lines = []
         lines.append("=" * 60)
         lines.append("  📊 RAPPORT DE PERFORMANCE — Robot MT5 FTMO")
-        lines.append(f"  {datetime.utcnow().strftime('%d %B %Y %H:%M UTC')}")
+        lines.append(f"  {datetime.now(timezone.utc).strftime('%d %B %Y %H:%M UTC')}")
         lines.append("=" * 60)
 
         # Challenge

@@ -4,7 +4,7 @@ import logging
 import os
 import time
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -141,6 +141,8 @@ class MarketRegime:
 
 class OnlineLearner:
     def __init__(self, window: int = 200, state_path: Optional[str] = None, burst_max: int = 25) -> None:
+        import threading
+        self._lock = threading.RLock()  # 🔧 FIX C6: RLock (reentrant) car save_state() est appelé depuis record_trade()
         self.window = window
         self.history = {}
         self.adapted_params = {}
@@ -174,23 +176,28 @@ class OnlineLearner:
 
     def save_state(self, path: Optional[str] = None) -> None:
         path_str = path or self._state_path or self.STATE_FILENAME
-        try:
-            data = {
-                "window": self.window,
-                "history": {sym: list(h) for sym, h in self.history.items()},
-                "adapted_params": self.adapted_params,
-            }
-            import json
+        with self._lock:  # 🔧 FIX C6: serialiser avec record_trade/_update_params
+            try:
+                data = {
+                    "window": self.window,
+                    "history": {sym: list(h) for sym, h in self.history.items()},
+                    "adapted_params": self.adapted_params,
+                }
+                import json
 
-            p = Path(str(path_str))
-            p.parent.mkdir(parents=True, exist_ok=True)
-            # Écriture atomique : tmp fixe (sans timestamp) + replace
-            # Un nom fixe garantit que l'écriture précédente échouée est écrasée
-            tmp = p.with_suffix(".json.tmp")
-            tmp.write_text(json.dumps(data, indent=2, default=str), encoding="utf-8")
-            tmp.replace(p)  # atomique sur NTFS
-        except Exception as e:
-            logger.warning(f"[OnlineLearner] save_state failed: {e}")  # Warning pour visibilité
+                p = Path(str(path_str))
+                p.parent.mkdir(parents=True, exist_ok=True)
+                # Écriture atomique : tmp fixe (sans timestamp) + fsync + replace
+                import os
+                tmp = p.with_suffix(".json.tmp")
+                with tmp.open("w", encoding="utf-8") as f:
+                    import json as _json
+                    _json.dump(data, f, indent=2, default=str)
+                    f.flush()
+                    os.fsync(f.fileno())  # 🔧 FIX C8: garantir écriture disque
+                tmp.replace(p)  # atomique sur NTFS
+            except Exception as e:
+                logger.warning(f"[OnlineLearner] save_state failed: {e}")
 
     def _load_state(self, path: Optional[str] = None) -> None:
         path = path or self._state_path or self.STATE_FILENAME
@@ -236,7 +243,8 @@ class OnlineLearner:
             # (leurs params sont dérivés des 200 trades synthétiques → non fiables)
             cal_adapted = data.get("adapted_params", {})
             valid_regimes = {"RANGING", "TREND_UP", "TREND_DOWN", "HIGH_VOL", "LOW_VOL"}
-            min_trades = max(10, self.window // 10)
+            # 🔧 21 Août 2026 (Robot Manager P1): aligné sur _update_params (15 trades)
+            min_trades = max(15, self.window // 10)
             for sym in list(cal_adapted.keys()):
                 if sym not in self.history:
                     logger.warning(f"[OnlineLearner] {sym}: adapted_params purgés (history absente/contaminée)")
@@ -297,9 +305,9 @@ class OnlineLearner:
                     {
                         "r": r_mul,
                         "regime": regime,
-                        "time": row.get("timestamp", datetime.utcnow().isoformat())
+                        "time": row.get("timestamp", datetime.now(timezone.utc).isoformat())
                         if "timestamp" in row
-                        else datetime.utcnow().isoformat(),
+                        else datetime.now(timezone.utc).isoformat(),
                     }
                 )
                 # enrichir si disponible
@@ -340,64 +348,53 @@ class OnlineLearner:
         self, symbol: str, r_multiple: float, regime: str, profit: Optional[float] = None, win: Optional[bool] = None
     ) -> None:
         # 🔧 FIX 28 Juillet 2026: Rejeter toute donnée non-réelle
-        # Les trades HIST (import), SYNTHETIC (rejeu), SEED (initialisation CSV)
-        # et tout autre régime artificiel est silencieusement ignoré.
-        # L'OnlineLearner n'apprend que des vrais trades exécutés sur MT5.
         if regime not in self._REAL_REGIMES:
             logger.debug(
                 f"  [OL] {symbol}: skipping regime={regime} (real data only — accepted: {sorted(self._REAL_REGIMES)})"
             )
             return
         # 🐛 FIX 28 Juillet 2026: Rate limiter anti-rafale
-        # Vérifie si trop de trades arrivent trop vite pour le même symbole.
-        # Une rafale de >15 trades en 5s = contamination historique (ex: 166 EURUSD en 16s).
-        # Limite haute (15/5s) pour ne pas bloquer les tests unitaires qui ajoutent
-        # 10 trades rapidement.
         now = time.time()
-        if symbol not in self._last_trade_times:
-            self._last_trade_times[symbol] = []
-        # Nettoyer les timestamps plus vieux que la fenêtre
-        self._last_trade_times[symbol] = [t for t in self._last_trade_times[symbol] if now - t < self._BURST_WINDOW_SEC]
-        if len(self._last_trade_times[symbol]) >= self._BURST_MAX_TRADES:
-            logger.warning(
-                f"  [OL BURST] {symbol}: {len(self._last_trade_times[symbol])} trades en "
-                f"{self._BURST_WINDOW_SEC:.0f}s ≥ {self._BURST_MAX_TRADES} — rejeté (rafale suspecte)"
-            )
-            return
-        self._last_trade_times[symbol].append(now)
-        if symbol not in self.history:
-            self.history[symbol] = deque(maxlen=self.window)
-        entry = {
-            "r": r_multiple,
-            "regime": regime,
-            "time": datetime.utcnow().isoformat(),
-        }
-        if profit is not None:
-            entry["profit"] = profit
-        if win is not None:
-            entry["win"] = win
-        self.history[symbol].append(entry)
-        # ⚠️ CRITIQUE: _update_params peut planter (ex: données corrompues).
-        # try/finally garantit que save_state() est TOUJOURS appelée pour
-        # ne JAMAIS perdre un trade live. Sans cela, l'OnlineLearner reste
-        # figé aux valeurs seed et n'apprend jamais du marché réel.
-        try:
-            self._update_params(symbol)
-        except Exception as e:
-            logger.error(f"[OnlineLearner] _update_params échoué pour {symbol}: {e}")
-        if not self._batch_mode:
-            self.save_state()
+        with self._lock:  # 🔧 FIX C6: protéger history + adapted_params
+            if symbol not in self._last_trade_times:
+                self._last_trade_times[symbol] = []
+            self._last_trade_times[symbol] = [t for t in self._last_trade_times[symbol] if now - t < self._BURST_WINDOW_SEC]
+            if len(self._last_trade_times[symbol]) >= self._BURST_MAX_TRADES:
+                logger.warning(
+                    f"  [OL BURST] {symbol}: {len(self._last_trade_times[symbol])} trades en "
+                    f"{self._BURST_WINDOW_SEC:.0f}s ≥ {self._BURST_MAX_TRADES} — rejeté (rafale suspecte)"
+                )
+                return
+            self._last_trade_times[symbol].append(now)
+            if symbol not in self.history:
+                self.history[symbol] = deque(maxlen=self.window)
+            entry = {
+                "r": r_multiple,
+                "regime": regime,
+                "time": datetime.now(timezone.utc).isoformat(),
+            }
+            if profit is not None:
+                entry["profit"] = profit
+            if win is not None:
+                entry["win"] = win
+            self.history[symbol].append(entry)
+            try:
+                self._update_params(symbol)
+            except Exception as e:
+                logger.error(f"[OnlineLearner] _update_params échoué pour {symbol}: {e}")
+            if not self._batch_mode:
+                self.save_state()
 
     def get_params(self, symbol: str, base_thresh: float = 3.0) -> dict:
         # 🔧 FIX 10 Juillet 2026: Appliquer SYMBOL_MAX_RISK sur TOUS les retours
         from engine_simple.ftmo_config import SYMBOL_MAX_RISK
 
-        if symbol not in self.adapted_params:
-            # ⚠️ R1: Fallback transparent — pas de paramètres appris pour ce symbole
-            logger.debug(f"[OnlineLearner] {symbol}: fallback defaults (no adapted_params)")
-            params = {"thresh": base_thresh, "risk_mult": 1.0, "sl_mult": 2.0, "tp_mult": 5.0}
-        else:
-            params = dict(self.adapted_params[symbol])
+        with self._lock:  # 🔧 FIX C6: lecture atomique de adapted_params
+            if symbol not in self.adapted_params:
+                logger.debug(f"[OnlineLearner] {symbol}: fallback defaults (no adapted_params)")
+                params = {"thresh": base_thresh, "risk_mult": 1.0, "sl_mult": 2.0, "tp_mult": 5.0}
+            else:
+                params = dict(self.adapted_params[symbol])
 
         # 🛡️ SYMBOL_MAX_RISK override — s'applique même au fallback
         max_risk = SYMBOL_MAX_RISK.get(symbol)
@@ -407,9 +404,10 @@ class OnlineLearner:
 
     def _update_params(self, symbol: str) -> None:
         h = list(self.history.get(symbol, []))
-        # 🔓 FIX 8 Juillet: min_trades réduit à window//10 pour que l'OL s'active
-        # plus tôt (20 trades au lieu de 40).
-        min_trades = max(10, self.window // 10)  # 🔧 28 Juillet: 15→10 : active OL plus tôt (Robot Manager)
+        # 🔧 21 Août 2026 (Robot Manager P1): min_trades 20→15 — active l'apprentissage
+        # plus tôt. Les symboles n'ont que 5-17 trades, le seuil 20 bloque tout.
+        # 15 trades = assez pour une tendance, pas assez pour overfitter.
+        min_trades = max(15, self.window // 10)  # 15 trades minimum
         if len(h) < min_trades:
             return
 
@@ -569,10 +567,7 @@ class OnlineLearner:
         }
 
 
-# Symbols ou DL est pire que aleatoire
-DL_MIN_SCORE = 0.50  # Abaissé de 0.60→0.50 : le modèle donne 83% de scores entre 0.58-0.60
-# À 0.50 : scores 0.50-0.60 acceptés avec risque ×0.5 (même 33% WR × RR 3= profitable)
-DL_SAFE_SCORE = 0.60  # Seuil historique : scores >= 0.60 = risque plein
+# 🔧 FIX 28 Août 2026: DL constants supprimés (code mort — aucun modèle actif)
 
 
 class AdaptiveEngine:
@@ -583,21 +578,9 @@ class AdaptiveEngine:
         # puis seed depuis les fichiers Excel historiques si premier démarrage
         self.learner = OnlineLearner(window=200, state_path=OnlineLearner.STATE_FILENAME)
         self.learner.seed_from_csv("runtime/online_learner_seed.csv")
-        # P7: DL désactivé — aucun modèle .pkl trouvé
-        self.dl: Optional[Any] = None
-        self.ml = None
-        # LightGBM désactivé — aucun modèle entraîné
-        self.lgb = None
-        # Meta-Learner désactivé — voir historique des commits (Juin 2026)
-        self.meta = None
-        self._meta_active = False  # désactivé explicitement — tous les guards sont NO-OP
-
-        self._dl_grey_zone = False  # flag pour risk/2 entre 0.50-0.60
         self.calibration_path = calibration_path
         if calibration_path:
             self._load_calibration(calibration_path)
-        # Walk-Forward Validator retiré — module archivé dans retired/
-        self.validator = None
 
     def _load_calibration(self, path: str) -> None:
         if not os.path.exists(path):
@@ -710,7 +693,7 @@ class AdaptiveEngine:
                             1 for t in hist
                             if t.get("regime", "") in valid_regimes and abs(t.get("r", 0)) >= 0.1
                         )
-                        min_trades = max(10, self.learner.window // 10)
+                        min_trades = max(15, self.learner.window // 10)  # 🔧 21/08 aligné sur _update_params
                         if n_valid < min_trades:
                             skip = True
                             reason = f"history insuffisante ({n_valid} valid < {min_trades}) — purge des params pré-GR"
@@ -763,36 +746,16 @@ class AdaptiveEngine:
             logger.warning(f"  [CAL] Failed to save calibration: {e}")
 
     def vigilance(self, symbol: str, rates_dict: dict) -> Optional[dict]:
-        """Run full pipeline (regime + DL) for any symbol without needing a signal. Logs everything."""
+        """Run regime detection for any symbol without needing a signal. Logs everything."""
         h1_rates = rates_dict.get("H1")
         if h1_rates is None or len(h1_rates) < 50:
             return None
         regime, meta = self.regime.detect(h1_rates, symbol=symbol)
-        dl_result = None
-        dl_label = "N/A"
-        if self.dl is not None and self.dl.available:
-            try:
-                dl_result = self.dl.predict(symbol, rates_dict)
-                if dl_result:
-                    dl_score = dl_result.get("score", 0)
-                    dl_label = f"{dl_result['action']} ({dl_result['buy_prob']:.3f})"
-                    if dl_score < DL_MIN_SCORE:
-                        dl_label = f"IGNORE (score={dl_score:.2f} < {DL_MIN_SCORE})"
-                        dl_result = None
-                    elif dl_score < DL_SAFE_SCORE:
-                        dl_label = f"GREY (score={dl_score:.2f}, risk/2)"
-                    else:
-                        dl_label = f"{dl_result['action']} ({dl_result['buy_prob']:.3f})"
-                    logger.info(f"  [VIGIL] {symbol}: regime={regime} DL={dl_label} ADX={meta['adx']:.0f}")
-            except (ValueError, TypeError, IndexError, AttributeError) as e:
-                logger.warning(f"  [VIGIL] {symbol}: DL error: {e}")
+        logger.info(f"  [VIGIL] {symbol}: regime={regime} ADX={meta['adx']:.0f}")
         return {
             "symbol": symbol,
             "regime": regime,
             "regime_meta": meta,
-            "dl_action": dl_result["action"] if dl_result else None,
-            "dl_score": dl_result["score"] if dl_result else None,
-            "dl_buy_prob": dl_result["buy_prob"] if dl_result else None,
         }
 
     def analyze(self, symbol: str, rates_dict: dict, signal: dict, trade_stats: Optional[dict] = None) -> dict:
@@ -837,42 +800,6 @@ class AdaptiveEngine:
         sweep_type, sweep_level = None, None
         active_fvgs = []
 
-        # Collect predictions from ALL models
-        all_predictions = {"MOM20x3": {"action": signal.get("action", "HOLD"), "score": signal.get("score", 0.5)}}
-
-        dl_result = None
-        if self.dl is not None and self.dl.available:
-            try:
-                dl_result = self.dl.predict(symbol, rates_dict)
-                if dl_result:
-                    dl_score = dl_result.get("score", 0)
-                    if dl_score < DL_MIN_SCORE:
-                        logger.info(f"  [DL] {symbol}: IGNORE (score={dl_score:.2f} < {DL_MIN_SCORE})")
-                        dl_result = None
-                    elif dl_score < DL_SAFE_SCORE:
-                        # Zone grise 0.50-0.60 : accepté mais risque réduit
-                        all_predictions["DL_LSTM"] = dl_result
-                        dl_agrees = dl_result.get("action", "HOLD") == signal.get("action", "HOLD")
-                        self._dl_grey_zone = True  # Flag pour risk/2 plus tard
-                        logger.info(
-                            f"  [DL] {symbol}: {dl_result['action']} (score={dl_score:.3f}, GREY ZONE, agree={dl_agrees})"
-                        )
-                    else:
-                        # Score >= 0.60 : confiance pleine
-                        all_predictions["DL_LSTM"] = dl_result
-                        self._dl_grey_zone = False
-                        dl_agrees = dl_result.get("action", "HOLD") == signal.get("action", "HOLD")
-                        logger.info(f"  [DL] {symbol}: {dl_result['action']} (score={dl_score:.3f}, agree={dl_agrees})")
-            except (ValueError, TypeError, IndexError, AttributeError, KeyError) as e:
-                logger.warning(f"  [DL] {symbol}: predict error: {e}")
-
-        # LightGBM désactivé — aucun modèle entraîné
-        lgb_result = None
-
-        # Meta-Learner désactivé — voir historique des commits (Juin 2026)
-        meta_action, meta_confidence = "HOLD", 0.5
-        devil_disagreements = []
-
         adapted = dict(signal)
 
         # SL/TP : préserver les valeurs calibrées par symbole (strategy.py)
@@ -894,30 +821,7 @@ class AdaptiveEngine:
                 adapted["tp_atr"] = 4.5
 
         # OL risk_mult appliqué en multiplicateur du base_risk_mult par symbole
-        # (le risk_mult du signal contient déjà base_risk × ol_risk de main.py)
         adapted["risk_mult"] = adapted.get("risk_mult", 1.0)
-
-        # DL grey zone (0.50-0.60) : risk/2
-        if getattr(self, "_dl_grey_zone", False):
-            adapted["risk_mult"] *= 0.50
-            logger.info(f"  [DL GREY ZONE] {symbol}: risk/2 (score DL entre {DL_MIN_SCORE}-{DL_SAFE_SCORE})")
-            self._dl_grey_zone = False  # reset
-
-        # DL ignored en regime RANGING → risk/2 (MOM20x3 seul en ranging est bruyant)
-        # Fix P5: ne s'applique QUE si DL est activé (self.dl is not None)
-        if self.dl is not None and dl_result is None and regime == "RANGING":
-            adapted["risk_mult"] *= 0.5
-            logger.info(f"  [DL-IGNORE RANGING] {symbol}: risk/2 (MOM20x3 seul en ranging, DL score<{DL_MIN_SCORE})")
-
-        # MOM/DL AGREEMENT check (seulement si DL disponible)
-        mom_action = signal.get("action", "HOLD")
-        if dl_result and dl_result.get("action", "HOLD") in ("BUY", "SELL") and mom_action in ("BUY", "SELL"):
-            if dl_result["action"] != mom_action:
-                logger.info(f"  [AGREEMENT] {symbol}: MOM={mom_action} DL={dl_result['action']} → DISAGREE, risk/2")
-                adapted["risk_mult"] *= 0.5
-            else:
-                logger.info(f"  [AGREEMENT] {symbol}: MOM={mom_action} DL={dl_result['action']} → AGREE ✓")
-                adapted["confidence"] = min(0.95, adapted.get("confidence", 0.5) + 0.10)
 
         # Structure alignment bonus/penalty
         if alignment_score >= 2 and signal.get("action") == "BUY":
@@ -957,7 +861,7 @@ class AdaptiveEngine:
             _sym_cfg = _SYM.get(symbol, {})
             _pref = _sym_cfg.get("preferred_hours")
             if _pref is not None and len(_pref) > 0 and len(_pref) < 24:
-                h = datetime.utcnow().hour
+                h = datetime.now(timezone.utc).hour
                 if h in _pref:
                     adapted["score"] = min(0.99, adapted.get("score", 0.5) + 0.08)
                     adapted["confidence"] = min(0.95, adapted.get("confidence", 0.5) + 0.06)
@@ -990,13 +894,6 @@ class AdaptiveEngine:
                 logger.info(f"  [STATS] {symbol}: PF={pf:.1f} < 0.8 → risk/2")
 
         adapted["_regime"] = regime
-        adapted["_dl_score"] = dl_result.get("score") if dl_result else None
-        adapted["_model_predictions"] = dict(all_predictions)
-        # ML agrees: DL (LSTM) avec MOM20x3
-        _mom_action = signal.get("action", "HOLD")
-        _dl_agrees = dl_result and dl_result.get("action", "HOLD") == _mom_action
-        adapted["_ml_agrees"] = _dl_agrees
-        adapted["_dl_agrees"] = _dl_agrees
         # Institutional analysis fields
         adapted["_alignment_dir"] = alignment_dir
         adapted["_alignment_score"] = alignment_score
@@ -1025,7 +922,6 @@ class AdaptiveEngine:
         symbol: str,
         r_multiple: float,
         regime: Optional[str] = None,
-        dl_features: Any = None,
         batch: bool = False,
         profit: Optional[float] = None,
         win: Optional[bool] = None,
@@ -1042,32 +938,6 @@ class AdaptiveEngine:
         self.learner.record_trade(symbol, r_multiple, actual_regime, profit=profit, win=win)
         if not batch:
             self._save_calibration()  # persistence immédiate après chaque trade réel
-        if dl_features is not None and self.dl is not None and self.dl.available:
-            self.dl.record_trade(symbol, dl_features, r_multiple)
-
-    def record_meta_result(self, symbol: str, regime: str, predictions_outcomes: Any) -> None:
-        # Meta-Learner désactivé — no-op (record_result gère déjà _save_calibration)
-        pass
-
-    def train_dl_if_ready(self) -> None:
-        if self.dl is not None and self.dl.available:
-            total = sum(len(v) for v in self.dl.training_buffer.values())
-            if total >= 32:
-                self.dl.train_all()
-                self._save_calibration()
-                n_symbols = sum(1 for v in self.dl.training_buffer.values() if len(v) >= 32)
-                logger.info(f"  [DL] Online training: {total} samples across {n_symbols} symbols")
-
-    def build_dl_features(self, rates_dict: dict) -> Any:
-        if self.dl is None or not self.dl.available:
-            return None
-        h1 = rates_dict.get("H1")
-        if h1 is None:
-            return None
-        try:
-            return self.dl._build_sequence(h1)
-        except (ValueError, TypeError, IndexError):
-            return None
 
     def get_report(self, symbol: str) -> dict:
         return self.learner.get_summary(symbol)

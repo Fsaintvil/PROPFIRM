@@ -57,11 +57,9 @@ class MT5Connector:
             return future.result(timeout=timeout)
         except concurrent.futures.TimeoutError:
             logger.error(f"[MT5 TIMEOUT] {name} bloque depuis >{timeout}s")
-            # 🐛 FIX 16 Août 2026 (Audit B3): le thread C bloqué ne libère jamais
-            # l'unique worker du pool. Tout appel MT5 suivant se retrouve en file
-            # derrière l'appel gelé → timeouts en cascade → robot paralysé.
-            # On recrée un executor neuf : l'ancien worker reste bloqué en arrière-plan
-            # (processus vivant) mais les NOUVEAUX appels MT5 retrouvent un worker libre.
+            # 🔧 FIX 28 Août 2026: Annuler le future AVANT de recréer l'executor
+            # pour éviter le leak de thread et le comportement indéfini.
+            future.cancel()
             try:
                 self._executor.shutdown(wait=False, cancel_futures=True)
             except Exception:
@@ -69,7 +67,9 @@ class MT5Connector:
             self._executor = concurrent.futures.ThreadPoolExecutor(
                 max_workers=1, thread_name_prefix="mt5_timeout"
             )
-            self.connected = False  # forcer un reconnect au prochain cycle
+            # Ne PAS setting connected=False ici — un timeout sur un appel non-critique
+            # (get_tick) ne justifie pas un reconnect complet. Le reconnect sera forcé
+            # uniquement si un appel critique échoue (order_send, health_check).
             return default
         except Exception as e:
             logger.error(f"[MT5 ERROR] {name}: {e}")
@@ -300,7 +300,13 @@ class MT5Connector:
         if tick is None:
             logger.error(f"Cannot close {position.symbol}: tick is None (market closed?)")
             return None
+        if position.type is None:
+            logger.error(f"Cannot close {position.symbol}: position.type is None (corrupt data?)")
+            return None
         ct = 1 if position.type == 0 else 0
+        if ct not in (0, 1):
+            logger.error(f"Cannot close {position.symbol}: unexpected type={position.type}")
+            return None
         price = tick.ask if ct == 0 else tick.bid
         req = dict(
             action=mt5.TRADE_ACTION_DEAL,
@@ -311,6 +317,11 @@ class MT5Connector:
             price=price,
             magic=self.magic,
             comment="CLOSE_SIMPLE",
+            sl=0,
+            tp=0,
+            deviation=20,
+            type_filling=mt5.ORDER_FILLING_IOC,
+            type_time=mt5.ORDER_TIME_DAY,
         )
         return self._call_with_timeout(
             lambda: mt5.order_send(req),

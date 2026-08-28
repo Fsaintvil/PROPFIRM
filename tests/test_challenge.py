@@ -130,11 +130,11 @@ class TestRecordTradeResult:
             t.record_trade_result("EURUSD", 10.0 if i % 2 == 0 else -10.0)
         assert len(t._symbol_trade_history["EURUSD"]) == 50
 
-    def test_trade_history_capped_1000(self):
+    def test_trade_history_capped_500(self):
         t = make_position_tracker()
-        for i in range(1100):
+        for i in range(600):
             t.record_trade_result("EURUSD", 1.0)
-        assert len(t._trade_history) == 1000
+        assert len(t._trade_history) == 500
 
     def test_historical_trade_not_counted_in_daily(self):
         t = make_position_tracker()
@@ -598,16 +598,16 @@ class TestStatePersistence:
 class TestPruneHistories:
     """Pruning des historiques pour limiter la mémoire."""
 
-    def test_trims_trade_history_to_1000(self):
+    def test_trims_trade_history_to_500(self):
         t = make_position_tracker()
-        for i in range(1500):
-            t._trade_history.append({"symbol": "EURUSD", "profit": 1.0, "time": datetime.utcnow()})
-        t._prune_histories()
-        assert len(t._trade_history) == 1000
-
-    def test_does_not_trim_when_under_limit(self):
-        t = make_position_tracker()
-        for i in range(500):
+        for i in range(600):
             t._trade_history.append({"symbol": "EURUSD", "profit": 1.0, "time": datetime.utcnow()})
         t._prune_histories()
         assert len(t._trade_history) == 500
+
+    def test_does_not_trim_when_under_limit(self):
+        t = make_position_tracker()
+        for i in range(400):
+            t._trade_history.append({"symbol": "EURUSD", "profit": 1.0, "time": datetime.utcnow()})
+        t._prune_histories()
+        assert len(t._trade_history) == 400

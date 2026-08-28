@@ -545,9 +545,9 @@ class TestPhase2ADXFilter:
     """Tests du filtre ADX."""
 
     def test_bypass_on_high_score(self, pipeline):
-        signal = {"score": 0.85, "adx": 18}
+        signal = {"score": 0.85, "adx": 22}
         result = pipeline._phase2_adx_filter("XAUUSD", signal, 1, {})
-        assert result is True  # bypass car score>=0.80 ET adx>=15
+        assert result is True  # bypass car score>=0.80 ET adx>=20
 
     def test_bypass_refused_when_adx_too_low(self, pipeline):
         signal = {"score": 0.85, "adx": 9}
@@ -585,8 +585,17 @@ class TestPhase5RegimeRule:
     def test_blocks_countertrend(self, pipeline):
         signal = {"_regime": "TREND_DOWN", "action": "BUY"}
         assert pipeline._phase5_regime_rule(signal) is False
-        signal = {"_regime": "TREND_UP", "action": "SELL"}
+        # SELL en TREND_UP avec allow_shorts=false → bloqué
+        pipeline.symbol_limits["TESTSYM"] = {"allow_shorts": False}
+        signal = {"_regime": "TREND_UP", "action": "SELL", "symbol": "TESTSYM", "score": 0.80}
         assert pipeline._phase5_regime_rule(signal) is False
+
+    def test_sell_selectif_trend_up_penalty(self, pipeline):
+        """🔧 FIX 28 Août 2026: SELL en TREND_UP avec allow_shorts=true → penalty 0.70."""
+        pipeline.symbol_limits["SOLUSD"] = {"allow_shorts": True}
+        signal = {"_regime": "TREND_UP", "action": "SELL", "symbol": "SOLUSD", "score": 0.80}
+        assert pipeline._phase5_regime_rule(signal) is True
+        assert signal["score"] == pytest.approx(0.56, abs=0.01)  # 0.80 × 0.70
 
     def test_allows_ranging_any_direction(self, pipeline):
         signal = {"_regime": "RANGING", "action": "BUY"}
@@ -735,7 +744,7 @@ class TestDynamicPositionLimits:
                 "action": "BUY",
                 "score": 0.60,
                 "confidence": 0.50,
-                "adx": 15,
+                "adx": 22,
                 "atr": 0.01,
                 "_regime": "RANGING",
                 "plus_di": 20,

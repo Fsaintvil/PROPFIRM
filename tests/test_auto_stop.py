@@ -515,9 +515,7 @@ class TestConstants:
 
     def test_active_symbols_non_empty(self):
         assert len(ACTIVE_SYMBOLS) >= 3
-        # 🔧 14 Aout 2026 - XAUUSD + PAIRES PRIMAIRES ACTIVES (decision utilisateur)
-        assert "XAUUSD" in ACTIVE_SYMBOLS  # 🔧 REACTIVE 14 Aout 2026 (decision utilisateur)
-        assert "EURUSD" in ACTIVE_SYMBOLS  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
-        assert "USDJPY" in ACTIVE_SYMBOLS  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
-        assert "US100.cash" in ACTIVE_SYMBOLS  # 🔧 PF 1.20, 6/6 annees positives
-        assert "BTCUSD" in ACTIVE_SYMBOLS  # 🔧 DEBLOQUE 13 Aout 2026 - groupe CRYPTO independant
+        # 🔧 25 Août 2026 - PORTFEUILLE EDGE: 3 symboles prouvés (PF 1.53+)
+        assert "BTCUSD" in ACTIVE_SYMBOLS  # Edge #1: +$733, WR 49%, PF 1.66
+        assert "SOLUSD" in ACTIVE_SYMBOLS  # Edge #2: +$40, WR 52%, PF 1.65
+        assert "USDJPY" in ACTIVE_SYMBOLS  # Edge #3: +$75, WR 55%, PF 1.70

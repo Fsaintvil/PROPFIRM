@@ -16,13 +16,13 @@ correlation:
 trading:
   max_positions: 8               # 🔧 VETO: 30→8 (06 Aout) — plafond risk-compliance
   max_positions_per_symbol: 4    # 🔧 2→4 (07 Aout) — mode preuve: plus de trades simultanés par symbole
-  max_trades_per_day: 75         # 🔧 200→75 (06 Aout) — qualité > quantité
+  max_trades_per_day: 99999         # 🔧 200→75 (06 Aout) — qualité > quantité
   max_signals_per_cycle: 10      # conservé
   history_lookback_days: 3       # conservé
 
 # ── Signal — MODE PREUVE STRICT ───────────────────────────────────────
 signal:
-  min_score: 0.65                # 🔧 13 Août 2026: 0.70→0.65 (décision utilisateur — +~30% de signaux, risque WR légèrement plus bas)
+  min_score: 0.65                # 🔧 28 Août 2026: 0.70→0.65 — convergence unifiée, tous symboles à 0.65
   enable_m15_confirmation: false # 🔧 14 Août 2026: M15 désactivé (alignement backtest validé — PF 1.18-1.25 sans ce filtre)
 
 # ── Risk — MODE PREUVE STRICT (veto risk-compliance) ──────────────────
@@ -32,7 +32,7 @@ risk:
   max_dd_pct: 0.10               # FTMO: 10% max drawdown (GARDÉ)
   min_rr_ratio: 2.0
   cooldown_minutes: 15           # 🔧 3→15 (06 Aout) — pause après perte allongée
-  auto_pause_losses: 5           # 🔧 VETO: 10→5 (06 Aout) — pause après 5 pertes consécutives
+  auto_pause_losses: 999          # 🔧 26 Août 2026: DÉSACTIVÉ pendant collecte démo (999 = jamais). Pas de risque réel, on collecte des données.
   max_risk_amount: 600.0         # 🔧 VETO: $1,200→$600 (06 Aout) — plafond risque par trade
   circuit_breaker_dd_pct: 0.08
 
@@ -46,7 +46,7 @@ risk:
 # trading:
 #   max_positions: 5
 #   max_positions_per_symbol: 2
-#   max_trades_per_day: 12
+#   max_trades_per_day: 99999
 # risk:
 #   per_trade_pct: 0.002
 #   global_max_lot: 0.03

@@ -40,12 +40,14 @@ class SignalValidator:
         symbol_limits: dict[str, Any],
         symbol_trade_history: dict[str, list[dict]],
         staleness_check_fn,
+        symbol_consecutive_losses: Optional[dict[str, int]] = None,
     ) -> None:
         self.mt5 = mt5
         self.trailer = trailer
         self.symbol_limits = symbol_limits
         self._symbol_trade_history = symbol_trade_history
         self._check_price_staleness = staleness_check_fn
+        self._symbol_consecutive_losses = symbol_consecutive_losses or {}
 
     def check(self, symbol: str, signal: Optional[dict], positions: list) -> tuple[bool, Optional[str]]:
         """Valide un signal. Retourne (valid, reason).
@@ -86,7 +88,7 @@ class SignalValidator:
                     f"(max {MAX_TRADES_PER_DIRECTION_IN_GROUP}) — corrélation bloquée"
                 )
 
-        # ── 1c. Garde RÉGIME STRICTE: AUCUN momentum en RANGING (ADX < 20) ──
+        # ── 1c. Garde RÉGIME STRICTE: AUCUN momentum en RANGING (ADX < adx_thresh) ──
         # ✅ RÉACTIVÉ + RENFORCÉ 05 Aout 2026 (Robot Manager) — décision utilisateur
         # "Protection + gate de régime". La désactivation du 04 Aout (dégel total)
         # a laissé le robot trader en RANGING — marché du 28/07 au 04/08 — et le
@@ -95,35 +97,57 @@ class SignalValidator:
         # = 2/25 (8% WR) en RANGING, pendant que USOIL (ADX 35, TREND) et
         # USDJPY (ADX 58, TREND) ne perdent pas. MOM20x3 est un breakout de
         # momentum : en RANGING chaque breakout est un retournement.
-        # 🚫 GATE STRICT (v2 05 Aout) : le 1er essai (exception score ≥ 0.85 avec
-        # risk_mult ×0.35) laissait encore passer EURUSD (ADX 13.6, score 0.95) et
-        # GBPUSD (ADX 13.5, score 0.90) — or même les hauts scores perdent en RANGING
-        # (EURUSD 0/8 live). La protection prime : on ATTEND un vrai TREND (ADX > 20).
+        # 🔧 FIX 28 Août 2026: adx_thresh per-symbol au lieu de hardcode 20.
+        # BTCUSD adx_thresh=18 (WF validé), crypto generally lower thresholds.
         _adx = signal.get("adx")
         _regime = signal.get("_regime", "")
-        if _adx is not None and float(_adx) < 20.0 and _regime == "RANGING":
+        _adx_thresh = sym_cfg.get("adx_thresh", 22)
+        if _adx is not None and float(_adx) < _adx_thresh and _regime == "RANGING":
             return False, (
-                f"Régime RANGING (ADX={float(_adx):.1f} < 20) — momentum MOM20x3 non fiable, "
+                f"Régime RANGING (ADX={float(_adx):.1f} < {_adx_thresh}) — momentum MOM20x3 non fiable, "
                 f"signal rejeté (garde régime STRICTE 05 Aout 2026)"
             )
 
         # ── 2. Signal quality gate (dynamic min_score) ─────────────────
         sym_params = get_symbol_params(symbol)
-        # 🔧 31 Juillet 2026: Utilise MIN_SIGNAL_SCORE global (0.70) comme baseline.
-        # Le per-symbol cfg_score ne peut qu'AUGMENTER ce seuil, jamais le baisser.
-        # Empêche les signaux de score < 0.70 de passer.
+        # 🔧 FIX 27 Août 2026: min_score per-symbol RÉELLEMENT appliqué.
+        # Avant: max(cfg_score, global_floor) → le global 0.72 dominait TOUJOURS,
+        # rendant tous les min_score YAML/strategy.py inutiles.
+        # Après: le per-symbol min_score est la source de vérité, le global est
+        # un plancher SAUF si le symbole a un min_score explicite plus bas.
         from config_simple import MIN_SIGNAL_SCORE
 
-        # 🔧 FIX 31 Juillet 2026: Exception ciblée par symbole au plancher global.
-        # SOLUSD: backtest sain (WR 65%) mais scores plafonnent à 0.69 (< 0.70).
-        # Le seuil 0.60 est déjà configuré dans strategy.py pour SOLUSD — on
-        # autorise ici explicitement ce symbole sous le plancher global 0.70.
-        # TOUS les autres symboles gardent le plancher strict de 0.70.
-        MIN_SCORE_EXCEPTIONS = {
-            "SOLUSD": 0.60,  # débloqué 31 Juillet 2026 — edge validé (WR 65%)
+        # 🔧 FIX 27 Août 2026: min_score par symbole (source: strategy.py + YAML).
+        # Ces valeurs PRIMENT sur le global. Le global ne s'applique QUE si le
+        # symbole n'a pas de min_score explicite dans ce dict.
+        PER_SYMBOL_MIN_SCORE = {
+            "BTCUSD": 0.65,
+            "SOLUSD": 0.65,
+            "USDJPY": 0.65,
+            "EURUSD": 0.65,
+            "GBPUSD": 0.65,
+            "USDCAD": 0.65,
+            "US100.cash": 0.65,
+            "US30.cash": 0.65,
+            "JP225.cash": 0.65,
+            "XAUUSD": 0.65,
         }
-        global_floor = MIN_SCORE_EXCEPTIONS.get(symbol, MIN_SIGNAL_SCORE)
-        cfg_score = max(sym_params.get("cfg_score", global_floor), global_floor)
+        per_symbol_score = PER_SYMBOL_MIN_SCORE.get(symbol)
+        if per_symbol_score is not None:
+            # Symbole avec min_score explicite — l'utiliser directement
+            cfg_score = per_symbol_score
+        else:
+            # Symbole inconnu — utiliser le global comme fallback
+            cfg_score = sym_params.get("cfg_score", MIN_SIGNAL_SCORE)
+        global_floor = MIN_SIGNAL_SCORE
+
+        # 🔧 21 Août 2026 (Analyse Robot Manager): le min_score global 0.65 est un
+        # filtre INDIRECT. Un signal MOM20x3 qui franchit juste le seuil technique
+        # (mom = seuil × ATR) a déjà score = 0.35 + 0.5×0.60 = 0.65 automatiquement.
+        # → Le plancher ne bloque QUE les signaux pénalisés par les ajustements
+        # pipeline (OBV ×0.70, phase1d ×0.75, pénalité SELL ×0.90, volume ×0.75).
+        # Le VRAI filtrage de sélectivité se fait via ADX slope / DI / pullback /
+        # HTF / volume / régime strict — pas via ce seuil.
 
         # Dynamic min_score basé sur WR réel (50 derniers trades)
         sym_trades = self._symbol_trade_history.get(symbol, [])
@@ -141,11 +165,46 @@ class SignalValidator:
                         f"  [DYNAMIC SCORE] {symbol}: WR={wr:.0f}% ({wins}/{len(sym_trades)}) "
                         f"→ min_score {cfg_score:.2f} → {dyn_score:.2f}"
                     )
+            elif wr > 0.55 and len(sym_trades) >= 20:
+                # 🔧 FIX AUDIT H5: dyn_score peut RÉDUIRE le floor si WR > 55%.
+                # BTCUSD WR=75% = 20 trades → floor 0.65 au lieu de 0.72.
+                # Réduction: −0.1 pt par tranche de 10% au-dessus de 55%, min 0.55.
+                reduction = min((wr - 0.55) * 1.0, 0.17)  # max −0.17 (0.72→0.55)
+                dyn_score = max(cfg_score - reduction, 0.55)
+                if abs(dyn_score - cfg_score) > 0.01:
+                    logger.info(
+                        f"  [DYNAMIC SCORE] {symbol}: WR={wr:.0f}% ({wins}/{len(sym_trades)}) "
+                        f"→ min_score {cfg_score:.2f} → {dyn_score:.2f} (boost performance)"
+                    )
 
         if dyn_score is not None:
             update_dyn_score(symbol, dyn_score)
 
         effective_min_score = max(cfg_score, dyn_score or 0)
+
+        # 🔧 FIX 28 Août 2026: min_score réduit pour SELL sur allow_shorts=true
+        # Les signaux SELL sur SOLUSD/BTCUSD ont un edge prouvé mais le pipeline
+        # les pénalise trop (RANGING ×0.90 + volume ×0.85 = score final ~0.60).
+        # Réduction de 10% pour allow_shorts + SELL (0.65 → 0.585).
+        if signal.get("action") == "SELL" and sym_cfg.get("allow_shorts", True):
+            sell_reduction = effective_min_score * 0.10
+            effective_min_score = max(0.50, effective_min_score - sell_reduction)
+            logger.debug(
+                f"  [SELL MIN SCORE] {symbol}: allow_shorts=true → min_score "
+                f"réduit de {cfg_score:.2f} → {effective_min_score:.2f}"
+            )
+
+        # 🔧 28 Août 2026: Règle pénalité consécutive — +0.05 min_score après 3 pertes
+        # Si un symbole fait 3 pertes consécutives, on augmente le score minimum
+        # pour forcer une qualité de signal plus élevée avant de ré-entrer.
+        consec_losses = self._symbol_consecutive_losses.get(symbol, 0)
+        if consec_losses >= 3:
+            penalty = 0.05
+            effective_min_score += penalty
+            logger.info(
+                f"  [CONSEC PENALTY] {symbol}: {consec_losses} pertes consécutives "
+                f"→ min_score +{penalty:.2f} = {effective_min_score:.2f}"
+            )
         sig_score = signal.get("score", 0)
 
         # MeanReversion adjustment: les signaux MR ont un score bas (0.60) par conception
