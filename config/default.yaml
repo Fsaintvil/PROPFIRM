@@ -62,7 +62,7 @@ symbol_limits:
   XAUUSD:
     timeframe: H1
     execution_timeframe: M15
-    max_lot: 0.06
+    max_lot: 0.04
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.65
@@ -120,7 +120,7 @@ symbol_limits:
   BTCUSD:
     timeframe: H1
     execution_timeframe: M15
-    max_lot: 0.03
+    max_lot: 0.045
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.65

@@ -70,7 +70,7 @@ def test_symbol_limits_defaults():
     cfg = load_config("default")
     assert "XAUUSD" in cfg.symbol_limits
     assert "BTCUSD" in cfg.symbol_limits
-    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.06  # 🔧 MODE PREUVE 06 Aout 2026: 0.10→0.05; 🔧 17 Aout 2026: ×1.10 (décision utilisateur)
+    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.04  # 🔧 Council 29 Août 2026: 0.06→0.04 (D2: XAUUSD slug −$2,213)
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
     # 🔧 14 Aout 2026: XAUUSD REACTIVÉ (décision utilisateur) — risk_mult 0.0→1.0
     assert (
@@ -105,7 +105,7 @@ def test_symbol_limits_new_portfolio():
     assert btc.risk_mult == 1.0  # 🔓 DÉBLOQUÉ 13 Août 2026 (décision utilisateur — groupe CRYPTO indépendant)
     assert btc.allow_buys is True
     assert btc.allow_shorts is True  # 🔧 FIX 28 Août 2026: SELL sélectif réactivé (marché baissier)
-    assert btc.max_lot == 0.03  # lot minimal
+    assert btc.max_lot == 0.045  # 🔧 Council 29 Août 2026: 0.03→0.045 (D3: BTCUSD seul edge, scaling ×1.5)
     # 🔧 28 Août 2026: min_score unifié à 0.65 pour tous les symboles
     assert btc.min_score == 0.65
 

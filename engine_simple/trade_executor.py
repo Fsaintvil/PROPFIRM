@@ -516,24 +516,60 @@ class TradeExecutor:
         # quand le symbole est gelé via risk_mult=0.0.
         if lot is None:
             return 0.01  # Fallback sécurisé : lot minimum en cas d'erreur
+        if not isinstance(lot, (int, float)):
+            logger.warning(f"[LOT SAFETY] {symbol}: lot type={type(lot).__name__} non numérique → force 0.01")
+            return 0.01
         if lot <= 0:
             logger.info(f"  [GEL] {symbol}: calculate_lot retourné {lot} → trade refusé (symbole gelé)")
             return 0.0
-        # lot > 0: clamping sécurité
-        try:
-            # 🔧 FIX 28 Août 2026: import supprimé — config_simple déjà importé en haut du fichier
-            # (line 13). L'import dans la méthode créait un overhead à chaque appel.
+        # lot > 0: clamping sécurité (TRIPLE garde-fou)
+        _min = 0.01
+        _global_max = 0.5  # default absolu
 
-            # 🔧 FIX 10 Juillet 2026: global_max_lot appliqué comme plafond absolu
-            _max = min(getattr(cfg, "GLOBAL_MAX_LOT", 10.0), 10.0)
-            _min = 0.01  # minimum absolu (lots min pour data collection)
-            if lot > _max:
-                logger.warning(f"[LOT SAFETY] {symbol}: lot={lot:.3f} > {_max} (global_max_lot clamp)")
-                lot = _max
-            if lot < _min:
-                lot = _min
-        except (AttributeError, Exception) as _e:
-            logger.debug(f"[LOT SAFETY] config_simple non disponible: {_e}")
+        # Clamp 1: global_max_lot (plafond absolu global)
+        try:
+            _g = getattr(cfg, "GLOBAL_MAX_LOT", 0.5)
+            if isinstance(_g, (int, float)):
+                _global_max = min(_g, 10.0)
+            if lot > _global_max:
+                logger.warning(f"[LOT SAFETY] {symbol}: lot={lot:.3f} > global_max={_global_max} → clamp")
+                lot = _global_max
+        except Exception:
+            pass
+
+        # Clamp 2: per-symbol max_lot depuis symbol_limits (dict partagé hot-reload)
+        try:
+            _sym_entry = self.ftmo.symbol_limits.get(symbol, {})
+            if isinstance(_sym_entry, dict):
+                _sym_max = _sym_entry.get("max_lot", 0.01)
+                if isinstance(_sym_max, (int, float)) and lot > _sym_max:
+                    logger.warning(f"[LOT SAFETY] {symbol}: lot={lot:.3f} > per-symbol max_lot={_sym_max} → clamp")
+                    lot = _sym_max
+        except Exception:
+            pass
+
+        # Clamp 3 (HARD): per-symbol max_lot depuis YAML direct (pas hot-reload)
+        # Lit le YAML à chaque fois — defense contre dict corrompu/vidé par hot-reload
+        try:
+            from config.schema import load_config as _load_cfg
+            _direct_cfg = _load_cfg()
+            _direct_limits = _direct_cfg.trading.symbol_limits
+            if isinstance(_direct_limits, dict):
+                _direct_entry = _direct_limits.get(symbol, {})
+                if isinstance(_direct_entry, dict):
+                    _direct_max = _direct_entry.get("max_lot", 0.01)
+                    if isinstance(_direct_max, (int, float)) and lot > _direct_max:
+                        logger.critical(
+                            f"[LOT CRITICAL] {symbol}: lot={lot:.3f} > YAML direct max_lot={_direct_max} "
+                            f"(hot-reload suspecté corrompu) → FORCE CLAMP. "
+                            f"Vérifier le pipeline de calcul risk_amount/risk_per_01."
+                        )
+                        lot = _direct_max
+        except Exception:
+            pass  # Si le YAML direct échoue, on garde le clamp 2
+
+        # Final: lot dans [min, global_max]
+        lot = max(_min, min(lot, _global_max))
         return lot
 
     REGIME_TO_SHORT = {
