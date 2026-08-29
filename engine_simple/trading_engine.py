@@ -545,6 +545,22 @@ class TradingEngine:
             # CRITICAL: set on challenge._trade_history directly, not ftmo._trade_history
             # because ftmo._trade_history is an alias that gets disconnected on reassignment
             th_raw = self._state["trade_history"]
+            # 🔧 FIX 29 Août 2026: dedup trade_history at load time
+            # Les restarts successifs accumulaient des doublons (10× chaque trade historique).
+            # Set de clés uniques pour filtrer les doublons avant reconstruction.
+            seen_keys = set()
+            th_deduped = []
+            for t in th_raw:
+                _key = (t.get("symbol"), t.get("profit"), str(t.get("time", "")), t.get("action"))
+                if _key not in seen_keys:
+                    seen_keys.add(_key)
+                    th_deduped.append(t)
+            if len(th_deduped) < len(th_raw):
+                logger.warning(
+                    f"[STATE] Dedup trade_history: {len(th_raw)} → {len(th_deduped)} "
+                    f"({len(th_raw) - len(th_deduped)} doublons supprimés)"
+                )
+            th_raw = th_deduped
             active_symbols = set(cfg.SYMBOLS)
             self.ftmo.challenge._trade_history = []
             skipped = 0
