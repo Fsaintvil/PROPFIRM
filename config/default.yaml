@@ -124,7 +124,7 @@ symbol_limits:
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.65
-    max_spread_points: 150
+    max_spread_points: 300
     adx_thresh: 18
     allow_buys: true
     allow_shorts: true
