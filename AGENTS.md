@@ -1,5 +1,15 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 29 Août 2026 (23:00)** : 🏛️ **CONSEIL 7 AGENTS + TRIPLE CLAMP LOT SIZING + CONFIGS D2/D3** —
+> - **Conseil d'agents** : CIO, Risk-Compliance, Signal Engine, Optimizer, Quant Auditor, System Monitor, Log Analyst. **Verdict** : 🟢 GREEN mais 3 alertes critiques.
+> - **🚨 P0 — Triple clamp lot sizing** (`trade_executor.py:_calc_lot`) : le bug du 27/08 (SOLUSD 1.47 lot = ×24 max, BTCUSD 0.71 = ×23 max) a contourné les clamps existants. **Triple défense ajoutée** : (1) global_max_lot depuis config_simple, (2) per-symbol max_lot depuis symbol_limits dict hot-reloadé, (3) per-symbol max_lot depuis YAML direct (pas hot-reload). `isinstance` guards sur chaque comparaison. Log CRITICAL si Clamp 3 s'active. Cause racine exacte non identifiée (les clamps existants devraient suffire théoriquement) mais la triple défense rend le contournement quasi-impossible.
+> - **D2 — XAUUSD max_lot 0.06→0.04** (`config/default.yaml`) : slug −$2,213, PF 0.66, WR 35%. Dernier rebalancing après SCALING=désactivé.
+> - **D3 — BTCUSD max_lot 0.03→0.045** (`config/default.yaml`) : seul edge prouvé statiquement (p=0.0012), ×1.5 pour maximiser collecte prop.
+> - **Quant Auditor — wr_target abaissé 60%→25%** (`golden_rule.py` L.64) : le seuil 60% est mathématiquement incompatible avec MOM20x3 (edge RR ~2.75, WR naturel 38-50%). Seuil précédent atteint par hasard (p=0.50 >> 0.25). Nouveau seuil : PF ≥ 1.50 comme vraie mesure de l'edge.
+> - **Bidirectionnel (28/08)** : premier jour complet SELL activé. 18 trades, PnL +$93.85, WR 66.7%. SELL 16-18 trades cumulés, WR 68.8%, +$92.50. Prometteur mais IC large [41%, 96%].
+> - **Alertes résiduelles** : concentration BTCUSD 97% du PnL GR (PF gonflé par gros lots historiques), XAUUSD BUY en TREND_DOWN (signal/régime incohérent, autorisé sous surveillance), consistency 38.6% > 30% (pas bloquant en démo).
+> - **Tests** : 1230 passed, 33 skipped, 1 pré-existant (news_filter). Commit `cf95a1ecb`.
+
 > **Mise à jour 22 Août 2026 (00:15)** : 🔧 **CONSEIL D'AGENTS COMPLET (5 experts) + 3 FIXES APPLIQUÉS (time-stop 2h, XAUUSD threshold 2.5, LOT SAFETY clamp)** —
 > - **Conseil d'agents** : CIO, System Monitor, Risk Compliance, Optimizer, Log Analyst lancés en parallèle. Synthèse : robot GREEN, anomalies sous contrôle, fixes P0 identifiés.
 > - **Fix 1 — time-stop loss 3h→2h** (`trailer.py` L.319) : les trades perdants étaient maintenus 3h, trop long pour du momentum court terme. Fix attendu : −$100-200/jour en pertes évitées. **ACTIF** après redémarrage robot (PID 31564, start 23:47:02).
