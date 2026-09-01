@@ -48,8 +48,8 @@ logger = logging.getLogger("ftmo.trailer")
 # de profit avait encore SL=entry+0.15×ATR (logs 17/08 20:24).
 # Nouveau: paliers fixes tous les 0.30×ATR qui font monter le SL de +0.15×ATR
 # à chaque palier. Le SL suit le profit de façon quasi-linéaire tout en
-# restant TOUJOURS sous le trailing N1 (peak−trail_dist), donc compatible.
-# 1.00×ATR → entry          (BE pur, inchangé)
+# restant TOUJOURS sous le trailing N1 (peak−trail_dist) donc compatible.
+# 1.00×ATR → entry          (BE pur inchangé)
 # 1.30×ATR → entry+0.15×ATR (inchangé)
 # 1.60×ATR → entry+0.30×ATR
 # 1.90×ATR → entry+0.45×ATR
@@ -65,13 +65,45 @@ BE_PROGRESSIVE_LEVELS = [
     (2.50, 0.75),
 ]
 
+# 🔧 FIX 1 Sept 2026: BE per-symbol (optimisé backtest H1 2012-2026).
+# Chaque symbole a un comportement de retracement différent après avoir atteint
+# un certain profit. Les symboles forex (EURUSD, GBPUSD, NZDUSD) retracent
+# 58-63% après 1.0×ATR → BE plus agressif (seuil bas). Les USDJPY/USDCHF/USDCAD
+# retracent <20% → BE moins agressif (seuil haut, laisser courir).
+# Format: (seuil_be_premier, palier_buffer_1)
+# Les paliers suivants sont interpolés automatiquement (palier_prec + 0.30×ATR
+# seuil + 0.15×ATR buffer) jusqu'à 2.50×ATR.
+BE_BY_SYMBOL: dict = {
+    # Forex — retracement élevé BE agressif
+    "EURUSD":  [(0.70, 0.00), (1.00, 0.15), (1.30, 0.30), (1.60, 0.45), (1.90, 0.60), (2.20, 0.75)],
+    "GBPUSD":  [(0.85, 0.00), (1.15, 0.15), (1.45, 0.30), (1.75, 0.45), (2.05, 0.60), (2.35, 0.75)],
+    "NZDUSD":  [(0.85, 0.00), (1.15, 0.15), (1.45, 0.30), (1.75, 0.45), (2.05, 0.60), (2.35, 0.75)],
+    # Crypto — retracement modéré BE standard
+    "BTCUSD":  [(1.00, 0.00), (1.30, 0.15), (1.60, 0.30), (1.90, 0.45), (2.20, 0.60), (2.50, 0.75)],
+    "SOLUSD":  [(1.00, 0.00), (1.30, 0.15), (1.60, 0.30), (1.90, 0.45), (2.20, 0.60), (2.50, 0.75)],
+    # Forex — retracement faible BE permissif (laisser respirer)
+    "AUDUSD":  [(1.30, 0.00), (1.60, 0.15), (1.90, 0.30), (2.20, 0.45), (2.50, 0.60), (2.80, 0.75)],
+    "USDCAD":  [(1.30, 0.00), (1.60, 0.15), (1.90, 0.30), (2.20, 0.45), (2.50, 0.60), (2.80, 0.75)],
+    "USDJPY":  [(1.50, 0.00), (1.80, 0.15), (2.10, 0.30), (2.40, 0.45), (2.70, 0.60), (3.00, 0.75)],
+    "USDCHF":  [(1.50, 0.00), (1.80, 0.15), (2.10, 0.30), (2.40, 0.45), (2.70, 0.60), (3.00, 0.75)],
+    # XAUUSD — retracement modéré au début puis permissif
+    "XAUUSD":  [(1.00, 0.00), (1.30, 0.15), (1.60, 0.30), (1.90, 0.45), (2.20, 0.60), (2.50, 0.75)],
+}
+
+
+def _get_be_levels(symbol: str) -> list:
+    """Retourne les paliers BE pour un symbole (per-symbol ou fallback global)."""
+    return BE_BY_SYMBOL.get(symbol, BE_PROGRESSIVE_LEVELS)
+
 
 class Trailer:
     """ATR-based trailing SL + partial TP + time-stop + structure exit."""
 
-    def __init__(self, mt5_connector: Any, config: dict, shared_lock: Any = None) -> None:
+    def __init__(self, mt5_connector: Any, config: dict, shared_lock: Any = None, server_offset_s: float = 0.0) -> None:
         self.mt5: Any = mt5_connector
         self.config: dict = config
+        # 🔧 FIX 1 Sept 2026: server offset pour corriger position.time (MT5 serveur UTC+3)
+        self._server_offset_s: float = server_offset_s
 
         # State — managed by FTMOProtector, accessed via references
         # 🔧 FIX 16 Juillet 2026: shared_lock protège les 6 dicts partagés
@@ -98,6 +130,18 @@ class Trailer:
         self._trail_jitter_cache: dict = {}
 
     # ── Note: Utiliser FTMOProtector.check_invariants() pour la séquence production ──
+
+    def _pos_age_minutes(self, position: Any) -> float:
+        """Age de la position en minutes (corrigé de l'offset serveur MT5).
+
+        🔧 FIX 1 Sept 2026: position.time est en temps serveur MT5 (UTC+3),
+        time.time() est en UTC. Sans correction, l'âge est sous-estimé de ~3h
+        → BE progressif/structure_exit ignorés pour toute position < 3h.
+        """
+        raw_time = getattr(position, "time", None)
+        if not raw_time:
+            return 0.0
+        return (time.time() - raw_time + self._server_offset_s) / 60
 
     def _pip_offset(self, symbol: str, pips: int = 10) -> float:
         info = self.mt5.get_symbol_info(symbol)
@@ -631,7 +675,10 @@ class Trailer:
                 try:
                     # 🐛 FIX 26 Juin 2026: position.time est un int (Unix timestamp)
                     # dans l'API MT5, pas un datetime. .timestamp() lève AttributeError.
-                    pos_open_ts = position.time if isinstance(position.time, (int, float)) else None
+                    raw_ts = position.time if isinstance(position.time, (int, float)) else None
+                    # 🔧 FIX 1 Sept 2026: corriger offset serveur (rate timestamps = UTC réel)
+                    if raw_ts is not None:
+                        pos_open_ts = raw_ts - self._server_offset_s
                 except (AttributeError, TypeError):
                     pass
                 if pos_open_ts is not None:
@@ -708,7 +755,8 @@ class Trailer:
         # resserre le SL trop tôt après l'entrée (84 trades <30min = bruit pur).
         # Le SL initial au broker reste actif (protection), mais on ne resserre pas
         # avant 15 minutes pour laisser le trade respirer.
-        pos_age_min = (time.time() - position.time) / 60 if hasattr(position, 'time') and position.time else 0
+        # 🔧 FIX 1 Sept 2026: corriger position.time (serveur UTC+3) avec server offset
+        pos_age_min = self._pos_age_minutes(position)
         if pos_age_min < 15:
             return
 
@@ -743,12 +791,15 @@ class Trailer:
             )
             profit_atr = (entry - profit_price) / atr_val
 
-        if profit_atr <= 1.00:
+        # 🔧 FIX 1 Sept 2026: seuil BE per-symbol (pas le hardcodé 1.00×ATR)
+        be_levels = _get_be_levels(position.symbol)
+        first_threshold = be_levels[0][0] if be_levels else 1.00
+        if profit_atr <= first_threshold:
             return
 
         # Choisir le palier le plus haut atteint (croissants strictement)
         target_buffer = 0.0
-        for thresh, buffer in BE_PROGRESSIVE_LEVELS:
+        for thresh, buffer in be_levels:
             if profit_atr > thresh:
                 target_buffer = buffer
             else:
@@ -788,7 +839,8 @@ class Trailer:
         resserre le SL trop tôt après l'entrée (84 trades <30min = bruit pur).
         """
         # Min hold time: ne pas resserre le SL avant 15 minutes
-        pos_age_min = (time.time() - position.time) / 60 if hasattr(position, 'time') and position.time else 0
+        # 🔧 FIX 1 Sept 2026: corriger position.time (serveur UTC+3) avec server offset
+        pos_age_min = self._pos_age_minutes(position)
         if pos_age_min < 15:
             return
 
@@ -813,8 +865,10 @@ class Trailer:
 
         # 🐛 FIX 26 Juin 2026: position.time est un int (Unix timestamp)
         # 🐛 CORRIGÉ 26 Juin: ce bloc était APRÈS un `return` → dead code
+        # 🔧 FIX 1 Sept 2026: corriger offset serveur (candle timestamps = UTC réel)
         try:
-            pos_open_ts = position.time if isinstance(position.time, (int, float)) else None
+            raw_ts = position.time if isinstance(position.time, (int, float)) else None
+            pos_open_ts = (raw_ts - self._server_offset_s) if raw_ts is not None else None
             candle_ts = h1t[candle_idx]
             if pos_open_ts is not None and candle_ts <= pos_open_ts:
                 return

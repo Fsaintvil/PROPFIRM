@@ -700,7 +700,7 @@ class FTMOProtector:
         self._server_offset_s = self._measure_server_offset()
 
         # ── Trailer (delegated) ──────────────────────────────────────
-        self.trailer = Trailer(mt5, config, shared_lock=self._shared_lock)
+        self.trailer = Trailer(mt5, config, shared_lock=self._shared_lock, server_offset_s=self._server_offset_s)
         self.trailer.partial_closed = self.partial_closed
         self.trailer.trailing_peaks = self.trailing_peaks
 

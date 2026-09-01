@@ -568,25 +568,31 @@ class TestTrailingConfigLock:
             assert get_trailing_for_symbol("GBPUSD", regime) == levels
 
     def test_progressive_be_thresholds(self):
-        """Breakeven progressif : les seuils 1.00/1.30×ATR sont dans BE_PROGRESSIVE_LEVELS.
+        """Breakeven progressif : les seuils 1.00/1.30×ATR sont dans BE_PROGRESSIVE_LEVELS (fallback).
         Ce test verrouille le contrat (AGENTS.md 31 Juillet 2026 + FIX 17 Août 2026)."""
-        from engine_simple.trailer import BE_PROGRESSIVE_LEVELS
+        from engine_simple.trailer import BE_PROGRESSIVE_LEVELS, _get_be_levels
 
-        # La fonction doit référencer BE_PROGRESSIVE_LEVELS (module-level)
+        # La fonction doit référencer _get_be_levels (module-level)
         import engine_simple.trailer as trailer_mod
 
         src = [c for c in trailer_mod.Trailer._check_progressive_be.__code__.co_names]
-        assert "BE_PROGRESSIVE_LEVELS" in src, "la fonction doit utiliser BE_PROGRESSIVE_LEVELS"
+        assert "_get_be_levels" in src, "la fonction doit utiliser _get_be_levels (BE per-symbol)"
+        # Fallback global doit contenir les seuils historiques
         thresholds = [lvl[0] for lvl in BE_PROGRESSIVE_LEVELS]
         assert any(abs(t - 1.30) < 1e-9 for t in thresholds), "seuil 1.30×ATR manquant"
         assert any(abs(t - 1.00) < 1e-9 for t in thresholds), "seuil 1.00×ATR manquant"
+        # Per-symbol doit retourner les niveaux pour EURUSD (BE agressif)
+        eurusd_levels = _get_be_levels("EURUSD")
+        assert eurusd_levels[0][0] == 0.70, f"EURUSD BE pur doit être 0.70×ATR, trouvé {eurusd_levels[0][0]}"
+        # Un symbole inconnu doit retourner le fallback global
+        assert _get_be_levels("UNKNOWN") is BE_PROGRESSIVE_LEVELS
 
     def test_progressive_be_extra_levels(self):
         """🔧 FIX 17 Août 2026: paliers supplémentaires — montée PLUS rapide du SL.
         Les paliers 1.60/1.90/2.20/2.50×ATR doivent exister pour éviter la zone morte
         entre 1.30×ATR et le lock N1 (le SL restait fixe à entry+0.15×ATR pendant que
         le profit grimpait jusqu'à ~2×ATR de plus)."""
-        from engine_simple.trailer import BE_PROGRESSIVE_LEVELS
+        from engine_simple.trailer import BE_PROGRESSIVE_LEVELS, BE_BY_SYMBOL
 
         # Vérifier que la constante contient les paliers attendus, strictement croissants
         thresholds = [lvl[0] for lvl in BE_PROGRESSIVE_LEVELS]
@@ -602,6 +608,14 @@ class TestTrailingConfigLock:
         # À 2.50×ATR de profit, le SL doit être au moins à entry+0.75×ATR
         assert buffers[-1] >= 0.75, f"buffer max attendu ≥0.75×ATR, trouvé {buffers[-1]}"
 
+        # 🔧 FIX 1 Sept 2026: vérifier que chaque entrée per-symbol est aussi croissante
+        for symbol, levels in BE_BY_SYMBOL.items():
+            thr = [l[0] for l in levels]
+            buf = [l[1] for l in levels]
+            assert thr == sorted(thr), f"{symbol}: seuils BE doivent être croissants"
+            assert buf == sorted(buf), f"{symbol}: buffers BE doivent être croissants"
+            assert len(levels) >= 4, f"{symbol}: au moins 4 paliers attendus"
+
     def test_progressive_be_fast_rise(self, trailer, mock_mt5):
         """🔧 FIX 17 Août 2026: le SL monte PLUS VITE avec le profit (pas de zone morte).
 
@@ -609,18 +623,19 @@ class TestTrailingConfigLock:
         (BTCUSD TREND lock=2.50×ATR) → un trade à 2.27×ATR de profit avait encore
         SL=entry+0.15×ATR. Après le fix, à chaque palier de 0.30×ATR le SL gagne
         +0.15×ATR. On vérifie le SL cible à différents niveaux de profit."""
-        from engine_simple.trailer import BE_PROGRESSIVE_LEVELS
+        from engine_simple.trailer import _get_be_levels
 
         atr = 0.0020  # ATR EURUSD-like
         trailer._atr_cache["EURUSD"] = (atr, time.time())
         entry = 1.10000
 
-        # Table: (profit_atr, buffer_atr attendu) dérivé de BE_PROGRESSIVE_LEVELS
-        # On calcule le buffer attendu comme le plus grand buffer dont le seuil < profit
+        # 🔧 FIX 1 Sept 2026: utiliser les paliers EURUSD per-symbol (BE agressif)
+        eurusd_levels = _get_be_levels("EURUSD")
+        # Table: (profit_atr, buffer_atr attendu) dérivé de BE_BY_SYMBOL["EURUSD"]
         expected = {}
         for profit_atr in (1.05, 1.35, 1.65, 1.95, 2.25, 2.55):
             buf = 0.0
-            for thresh, buffer in BE_PROGRESSIVE_LEVELS:
+            for thresh, buffer in eurusd_levels:
                 if profit_atr > thresh:
                     buf = buffer
             expected[profit_atr] = buf
@@ -643,7 +658,7 @@ class TestTrailingConfigLock:
         assert abs(new_sl - expected_sl) < 1e-9, f"SL attendu {expected_sl}, trouvé {new_sl}"
         # Et il doit être nettement au-dessus de l'entrée (plus rapide qu'avant le fix)
         assert new_sl > entry, "le SL doit être au-dessus de l'entrée à 2.25×ATR"
-        # tolérance flottante (0.6×ATR - epsilon) pour éviter l'arrondi binaire
+        # EURUSD per-symbol: 2.25×ATR → buffer 0.75×ATR
         assert new_sl - entry >= 0.60 * atr - 1e-9, f"montée trop lente: SL={new_sl} vs entry={entry}"
 
     def test_partial_tp_threshold_065(self):
@@ -656,20 +671,21 @@ class TestTrailingConfigLock:
     def test_progressive_be_uses_peak_after_retracement(self, trailer, mock_mt5):
         """🔧 FIX 17 Août 2026: le BE progressif utilise le PEAK, pas le prix courant.
 
-        Cas réel ticket AUDUSD 519685971: pic à 1.06×ATR puis retracement sous 1.00×ATR.
+        Cas réel: pic à 1.06×ATR puis retracement sous 1.00×ATR.
         Avant le fix, profit_atr était calculé sur price_current (retracé) → le BE
         (seuil 1.00×ATR) ne se déclenchait jamais et le SL restait figé 52h.
-        Après le fix, le peak stocké dans trailing_peaks doit déclencher le BE."""
-        from engine_simple.trailer import BE_PROGRESSIVE_LEVELS
+        Après le fix, le peak stocké dans trailing_peaks doit déclencher le BE.
+        🔧 FIX 1 Sept 2026: utilise BTCUSD (seuil 1.00×ATR) car AUDUSD=1.30×ATR."""
+        from engine_simple.trailer import _get_be_levels
 
         atr = 0.0020
-        trailer._atr_cache["AUDUSD"] = (atr, time.time())
+        trailer._atr_cache["BTCUSD"] = (atr, time.time())
         entry = 0.65000
         # Le prix a atteint un pic à +1.06×ATR puis a RETRACÉ sous le seuil BE
         peak = entry + 1.06 * atr
         current = entry + 0.60 * atr  # retracé sous 1.00×ATR
 
-        pos = _make_position(ticket=519685971, symbol="AUDUSD", direction=0, entry=entry,
+        pos = _make_position(ticket=519685971, symbol="BTCUSD", direction=0, entry=entry,
                              current=current, sl=None, tp=entry + 4.0 * atr)
         trailer.trailing_peaks["519685971"] = peak  # peak enregistré par le trailing
 
@@ -689,14 +705,15 @@ class TestTrailingConfigLock:
         """🔧 FIX 17 Août 2026: peak > 1.30×ATR → SL = entry+0.15×ATR même retracé.
 
         Vérifie qu'avec un peak à 1.45×ATR (mais prix courant retracé à 1.10×ATR),
-        le SL cible le buffer du palier 1.30 (0.15×ATR) au lieu de rester à 0."""
+        le SL cible le buffer du palier 1.30 (0.15×ATR) au lieu de rester à 0.
+        🔧 FIX 1 Sept 2026: utilise BTCUSD (seuil 1.30×ATR = standard)."""
         atr = 0.0020
-        trailer._atr_cache["AUDUSD"] = (atr, time.time())
+        trailer._atr_cache["BTCUSD"] = (atr, time.time())
         entry = 0.65000
         peak = entry + 1.45 * atr
         current = entry + 1.10 * atr  # retracé mais resté au-dessus du seuil BE
 
-        pos = _make_position(ticket=519685972, symbol="AUDUSD", direction=0, entry=entry,
+        pos = _make_position(ticket=519685972, symbol="BTCUSD", direction=0, entry=entry,
                              current=current, sl=None, tp=entry + 4.0 * atr)
         trailer.trailing_peaks["519685972"] = peak
 
@@ -708,6 +725,45 @@ class TestTrailingConfigLock:
         new_sl = update_sl_args[0][1]
         expected_sl = round(entry + 0.15 * atr, 5)  # palier 1.30 → buffer 0.15×ATR
         assert abs(new_sl - expected_sl) < 1e-9, f"SL attendu {expected_sl}, trouvé {new_sl}"
+
+    def test_progressive_be_per_symbol_eurusd_aggressive(self, trailer, mock_mt5):
+        """🔧 FIX 1 Sept 2026: BE per-symbol — EURUSD BE agressif (seuil 0.70×ATR).
+
+        EURUSD retracent 63% après 1.0×ATR (backtest 2012-2026) → BE doit se
+        déclencher PLUS TÔT (0.70×ATR au lieu de 1.00×ATR). Vérifie que le SL
+        se déclenche à 0.75×ATR pour EURUSD alors qu'il ne se déclencherait pas
+        avec le fallback global (1.00×ATR)."""
+        atr = 0.0020
+        trailer._atr_cache["EURUSD"] = (atr, time.time())
+        entry = 1.10000
+        # Profit de 0.75×ATR — suffisant pour EURUSD (seuil 0.70) mais pas pour global (1.00)
+        pos = _make_position(ticket=8888, symbol="EURUSD", direction=0, entry=entry,
+                             current=entry + 0.75 * atr, sl=1.05000, tp=1.16000)
+        mock_mt5.reset_mock()
+        trailer._check_progressive_be(pos)
+        update_sl_args = mock_mt5.update_sl.call_args
+        assert update_sl_args is not None, "EURUSD: BE doit se déclencher à 0.75×ATR (seuil 0.70)"
+        new_sl = update_sl_args[0][1]
+        # EURUSD per-symbol: 0.75×ATR → palier 0.70 atteint → buffer 0.00 → SL = entry
+        assert abs(new_sl - round(entry, 5)) < 1e-9, f"EURUSD BE attendu à entry, trouvé {new_sl}"
+
+    def test_progressive_be_per_symbol_usdjpy_permissive(self, trailer, mock_mt5):
+        """🔧 FIX 1 Sept 2026: BE per-symbol — USDJPY BE permissif (seuil 1.50×ATR).
+
+        USDJPY ne retracent que 8% après 1.0×ATR → BE doit se déclencher
+        PLUS TARD (1.50×ATR au lieu de 1.00×ATR). Vérifie qu'à 1.20×ATR le SL
+        n'est PAS modifié pour USDJPY alors qu'il le serait avec le fallback global."""
+        atr = 0.13
+        trailer._atr_cache["USDJPY"] = (atr, time.time())
+        entry = 160.00
+        # Profit de 1.20×ATR — suffisant pour global (1.00) mais PAS pour USDJPY (1.50)
+        pos = _make_position(ticket=9999, symbol="USDJPY", direction=0, entry=entry,
+                             current=entry + 1.20 * atr, sl=159.50, tp=162.00)
+        mock_mt5.reset_mock()
+        trailer._check_progressive_be(pos)
+        # USDJPY: 1.20×ATR < 1.50×ATR → BE ne doit PAS se déclencher
+        update_sl_args = mock_mt5.update_sl.call_args
+        assert update_sl_args is None, f"USDJPY: BE ne doit PAS se déclencher à 1.20×ATR (seuil 1.50)"
 
     def test_time_stop_weekend_window_reduces_max_hours(self, trailer, mock_mt5, monkeypatch):
         """🔧 FIX 17 Août 2026: fermeture pré-weekend pour les symboles non-24/7.
