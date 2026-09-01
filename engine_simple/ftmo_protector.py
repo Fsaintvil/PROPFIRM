@@ -1080,6 +1080,11 @@ class FTMOProtector:
 
     def _check_risk_state(self, symbol: str, signal: Optional[dict[str, Any]]) -> tuple[bool, str | None]:
         """Volatility spike, DD circuit breaker, daily loss zones, auto-pause, cooldown."""
+        # 🔧 1 Sept 2026: Guard risk_mult=0 — symbole gelé, pas besoin de logger cooldown
+        # (le trade sera bloqué par _calc_lot avec lot=0, pas de spam de warnings)
+        if signal and signal.get("risk_mult", 1.0) <= 0:
+            return True, None
+
         # Volatility spike
         atr_pct = signal.get("atr_pct", 0) if signal else 0
         if atr_pct > 0:

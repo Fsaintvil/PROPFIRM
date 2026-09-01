@@ -122,6 +122,9 @@ class ExecutionStats:
             entry["slippage"] = slippage_pts
         self.records.append(entry)
         self.total_attempts += 1
+        # 🔧 1 Sept 2026: Pruning FIFO pour éviter memory leak (max 1000, trim à 500)
+        if len(self.records) > 1000:
+            self.records = self.records[-500:]
 
     @property
     def successful(self) -> int:
@@ -460,9 +463,6 @@ class TradeExecutor:
             for k in stale_sig:
                 del self._last_signal_per_symbol[k]
             self._last_cleanup_time = _now
-            stale = [k for k, ts in self._recent_trades.items() if _now - ts > 300]
-            for k in stale:
-                del self._recent_trades[k]
 
         # try/finally pour libérer les rate limiters en cas d'exception
         result = None

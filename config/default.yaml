@@ -71,7 +71,7 @@ symbol_limits:
     partial_tp_progress: 0.55
     time_stop_max_hours_profit: 10.0  # 🔧 1 Sept 2026: 8.0→10.0. XAUUSD TP 7.5×ATR nécessite plus de temps
     time_stop_max_hours_loss: 3.0  # 🔧 1 Sept 2026: défaut 2h→3h. ATR H4=$36.95, mouvements plus larges
-    max_spread_points: 60
+    max_spread_points: 90  # 🔧 1 Sept 2026: 60→90. Spread XAUUSD FTMO-Demo $0.60-$0.89, limit $0.60 = 339 rejets/7h
     adx_thresh: 22
     cooldown_minutes: 45  # 🔧 1 Sept 2026: 30→45. WR 25% = plus de fréquence de pertes, cooldown plus long
     allow_buys: true
@@ -125,7 +125,7 @@ symbol_limits:
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.65
-    max_spread_points: 300
+    max_spread_points: 600  # 🔧 1 Sept 2026: 300→600. Spread BTCUSD FTMO-Demo $3.00-$5.22, limit $3.00 = 142 rejets/7h. BTCUSD = seul edge prouvé (PF 4.34)
     time_stop_max_hours_profit: 15.0  # 🔧 1 Sept 2026: défaut 12h→15h. BTCUSD seul edge confirmé (PF 4.34), laisser courir
     adx_thresh: 18
     allow_buys: true

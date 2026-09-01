@@ -270,15 +270,17 @@ class PositionTracker:
                     from datetime import datetime as _dt
 
                     try:
+                        # 🔧 1 Sept 2026: offset serveur dynamique (pas hardcodé 10800)
+                        server_offset = getattr(self.ftmo, "_server_offset_s", 0.0) or 0.0
                         if isinstance(trade_dt, (int, float)):
                             # 🔧 FIX AUDIT H8: Soustraire offset serveur (~3h) pour trade_age correct.
                             # d.time = temps serveur MT5 (+3h vs UTC local). Sans correction,
                             # trade_age est 3h trop petit → trades 45-48h passent à tort.
-                            trade_age = time.time() - trade_dt - 10800  # −3h server offset
+                            trade_age = time.time() - trade_dt - server_offset
                         else:
                             # ⚠️ MT5 peut retourner datetime ou int selon version
                             trade_ts = trade_dt.timestamp() if hasattr(trade_dt, "timestamp") else float(trade_dt)
-                            trade_age = time.time() - trade_ts - 10800  # −3h server offset
+                            trade_age = time.time() - trade_ts - server_offset
                         if trade_age > 48 * 3600:
                             continue
                     except Exception as e:
