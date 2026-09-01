@@ -62,17 +62,18 @@ symbol_limits:
   XAUUSD:
     timeframe: H1
     execution_timeframe: M15
-    max_lot: 0.04
+    max_lot: 0.03  # 🔧 FIX 30 Août 2026: réduit 0.04→0.03. XAUUSD p=0.0008 (significativement perdant, Quant Auditor). Les SELL fonctionnent (+$77 flottant) mais les BUY historiques sont catastrophiques (WR 23%).
     min_lot: 0.01
-    risk_mult: 1.0
-    min_score: 0.65
+    risk_mult: 0.8  # 🔧 1 Sept 2026: 1.0→0.8. WR 25% justifie réduction exposure
+    min_score: 0.80  # 🔧 31 Aout 2026: 0.75→0.80. XAUUSD restrictif (WR 25%, PF 1.09), seuls les signaux forts passent
     # 🔧 19 Août 2026 (Council): sécurisation des gains XAUUSD.
     # WR GR 28.6% mais asymétrie positive (gros winners) → verrouiller plus tôt.
     partial_tp_progress: 0.55
-    time_stop_max_hours_profit: 8.0
+    time_stop_max_hours_profit: 10.0  # 🔧 1 Sept 2026: 8.0→10.0. XAUUSD TP 7.5×ATR nécessite plus de temps
+    time_stop_max_hours_loss: 3.0  # 🔧 1 Sept 2026: défaut 2h→3h. ATR H4=$36.95, mouvements plus larges
     max_spread_points: 60
     adx_thresh: 22
-    cooldown_minutes: 30
+    cooldown_minutes: 45  # 🔧 1 Sept 2026: 30→45. WR 25% = plus de fréquence de pertes, cooldown plus long
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
@@ -120,11 +121,12 @@ symbol_limits:
   BTCUSD:
     timeframe: H1
     execution_timeframe: M15
-    max_lot: 0.045
+    max_lot: 0.08  # 🔧 1 Sept 2026: 0.06→0.08. BTCUSD PF 4.34, p=0.0012, edge confirmé, increase exposure, 0.06 = 0.09% du compte
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.65
     max_spread_points: 300
+    time_stop_max_hours_profit: 15.0  # 🔧 1 Sept 2026: défaut 12h→15h. BTCUSD seul edge confirmé (PF 4.34), laisser courir
     adx_thresh: 18
     allow_buys: true
     allow_shorts: true
@@ -180,8 +182,8 @@ symbol_limits:
     timeframe: H1
     max_lot: 0.04
     min_lot: 0.01
-    risk_mult: 1.0
-    min_score: 0.65
+    risk_mult: 0.8  # 🔧 1 Sept 2026: 1.0→0.8. PF 1.53 marginal, W/L ~1.0 = barely above noise
+    min_score: 0.60  # 🔧 1 Sept 2026: 0.65→0.60. Dynamic score déjà pénalise (eff. ~0.72), trop restrictif
     max_spread_points: 45
     adx_thresh: 22
     allow_buys: true
@@ -211,11 +213,11 @@ symbol_limits:
     news_minutes_after: 5
   GBPUSD:
     timeframe: H1
-    max_lot: 0.06
+    max_lot: 0.06  # 🔧 1 Sept 2026: 0.08→0.06. GBPUSD 18T insuffisant pour highest forex lot
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.65
-    max_spread_points: 50
+    max_spread_points: 80  # 🔧 1 Sept 2026: 50→80. GBPUSD spread 0.0006-0.0015 > limit 0.00050 = 200+ rejets/jour
     adx_thresh: 22
     allow_buys: true
     allow_shorts: true
@@ -244,12 +246,12 @@ symbol_limits:
     news_minutes_after: 5
   USDJPY:
     timeframe: H1
-    max_lot: 0.06
+    max_lot: 0.03  # 🔧 31 Aout 2026: 0.06→0.03. USDJPY PF 0.86, perdant (4 trades, -$1.43)
     min_lot: 0.01
-    risk_mult: 1.0
+    risk_mult: 0.0  # 🔧 1 Sept 2026: 1.0→0.0. Aucun edge (4 trades, PF 0.86, expectancy négatif)
     min_score: 0.65
-    max_spread_points: 45
-    adx_thresh: 14
+    max_spread_points: 70  # 🔧 1 Sept 2026: 45→70. USDJPY spread 0.058 > limit 0.045 = 219 rejets/jour
+    adx_thresh: 22  # 🔧 31 Aout 2026: 14→22. Trop permissif, 14 autorise le ranging
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
@@ -279,7 +281,8 @@ symbol_limits:
     timeframe: H1
     max_lot: 0.04
     min_lot: 0.01
-    risk_mult: 1.0
+    # 🔧 1 Sept 2026: risk_mult 1.0→0.0. USDCAD PF 0.84, spread dead (16 trades, -$2.52)
+    risk_mult: 0.0
     min_score: 0.65
     max_spread_points: 45
     adx_thresh: 22
@@ -310,9 +313,10 @@ symbol_limits:
     news_minutes_after: 5
   AUDUSD:
     timeframe: H1
-    max_lot: 0.05
+    max_lot: 0.03  # 🔧 31 Aout 2026: 0.05→0.03. AUDUSD PF 0.60, perdant structurel
     min_lot: 0.01
-    risk_mult: 1.0
+    # 🔧 1 Sept 2026: risk_mult 1.0→0.0. AUDUSD PF 0.53, 0 GR trades, aucun edge validé
+    risk_mult: 0.0
     min_score: 0.65
     max_spread_points: 45
     max_spread_atr_ratio: 0.15
@@ -345,9 +349,10 @@ symbol_limits:
     news_minutes_after: 5
   NZDUSD:
     timeframe: H1
-    max_lot: 0.05
+    max_lot: 0.03  # 🔧 1 Sept 2026: 0.05→0.03. Défensif — disabled symbol ne devrait pas avoir de gros lot
     min_lot: 0.01
-    risk_mult: 1.0
+    # 🔧 31 Aout 2026: risk_mult 1.0→0.0. NZDUSD non présent dans GR MT5 (pas de trades)
+    risk_mult: 0.0
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -380,7 +385,7 @@ symbol_limits:
     timeframe: H1
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 1.0
+    risk_mult: 0.0  # 🔧 1 Sept 2026: 1.0→0.0. USDCHF WR 12.5% historique, aucun edge
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -517,7 +522,8 @@ symbol_limits:
     timeframe: H1
     max_lot: 0.06
     min_lot: 0.01
-    risk_mult: 1.0
+    # 🔧 31 Aout 2026: risk_mult 1.0→0.0. EURGBP non présent dans GR MT5 (pas de trades)
+    risk_mult: 0.0
     max_spread_points: 40
     max_spread_atr_ratio: 0.2
     adx_thresh: 22
@@ -608,6 +614,7 @@ symbol_limits:
     timeframe: H1
     max_lot: 0.06
     min_lot: 0.05
+    # 🔧 31 Aout 2026: risk_mult 1.0→0.0. XAGUSD risk_mult=0.0 dans strategy.py (gelé)
     risk_mult: 0.0
     max_spread_points: 80
     adx_thresh: 22
@@ -792,6 +799,7 @@ symbol_limits:
     timeframe: H1
     max_lot: 0.06
     min_lot: 0.05
+    # 🔧 31 Aout 2026: risk_mult 1.0→0.0. ETHUSD risk_mult=0.0 dans strategy.py (gelé)
     risk_mult: 0.0
     max_spread_points: 120
     adx_thresh: 20
@@ -842,9 +850,9 @@ symbol_limits:
     min_score: 0.65
   SOLUSD:
     timeframe: H1
-    max_lot: 0.06
+    max_lot: 0.06  # 🔧 1 Sept 2026: 0.10→0.06. SOLUSD PF 4.66 MAIS PnL inflaté par bug lot 27/08 (+$892). Normalisé ~$189/70T
     min_lot: 0.05
-    risk_mult: 1.0
+    risk_mult: 0.8  # 🔧 1 Sept 2026: 1.0→0.8. Compense le PF inflaté (vrai PF ~2.5 pas 4.66)
     max_spread_points: 120
     max_spread_atr_ratio: 0.25
     adx_thresh: 20
@@ -986,9 +994,10 @@ symbol_limits:
     min_score: 0.65
   US30.cash:
     timeframe: H1
-    max_lot: 0.06
-    min_lot: 0.05
-    risk_mult: 1.0
+    max_lot: 0.01  # 🔧 1 Sept 2026: 0.06→0.01. Défensif — PF 0.18 ne justifie pas un lot égal à BTCUSD
+    min_lot: 0.01
+    # 🔧 31 Aout 2026: risk_mult 1.0→0.0. US30 PF 0.18, perdant structurel (10 trades, -$22.80)
+    risk_mult: 0.0
     max_spread_points: 300
     adx_thresh: 22
     allow_buys: true
@@ -1026,7 +1035,8 @@ symbol_limits:
     execution_timeframe: M15
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 1.0
+    # 🔧 1 Sept 2026: risk_mult 1.0→0.0. US100 PF 0.58, perdant (7 trades, -$1.51)
+    risk_mult: 0.0
     max_spread_points: 200
     adx_thresh: 22
     allow_buys: true
@@ -1064,9 +1074,9 @@ symbol_limits:
     execution_timeframe: M15
     max_lot: 0.01
     min_lot: 0.01
-    risk_mult: 1.0
+    risk_mult: 0.5  # 🔧 1 Sept 2026: 1.0→0.5. 0 GR trades, backtest PF 1.23 mais non validé en live
     max_spread_points: 1200
-    adx_thresh: 22
+    adx_thresh: 18  # 🔧 1 Sept 2026: 22→18. 617 rejets ADX, seuil trop strict pour indice asiatique
     allow_buys: true
     allow_shorts: true
     momentum_period: 20

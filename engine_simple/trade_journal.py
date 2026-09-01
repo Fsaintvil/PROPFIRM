@@ -64,7 +64,8 @@ class TradeJournal:
             self._conn.commit()
 
     def _write_csv_backup(self, trade: dict) -> None:
-        """Écriture CSV redondante — backup si SQLite échoue, consultation facile."""
+        """Écriture CSV redondante — backup si SQLite échoue, consultation facile.
+        🔧 FIX 30 Aout 2026: dedup géré dans record_trade() — skip si update."""
         try:
             csv_cols = [
                 "timestamp",
@@ -111,6 +112,18 @@ class TradeJournal:
             logger.warning(f"CSV backup write failed: {e}")
 
     def record_trade(self, trade: dict) -> None:
+        # 🔧 FIX 30 Aout 2026: vérifier si le ticket existe AVANT l'insert
+        # pour décider si on écrit dans le CSV (dedup: skip si update, write si nouveau)
+        ticket = trade.get("ticket", "")
+        is_new = True
+        if ticket:
+            with _lock:
+                existing = self._conn.execute(
+                    "SELECT 1 FROM trades WHERE ticket=?", (ticket,)
+                ).fetchone()
+            if existing:
+                is_new = False  # C'est un update, pas un nouveau trade
+
         with _lock:
             self._conn.execute(
                 """
@@ -140,7 +153,9 @@ class TradeJournal:
             )
             self._conn.commit()
         # Backup CSV (hors du lock SQLite pour éviter contention)
-        self._write_csv_backup(trade)
+        # 🔧 FIX 30 Aout 2026: skip CSV si c'est un update (déjà enregistré)
+        if is_new:
+            self._write_csv_backup(trade)
 
     _record_counter: int = 0
 

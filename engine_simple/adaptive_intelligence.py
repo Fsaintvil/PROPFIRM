@@ -59,6 +59,70 @@ def _is_burst_history(hist: list, min_trades: int = 15, burst_ratio: float = 0.5
     return (sub_1s / len(gaps)) >= burst_ratio
 
 
+def _purge_burst_entries(hist: list, min_gap_s: float = 1.0) -> list:
+    """🔧 FIX 30 Août 2026: Purge les entrées burst d'un historique mixte.
+
+    Contrairement à _is_burst_history qui rejette TOUT l'historique,
+    cette fonction SUPPRIME UNIQUEMENT les entrées en burst (gaps < min_gap_s)
+    et conserve les trades réels. Utile quand un symbole a 3 vrais trades
+    mélangés à 75 trades synthétiques.
+
+    Algorithme:
+    1. Trie les trades par timestamp
+    2. Détecte les runs consécutives de gaps < min_gap_s ( clusters burst)
+    3. Supprime les trades des clusters burst (garde le 1er de chaque cluster)
+    4. Réordonne dans l'ordre original
+
+    Returns:
+        Liste nettoyée (sous-ensemble de hist)
+    """
+    if len(hist) < 3:
+        return list(hist)
+
+    # Indexer par position originale pour préserver l'ordre
+    indexed = [(i, t) for i, t in enumerate(hist) if t.get("time")]
+    if len(indexed) < 3:
+        return list(hist)
+
+    # Trier par timestamp pour détecter les bursts
+    try:
+        sorted_idx = sorted(range(len(indexed)), key=lambda j: indexed[j][1]["time"])
+    except (KeyError, TypeError):
+        return list(hist)
+
+    # Trouver les indices à supprimer (entrées burst)
+    to_remove = set()
+    run_start = 0
+    for k in range(1, len(sorted_idx)):
+        try:
+            t1 = datetime.fromisoformat(indexed[sorted_idx[k-1]][1]["time"].replace("+00:00","").replace("+02:00",""))
+            t2 = datetime.fromisoformat(indexed[sorted_idx[k]][1]["time"].replace("+00:00","").replace("+02:00",""))
+            gap = (t2 - t1).total_seconds()
+            if gap >= min_gap_s:
+                # Fin du run — marquer les entrées burst (sauf la première du run)
+                run_len = k - run_start
+                if run_len >= 5:  # cluster de ≥5 trades rapprochés = burst
+                    for j in range(run_start + 1, k):  # garder le 1er, supprimer les suivants
+                        orig_idx = indexed[sorted_idx[j]][0]
+                        to_remove.add(orig_idx)
+                run_start = k
+        except (ValueError, TypeError):
+            run_start = k + 1
+
+    # Dernier run
+    run_len = len(sorted_idx) - run_start
+    if run_len >= 5:
+        for j in range(run_start + 1, len(sorted_idx)):
+            orig_idx = indexed[sorted_idx[j]][0]
+            to_remove.add(orig_idx)
+
+    if not to_remove:
+        return list(hist)
+
+    cleaned = [t for i, t in enumerate(hist) if i not in to_remove]
+    return cleaned
+
+
 class MarketRegime:
     """Enhanced regime detection — délègue à regime.py + enrichit avec structure/volume."""
 
@@ -178,9 +242,24 @@ class OnlineLearner:
         path_str = path or self._state_path or self.STATE_FILENAME
         with self._lock:  # 🔧 FIX C6: serialiser avec record_trade/_update_params
             try:
+                # 🔧 FIX 30 Août 2026: Purger les bursts AVANT sauvegarde
+                # Empêche les données contaminées d'être persistées sur disque.
+                cleaned_history = {}
+                for sym, h in self.history.items():
+                    trade_list = list(h)
+                    if len(trade_list) >= 15 and _is_burst_history(trade_list):
+                        cleaned = _purge_burst_entries(trade_list)
+                        if len(cleaned) >= 5:
+                            cleaned_history[sym] = deque(cleaned[-self.window :], maxlen=self.window)
+                            logger.debug(f"[OL SAVE] {sym}: burst purgé ({len(trade_list)}→{len(cleaned)})")
+                        else:
+                            logger.warning(f"[OL SAVE] {sym}: trop peu de trades propres après purge, skip")
+                    else:
+                        cleaned_history[sym] = h
+
                 data = {
                     "window": self.window,
-                    "history": {sym: list(h) for sym, h in self.history.items()},
+                    "history": {sym: list(h) for sym, h in cleaned_history.items()},
                     "adapted_params": self.adapted_params,
                 }
                 import json
@@ -226,25 +305,49 @@ class OnlineLearner:
                     f"[OnlineLearner] window fichier={loaded_window} != config={self.window} — using config ({self.window})"
                 )
             self.history = {}
+            valid_regimes = {"RANGING", "TREND_UP", "TREND_DOWN", "HIGH_VOL", "LOW_VOL"}
             for sym, trades in data.get("history", {}).items():
-                # 🐛 FIX 31 Juillet 2026: Rejeter les histories contaminées par burst.
-                # Avant ce guard, _load_state restaurait DIRECTEMENT les 200 trades
-                # synthétiques (96% gaps < 1s) en contournant le rate limiter de
-                # record_trade. Les adapted_params de ces symboles étaient ensuite
-                # réappliqués en live (ex: EURUSD risk_mult=0.538 sur bruit).
-                if _is_burst_history(list(trades)):
-                    logger.warning(
-                        f"[OnlineLearner] {sym}: history contaminée détectée "
-                        f"({len(trades)} trades, burst gaps < 1s) — PURGE au chargement"
+                # 🔧 FIX 30 Août 2026: Purge intelligent des bursts
+                # Au lieu de rejeter TOUT l'historique (ancien comportement),
+                # on purge UNIQUEMENT les entrées burst et on garde les vrais trades.
+                trade_list = list(trades)
+                if _is_burst_history(trade_list):
+                    # Historique mixte probable — purger les entrées burst
+                    cleaned = _purge_burst_entries(trade_list)
+                    if len(cleaned) >= 5:
+                        n_removed = len(trade_list) - len(cleaned)
+                        logger.warning(
+                            f"[OnlineLearner] {sym}: burst nettoyé — {n_removed} entries supprimées, "
+                            f"{len(cleaned)} trades propres conservés"
+                        )
+                        trade_list = cleaned
+                    else:
+                        # Trop peu de trades propres restants → rejeter entièrement
+                        logger.warning(
+                            f"[OnlineLearner] {sym}: history contaminée "
+                            f"({len(trade_list)} trades, {len(cleaned)} propres < 5) — PURGE complète"
+                        )
+                        continue
+
+                # 🔧 FIX 1 Sept 2026: Purger les entrées avec régime invalide
+                # (BUY/SELL/HIST/DOW/RAN/SEED/SYNTHETIC = entrées legacy/synthétiques)
+                n_before = len(trade_list)
+                regime_cleaned = [t for t in trade_list if t.get("regime", "") in valid_regimes]
+                n_purged = n_before - len(regime_cleaned)
+                if n_purged > 0 and len(regime_cleaned) > 0:
+                    logger.info(
+                        f"[OnlineLearner] {sym}: {n_purged} entrées régime invalide purgées, "
+                        f"{len(regime_cleaned)} propres conservées"
                     )
-                    continue
-                self.history[sym] = deque(trades[-self.window :], maxlen=self.window)
+                    trade_list = regime_cleaned
+
+                self.history[sym] = deque(trade_list[-self.window :], maxlen=self.window)
             # 🐛 FIX 31 Juillet 2026: Purger les adapted_params des symboles contaminés
             # (leurs params sont dérivés des 200 trades synthétiques → non fiables)
             cal_adapted = data.get("adapted_params", {})
             valid_regimes = {"RANGING", "TREND_UP", "TREND_DOWN", "HIGH_VOL", "LOW_VOL"}
-            # 🔧 21 Août 2026 (Robot Manager P1): aligné sur _update_params (15 trades)
-            min_trades = max(15, self.window // 10)
+            # 🔧 1 Sept 2026: min_trades fixé à 10 (ancien max(10, window//10) = 20 bugué)
+            min_trades = 10
             for sym in list(cal_adapted.keys()):
                 if sym not in self.history:
                     logger.warning(f"[OnlineLearner] {sym}: adapted_params purgés (history absente/contaminée)")
@@ -256,7 +359,7 @@ class OnlineLearner:
                 # depuis ol_state.json à chaque redémarrage — purge du 19/08 annulée.
                 n_valid = sum(
                     1 for t in self.history[sym]
-                    if t.get("regime", "") in valid_regimes and abs(t.get("r", 0)) >= 0.1
+                    if t.get("regime", "") in valid_regimes and abs(t.get("r", 0)) >= 0.05
                 )
                 if n_valid < min_trades:
                     logger.warning(
@@ -404,10 +507,8 @@ class OnlineLearner:
 
     def _update_params(self, symbol: str) -> None:
         h = list(self.history.get(symbol, []))
-        # 🔧 21 Août 2026 (Robot Manager P1): min_trades 20→15 — active l'apprentissage
-        # plus tôt. Les symboles n'ont que 5-17 trades, le seuil 20 bloque tout.
-        # 15 trades = assez pour une tendance, pas assez pour overfitter.
-        min_trades = max(15, self.window // 10)  # 15 trades minimum
+        # 🔧 1 Sept 2026: min_trades fixé à 10 (ancien max(10, window//10) = 20 bugué)
+        min_trades = 10
         if len(h) < min_trades:
             return
 
@@ -423,7 +524,11 @@ class OnlineLearner:
             "LOW_VOL",
         }
         h_valid_all = [t for t in h if t.get("regime", "") in valid_regimes]
-        h_valid = [t for t in h_valid_all if abs(t.get("r", 0)) >= 0.1]
+        # 🔧 FIX 1 Sept 2026: seuil bruit abaissé 0.1→0.05
+        # L'ancien seuil 0.1 rejetait les petits winners (BE exits, partial TPs) = r=0.0-0.09.
+        # Un winner à r=0.02 est un trade RÉEL (small win > noise). Seuil 0.05 garde
+        # les wins significatifs tout en filtrant le vrai bruit (r=±0.01-0.04).
+        h_valid = [t for t in h_valid_all if abs(t.get("r", 0)) >= 0.05]
         filtered_noise = len(h_valid_all) - len(h_valid)
 
         # 🐛 FIX 03 Aout 2026: exiger min_trades (20) trades VALIDES, pas 5.
@@ -691,9 +796,9 @@ class AdaptiveEngine:
                         valid_regimes = {"RANGING", "TREND_UP", "TREND_DOWN", "HIGH_VOL", "LOW_VOL"}
                         n_valid = sum(
                             1 for t in hist
-                            if t.get("regime", "") in valid_regimes and abs(t.get("r", 0)) >= 0.1
+                            if t.get("regime", "") in valid_regimes and abs(t.get("r", 0)) >= 0.05
                         )
-                        min_trades = max(15, self.learner.window // 10)  # 🔧 21/08 aligné sur _update_params
+                        min_trades = 10  # 🔧 1 Sept 2026: fixé à 10 (ancien max(10, window//10) = 20 bugué)
                         if n_valid < min_trades:
                             skip = True
                             reason = f"history insuffisante ({n_valid} valid < {min_trades}) — purge des params pré-GR"

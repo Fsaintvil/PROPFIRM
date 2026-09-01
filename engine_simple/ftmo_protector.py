@@ -533,7 +533,11 @@ class ChallengeTracker:
             # et contamine le rebuild de daily_pnl_by_date.
             dedup: dict[tuple, dict] = {}
             for _t in self._trade_history:
-                _key = (_t.get("symbol"), _t.get("profit"), str(_t.get("time")))
+                # 🔧 FIX 30 Aout 2026: ajouter action à la clé de dédup pour éviter
+                # la fusion erronée de trades BUY/SELL avec même symbole/profit/time.
+                # Avant: (symbol, profit, time) → fusionnait BUY et SELL identiques.
+                # Après: (symbol, profit, time, action) → chaque direction est distincte.
+                _key = (_t.get("symbol"), _t.get("profit"), str(_t.get("time")), _t.get("action", ""))
                 # Priorité au flag non-historique (le vrai trade live)
                 if _key not in dedup or not _t.get("historical"):
                     dedup[_key] = _t
@@ -887,7 +891,14 @@ class FTMOProtector:
         """
         # _reset_daily() est appelé dans _scan_signals() (main.py) — une fois par cycle
 
-        for check in (
+        check_names = [
+            "_check_auto_stop", "_check_symbol_health", "_check_spread",
+            "_check_global_cooldown", "_check_symbol_daily_loss", "_check_daily_limits",
+            "_check_signal_valid", "_check_risk_state", "_check_profile",
+            "_check_session", "_check_fomc_protection",
+            "_check_consistency_cap", "_check_conservation_mode", "_check_ftmo_status",
+        ]
+        check_lambdas = [
             lambda: self._check_auto_stop(),
             lambda: self._check_symbol_health(symbol, signal),
             lambda: self._check_spread(symbol),
@@ -899,15 +910,18 @@ class FTMOProtector:
             lambda: self._check_profile(symbol, signal),
             lambda: self._check_session(symbol, signal, check_danger_hours),
             lambda: self._check_fomc_protection(symbol, signal),  # 🔒 Ajouté 28 Juillet 2026
-            lambda: self._check_directional_imbalance(symbol, signal),  # 🔒 Ajouté 28 Juillet 2026
+            # lambda: self._check_directional_imbalance(symbol, signal),  # DÉSACTIVÉ 31 Août 2026 — priorité signaux qualité
             lambda: (
                 self._check_consistency_cap()
             ),  # 🔧 Réactivé 16 Juillet 2026 — FIX: guard `positive_days < 2` au lieu de `len(...) < 2`
             lambda: self._check_conservation_mode(symbol, signal),  # 🔧 FIX 22 Juillet 2026
             lambda: self._check_ftmo_status(),
-        ):
+        ]
+        for name, check in zip(check_names, check_lambdas):
             ok, reason = check()
             if not ok:
+                # 🔧 DEBUG temporaire — identifier le blocker précis
+                logger.warning(f"  [CAN_TRADE] {symbol} BLOCKED by {name}: {reason}")
                 return ok, reason
 
         return True, "OK"
@@ -1266,18 +1280,21 @@ class FTMOProtector:
         utc_hour = datetime.now(timezone.utc).hour
         utc_dow = datetime.now(timezone.utc).weekday()  # 0=Monday
 
-        # 🔧 FIX 28 Août 2026: Monday 00:00-09:00 UTC = session morte
+        # 🔧 FIX 28 Août 2026 (désactivé 31 Août 2026): Monday 00:00-09:00 UTC = session morte
         # Données: Monday −$2,150 total, WR 34.2% (152 trades, pire jour)
         # 00:00-09:00 UTC = −$1,975 combiné (Asian pre-open, liquidité faible)
-        if utc_dow == 0 and 0 <= utc_hour < 9:
-            return False, f"Monday session block: {utc_hour}h UTC (Monday 00-09 = -$2,150, WR 34%)"
+        # ⚠️ DÉSACTIVÉ: bloquait aussi BTCUSD/SOLUSD/XAUUSD (24/7). Les données
+        # Monday 00-09 concernent le forex/indices (session fermée), pas crypto/gold.
+        # Le filtre preferred_hours par symbole gère déjà les sessionsmortes.
+        # if utc_dow == 0 and 0 <= utc_hour < 9:
+        #     return False, f"Monday session block: {utc_hour}h UTC (Monday 00-09 = -$2,150, WR 34%)"
 
-        # 🔧 FIX #5: DANGER_HOURS — PLUS AUCUN BYPASS
-        # Le bypass par score≥0.80+ADX≥15 est supprimé.
-        # Les heures dangereuses (WR historique 0-35%) bloquent TOUS les trades.
-        danger_hours = self.config.get("DANGER_HOURS", [])
-        if utc_hour in danger_hours and check_danger_hours:
-            return False, f"Danger hour: {utc_hour}h UTC (0% WR historique sur ce créneau — bypass supprimé)"
+        # 🔧 FIX #5 (DÉSACTIVÉ 31 Août 2026): DANGER_HOURS supprimé
+        # Priorité aux signaux de qualité (score > min_score) plutôt qu'un filtre horaire.
+        # Les signaux MOM20x3 ont déjà ADX/DI/pullback/HTF/volume comme filtres.
+        # danger_hours = self.config.get("DANGER_HOURS", [])
+        # if utc_hour in danger_hours and check_danger_hours:
+        #     return False, f"Danger hour: {utc_hour}h UTC (0% WR historique sur ce créneau — bypass supprimé)"
 
         # Session block
         start_hour = self.config.get("TRADING_START_HOUR", 0)
@@ -1285,13 +1302,14 @@ class FTMOProtector:
         if not (start_hour <= utc_hour < end_hour):
             return False, f"Session block: {utc_hour}h UTC (trade only {start_hour}-{end_hour}h UTC)"
 
-        # Per-symbol preferred hours
-        if signal is not None:
-            pref_hours = self.symbol_limits.get(symbol, {}).get("preferred_hours")
-            if pref_hours is not None and len(pref_hours) > 0 and utc_hour not in pref_hours:
-                return False, f"{symbol}: not in preferred hours {pref_hours}h UTC"
-            elif pref_hours is not None and len(pref_hours) == 0:
-                return False, f"{symbol}: preferred_hours empty — trading bloqué"
+        # Per-symbol preferred hours — DÉSACTIVÉ 31 Août 2026
+        # Priorité aux signaux de qualité (score > min_score) plutôt que filtre horaire.
+        # if signal is not None:
+        #     pref_hours = self.symbol_limits.get(symbol, {}).get("preferred_hours")
+        #     if pref_hours is not None and len(pref_hours) > 0 and utc_hour not in pref_hours:
+        #         return False, f"{symbol}: not in preferred hours {pref_hours}h UTC"
+        #     elif pref_hours is not None and len(pref_hours) == 0:
+        #         return False, f"{symbol}: preferred_hours empty — trading bloqué"
 
         # Per-symbol weekend block (XAUUSD = 24/5, BTC/ETH = 24/7)
         weekend_ok = self.symbol_limits.get(symbol, {}).get("weekend_trading", True)

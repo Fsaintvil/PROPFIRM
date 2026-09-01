@@ -273,6 +273,9 @@ class SignalPipeline:
         if not self._phase7b_rvol_cmf(symbol, signal):
             return None
 
+        # Phase 7b2: Volatility Squeeze Filter (FIX 30 Août 2026)
+        self._phase7b2_volatility_squeeze(symbol, signal)
+
         # Phase 7c: OBV Divergence
         self._phase7c_obv_divergence(symbol, signal)
 
@@ -702,18 +705,33 @@ class SignalPipeline:
                 f"slope={h4_slope:.4f}) | H1 signal={signal_action} score={signal_score:.2f}"
             )
 
-            # Si H4 est neutre → pas de pénalité (laisser passer le signal H1)
+            # 🔧 FIX 30 Aout 2026: H4 NEUTRAL + ADX > 20 → pénalité légère ×0.90
+            # Avant: NEUTRAL = pas de pénalité (fail-open). Maintenant: si H4 est neutre
+            # mais l'ADX H4 est élevé (>20), le marché est en transition — pénaliser légèrement.
             if h4_direction == "NEUTRAL":
                 signal["_h4_dir"] = "NEUTRAL"
-                signal["_h4_conf"] = 1.0
+                if h4_adx > 20:
+                    signal["score"] = max(0.30, signal_score * 0.90)
+                    signal["_h4_penalty"] = 0.90
+                    signal["_h4_conf"] = 0.90
+                    logger.debug(
+                        f"  [H4_DIR] {symbol}: PÉNALITÉ NEUTRAL — ADX H4={h4_adx:.0f} > 20, "
+                        f"score {signal_score:.2f}→{signal['score']:.2f}"
+                    )
+                else:
+                    signal["_h4_conf"] = 1.0
                 return True
 
             # Conflit: signal H1 va contre H4
             if signal_action != h4_direction:
-                if h4_strength == "strong":
+                # 🔧 FIX 30 Aout 2026: ADX H4 > 25 → REJETER même si "moderate"
+                # Avant: seul "strong" (ADX>=22) était rejeté. Maintenant: si ADX > 25,
+                # la tendance H4 est très forte → bloquer le contre-courant.
+                if h4_strength == "strong" or h4_adx > 25:
                     # Tendance H4 forte → REJETER le signal contre-tendance
                     logger.debug(
-                        f"  [H4_DIR] {symbol}: REJETÉ — {signal_action} contre tendance H4 {h4_direction} (forte)"
+                        f"  [H4_DIR] {symbol}: REJETÉ — {signal_action} contre tendance H4 {h4_direction} "
+                        f"(ADX={h4_adx:.0f}, strength={h4_strength})"
                     )
                     return False
                 else:
@@ -1239,6 +1257,89 @@ class SignalPipeline:
         except Exception as e:
             logger.debug(f"  [VOL] {symbol}: erreur RVOL/CMF: {e}")
         return True
+
+    def _phase7b2_volatility_squeeze(self, symbol: str, signal: dict) -> None:
+        """Volatility Squeeze Filter (FIX 30 Août 2026 — Alpha Researcher).
+
+        Quand les Bollinger Bands sont comprimées à l'intérieur des Keltner Channels
+        (= squeeze), le marché est en phase de compression. Un breakout APRÈS un squeeze
+        a plus de momentum que breakout dans un marché déjà étendu.
+
+        Logique :
+        - BB dans KC (squeeze actif) → signal CONFIRMÉ, bonus +5%
+        - BB élargies (post-squeeze) → signal déjà validé, pas de penalty
+        - BB très élargies (overextension) → penalty -10% si le prix est déjà étendu
+
+        Utilise ATR pour les Keltner Channels (cohérent avec le reste du code).
+        """
+        try:
+            tf = self.symbol_timeframes.get(symbol, "H1")
+            rates = self._get_cached_rates(symbol, tf, count=60)
+            if rates is None or len(rates) < 30:
+                return
+            df = self._to_dataframe(rates)
+            closes = df["close"].values
+            highs = df["high"].values
+            lows = df["low"].values
+
+            # Bollinger Bands (20, 2.0)
+            period_bb = min(20, len(closes) - 1)
+            if period_bb < 10:
+                return
+            sma = float(np.mean(closes[-period_bb:]))
+            std = float(np.std(closes[-period_bb:]))
+            bb_upper = sma + 2.0 * std
+            bb_lower = sma - 2.0 * std
+            bb_width = bb_upper - bb_lower
+
+            # Keltner Channels (20, 1.5×ATR)
+            atr_val = self._get_atr(symbol, "H1", count=15)
+            if atr_val is None or atr_val <= 0:
+                return
+            kc_upper = sma + 1.5 * atr_val
+            kc_lower = sma - 1.5 * atr_val
+            kc_width = kc_upper - kc_lower
+
+            # Détection squeeze : BB dans KC
+            is_squeeze = (bb_upper < kc_upper) and (bb_lower > kc_lower)
+
+            # Détection overextension : prix au-delà des BB
+            last_close = float(closes[-1])
+            sig_action = signal.get("action")
+            overextended = False
+            if sig_action == "BUY" and last_close > bb_upper:
+                overextended = True
+            elif sig_action == "SELL" and last_close < bb_lower:
+                overextended = True
+
+            # Normaliser bb_width par rapport à kc_width pour comparer
+            if kc_width > 0:
+                bb_kc_ratio = bb_width / kc_width
+            else:
+                bb_kc_ratio = 1.0
+
+            if is_squeeze:
+                # Squeeze actif → breakout a du potentiel
+                signal["score"] = min(0.95, signal["score"] * 1.05)
+                signal["squeeze"] = True
+                signal["squeeze_note"] = "squeeze_active"
+                logger.debug(f"  [SQUEEZE] {symbol}: BB dans KC → squeeze actif, score +5%")
+            elif overextended:
+                # Prix au-delà des BB → overextension
+                signal["score"] = max(0.3, signal["score"] * 0.90)
+                signal["squeeze"] = False
+                signal["squeeze_note"] = "overextended"
+                logger.debug(f"  [SQUEEZE] {symbol}: prix au-delà BB → overextension, score -10%")
+            else:
+                signal["squeeze"] = False
+                signal["squeeze_note"] = "normal"
+
+            signal["bb_width"] = round(bb_width, 6)
+            signal["kc_width"] = round(kc_width, 6)
+            signal["bb_kc_ratio"] = round(bb_kc_ratio, 3)
+
+        except Exception as e:
+            logger.debug(f"  [SQUEEZE] {symbol}: erreur volatility squeeze: {e}")
 
     # ── Phase 7c: OBV Divergence ──────────────────────────────────────────
 

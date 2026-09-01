@@ -164,8 +164,11 @@ class PositionTracker:
         self._previous_tickets = set()
         self._recorded_deals = OrderedDict()  # Ordered set: insertion order preserved
         self._recorded_position_ids = OrderedDict()  # pour pruning FIFO déterministe
-        self._max_recorded = 2000
-        self._trim_target = 1500
+        # 🔧 FIX 30 Aout 2026: augmenter les seuils de pruning pour éviter les doublons
+        # Avant: 2000/1500 → pruning fréquent, position_ids prunés puis ré-importés au restart
+        # Après: 5000/4000 → pruning rare, suffisant pour des mois de trading
+        self._max_recorded = 5000
+        self._trim_target = 4000
         self._position_meta = {}
         # ⭐⭐ FIX 12 Août 2026 — Retry des fermetures sans deal MT5 (gap de session)
         # Problème observé (analyse de la journée du 11/08) : 2 XAUUSD fermées pendant
@@ -418,100 +421,107 @@ class PositionTracker:
 
     def check_closed(self) -> None:
         current = {p.ticket for p in (self.positions_cache.get() or []) if p.magic == cfg.ROBOT_MAGIC}
-        # 🔧 FIX 12 Août 2026: Annuler les retries des tickets réapparus en position.
-        # Un ticket mis en file _pending_closures car "fermé sans historique MT5" peut
-        # en réalité être un glitch MT5 (position restaurée au cycle suivant). Dans ce
-        # cas on ANNULE le retry — ne jamais enregistrer un faux trade.
-        if self._pending_closures:
-            reappeared = [t for t in self._pending_closures if t in current]
-            if reappeared:
+        try:
+            # 🔧 FIX 12 Août 2026: Annuler les retries des tickets réapparus en position.
+            # Un ticket mis en file _pending_closures car "fermé sans historique MT5" peut
+            # en réalité être un glitch MT5 (position restaurée au cycle suivant). Dans ce
+            # cas on ANNULE le retry — ne jamais enregistrer un faux trade.
+            if self._pending_closures:
+                reappeared = [t for t in self._pending_closures if t in current]
+                if reappeared:
+                    logger.info(
+                        f"  [TRACKER] {len(reappeared)} tickets réapparus en position "
+                        f"(glitch MT5) → retry annulé: {reappeared}"
+                    )
+                    for t in reappeared:
+                        self._pending_closures.pop(t, None)
+            closed = self._previous_tickets - current
+            if closed:
                 logger.info(
-                    f"  [TRACKER] {len(reappeared)} tickets réapparus en position "
-                    f"(glitch MT5) → retry annulé: {reappeared}"
+                    f"  [TRACKER] Closed tickets detected: {closed}, previous={self._previous_tickets}, current={current}"
                 )
-                for t in reappeared:
-                    self._pending_closures.pop(t, None)
-        closed = self._previous_tickets - current
-        if closed:
-            logger.info(
-                f"  [TRACKER] Closed tickets detected: {closed}, previous={self._previous_tickets}, current={current}"
-            )
-            # 🔒 CIRCUIT BREAKER 29 Juillet 2026: Si trop de positions ferment en un cycle,
-            # c'est probablement un glitch MT5 (get_positions timeout → retourne [])
-            # plutôt que de vraies fermetures. On saute l'enregistrement OL pour ces trades
-            # pour éviter la contamination (ex: 40 trades d'un coup pour EURUSD).
-            # Limite: 5 positions/cycle (même avec MAX_POSITIONS=18, le robot ne peut pas
-            # en fermer plus de ~4 simultanément via trailing/TP).
-            if len(closed) > 5:
-                logger.warning(
-                    f"  [TRACKER] ⚠️ CIRCUIT BREAKER: {len(closed)} positions fermées en 1 cycle "
-                    f"(max attendu=5) — probable glitch MT5, skip OL recording"
-                )
-                # Marquer comme traitées (pour éviter les logs répétés) mais NE PAS
-                # enregistrer dans l'OL ni le performance monitor.
-                for t in closed:
-                    self._recorded_deals[t] = None
-                return
-        pending_this_cycle: set[int] = set()
-        # 🔧 FIX 12 Août 2026: tickets fermés sans deal MT5 mis en retry
-        for ticket in closed:
-            if ticket in self._recorded_deals:
-                logger.debug(f"  [TRACKER] ticket {ticket} already recorded")
-                continue
-            # Prune FIFO si le seuil est dépassé (déterministe : supprime les plus anciens)
-            if len(self._recorded_deals) >= self._max_recorded:
-                self._recorded_deals = OrderedDict(list(self._recorded_deals.items())[-self._trim_target :])
-            if len(self._recorded_position_ids) >= self._max_recorded:
-                self._recorded_position_ids = OrderedDict(
-                    list(self._recorded_position_ids.items())[-self._trim_target :]
-                )
-            closing = self._find_closing_deal(ticket)
-            if closing is None:
-                # 🔧 FIX 12 Août 2026: Retry des fermetures sans deal MT5 (gap de session).
-                # Avant ce fix, marquer _recorded_deals[ticket]=None ABANDONNAIT définitivement
-                # le PnL (absent de trades_log.csv, daily_pnl_by_date et perf monitor).
-                # Observé le 11/08: 2 XAUUSD (−240.65$) fermées pendant la reprise post-gel
-                # machine S3, deal MT5 pas encore synchronisé → stats fausses.
-                # Désormais: file de retry CLOSE_RETRY_ATTEMPTS cycles (~90s) où l'on retente
-                # la recherche du deal. Si trouvé → enregistrement complet (_record_closed_trade).
-                self._pending_closures[ticket] = self.CLOSE_RETRY_ATTEMPTS
-                pending_this_cycle.add(ticket)
-                logger.info(
-                    f"  [TRACKER] Ticket {ticket} ferme sans historique MT5 — "
-                    f"retry {self.CLOSE_RETRY_ATTEMPTS} cycles (~90s) avant fallback import_history"
-                )
-                continue
-            deal_ts = self._deal_timestamp(closing)
-            is_historical = deal_ts > 0 and deal_ts < float(self._start_time)
-            self._record_closed_trade(closing, ticket, deal_ts, is_historical)
-        # 🔧 FIX 12 Août 2026: Sweep des retries en attente (cycles suivants).
-        # Un ticket fermé sans deal MT5 au cycle N reste dans _pending_closures et est
-        # ré-interrogé à chaque cycle jusqu'à épuisement des tentatives ou apparition du deal.
-        for ticket, remaining in list(self._pending_closures.items()):
-            if ticket in pending_this_cycle:
-                continue  # déjà traité ce cycle (enqueued dans la boucle closed)
-            if ticket in self._recorded_deals:
-                # Déjà traité (ex: réapparu + re-fermé, ou import) → nettoyer la file
-                self._pending_closures.pop(ticket, None)
-                continue
-            closing = self._find_closing_deal(ticket)
-            if closing is not None:
+                # 🔒 CIRCUIT BREAKER 29 Juillet 2026: Si trop de positions ferment en un cycle,
+                # c'est probablement un glitch MT5 (get_positions timeout → retourne [])
+                # plutôt que de vraies fermetures. On saute l'enregistrement OL pour ces trades
+                # pour éviter la contamination (ex: 40 trades d'un coup pour EURUSD).
+                # Limite: 5 positions/cycle (même avec MAX_POSITIONS=18, le robot ne peut pas
+                # en fermer plus de ~4 simultanément via trailing/TP).
+                if len(closed) > 5:
+                    logger.warning(
+                        f"  [TRACKER] ⚠️ CIRCUIT BREAKER: {len(closed)} positions fermées en 1 cycle "
+                        f"(max attendu=5) — probable glitch MT5, skip OL recording"
+                    )
+                    # Marquer comme traitées (pour éviter les logs répétés) mais NE PAS
+                    # enregistrer dans l'OL ni le performance monitor.
+                    for t in closed:
+                        self._recorded_deals[t] = None
+                    return
+            pending_this_cycle: set[int] = set()
+            # 🔧 FIX 12 Août 2026: tickets fermés sans deal MT5 mis en retry
+            for ticket in closed:
+                if ticket in self._recorded_deals:
+                    logger.debug(f"  [TRACKER] ticket {ticket} already recorded")
+                    continue
+                # Prune FIFO si le seuil est dépassé (déterministe : supprime les plus anciens)
+                if len(self._recorded_deals) >= self._max_recorded:
+                    self._recorded_deals = OrderedDict(list(self._recorded_deals.items())[-self._trim_target :])
+                if len(self._recorded_position_ids) >= self._max_recorded:
+                    self._recorded_position_ids = OrderedDict(
+                        list(self._recorded_position_ids.items())[-self._trim_target :]
+                    )
+                closing = self._find_closing_deal(ticket)
+                if closing is None:
+                    # 🔧 FIX 12 Août 2026: Retry des fermetures sans deal MT5 (gap de session).
+                    # Avant ce fix, marquer _recorded_deals[ticket]=None ABANDONNAIT définitivement
+                    # le PnL (absent de trades_log.csv, daily_pnl_by_date et perf monitor).
+                    # Observé le 11/08: 2 XAUUSD (−240.65$) fermées pendant la reprise post-gel
+                    # machine S3, deal MT5 pas encore synchronisé → stats fausses.
+                    # Désormais: file de retry CLOSE_RETRY_ATTEMPTS cycles (~90s) où l'on retente
+                    # la recherche du deal. Si trouvé → enregistrement complet (_record_closed_trade).
+                    self._pending_closures[ticket] = self.CLOSE_RETRY_ATTEMPTS
+                    pending_this_cycle.add(ticket)
+                    logger.info(
+                        f"  [TRACKER] Ticket {ticket} ferme sans historique MT5 — "
+                        f"retry {self.CLOSE_RETRY_ATTEMPTS} cycles (~90s) avant fallback import_history"
+                    )
+                    continue
                 deal_ts = self._deal_timestamp(closing)
                 is_historical = deal_ts > 0 and deal_ts < float(self._start_time)
-                logger.info(f"  [TRACKER] Retry OK: deal trouvé pour ticket {ticket} → PnL enregistré")
                 self._record_closed_trade(closing, ticket, deal_ts, is_historical)
-                self._pending_closures.pop(ticket, None)
-                continue
-            if remaining <= 1:
-                logger.warning(
-                    f"  [TRACKER] Ticket {ticket}: deal introuvable après {self.CLOSE_RETRY_ATTEMPTS} cycles "
-                    f"de retry — PnL abandonné (sera récupéré par import_history au prochain restart)"
-                )
-                self._recorded_deals[ticket] = None
-                self._pending_closures.pop(ticket, None)
-            else:
-                self._pending_closures[ticket] = remaining - 1
-        self._previous_tickets = current
+            # 🔧 FIX 12 Août 2026: Sweep des retries en attente (cycles suivants).
+            # Un ticket fermé sans deal MT5 au cycle N reste dans _pending_closures et est
+            # ré-interrogé à chaque cycle jusqu'à épuisement des tentatives ou apparition du deal.
+            for ticket, remaining in list(self._pending_closures.items()):
+                if ticket in pending_this_cycle:
+                    continue  # déjà traité ce cycle (enqueued dans la boucle closed)
+                if ticket in self._recorded_deals:
+                    # Déjà traité (ex: réapparu + re-fermé, ou import) → nettoyer la file
+                    self._pending_closures.pop(ticket, None)
+                    continue
+                closing = self._find_closing_deal(ticket)
+                if closing is not None:
+                    deal_ts = self._deal_timestamp(closing)
+                    is_historical = deal_ts > 0 and deal_ts < float(self._start_time)
+                    logger.info(f"  [TRACKER] Retry OK: deal trouvé pour ticket {ticket} → PnL enregistré")
+                    self._record_closed_trade(closing, ticket, deal_ts, is_historical)
+                    self._pending_closures.pop(ticket, None)
+                    continue
+                if remaining <= 1:
+                    logger.warning(
+                        f"  [TRACKER] Ticket {ticket}: deal introuvable après {self.CLOSE_RETRY_ATTEMPTS} cycles "
+                        f"de retry — PnL abandonné (sera récupéré par import_history au prochain restart)"
+                    )
+                    self._recorded_deals[ticket] = None
+                    self._pending_closures.pop(ticket, None)
+                else:
+                    self._pending_closures[ticket] = remaining - 1
+        finally:
+            # 🔧 FIX 30 Août 2026: TOUJOURS mettre à jour _previous_tickets
+            # même si une exception survient dans la boucle. Sans ce try/finally,
+            # une exception dans _record_closed_trade ou _find_closing_deal laissait
+            # _previous_tickets inchangé → le prochain cycle re-détectait les mêmes
+            # fermetures → double-comptage des trades (bug BTCUSD 4× SELL en 5s).
+            self._previous_tickets = current
 
 
     def _find_closing_deal(self, ticket: int) -> Any:

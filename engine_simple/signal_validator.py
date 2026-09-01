@@ -12,7 +12,9 @@ Responsabilités:
 - Price staleness
 """
 
+import json
 import logging
+from pathlib import Path
 from typing import Any, Optional
 
 from engine_simple.portfolio_controller import (
@@ -23,6 +25,68 @@ from engine_simple.portfolio_controller import (
 from engine_simple.symbol_params import get_symbol_params, update_dyn_score
 
 logger = logging.getLogger("ftmo.signal_validator")
+
+# Cache for golden rule state (refreshed every 60s)
+_gr_state_cache: Optional[dict] = None
+_gr_state_cache_ts: float = 0
+
+
+def _load_gr_state() -> dict:
+    """Load golden rule state with caching (60s TTL)."""
+    global _gr_state_cache, _gr_state_cache_ts
+    import time
+    now = time.time()
+    if _gr_state_cache is not None and (now - _gr_state_cache_ts) < 60:
+        return _gr_state_cache
+    gr_path = Path("runtime/golden_rule/state.json")
+    if gr_path.exists():
+        try:
+            _gr_state_cache = json.loads(gr_path.read_text())
+            _gr_state_cache_ts = now
+        except Exception:
+            pass
+    return _gr_state_cache or {}
+
+
+def _get_dynamic_min_score(symbol: str) -> float:
+    """🔧 31 Aout 2026: min_score dynamique basé sur la performance du symbole (Golden Rule).
+
+    Formule: plus le symbole est perdant (PnL négatif), plus le min_score monte vers 0.80.
+    - PnL >= +50 → 0.65 (bon performeur, signaux faibles autorisés)
+    - PnL = 0 → 0.725 (neutre)
+    - PnL <= -50 → 0.80 (mauvais performeur, seuls les signaux forts passent)
+    - Linear interpolation entre ces points.
+    """
+    MIN_SCORE_FLOOR = 0.65   # Bon performeur
+    MIN_SCORE_CAP = 0.80     # Mauvais performeur
+    PNL_GOOD = 50.0          # Au-dessus → score plancher
+    PNL_BAD = -50.0          # En-dessous → score plafond
+
+    # 🔧 31 Aout 2026: Overrides minimum par symbole (indépendant du dynamique).
+    # XAUUSD = 0.80 (restrictif, WR 25% sur 48 trades MT5)
+    SYMBOL_MIN_SCORE_OVERRIDE = {
+        "XAUUSD": 0.80,
+    }
+
+    gr = _load_gr_state()
+    by_sym = gr.get("stats", {}).get("by_symbol", {})
+    sym_stats = by_sym.get(symbol)
+    if not sym_stats or sym_stats.get("trades", 0) < 5:
+        # Pas assez de données → score plancher (neutre), sauf override
+        return SYMBOL_MIN_SCORE_OVERRIDE.get(symbol, MIN_SCORE_FLOOR)
+
+    pnl = sym_stats.get("pnl", 0.0)
+    if pnl >= PNL_GOOD:
+        base_score = MIN_SCORE_FLOOR
+    elif pnl <= PNL_BAD:
+        base_score = MIN_SCORE_CAP
+    else:
+        # Linear interpolation: 0.65 + 0.15 * (distance from good / total range)
+        base_score = MIN_SCORE_FLOOR + (MIN_SCORE_CAP - MIN_SCORE_FLOOR) * (PNL_GOOD - pnl) / (PNL_GOOD - PNL_BAD)
+
+    # Appliquer l'override minimum si le score calculé est inférieur
+    override = SYMBOL_MIN_SCORE_OVERRIDE.get(symbol, 0)
+    return max(base_score, override)
 
 
 class SignalValidator:
@@ -110,35 +174,13 @@ class SignalValidator:
 
         # ── 2. Signal quality gate (dynamic min_score) ─────────────────
         sym_params = get_symbol_params(symbol)
-        # 🔧 FIX 27 Août 2026: min_score per-symbol RÉELLEMENT appliqué.
-        # Avant: max(cfg_score, global_floor) → le global 0.72 dominait TOUJOURS,
-        # rendant tous les min_score YAML/strategy.py inutiles.
-        # Après: le per-symbol min_score est la source de vérité, le global est
-        # un plancher SAUF si le symbole a un min_score explicite plus bas.
         from config_simple import MIN_SIGNAL_SCORE
 
-        # 🔧 FIX 27 Août 2026: min_score par symbole (source: strategy.py + YAML).
-        # Ces valeurs PRIMENT sur le global. Le global ne s'applique QUE si le
-        # symbole n'a pas de min_score explicite dans ce dict.
-        PER_SYMBOL_MIN_SCORE = {
-            "BTCUSD": 0.65,
-            "SOLUSD": 0.65,
-            "USDJPY": 0.65,
-            "EURUSD": 0.65,
-            "GBPUSD": 0.65,
-            "USDCAD": 0.65,
-            "US100.cash": 0.65,
-            "US30.cash": 0.65,
-            "JP225.cash": 0.65,
-            "XAUUSD": 0.65,
-        }
-        per_symbol_score = PER_SYMBOL_MIN_SCORE.get(symbol)
-        if per_symbol_score is not None:
-            # Symbole avec min_score explicite — l'utiliser directement
-            cfg_score = per_symbol_score
-        else:
-            # Symbole inconnu — utiliser le global comme fallback
-            cfg_score = sym_params.get("cfg_score", MIN_SIGNAL_SCORE)
+        # 🔧 31 Aout 2026: min_score DYNAMIQUE basé sur la performance du symbole.
+        # Plus un symbole est perdant (PnL Golden Rule), plus le min_score monte (0.65→0.80).
+        # Cela force les signaux faibles à être rejetés sur les symboles perdants,
+        # tout en gardant une sélectivité normale sur les gagnants.
+        cfg_score = _get_dynamic_min_score(symbol)
         global_floor = MIN_SIGNAL_SCORE
 
         # 🔧 21 Août 2026 (Analyse Robot Manager): le min_score global 0.65 est un
@@ -204,6 +246,20 @@ class SignalValidator:
             logger.info(
                 f"  [CONSEC PENALTY] {symbol}: {consec_losses} pertes consécutives "
                 f"→ min_score +{penalty:.2f} = {effective_min_score:.2f}"
+            )
+
+        # 🔧 FIX 30 Aout 2026: Commission awareness — penaliser les symboles à haute commission.
+        # Les commissions mangent 11.9% des gains bruts ($428 sur $3,209). Un symbole avec
+        # commission > $1/trade est moins rentable qu'un score similaire sans commission.
+        # Penalty: −0.02 si commission > $1/trade (appliqué aux forex, pas aux crypto incluse dans spread).
+        COMMISSION_PENALTY = 0.02
+        COMMISSION_THRESHOLD = 1.0  # $/trade
+        sym_comm = sym_cfg.get("commission_per_trade", 0)
+        if sym_comm > COMMISSION_THRESHOLD:
+            effective_min_score += COMMISSION_PENALTY
+            logger.debug(
+                f"  [COMMISSION] {symbol}: commission ${sym_comm:.2f}/trade > ${COMMISSION_THRESHOLD} "
+                f"→ min_score +{COMMISSION_PENALTY:.2f} = {effective_min_score:.2f}"
             )
         sig_score = signal.get("score", 0)
 

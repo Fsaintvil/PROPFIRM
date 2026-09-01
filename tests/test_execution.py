@@ -99,8 +99,8 @@ class TestTradeExecutor:
         req = args[0]
         assert req["symbol"] == "XAUUSD"
         assert req["type"] == 0
-        # ftmo.calculate_lot retourne 0.05, XAUUSD max_lot=0.04 (Council 29 Août 2026) plafonne
-        assert req["volume"] == 0.04
+        # ftmo.calculate_lot retourne 0.05, XAUUSD max_lot=0.03 (FIX 30 Août 2026) plafonne
+        assert req["volume"] == 0.03
 
     def test_execute_rr_too_low(self):
         mt5 = make_mock_mt5()

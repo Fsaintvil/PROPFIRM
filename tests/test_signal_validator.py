@@ -181,7 +181,8 @@ class TestCheck:
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     @patch("engine_simple.signal_validator.update_dyn_score")
-    def test_update_dyn_score_called(self, mock_update, mock_params):
+    @patch("engine_simple.signal_validator._load_gr_state", return_value={})
+    def test_update_dyn_score_called(self, mock_gr, mock_update, mock_params):
         mock_params.return_value = {"cfg_score": 0.80, "min_rr": 1.5}
         # 🔧 27 Août 2026: PER_SYMBOL_MIN_SCORE["EURUSD"]=0.65 Prime sur le mock.
         # 7/15 wins = 46.7% < 50% → dyn_score = 0.65 + (0.50-0.467)*0.5 = 0.6667
@@ -196,7 +197,8 @@ class TestCheck:
 
     @patch("engine_simple.signal_validator.get_symbol_params")
     @patch("engine_simple.signal_validator.update_dyn_score")
-    def test_update_dyn_score_low_wr_raises_more(self, mock_update, mock_params):
+    @patch("engine_simple.signal_validator._load_gr_state", return_value={})
+    def test_update_dyn_score_low_wr_raises_more(self, mock_gr, mock_update, mock_params):
         """WR très bas → min_score doit monter plus haut."""
         mock_params.return_value = {"cfg_score": 0.80, "min_rr": 1.5}
         # 🔧 27 Août 2026: PER_SYMBOL_MIN_SCORE["EURUSD"]=0.65 Prime sur le mock.
@@ -413,3 +415,157 @@ class TestConsecutiveLossPenalty:
         sig = make_signal(score=0.65)
         ok, reason = v.check("BTCUSD", sig, [])
         assert ok
+
+
+# ============================================================================
+# Tests pour min_score dynamique basé sur Golden Rule PnL
+# ============================================================================
+
+
+class TestDynamicMinScoreGR:
+    """🔧 31 Aout 2026: min_score dynamique basé sur la performance du symbole."""
+
+    def test_good_performer_low_min_score(self):
+        """Symbole gagnant (PnL=+100) → min_score = 0.65 (floor)."""
+        from engine_simple.signal_validator import _get_dynamic_min_score, _gr_state_cache
+        import engine_simple.signal_validator as sv
+
+        # Mock GR state with good performer
+        sv._gr_state_cache = {
+            "stats": {
+                "by_symbol": {
+                    "BTCUSD": {"trades": 30, "wins": 20, "pnl": 100.0}
+                }
+            }
+        }
+        score = _get_dynamic_min_score("BTCUSD")
+        assert score == 0.65
+        sv._gr_state_cache = None
+
+    def test_bad_performer_high_min_score(self):
+        """Symbole perdant (PnL=-100) → min_score = 0.80 (cap)."""
+        from engine_simple.signal_validator import _get_dynamic_min_score
+        import engine_simple.signal_validator as sv
+
+        sv._gr_state_cache = {
+            "stats": {
+                "by_symbol": {
+                    "XAUUSD": {"trades": 30, "wins": 5, "pnl": -100.0}
+                }
+            }
+        }
+        score = _get_dynamic_min_score("XAUUSD")
+        assert score == 0.80
+        sv._gr_state_cache = None
+
+    def test_neutral_performer_mid_min_score(self):
+        """Symbole neutre (PnL=0) → min_score = 0.725 (milieu)."""
+        from engine_simple.signal_validator import _get_dynamic_min_score
+        import engine_simple.signal_validator as sv
+
+        sv._gr_state_cache = {
+            "stats": {
+                "by_symbol": {
+                    "EURUSD": {"trades": 20, "wins": 10, "pnl": 0.0}
+                }
+            }
+        }
+        score = _get_dynamic_min_score("EURUSD")
+        assert score == pytest.approx(0.725, abs=0.001)
+        sv._gr_state_cache = None
+
+    def test_unknown_symbol_returns_floor(self):
+        """Symbole inconnu dans GR → min_score = 0.65 (floor)."""
+        from engine_simple.signal_validator import _get_dynamic_min_score
+        import engine_simple.signal_validator as sv
+
+        sv._gr_state_cache = {"stats": {"by_symbol": {}}}
+        score = _get_dynamic_min_score("UNKNOWN")
+        assert score == 0.65
+        sv._gr_state_cache = None
+
+    def test_insufficient_trades_returns_floor(self):
+        """Moins de 5 trades → min_score = 0.65 (floor), sauf override."""
+        from engine_simple.signal_validator import _get_dynamic_min_score
+        import engine_simple.signal_validator as sv
+
+        sv._gr_state_cache = {
+            "stats": {
+                "by_symbol": {
+                    "EURUSD": {"trades": 3, "wins": 0, "pnl": -50.0}
+                }
+            }
+        }
+        score = _get_dynamic_min_score("EURUSD")
+        assert score == 0.65
+        sv._gr_state_cache = None
+
+    def test_interpolation_positive_pnl(self):
+        """PnL=+25 → interpolation entre 0.65 et 0.725."""
+        from engine_simple.signal_validator import _get_dynamic_min_score
+        import engine_simple.signal_validator as sv
+
+        sv._gr_state_cache = {
+            "stats": {
+                "by_symbol": {
+                    "GBPUSD": {"trades": 15, "wins": 10, "pnl": 25.0}
+                }
+            }
+        }
+        score = _get_dynamic_min_score("GBPUSD")
+        # PNL_GOOD=50, PNL_BAD=-50, pnl=25
+        # score = 0.65 + 0.15 * (50-25)/100 = 0.65 + 0.0375 = 0.6875
+        assert score == pytest.approx(0.6875, abs=0.001)
+        sv._gr_state_cache = None
+
+    def test_interpolation_negative_pnl(self):
+        """PnL=-25 → interpolation entre 0.725 et 0.80."""
+        from engine_simple.signal_validator import _get_dynamic_min_score
+        import engine_simple.signal_validator as sv
+
+        sv._gr_state_cache = {
+            "stats": {
+                "by_symbol": {
+                    "US30.cash": {"trades": 15, "wins": 5, "pnl": -25.0}
+                }
+            }
+        }
+        score = _get_dynamic_min_score("US30.cash")
+        # PNL_GOOD=50, PNL_BAD=-50, pnl=-25
+        # score = 0.65 + 0.15 * (50-(-25))/100 = 0.65 + 0.15*0.75 = 0.7625
+        assert score == pytest.approx(0.7625, abs=0.001)
+        sv._gr_state_cache = None
+
+    def test_xauusd_override_forces_080(self):
+        """🔧 31 Aout 2026: XAUUSD override force min_score=0.80 même si le dynamique calcule moins."""
+        from engine_simple.signal_validator import _get_dynamic_min_score
+        import engine_simple.signal_validator as sv
+
+        # XAUUSD avec PnL positif (+100) → le dynamique donnerait 0.65
+        # mais l'override force 0.80
+        sv._gr_state_cache = {
+            "stats": {
+                "by_symbol": {
+                    "XAUUSD": {"trades": 30, "wins": 10, "pnl": 100.0}
+                }
+            }
+        }
+        score = _get_dynamic_min_score("XAUUSD")
+        assert score == 0.80  # Override > dynamique (0.65)
+        sv._gr_state_cache = None
+
+    def test_non_overridden_symbol_uses_dynamic(self):
+        """BTCUSD n'a pas d'override → utilise le score dynamique normal."""
+        from engine_simple.signal_validator import _get_dynamic_min_score
+        import engine_simple.signal_validator as sv
+
+        sv._gr_state_cache = {
+            "stats": {
+                "by_symbol": {
+                    "BTCUSD": {"trades": 30, "wins": 20, "pnl": 100.0}
+                }
+            }
+        }
+        score = _get_dynamic_min_score("BTCUSD")
+        assert score == 0.65  # PnL > 50 → floor, pas d'override
+        sv._gr_state_cache = None

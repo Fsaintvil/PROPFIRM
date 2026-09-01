@@ -105,10 +105,13 @@ def _get_process_creation_time(pid: int):
 
 
 def _init_file_log() -> None:
-    """Ouvre (append) le fichier de log dédié à CE watchdog (par PID)."""
+    """Ouvre (append) le fichier de log dédié à CE watchdog (par PID).
+    🔧 FIX 30 Août 2026: nettoyage auto des watchdog logs orphelins (garde les 5 derniers)."""
     global _WATCHDOG_FILE_HANDLE
     try:
         _WATCHDOG_LOG_DIR.mkdir(parents=True, exist_ok=True)
+        # Nettoyage auto: garder uniquement les 5 derniers watchdog logs
+        _cleanup_old_watchdog_logs(keep=5)
         _WATCHDOG_FILE_HANDLE = open(
             _WATCHDOG_LOG_DIR / f"watchdog_{os.getpid()}.log",
             "a",
@@ -116,6 +119,21 @@ def _init_file_log() -> None:
         )
     except Exception:
         _WATCHDOG_FILE_HANDLE = None
+
+
+def _cleanup_old_watchdog_logs(keep: int = 5) -> None:
+    """Supprime les anciens watchdog logs, garde les `keep` plus récents."""
+    try:
+        import glob as glob_mod
+        log_files = sorted(
+            _WATCHDOG_LOG_DIR.glob("watchdog_*.log"),
+            key=lambda f: f.stat().st_mtime,
+            reverse=True,
+        )
+        for old_file in log_files[keep:]:
+            old_file.unlink(missing_ok=True)
+    except Exception:
+        pass  # best effort
 
 
 def log(msg: str, level: str = "INFO") -> None:

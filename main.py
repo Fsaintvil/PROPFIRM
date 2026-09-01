@@ -91,7 +91,7 @@ def _clean_watchdog_flags():
     runtime_dir = Path("runtime")
     if not runtime_dir.exists():
         return
-    for name in ("robot.stop.flag", "robot.halt.flag"):
+    for name in ("robot.stop.flag", "robot.halt.flag", "robot.respawn.flag"):
         flag = runtime_dir / name
         try:
             if flag.exists():

@@ -95,8 +95,11 @@ SYMBOL_CONFIG = {
         # 🔧 28 Août 2026: SL 1.5→2.5×ATR (uniformisé partout). TP 6.0→7.5 (RR 3.0 conservé).
         "sl_atr_trending": 2.5,
         "tp_atr_trending": 7.5,
-        "sl_atr_ranging": 2.5,
-        "tp_atr_ranging": 7.5,
+        # 🔧 FIX 30 Aout 2026: XAUUSD SL ranging 2.5→2.0 (revenir à l'ancienne config).
+        # En ranging, la volatilité est plus basse → SL plus serré protège mieux sur les faux signaux.
+        # En trending, le SL 2.5 est correct (laisse respirer le trade).
+        "sl_atr_ranging": 2.0,
+        "tp_atr_ranging": 6.0,
         "threshold_trending": 2.5,  # 🔧 ALIGNÉ 06 Aout 2026: 4.0→2.5 (le pipeline réel utilise déjà 2.5 via OL base_thresh — le 4.0 était inerte/incohérent, calé sur backtest H4 mais robot en H1)
         "threshold_ranging": 2.0,  # 🔧 ALIGNÉ 06 Aout 2026: 4.0→2.0 (même logique, aligné OL base_thresh=2.5 trending / 2.0 ranging)
         "adx_slope_threshold": -9.0,
@@ -112,7 +115,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 10,
         "news_minutes_after": 10,
-        "min_score": 0.65,  # 🔧 ALIGNÉ 14 Aout 2026: 0.75→0.65 (décision utilisateur, cohérent mode preuve)
+        "min_score": 0.80,  # 🔧 31 Aout 2026: 0.75→0.80. XAUUSD restrictif (WR 25%, PF 1.09), seuls les signaux forts
         "adx_thresh": 22,
         "min_rr": 2.0,
         "risk_mult": 1.0,  # 🔧 ALIGNÉ 14 Aout 2026: 0.0→1.0 (décision utilisateur — réactivation XAUUSD)
@@ -246,7 +249,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.65,  # 🔧 10 Juil 2026: ↑ 0.80→0.85 — symbole réactivé, sélectif max
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+        "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.18, perdant structurel (aligné default.yaml)
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
     },
@@ -270,7 +273,57 @@ SYMBOL_CONFIG = {
         "min_score": 0.65,  # 🔧 10 Juil 2026: ↓ 0.85→0.80 — trop restrictif, scores plafonnent à 0.61
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 1.0,  # 🔓 DÉGELÉ 29 Juillet 2026 — backtest 68.3% WR, +$542K
+        "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.86, aucun edge (aligné default.yaml)
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # USDCAD H1 — gelé, aucun edge validé (PF 0.84, 16 trades, -$2.52)
+    # ═══════════════════════════════════════════════════════════════════════
+    "USDCAD": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.25,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 6.67,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": [13, 14, 15, 16, 17],
+        "news_minutes_before": 5,
+        "news_minutes_after": 5,
+        "min_score": 0.65,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.84, spread dead (aligné default.yaml)
+        "cooldown_minutes": 15,
+        "auto_pause_losses": 5,
+    },
+    # ═══════════════════════════════════════════════════════════════════════
+    # USDCHF H1 — gelé, WR 12.5% historique
+    # ═══════════════════════════════════════════════════════════════════════
+    "USDCHF": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.25,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 6.67,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": [13, 14, 15, 16, 17],
+        "news_minutes_before": 5,
+        "news_minutes_after": 5,
+        "min_score": 0.65,
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: WR 12.5% historique, aucun edge (aligné default.yaml)
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
     },
@@ -366,7 +419,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.65,  # ↓ 0.60→0.50 (threshold 3.0×ATR assez sélectif)
         "adx_thresh": 22,
         "min_rr": 2.0,  # ↑ 1.5→2.0 (TP 6.0 / SL 1.5 = RR 4.0)
-        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026 — décision après 15 trades
+        "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.58, perdant (aligné default.yaml)
         "cooldown_minutes": 15,
         "auto_pause_losses": 5,
     },
@@ -957,6 +1010,46 @@ def mom20x3_signal(
     else:
         raw_score = 0.0
 
+    # === Wick Ratio Filter (FIX 30 Août 2026 — Alpha Researcher) ===
+    # Détecte la pression intra-bougie : un breakout haussier avec long upper wick
+    # = pression vendeuse (rejet du prix). Un breakout baissier avec long lower wick
+    # = pression acheteuse (rejet du prix). Seuil 0.40 = la moitié de la bougie est une mèche.
+    try:
+        last_h = float(high[-1])
+        last_l = float(low[-1])
+        last_c = float(close[-1])
+        last_o = float(close[-2]) if len(close) >= 2 else last_c  # open ≈ previous close
+        candle_range = last_h - last_l
+        if candle_range > 0:
+            if mom > 0:  # BUY signal → vérifier upper wick (rejection)
+                upper_wick = last_h - max(last_o, last_c)
+                wick_ratio = upper_wick / candle_range
+                if wick_ratio > 0.40:
+                    raw_score *= 0.80
+                    logger.debug(f"  [WICK] {symbol}: BUY mais upper wick={wick_ratio:.2f} > 0.40 → score -20%")
+            else:  # SELL signal → vérifier lower wick (rejection)
+                lower_wick = min(last_o, last_c) - last_l
+                wick_ratio = lower_wick / candle_range
+                if wick_ratio > 0.40:
+                    raw_score *= 0.80
+                    logger.debug(f"  [WICK] {symbol}: SELL mais lower wick={wick_ratio:.2f} > 0.40 → score -20%")
+    except Exception:
+        pass  # fail-open si données manquantes
+
+    # === Momentum Acceleration Filter (FIX 30 Août 2026 — Alpha Researcher) ===
+    # Quand le momentum ralentit (mom_current < mom_prev × 0.7), le breakout a
+    # moins de force. Élimine les signaux momentum décroissant.
+    try:
+        if len(close) >= period + 6:
+            mom_prev = float(close[-6] - close[-period - 6])
+            if not np.isnan(mom_prev) and abs(mom_prev) > 0:
+                accel = mom / mom_prev if (mom * mom_prev > 0) else 0
+                if accel < 0.7:  # momentum ralentit de >30%
+                    raw_score *= 0.85
+                    logger.debug(f"  [ACCEL] {symbol}: momentum ralentit ({accel:.2f} < 0.7) → score -15%")
+    except Exception:
+        pass  # fail-open si données manquantes
+
     # === Market Structure Filter (ICT/SMC) ===
     # Analyse BOS/CHOCH/OB pour confirmer ou infirmer la direction du signal
     _structure = None
@@ -1224,17 +1317,15 @@ def mom20x3_signal(
         "threshold_value": round(threshold_value, 5),
         "momentum_period": period,
         "is_trending": is_trending,
+        # 🔧 FIX 30 Aout 2026: supprimer le fallback action-based qui assignait TREND_UP
+        # à tout BUY en marché trending avec pente ambiguë (entre -0.002 et +0.002).
+        # Cela contournait la phase 5 (counter-trend block) et laissait les BUY entrer
+        # en TREND_DOWN. Maintenant: pente ambiguë = RANGING (paramètres conservateurs).
         "_regime": "TREND_UP"
         if (is_trending and _ma_slope is not None and _ma_slope > 0.002)
         else "TREND_DOWN"
         if (is_trending and _ma_slope is not None and _ma_slope < -0.002)
-        else (
-            "TREND_UP"
-            if is_trending and action == "BUY"
-            else "TREND_DOWN"
-            if is_trending and action == "SELL"
-            else "RANGING"
-        ),
+        else "RANGING",
         "_model_predictions": {"MOM20x3": action},
         # Market structure data (ICT/SMC)
         "structure_trend": _struct_trend,

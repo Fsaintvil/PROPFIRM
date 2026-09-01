@@ -338,6 +338,16 @@ class Trailer:
             if max_profit > 0
             else float(os.environ.get("TIME_STOP_MAX_HOURS_LOSS", "2"))
         )
+        # 🔧 FIX 30 Aout 2026: time-stop loss 2h→3h pour crypto (BTCUSD, SOLUSD).
+        # La zone 5-12h génère 86% du profit (+$1,489) avec 40 trades. Le time-stop
+        # loss à 2h ferme trop tôt les trades crypto qui auraient besoin de 3-5h
+        # pour se développer. Augmenter à 3h pour crypto, garder 2h pour le forex.
+        # 🔧 1 Sept 2026: extension au forex — le momentum a besoin de 3h pour se
+        # développer. 25.9% des exits = time-stop, les trades forex sont coupés trop tôt.
+        _LOSS_TIME_3H_SYMBOLS = ("BTCUSD", "SOLUSD", "EURUSD", "GBPUSD", "USDJPY",
+                                  "USDCAD", "AUDUSD", "NZDUSD", "USDCHF")
+        if max_profit <= 0 and position.symbol in _LOSS_TIME_3H_SYMBOLS:
+            max_hours = 3.0
         # 🔧 FIX 19 Août 2026 (Council): time-stop profit configurable par symbole.
         # XAUUSD: time_stop_max_hours_profit=8.0 (défaut 12h) → sécurise les gains
         # plus vite sur un symbole à WR faible (28.6% GR) mais gros winners.
@@ -694,6 +704,14 @@ class Trailer:
         Permet de garantir qu'un trade qui atteint +1.00×ATR puis retrace
         ne repars pas à zéro.
         """
+        # 🔧 FIX 30 Aout 2026: min hold time 15min — éviter que le BE progressif
+        # resserre le SL trop tôt après l'entrée (84 trades <30min = bruit pur).
+        # Le SL initial au broker reste actif (protection), mais on ne resserre pas
+        # avant 15 minutes pour laisser le trade respirer.
+        pos_age_min = (time.time() - position.time) / 60 if hasattr(position, 'time') and position.time else 0
+        if pos_age_min < 15:
+            return
+
         # SOLUTION A: Pas de BE progressif pour les symboles sans trailing
         if is_trailing_disabled(position.symbol):
             return
@@ -765,7 +783,15 @@ class Trailer:
         Au lieu de fermer en market order (perdait le trailing ATR),
         on modifie le SL au niveau BOS pour laisser le trailing ou le marché
         décider de la sortie. Préserve les gains déjà verrouillés par le trailing.
+
+        🔧 FIX 30 Aout 2026: min hold time 15min — éviter que le structure exit
+        resserre le SL trop tôt après l'entrée (84 trades <30min = bruit pur).
         """
+        # Min hold time: ne pas resserre le SL avant 15 minutes
+        pos_age_min = (time.time() - position.time) / 60 if hasattr(position, 'time') and position.time else 0
+        if pos_age_min < 15:
+            return
+
         symbol = position.symbol
         now = time.time()
         cached = self._rates_cache.get(symbol)

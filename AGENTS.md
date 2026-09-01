@@ -1,5 +1,20 @@
 # MT5 FTMO - Robot MOM20x3 Multi-Symbol + Intelligence Adaptative
 
+> **Mise à jour 1 Septembre 2026 (13:00)** : 🔧 **RISK_MULT ALIGNEMENT STRATEGY.PY + NETTOYAGE COMPLET + FIXES PERFORMANCE** —
+> - **Bug racine trouvé** : `risk_mult` a DEUX sources de vérité — `strategy.py` SYMBOL_CONFIG (lu par signal pipeline) et `config/default.yaml` symbol_limits (lu par FTMO protector). Les freezes risque dans le YAML (risk_mult=0.0) étaient IGNORES car le signal pipeline lit strategy.py. US30, US100, USDJPY, EURUSD avaient risk_mult=1.0 dans strategy.py → trades encore ouverts malgré le freeze YAML.
+> - **Fix — risk_mult aligné** (`strategy.py`) : US30.cash→0.0, US100.cash→0.0, USDJPY→0.0, USDCAD→0.0 (nouvelle entrée), USDCHF→0.0 (nouvelle entrée). 8 symboles gelés sur 14 actifs. Seuls XAUUSD/BTCUSD/SOLUSD/EURUSD/GBPUSD/JP225.cash restent actifs (risk_mult > 0).
+> - **Fix — test_risk_mult adapté** (`test_signal_pipeline.py`) : EURUSD→BTCUSD comme symbole de test (EURUSD est maintenant gelé risk_mult=0.0).
+> - **Nettoyage session** : ~111 fichiers supprimés (43 scripts UNUSED dans scripts/, 2 __pycache__, 3 backup dirs, 62 stale files, 3 stale dirs). Repo nettoyé.
+> - **P0-1 — respawn flag** (`main.py` L.94) : `robot.respawn.flag` ajouté au cleanup des flags au démarrage.
+> - **P1-1 — SOLUSD trailing relâché** (`ftmo_config.py` TRAILING_BY_SYMBOL) : lock 1.50→2.00, trail 0.80→1.20. Le trailing serré coupait les trades SOLUSD avant TP.
+> - **P1-2/3 — XAUUSD time-stop élargi** (`default.yaml`) : loss 2h→3h, profit 8h→10h. Le time-stop loss 2h était trop agressif pour la volatilité or.
+> - **P1-4 — BTCUSD profit time-stop** (`default.yaml`) : défaut→15h. Laisse respirer le seul edge prouvé (PF 4.34).
+> - **P1-5 — JP225 adx_thresh** (`default.yaml`) : 22→18. Plus de signaux sur indice japonais (ADX naturellement bas).
+> - **P1-6 — Forex time_stop loss** (`trailer.py` `_LOSS_TIME_3H_SYMBOLS`) : étendu aux 7 paires forex (EURUSD/GBPUSD/USDJPY/USDCAD/AUDUSD/NZDUSD/USDCHF). Uniformisé avec crypto.
+> - **Cooldown reset** (`robot_state.json`) : consecutive_losses=0, global_cooldown_until supprimé. Le robot repart à zéro après la session de fixes.
+> - **Baseline snapshot** (`runtime/impact_snapshots/snapshot_manual_20260901_155800.json`) : état J0 pour le suivi d'impact via `monitor_impact.py`.
+> - **Tests** : **1249 passed, 33 skipped, 0 failed**. Robot PID 28988 vivant, 5 positions legacy (USDJPY/US100/EURUSD/XAUUSD×2), 0 nouveaux trades sur symboles gelés.
+
 > **Mise à jour 29 Août 2026 (23:00)** : 🏛️ **CONSEIL 7 AGENTS + TRIPLE CLAMP LOT SIZING + CONFIGS D2/D3** —
 > - **Conseil d'agents** : CIO, Risk-Compliance, Signal Engine, Optimizer, Quant Auditor, System Monitor, Log Analyst. **Verdict** : 🟢 GREEN mais 3 alertes critiques.
 > - **🚨 P0 — Triple clamp lot sizing** (`trade_executor.py:_calc_lot`) : le bug du 27/08 (SOLUSD 1.47 lot = ×24 max, BTCUSD 0.71 = ×23 max) a contourné les clamps existants. **Triple défense ajoutée** : (1) global_max_lot depuis config_simple, (2) per-symbol max_lot depuis symbol_limits dict hot-reloadé, (3) per-symbol max_lot depuis YAML direct (pas hot-reload). `isinstance` guards sur chaque comparaison. Log CRITICAL si Clamp 3 s'active. Cause racine exacte non identifiée (les clamps existants devraient suffire théoriquement) mais la triple défense rend le contournement quasi-impossible.

@@ -570,16 +570,18 @@ class TestAdaptiveEngine:
 
     def test_load_calibration_purges_pre_gr_params(self, tmp_path):
         """🔧 FIX 20 Août 2026 (Robot Manager): les adapted_params restaurés depuis
-        la calibration avec une history < min_trades (20) doivent être PURGÉS.
+        la calibration avec une history < min_trades (10) doivent être PURGÉS.
         C'était le contournement de la garde _update_params L.418 : les params
         pré-GR (NZDUSD/USDJPY/US30.cash thresh 2.6-2.75, 10-17 trades) étaient
-        restaurés à chaque redémarrage, annulant la purge du 19/08 23:55."""
+        restaurés à chaque redémarrage, annulant la purge du 19/08 23:55.
+        🔧 1 Sept 2026: min_trades corrigé 20→10. Les tests utilisent 8 trades
+        (< 10) pour valider la purge."""
         import json
 
         cal_path = str(tmp_path / "cal.json")
-        # History et params pré-GR du scénario réel (10-17 trades < 20 min_trades)
+        # History et params pré-GR du scénario réel (8 trades < 10 min_trades)
         pre_gr_history = [
-            {"r": 0.5, "regime": "TREND_UP"} for _ in range(12)  # NZDUSD-like: 12 trades
+            {"r": 0.5, "regime": "TREND_UP"} for _ in range(8)  # NZDUSD-like: 8 trades
         ]
         cal = {
             "online_history": {
@@ -599,24 +601,26 @@ class TestAdaptiveEngine:
 
         # Les params pré-GR avec history insuffisante doivent être purgés
         assert "NZDUSD" not in ae.learner.adapted_params, (
-            "NZDUSD <20 trades valides → params pré-GR doivent être purgés"
+            "NZDUSD <10 trades valides → params pré-GR doivent être purgés"
         )
         assert "US30.cash" not in ae.learner.adapted_params
         assert "USDJPY" not in ae.learner.adapted_params
         # L'history reste restaurée (elle n'est pas contaminée — juste insuffisante)
-        assert len(ae.learner.history.get("NZDUSD", [])) == 12
+        assert len(ae.learner.history.get("NZDUSD", [])) == 8
 
     def test_load_state_purges_pre_gr_params(self, tmp_path):
         """🔧 FIX 20 Août 2026 (Robot Manager): OnlineLearner._load_state doit
         appliquer la MÊME garde min_trades que la calibration. ol_state.json
         contenait aussi les 5 params pré-GR (NZDUSD/USDJPY/US30/GBPJPY/USOIL
         10-17 trades) — ils étaient restaurés via ce chemin, pas seulement
-        via _load_calibration."""
+        via _load_calibration.
+        🔧 1 Sept 2026: min_trades corrigé 20→10. Les tests utilisent 8 trades
+        (< 10) pour valider la purge."""
         import json
 
         state_path = str(tmp_path / "ol_state.json")
         pre_gr_history = [
-            {"r": 0.5, "regime": "TREND_UP"} for _ in range(12)  # NZDUSD-like
+            {"r": 0.5, "regime": "TREND_UP"} for _ in range(8)  # NZDUSD-like
         ]
         state = {
             "window": 200,
@@ -635,10 +639,10 @@ class TestAdaptiveEngine:
 
         ol = OnlineLearner(window=200, state_path=state_path)
 
-        # NZDUSD: history 12 < 20 → params purgés ; BTCUSD: history 25 ≥ 20 → conservé
-        assert "NZDUSD" not in ol.adapted_params, "NZDUSD <20 trades → params pré-GR purgés"
-        assert "BTCUSD" in ol.adapted_params, "BTCUSD ≥20 trades → params conservés"
-        assert len(ol.history.get("NZDUSD", [])) == 12
+        # NZDUSD: history 8 < 10 → params purgés ; BTCUSD: history 25 ≥ 10 → conservé
+        assert "NZDUSD" not in ol.adapted_params, "NZDUSD <10 trades → params pré-GR purgés"
+        assert "BTCUSD" in ol.adapted_params, "BTCUSD ≥10 trades → params conservés"
+        assert len(ol.history.get("NZDUSD", [])) == 8
 
     @patch("engine_simple.adaptive_intelligence.datetime")
     @pytest.mark.skip(reason="P7: DL supprimé (code mort)")
@@ -931,3 +935,81 @@ class TestAdaptiveEngine:
             "_sweep_level",
         ):
             assert key in result, f"Missing key: {key}"
+
+
+class TestBurstPurge:
+    """🔧 Tests pour _purge_burst_entries (FIX 30 Août 2026)."""
+
+    def test_purge_removes_burst_cluster(self):
+        """Un cluster de 10 trades en 2 secondes doit être purgé."""
+        from engine_simple.adaptive_intelligence import _purge_burst_entries
+        trades = [
+            {"r": 1.0, "regime": "TREND_UP", "time": "2026-08-30T10:00:00"},
+            {"r": -0.5, "regime": "RANGING", "time": "2026-08-30T10:00:00.100"},
+            {"r": 0.8, "regime": "RANGING", "time": "2026-08-30T10:00:00.200"},
+            {"r": -0.3, "regime": "RANGING", "time": "2026-08-30T10:00:00.300"},
+            {"r": 0.6, "regime": "RANGING", "time": "2026-08-30T10:00:00.400"},
+            {"r": -0.7, "regime": "RANGING", "time": "2026-08-30T10:00:00.500"},
+            {"r": 0.9, "regime": "RANGING", "time": "2026-08-30T10:00:00.600"},
+            {"r": -0.4, "regime": "RANGING", "time": "2026-08-30T10:00:00.700"},
+            {"r": 0.5, "regime": "RANGING", "time": "2026-08-30T10:00:00.800"},
+            {"r": -0.6, "regime": "RANGING", "time": "2026-08-30T10:00:00.900"},
+            {"r": 1.2, "regime": "TREND_UP", "time": "2026-08-30T10:00:05.000"},  # 5s later = clean
+        ]
+        cleaned = _purge_burst_entries(trades)
+        # Le premier du cluster + le trade à +5s doivent rester
+        assert len(cleaned) == 2
+        assert cleaned[0]["r"] == 1.0
+        assert cleaned[1]["r"] == 1.2
+
+    def test_purge_preserves_clean_history(self):
+        """Un historique propre (tous > 1s d'écart) n'est pas modifié."""
+        from engine_simple.adaptive_intelligence import _purge_burst_entries
+        trades = [
+            {"r": 1.0, "regime": "TREND_UP", "time": f"2026-08-30T10:{i:02d}:00"}
+            for i in range(20)
+        ]
+        cleaned = _purge_burst_entries(trades)
+        assert len(cleaned) == 20
+
+    def test_purge_small_history_passthrough(self):
+        """Historiques < 3 trades ne sont pas modifiés."""
+        from engine_simple.adaptive_intelligence import _purge_burst_entries
+        trades = [{"r": 1.0, "regime": "TREND_UP"}]
+        cleaned = _purge_burst_entries(trades)
+        assert len(cleaned) == 1
+
+    def test_purge_mixed_keeps_real_trades(self):
+        """3 vrais trades mélangés à 8 burst: seuls les 3 vrais restent."""
+        from engine_simple.adaptive_intelligence import _purge_burst_entries
+        trades = [
+            # 3 vrais trades (éparpillés)
+            {"r": 1.0, "regime": "TREND_UP", "time": "2026-08-30T08:00:00"},
+            {"r": -0.5, "regime": "RANGING", "time": "2026-08-30T09:30:00"},
+            {"r": 0.8, "regime": "TREND_UP", "time": "2026-08-30T11:00:00"},
+            # 8 burst trades (en 1 seconde)
+            {"r": 0.1, "regime": "RANGING", "time": "2026-08-30T20:45:00.100"},
+            {"r": -0.1, "regime": "RANGING", "time": "2026-08-30T20:45:00.200"},
+            {"r": 0.1, "regime": "RANGING", "time": "2026-08-30T20:45:00.300"},
+            {"r": -0.1, "regime": "RANGING", "time": "2026-08-30T20:45:00.400"},
+            {"r": 0.1, "regime": "RANGING", "time": "2026-08-30T20:45:00.500"},
+            {"r": -0.1, "regime": "RANGING", "time": "2026-08-30T20:45:00.600"},
+            {"r": 0.1, "regime": "RANGING", "time": "2026-08-30T20:45:00.700"},
+            {"r": -0.1, "regime": "RANGING", "time": "2026-08-30T20:45:00.800"},
+        ]
+        cleaned = _purge_burst_entries(trades)
+        # Les 3 vrais trades + le 1er du cluster burst = 4
+        assert len(cleaned) == 4
+        assert cleaned[0]["r"] == 1.0
+        assert cleaned[1]["r"] == -0.5
+        assert cleaned[2]["r"] == 0.8
+
+    def test_purge_preserves_no_timestamp_trades(self):
+        """Trades sans timestamp ne sont pas supprimés."""
+        from engine_simple.adaptive_intelligence import _purge_burst_entries
+        trades = [
+            {"r": 1.0, "regime": "TREND_UP"},  # pas de timestamp
+            {"r": -0.5, "regime": "RANGING"},  # pas de timestamp
+        ]
+        cleaned = _purge_burst_entries(trades)
+        assert len(cleaned) == 2

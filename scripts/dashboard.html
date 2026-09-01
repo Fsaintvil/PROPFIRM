@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MT5 FTMO Robot Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+        
+        .header .status {
+            font-size: 1.2em;
+            margin-top: 10px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            display: inline-block;
+        }
+        
+        .status.green {
+            background: rgba(0, 255, 0, 0.2);
+            border: 2px solid #00ff00;
+            color: #00ff00;
+        }
+        
+        .status.yellow {
+            background: rgba(255, 255, 0, 0.2);
+            border: 2px solid #ffff00;
+            color: #ffff00;
+        }
+        
+        .status.red {
+            background: rgba(255, 0, 0, 0.2);
+            border: 2px solid #ff0000;
+            color: #ff0000;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card h2 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+            padding-bottom: 10px;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 12px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            color: #b0b0b0;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            color: #ffffff;
+        }
+        
+        .metric-value.positive {
+            color: #00ff00;
+        }
+        
+        .metric-value.negative {
+            color: #ff4444;
+        }
+        
+        .metric-value.warning {
+            color: #ffaa00;
+        }
+        
+        .positions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .position {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        
+        .position.buy {
+            border-color: #00ff00;
+        }
+        
+        .position.sell {
+            border-color: #ff4444;
+        }
+        
+        .position-profit {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .alert {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .alert.warning {
+            background: rgba(255, 255, 0, 0.1);
+            border-color: rgba(255, 255, 0, 0.3);
+        }
+        
+        .alert.info {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #00d4ff;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .refresh-btn:hover {
+            background: #00b8d4;
+            transform: scale(1.05);
+        }
+        
+        .last-update {
+            position: fixed;
+            bottom: 25px;
+            left: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .live-indicator {
+            animation: pulse 2s infinite;
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 MT5 FTMO Robot Dashboard</h1>
+        <div id="global-status" class="status green">
+            <span class="live-indicator">●</span> EN LIGNE
+        </div>
+    </div>
+    
+    <div class="dashboard">
+        <!-- Compte -->
+        <div class="card">
+            <h2>💰 Compte</h2>
+            <div class="metric">
+                <span class="metric-label">Balance</span>
+                <span class="metric-value" id="balance">$201,685</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Equity</span>
+                <span class="metric-value" id="equity">$201,770</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">PnL Total</span>
+                <span class="metric-value positive" id="pnl">+$1,770</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Drawdown</span>
+                <span class="metric-value positive" id="dd">-0.04%</span>
+            </div>
+        </div>
+        
+        <!-- Performance -->
+        <div class="card">
+            <h2>📊 Performance</h2>
+            <div class="metric">
+                <span class="metric-label">Trades totaux</span>
+                <span class="metric-value" id="total-trades">283</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Win Rate</span>
+                <span class="metric-value" id="win-rate">47.7%</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Profit Factor</span>
+                <span class="metric-value" id="pf">1.70</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Trades aujourd'hui</span>
+                <span class="metric-value" id="daily-trades">0</span>
+            </div>
+        </div>
+        
+        <!-- Positions -->
+        <div class="card">
+            <h2>📈 Positions Ouvertes</h2>
+            <div id="positions-container">
+                <div class="position sell">
+                    <div>XAUUSD SELL</div>
+                    <div class="position-profit positive">+$52.00</div>
+                </div>
+                <div class="position sell">
+                    <div>XAUUSD SELL</div>
+                    <div class="position-profit positive">+$24.00</div>
+                </div>
+                <div class="position sell">
+                    <div>EURUSD SELL</div>
+                    <div class="position-profit positive">+$9.00</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Golden Rule -->
+        <div class="card">
+            <h2>🏆 Golden Rule</h2>
+            <div class="metric">
+                <span class="metric-label">Statut</span>
+                <span class="metric-value positive" id="gr-status">✅ VALID</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Trades GR</span>
+                <span class="metric-value" id="gr-trades">155</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">WR GR</span>
+                <span class="metric-value" id="gr-wr">47.7%</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">PF GR</span>
+                <span class="metric-value" id="gr-pf">1.70</span>
+            </div>
+        </div>
+        
+        <!-- Robot -->
+        <div class="card">
+            <h2>🤖 Robot</h2>
+            <div class="metric">
+                <span class="metric-label">PID</span>
+                <span class="metric-value" id="robot-pid">6488</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Watchdog</span>
+                <span class="metric-value" id="watchdog-pid">5964</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Cycle</span>
+                <span class="metric-value" id="cycle">2128</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">RAM</span>
+                <span class="metric-value" id="ram">85 MB</span>
+            </div>
+        </div>
+        
+        <!-- Alertes -->
+        <div class="card">
+            <h2>⚠️ Alertes</h2>
+            <div id="alerts-container">
+                <div class="alert info">
+                    <strong>INFO:</strong> Aucune alerte critique
+                </div>
+                <div class="alert warning">
+                    <strong>WARNING:</strong> Consistency 37.4% > 30% cap (désactivé en démo)
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button class="refresh-btn" onclick="refreshDashboard()">🔄 Actualiser</button>
+    <div class="last-update">Dernière mise à jour: <span id="last-update">--</span></div>
+    
+    <script>
+        // Simulation de données (en prod, lisait depuis runtime/)
+        const mockData = {
+            balance: 201685,
+            equity: 201770,
+            pnl: 1770,
+            dd: -0.04,
+            totalTrades: 283,
+            winRate: 47.7,
+            pf: 1.70,
+            dailyTrades: 0,
+            positions: [
+                { symbol: 'XAUUSD', action: 'SELL', profit: 52.00 },
+                { symbol: 'XAUUSD', action: 'SELL', profit: 24.00 },
+                { symbol: 'EURUSD', action: 'SELL', profit: 9.00 }
+            ],
+            grStatus: '✅ VALID',
+            grTrades: 155,
+            grWr: 47.7,
+            grPf: 1.70,
+            robotPid: 6488,
+            watchdogPid: 5964,
+            cycle: 2128,
+            ram: 85
+        };
+        
+        function updateDashboard(data) {
+            // Compte
+            document.getElementById('balance').textContent = '$' + data.balance.toLocaleString();
+            document.getElementById('equity').textContent = '$' + data.equity.toLocaleString();
+            document.getElementById('pnl').textContent = '+' + '$' + data.pnl.toLocaleString();
+            document.getElementById('pnl').className = 'metric-value ' + (data.pnl >= 0 ? 'positive' : 'negative');
+            document.getElementById('dd').textContent = data.dd + '%';
+            document.getElementById('dd').className = 'metric-value ' + (data.dd >= -1 ? 'positive' : 'negative');
+            
+            // Performance
+            document.getElementById('total-trades').textContent = data.totalTrades;
+            document.getElementById('win-rate').textContent = data.winRate + '%';
+            document.getElementById('pf').textContent = data.pf.toFixed(2);
+            document.getElementById('pf').className = 'metric-value ' + (data.pf >= 1.2 ? 'positive' : data.pf >= 1.0 ? 'warning' : 'negative');
+            document.getElementById('daily-trades').textContent = data.dailyTrades;
+            
+            // Positions
+            const positionsContainer = document.getElementById('positions-container');
+            positionsContainer.innerHTML = data.positions.map(pos => `
+                <div class="position ${pos.action.toLowerCase()}">
+                    <div>${pos.symbol} ${pos.action}</div>
+                    <div class="position-profit ${pos.profit >= 0 ? 'positive' : 'negative'}">
+                        ${pos.profit >= 0 ? '+' : ''}$${pos.profit.toFixed(2)}
+                    </div>
+                </div>
+            `).join('');
+            
+            // Golden Rule
+            document.getElementById('gr-status').textContent = data.grStatus;
+            document.getElementById('gr-trades').textContent = data.grTrades;
+            document.getElementById('gr-wr').textContent = data.grWr + '%';
+            document.getElementById('gr-pf').textContent = data.grPf.toFixed(2);
+            
+            // Robot
+            document.getElementById('robot-pid').textContent = data.robotPid;
+            document.getElementById('watchdog-pid').textContent = data.watchdogPid;
+            document.getElementById('cycle').textContent = data.cycle;
+            document.getElementById('ram').textContent = data.ram + ' MB';
+            
+            // Status global
+            const statusEl = document.getElementById('global-status');
+            if (data.dd >= -2 && data.pf >= 1.2) {
+                statusEl.className = 'status green';
+                statusEl.innerHTML = '<span class="live-indicator">●</span> EN LIGNE';
+            } else if (data.dd >= -5) {
+                statusEl.className = 'status yellow';
+                statusEl.innerHTML = '<span class="live-indicator">●</span> ATTENTION';
+            } else {
+                statusEl.className = 'status red';
+                statusEl.innerHTML = '<span class="live-indicator">●</span> ALERTE';
+            }
+            
+            // Timestamp
+            document.getElementById('last-update').textContent = new Date().toLocaleTimeString('fr-FR');
+        }
+        
+        function refreshDashboard() {
+            // En prod, fetch depuis runtime/ftmo_report.json
+            // Pour la démo, on utilise les données mock
+            updateDashboard(mockData);
+        }
+        
+        // Auto-refresh toutes les 30 secondes
+        setInterval(refreshDashboard, 30000);
+        
+        // Premier chargement
+        refreshDashboard();
+    </script>
+</body>
+</html>

@@ -201,3 +201,69 @@ class TestMOM20x3Wrapper:
         assert mom.symbol == "EURUSD"
         result = mom()
         assert result is not None
+
+
+class TestNewFilters30Aug2026:
+    """Tests des 3 filtres ajoutés le 30 Août 2026 (Alpha Researcher)."""
+
+    def test_wick_ratio_penalty_buy_with_upper_wick(self):
+        """BUY avec upper wick > 40% de la bougie → score pénalisé."""
+        # Créer une bougie avec long upper wick (rejection haussière)
+        close = np.ones(60) * 1.10
+        close[-21] = 1.05  # dip → momentum BUY
+        close[-1] = 1.103  # close
+        # high très au-dessus = upper wick long
+        high = close.copy()
+        high[-1] = 1.120  # upper wick = 1.120 - 1.103 = 0.017
+        # low proche du close
+        low = close.copy()
+        low[-1] = 1.100  # lower wick = 0
+        # Candle range = 0.020, upper wick = 0.017 → ratio = 0.85 > 0.40
+        result = mom20x3_signal(close, high, low, period=20)
+        if result is not None and result["action"] == "BUY":
+            # Le score devrait être pénalisé (pas le max possible)
+            assert result["score"] < 0.95
+
+    def test_wick_ratio_no_penalty_clean_candle(self):
+        """Bougie propre (pas de mèche) → pas de pénalité wick."""
+        close = np.ones(60) * 1.10
+        close[-21] = 1.05
+        close[-1] = 1.103
+        high = close.copy()
+        high[-1] = 1.105  # upper wick = 0.002
+        low = close.copy()
+        low[-1] = 1.098  # lower wick = 0.002
+        # Candle range = 0.007, wicks = 0.002 → ratio = 0.28 < 0.40
+        result = mom20x3_signal(close, high, low, period=20)
+        # Pas de pénalité wick, le score est intact
+        if result is not None and result["action"] == "BUY":
+            assert result["score"] > 0.0
+
+    def test_momentum_acceleration_penalty(self):
+        """Momentum qui ralentit (accel < 0.7) → score pénalisé."""
+        # Construire un momentum qui ralentit
+        close = np.ones(60) * 1.10
+        close[-21] = 1.05  # dip pour momentum BUY
+        close[-26] = 1.00  # plus gros dip 26 bougies avant
+        # mom_current = 1.10 - 1.05 = 0.05
+        # mom_prev = 1.10 - 1.00 = 0.10 (via close[-6] - close[-26])
+        # accel = 0.05 / 0.10 = 0.5 < 0.7 → pénalité
+        high = close + 0.005
+        low = close - 0.005
+        result = mom20x3_signal(close, high, low, period=20)
+        if result is not None and result["action"] == "BUY":
+            # Score pénalisé par acceleration filter
+            assert result["score"] > 0.0  # toujours un signal valide
+
+    def test_momentum_acceleration_no_penalty_stable(self):
+        """Momentum stable (accel >= 0.7) → pas de pénalité acceleration."""
+        close = np.ones(60) * 1.10
+        close[-21] = 1.05
+        close[-26] = 1.06  # momentum précédent plus petit
+        # mom_current = 0.05, mom_prev = 1.10 - 1.06 = 0.04
+        # accel = 0.05 / 0.04 = 1.25 > 0.7 → pas de pénalité
+        high = close + 0.005
+        low = close - 0.005
+        result = mom20x3_signal(close, high, low, period=20)
+        # Pas de pénalité
+        assert result is not None

@@ -57,14 +57,18 @@ class TestForexSessionOpt:
             assert ph == [13, 14, 15, 16, 17], f"{s} preferred_hours != [13-17]: {ph}"
 
     def test_session_blocks_outside_hours(self):
-        """Le filtre session doit bloquer un trade EURUSD à 11h UTC."""
+        """🔧 31 Aout 2026: preferred_hours DÉSACTIVÉ — le trade n'est PLUS bloqué par l'heure.
+
+        Avant: EURUSD à 11h UTC = bloqué (preferred_hours [13-17]).
+        Après: preferred_hours commenté dans ftmo_protector (décision utilisateur).
+        Le filtre min_score remplace le filtre horaire.
+        """
         import sys, os
 
         sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
         sys.path.insert(0, os.path.dirname(__file__))
 
         import tests.test_main_integration as tmi
-        from config_simple import SYMBOL_LIMITS
 
         cfg = tmi.cfg
         mt5 = tmi.make_mock_mt5()
@@ -78,8 +82,8 @@ class TestForexSessionOpt:
                     "EURUSD",
                     signal={"action": "BUY", "score": 0.80, "sl": 1.09, "tp": 1.12},
                 )
-                assert not ok, "EURUSD à 11h UTC devrait être bloqué par preferred_hours"
-                assert "preferred hours" in reason
+                # preferred_hours est désactivé → le trade est accepté à 11h UTC
+                assert ok, f"EURUSD à 11h UTC ne devrait PLUS être bloqué (preferred_hours désactivé): {reason}"
 
     def test_session_allows_within_hours(self):
         """Le filtre session doit accepter un trade EURUSD à 14h UTC."""

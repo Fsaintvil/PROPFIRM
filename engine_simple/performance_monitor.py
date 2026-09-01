@@ -619,6 +619,32 @@ class PerformanceMonitor:
                         }
                     )
 
+            # 🔧 FIX 30 Aout 2026: SYMBOL_PF_HIGH — détecter les edges émergents.
+            # PF > 1.5 sur ≥20 trades = edge potentiel → info pour scaler.
+            # Permet de repérer les symboles qui méritent une augmentation d'exposition.
+            if (
+                trades >= 20
+                and gross_loss > 0
+                and pf_sym > 1.5
+            ):
+                metric_key = f"SYMBOL_PF_HIGH_{sym}_{today}"
+                if self._dedup_alert(metric_key):
+                    alerts.append(
+                        {
+                            "level": "INFO",
+                            "metric": "SYMBOL_PF_HIGH",
+                            "message": (
+                                f"{sym}: PF {pf_sym:.2f} > 1.5 sur {trades} trades "
+                                f"(WR {wr:.1f}%, ${pnl:.0f}) — edge potentiel, "
+                                f"considérer augmenter max_lot"
+                            ),
+                            "value": pf_sym,
+                            "threshold": 1.5,
+                            "symbol": sym,
+                            "date": today,
+                        }
+                    )
+
         # 4. Challenge progress faible à J+15
         c = self.history["challenge"]
         td = c.get("trading_days", 0)

@@ -12,12 +12,12 @@
 correlation:
   enabled: true
 
-# ── Trading — MODE PREUVE STRICT ──────────────────────────────────────
+# ── Trading — 20 SYMBOLES SIMULTANÉS ──────────────────────────────────
 trading:
-  max_positions: 8               # 🔧 VETO: 30→8 (06 Aout) — plafond risk-compliance
-  max_positions_per_symbol: 4    # 🔧 2→4 (07 Aout) — mode preuve: plus de trades simultanés par symbole
-  max_trades_per_day: 99999         # 🔧 200→75 (06 Aout) — qualité > quantité
-  max_signals_per_cycle: 10      # conservé
+  max_positions: 20              # 🔧 31 Août 2026: 8→20 — trader jusqu'à 20 symboles en même temps
+  max_positions_per_symbol: 4    # inchangé — 4 positions max par symbole
+  max_trades_per_day: 99999
+  max_signals_per_cycle: 20      # 🔧 10→20 — un signal par symbole max par cycle
   history_lookback_days: 3       # conservé
 
 # ── Signal — MODE PREUVE STRICT ───────────────────────────────────────

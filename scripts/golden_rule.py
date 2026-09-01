@@ -14,7 +14,8 @@ compte démo. AUCUNE re-tentative de challenge ni scaling avant que la règle
 d'or ne soit VALIDÉE. Ce script est la seule référence pour cette décision.
 
 Usage :
-    python scripts/golden_rule.py              # rapport texte + écrit état
+    python scripts/golden_rule.py              # rapport texte + écrit état (source MT5)
+    python scripts/golden_rule.py --source csv # source CSV (rétrocompatibilité)
     python scripts/golden_rule.py --json       # sortie JSON uniquement
     python scripts/golden_rule.py --start "2026-08-13 21:20"  # borne custom
     python scripts/golden_rule.py --entry-based  # filtrer par OUVRetture
@@ -70,7 +71,7 @@ OUT_DIR = BASE / "runtime" / "golden_rule"
 
 
 def load_trades():
-    """Charge le journal CSV (source principale : trades_log.csv)."""
+    """Charge le journal CSV (source secondaire : trades_log.csv)."""
     path = BASE / "runtime" / "trades_log.csv"
     if not path.exists():
         return []
@@ -81,6 +82,89 @@ def load_trades():
         for row in reader:
             if len(row) >= 12:
                 rows.append(row)
+    return rows
+
+
+def load_trades_from_mt5(symbols, start_str):
+    """🔧 31 Aout 2026: Charge les trades directement depuis l'API MT5.
+
+    Retourne des rows au même format que le CSV pour compatibilité avec compute_stats().
+    Format row: [timestamp, symbol, direction, volume, entry_price, sl, tp, exit_price,
+                 sl_atr, tp_atr, pnl, reason, duration_h, atr_h1]
+
+    Note: sl/tp/reason/duration_h/atr_h1 sont à 0 (non disponibles dans les deals MT5).
+    """
+    try:
+        import MetaTrader5 as mt5
+    except ImportError:
+        print("ERROR: MetaTrader5 module not found. Use --source csv instead.")
+        return []
+
+    if not mt5.initialize():
+        print("ERROR: MT5 initialize failed")
+        return []
+
+    login_ok = mt5.login(1514237506, server="FTMO-Demo")
+    if not login_ok:
+        print("ERROR: MT5 login failed")
+        mt5.shutdown()
+        return []
+
+    start = datetime.fromisoformat(start_str.replace(" ", "T")).replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+
+    deals = mt5.history_deals_get(start, now)
+    mt5.shutdown()
+
+    if not deals:
+        print(f"WARNING: No deals found from {start_str} to now")
+        return []
+
+    # Indexer les deals d'entrée par position_id pour récupérer entry_price
+    entry_deals = {}
+    for d in deals:
+        if d.entry == 0:  # IN (ouverture)
+            entry_deals[d.position_id] = d
+
+    rows = []
+    for d in deals:
+        if d.entry != 1:  # On ne veut que les OUT (fermetures)
+            continue
+        if d.profit == 0 and d.swap == 0 and d.commission == 0:
+            continue  # Skip deals sans PnL (entries non tradées)
+
+        # Récupérer le deal d'entrée correspondant
+        entry = entry_deals.get(d.position_id)
+        entry_price = entry.price if entry else d.price
+
+        # Direction: type 0=BUY, 1=SELL
+        direction = "BUY" if d.type == 0 else "SELL"
+
+        # Timestamp au format ISO
+        ts = datetime.fromtimestamp(d.time, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+        # Format row compatible CSV:
+        # [timestamp, symbol, direction, volume, entry_price, sl, tp, exit_price,
+        #  sl_atr, tp_atr, pnl, reason, duration_h, atr_h1]
+        row = [
+            ts,                     # col 0: timestamp (exit time)
+            d.symbol,               # col 1: symbol
+            direction,              # col 2: direction
+            str(d.volume),          # col 3: volume
+            str(entry_price),       # col 4: entry_price
+            "0",                    # col 5: sl (non disponible)
+            "0",                    # col 6: tp (non disponible)
+            str(d.price),           # col 7: exit_price
+            "0",                    # col 8: sl_atr (non disponible)
+            "0",                    # col 9: tp_atr (non disponible)
+            str(d.profit + d.commission + d.swap),  # col 10: pnl net
+            "mt5_api",              # col 11: reason
+            "0",                    # col 12: duration_h (non disponible)
+            "0",                    # col 13: atr_h1 (non disponible)
+        ]
+        rows.append(row)
+
+    print(f"MT5 API: {len(rows)} deals chargés ({len(deals)} total deals)")
     return rows
 
 
@@ -251,9 +335,16 @@ def main():
         "--entry-based", action="store_true",
         help="Filtrer par date d'ouverture (nécessite une source avec entry_time)",
     )
+    parser.add_argument(
+        "--source", choices=["mt5", "csv"], default="mt5",
+        help="Source des trades: mt5 (API directe, défaut) ou csv (trades_log.csv)",
+    )
     args = parser.parse_args()
 
-    rows = load_trades()
+    if args.source == "mt5":
+        rows = load_trades_from_mt5(args.symbols, args.start)
+    else:
+        rows = load_trades()
     stats = compute_stats(rows, args.start, args.symbols, args.entry_based)
     verdict = evaluate_golden_rule(stats)
 
