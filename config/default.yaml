@@ -17,9 +17,9 @@ trading:
   - AUDUSD
   - NZDUSD
   - USDCHF
-  max_positions: 30
-  max_positions_per_symbol: 3
-  max_trades_per_day: 200
+  max_positions: 99999           # 🔧 2 Sept 2026: DÉSACTIVÉ pour collecte maximale
+  max_positions_per_symbol: 99999  # 🔧 2 Sept 2026: DÉSACTIVÉ pour collecte maximale
+  max_trades_per_day: 99999     # 🔧 2 Sept 2026: DÉSACTIVÉ pour collecte maximale
   max_signals_per_cycle: 10
   max_orders_per_minute: 6
   lot_size: 0.05
