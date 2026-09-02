@@ -115,7 +115,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 10,
         "news_minutes_after": 10,
-        "min_score": 0.80,  # 🔧 31 Aout 2026: 0.75→0.80. XAUUSD restrictif (WR 25%, PF 1.09), seuls les signaux forts
+        "min_score": 0.85,  # 🔧 31 Aout 2026: 0.75→0.80. XAUUSD restrictif (WR 25%, PF 1.09), seuls les signaux forts
         "adx_thresh": 22,
         "min_rr": 2.0,
         "risk_mult": 1.0,  # 🔧 ALIGNÉ 14 Aout 2026: 0.0→1.0 (décision utilisateur — réactivation XAUUSD)
@@ -123,8 +123,8 @@ SYMBOL_CONFIG = {
         #    (0.0→1.0) mais PAS strategy.py → XAUUSD restait gelé car get_symbol_param lit
         #    strategy.py, PAS le YAML (c'était "la doc"). Aligné le 14 Aout sur la décision
         #    utilisateur. Signal risk_mult = 1.0 × OL → calculate_lot → lot réel.
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
         "lot_base": 0.01,
         "lot_max": 0.10,
         "daily_loss_limit_pct": 0.02,
@@ -172,12 +172,56 @@ SYMBOL_CONFIG = {
         "adx_thresh": 20,
         "min_rr": 2.0,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 13 Août 2026 (décision utilisateur): PF backtest 1.18, groupe CRYPTO indépendant
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
         "lot_base": 0.01,
         "lot_max": 0.10,
         "daily_loss_limit_pct": 0.02,
         "max_dd_pct": 0.10,
+    },
+    "GBPUSD": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.25,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 6.67,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -8.0,
+        "adx_slope_threshold_strong": -12.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": [13, 14, 15, 16, 17],
+        "news_minutes_before": 5,
+        "news_minutes_after": 5,
+        "min_score": 0.70,  # 🔧 2 Sept 2026: user request — collecte qualifiée
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 1.0,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
+    },
+    "AUDUSD": {
+        "momentum_period": 20,
+        "sl_atr_trending": 2.5,
+        "tp_atr_trending": 6.25,
+        "sl_atr_ranging": 2.5,
+        "tp_atr_ranging": 6.67,
+        "threshold_trending": 2.5,
+        "threshold_ranging": 2.0,
+        "adx_slope_threshold": -5.0,
+        "adx_slope_threshold_strong": -8.0,
+        "pullback_band_trending": 0.5,
+        "pullback_band_ranging": 0.3,
+        "preferred_hours": [13, 14, 15, 16, 17],
+        "news_minutes_before": 5,
+        "news_minutes_after": 5,
+        "min_score": 0.80,  # 🔧 2 Sept 2026: user request — perdant structurel, filtré
+        "adx_thresh": 22,
+        "min_rr": 1.5,
+        "risk_mult": 0.0,  # 🔴 GELÉ: PF 0.60, perdant structurel
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # US500.cash — DÉSACTIVÉ 25 Juin 2026 (PF 0.39 toxique)
@@ -216,12 +260,12 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         # 🔒 RENFORCÉ 1er Juillet 2026 — WR 28.6% live
-        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.8,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # Symboles REACTIVÉS 29 Juin 2026 — High Confidence Only (≥90%)
@@ -246,12 +290,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17],
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.65,  # 🔧 10 Juil 2026: ↑ 0.80→0.85 — symbole réactivé, sélectif max
+        "min_score": 0.7,  # 🔧 10 Juil 2026: ↑ 0.80→0.85 — symbole réactivé, sélectif max
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.18, perdant structurel (aligné default.yaml)
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     "USDJPY": {
         "momentum_period": 20,
@@ -270,12 +314,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17],
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.65,  # 🔧 10 Juil 2026: ↓ 0.85→0.80 — trop restrictif, scores plafonnent à 0.61
+        "min_score": 0.75,  # 🔧 10 Juil 2026: ↓ 0.85→0.80 — trop restrictif, scores plafonnent à 0.61
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.86, aucun edge (aligné default.yaml)
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # USDCAD H1 — gelé, aucun edge validé (PF 0.84, 16 trades, -$2.52)
@@ -295,12 +339,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17],
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.65,
+        "min_score": 0.8,
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.84, spread dead (aligné default.yaml)
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # USDCHF H1 — gelé, WR 12.5% historique
@@ -324,8 +368,8 @@ SYMBOL_CONFIG = {
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: WR 12.5% historique, aucun edge (aligné default.yaml)
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     "NZDUSD": {
         "momentum_period": 20,
@@ -344,12 +388,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17],
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.8,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.3,
         "risk_mult": 1.0,
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     "ETHUSD": {
         "momentum_period": 20,
@@ -416,12 +460,12 @@ SYMBOL_CONFIG = {
         "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.65,  # ↓ 0.60→0.50 (threshold 3.0×ATR assez sélectif)
+        "min_score": 0.75,  # ↓ 0.60→0.50 (threshold 3.0×ATR assez sélectif)
         "adx_thresh": 22,
         "min_rr": 2.0,  # ↑ 1.5→2.0 (TP 6.0 / SL 1.5 = RR 4.0)
         "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.58, perdant (aligné default.yaml)
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════
     # US500.cash H1 — S&P 500 (AJOUTÉ 29 Juin 2026 — Target 80% WR)
@@ -454,8 +498,8 @@ SYMBOL_CONFIG = {
         "adx_thresh": 22,
         "min_rr": 2.0,
         "risk_mult": 1.0,
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     "XAGUSD": {
         "momentum_period": 20,
@@ -510,7 +554,7 @@ SYMBOL_CONFIG = {
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
-        "cooldown_minutes": 15,
+        "cooldown_minutes": 0,
         "auto_pause_losses": 4,
     },
     # ═══════════════════════════════════════════════════════════════════════
@@ -546,8 +590,8 @@ SYMBOL_CONFIG = {
         "adx_thresh": 22,
         "min_rr": 2.0,  # ↑ 1.5→2.0
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # USOIL.cash H1 — US Oil (AJOUTÉ 29 Juin 2026)
@@ -624,7 +668,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres seulement
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.8,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.5,
         "risk_mult": 1.0,  # 🔧 ↑ 0.8→1.0 (bon performer)
@@ -710,8 +754,8 @@ SYMBOL_CONFIG = {
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # UK100.cash H1 — FTSE 100 Britannique (AJOUTÉ 1er Juillet 2026)
@@ -737,8 +781,8 @@ SYMBOL_CONFIG = {
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
-        "cooldown_minutes": 15,
-        "auto_pause_losses": 5,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # UKOIL.cash H1 — Brent Oil (AJOUTÉ 1er Juillet 2026)
@@ -826,8 +870,8 @@ DEFAULT_SYMBOL_CONFIG = {
     "min_rr": 1.5,  # RR minimum exigé
     # ── Risque ────────────────────────────────────────────────────────
     "risk_mult": 1.0,  # multiplicateur risque (1.0 = normal)
-    "cooldown_minutes": 15,  # pause après perte
-    "auto_pause_losses": 5,  # pertes consécutives avant pause
+    "cooldown_minutes": 0,  # pause après perte
+    "auto_pause_losses": 999,  # pertes consécutives avant pause
     # ── Lots ──────────────────────────────────────────────────────────
     "lot_base": 0.05,  # lot minimum de départ (×5)
     "lot_max": 0.50,  # lot maximum après progression WR (×5)
