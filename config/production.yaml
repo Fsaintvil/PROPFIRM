@@ -31,7 +31,7 @@ risk:
   max_daily_loss_pct: 0.02       # FTMO: 2% daily loss (GARDÉ — protection critique)
   max_dd_pct: 0.10               # FTMO: 10% max drawdown (GARDÉ)
   min_rr_ratio: 2.0
-  cooldown_minutes: 15           # 🔧 3→15 (06 Aout) — pause après perte allongée
+  cooldown_minutes: 0            # 🔧 2 Sept 2026: DÉSACTIVÉ pour collecte maximale
   auto_pause_losses: 999          # 🔧 26 Août 2026: DÉSACTIVÉ pendant collecte démo (999 = jamais). Pas de risque réel, on collecte des données.
   max_risk_amount: 600.0         # 🔧 VETO: $1,200→$600 (06 Aout) — plafond risque par trade
   circuit_breaker_dd_pct: 0.08

@@ -52,8 +52,8 @@ risk:
   max_risk_amount: 800.0
   min_rr_ratio: 2.0
   atr_multiplier: 1.5
-  cooldown_minutes: 15
-  auto_pause_losses: 5
+  cooldown_minutes: 0  # 🔧 2 Sept 2026: DÉSACTIVÉ pour collecte maximale
+  auto_pause_losses: 999  # 🔧 2 Sept 2026: DÉSACTIVÉ pour collecte maximale (circuit breaker off)
   conservation_mode_enabled: false
   max_spread_points: 120
   circuit_breaker_dd_pct: 0.08
@@ -73,7 +73,7 @@ symbol_limits:
     time_stop_max_hours_loss: 3.0  # 🔧 1 Sept 2026: défaut 2h→3h. ATR H4=$36.95, mouvements plus larges
     max_spread_points: 90  # 🔧 1 Sept 2026: 60→90. Spread XAUUSD FTMO-Demo $0.60-$0.89, limit $0.60 = 339 rejets/7h
     adx_thresh: 22
-    cooldown_minutes: 45  # 🔧 1 Sept 2026: 30→45. WR 25% = plus de fréquence de pertes, cooldown plus long
+    cooldown_minutes: 0  # 🔧 2 Sept 2026: DÉSACTIVÉ pour collecte maximale
     allow_buys: true
     allow_shorts: true
     momentum_period: 20

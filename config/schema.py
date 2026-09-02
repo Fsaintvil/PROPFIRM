@@ -126,7 +126,7 @@ class RiskConfig(BaseModel):
     consistency_cap_enabled: bool = Field(default=True)
     min_rr_ratio: float = Field(default=1.5, ge=1.0, le=10.0)  # ↓ 2.0→1.5 (26 Juin)
     atr_multiplier: float = Field(default=1.5, ge=0.5, le=5.0)
-    cooldown_minutes: int = Field(default=15, ge=1, le=240)  # ↑ 5→15 (FTMO-safe)
+    cooldown_minutes: int = Field(default=15, ge=0, le=240)  # ↑ 5→15 (FTMO-safe) | 🔧 2 Sept: ge=1→ge=0 pour désactivation collecte
     min_trading_days: int = Field(default=10, ge=1, le=60)
     max_trading_days: int = Field(default=0, ge=0)
     max_risk_amount: float = Field(default=800.0, ge=0.0)
