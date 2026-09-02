@@ -1,6 +1,7 @@
 """Tests pour PortfolioController — corrélation, limites, allocation de risque."""
 
 import pytest
+from unittest.mock import patch
 from engine_simple.portfolio_controller import (
     PortfolioController,
     Position,
@@ -221,10 +222,12 @@ class TestCanOpenNormal:
 
     def test_max_per_symbol(self):
         pc = PortfolioController()
-        sym_positions = [MAKE_POSITION("EURUSD", "BUY", 0.1, 1.10 + i * 0.001) for i in range(MAX_POSITIONS_PER_SYMBOL)]
-        can, reason = pc.can_open_position("EURUSD", "BUY", sym_positions)
-        assert can is False
-        assert "Max positions EURUSD" in reason
+        # 🔧 2 Sept 2026: MAX_POSITIONS_PER_SYMBOL=99999 en prod, on mock pour tester la garde
+        with patch("engine_simple.portfolio_controller.MAX_POSITIONS_PER_SYMBOL", 4):
+            sym_positions = [MAKE_POSITION("EURUSD", "BUY", 0.1, 1.10 + i * 0.001) for i in range(4)]
+            can, reason = pc.can_open_position("EURUSD", "BUY", sym_positions)
+            assert can is False
+            assert "Max positions EURUSD" in reason
 
     def test_max_per_direction(self):
         pc = PortfolioController()

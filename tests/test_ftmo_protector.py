@@ -283,7 +283,7 @@ class TestCanTrade:
         """Après expiration du cooldown, le trading reprend MAIS le compteur est
         CONSERVÉ (FIX Bug #4) : il ne descend que sur une victoire, pour que
         l'escalade 3→5→10 du circuit breaker s'accumule et atteigne le HARD STOP."""
-        p = make_protector()
+        p = make_protector(make_config(AUTO_PAUSE_LOSSES=5))
         self._mock_symbol_info(p)
         p.mt5.get_account_info.return_value = MagicMock(equity=200000)
         p.consecutive_losses = 8

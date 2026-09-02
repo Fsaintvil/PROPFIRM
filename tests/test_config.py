@@ -62,7 +62,7 @@ def test_as_flat_dict():
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
     assert flat["RISK_PER_TRADE_PCT"] == 0.004  # défaut YAML (production override → 0.003)
-    assert flat["TRADING_MAX_POSITIONS"] == 30  # défaut YAML (production override → 8)
+    assert flat["TRADING_MAX_POSITIONS"] == 99999  # 🔧 2 Sept 2026: désactivé pour collecte maximale
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
 
@@ -70,15 +70,15 @@ def test_symbol_limits_defaults():
     cfg = load_config("default")
     assert "XAUUSD" in cfg.symbol_limits
     assert "BTCUSD" in cfg.symbol_limits
-    assert cfg.symbol_limits["XAUUSD"].max_lot == 0.03  # 🔧 FIX 30 Août 2026: 0.04→0.03 (XAUUSD p=0.0008, significativement perdant)
+    assert cfg.symbol_limits["XAUUSD"].max_lot == 1.5  # 🔧 2 Sept 2026: user request max_lot 1.0-2.0
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
     # 🔧 1 Sept 2026: XAUUSD risk_mult 1.0→0.8 (WR 25% justifie réduction)
     assert (
         cfg.symbol_limits["XAUUSD"].risk_mult == 0.8
     )  # 🔧 1 Sept 2026: WR 25% → réduction exposure
     assert (
-        cfg.symbol_limits["XAUUSD"].min_score == 0.80
-    )  # 🔧 31 Aout 2026: 0.75→0.80. XAUUSD restrictif (WR 25%, PF 1.09)
+        cfg.symbol_limits["XAUUSD"].min_score == 0.85
+    )  # 🔧 2 Sept 2026: user request 0.80→0.85
     assert cfg.symbol_limits["XAUUSD"].allow_buys is True
     assert cfg.symbol_limits["XAUUSD"].allow_shorts is True  # 🔧 FIX 28 Août 2026: SELL sélectif réactivé
 
@@ -92,7 +92,7 @@ def test_usdcad_max_lot_preuve():
     GR (PF 0.034 sur 3 trades), aligné sur le pattern AUDUSD (réduction des perdants)."""
     cfg = load_config("default")
     assert "USDCAD" in cfg.symbol_limits
-    assert cfg.symbol_limits["USDCAD"].max_lot == 0.04
+    assert cfg.symbol_limits["USDCAD"].max_lot == 1.0  # 🔧 2 Sept 2026: user request max_lot 1.0-2.0
     assert cfg.symbol_limits["USDCAD"].allow_shorts is True  # 🔧 FIX 28 Août 2026: SELL sélectif réactivé
 
 
@@ -105,7 +105,7 @@ def test_symbol_limits_new_portfolio():
     assert btc.risk_mult == 1.0  # 🔓 DÉBLOQUÉ 13 Août 2026 (décision utilisateur — groupe CRYPTO indépendant)
     assert btc.allow_buys is True
     assert btc.allow_shorts is True  # 🔧 FIX 28 Août 2026: SELL sélectif réactivé (marché baissier)
-    assert btc.max_lot == 0.12  # 🔧 2 Sept 2026: 0.08→0.12 (BTCUSD seul edge prouvé, maximiser collecte)
+    assert btc.max_lot == 2.0  # 🔧 2 Sept 2026: user request max_lot 2.0 pour BTCUSD
     # 🔧 28 Août 2026: min_score unifié à 0.65 pour tous les symboles
     assert btc.min_score == 0.65
 

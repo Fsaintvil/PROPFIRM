@@ -426,8 +426,8 @@ SYMBOL_CONFIG = {
         "min_rr": 2.0,
         "risk_mult": 0.0,  # 🔴 GEL TEMPORAIRE par automation: freeze symbol due to large losses
         "risk_per_trade": 0.001,  # risque réduit (soft block)
-        "cooldown_minutes": 30,
-        "auto_pause_losses": 3,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
         "lot_base": 0.05,
         "lot_max": 0.10,  # plafonné (soft block ×5)
         "daily_loss_limit_pct": 0.01,  # 1% max par jour (soft block)
@@ -526,8 +526,8 @@ SYMBOL_CONFIG = {
         "adx_thresh": 25,
         "min_rr": 2.0,
         "risk_mult": 0.0,  # 🔴 GEL TEMPORAIRE par automation: freeze symbol due to large losses
-        "cooldown_minutes": 30,
-        "auto_pause_losses": 3,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # GBPJPY H1 — Livre Sterling / Yen Japonais (AJOUTÉ 29 Juin 2026)
@@ -555,7 +555,7 @@ SYMBOL_CONFIG = {
         "min_rr": 1.6,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 0,
-        "auto_pause_losses": 4,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # JP225.cash H1 — Nikkei 225 (AJOUTÉ 29 Juin 2026)
@@ -672,8 +672,8 @@ SYMBOL_CONFIG = {
         "adx_thresh": 20,
         "min_rr": 1.5,
         "risk_mult": 1.0,  # 🔧 ↑ 0.8→1.0 (bon performer)
-        "cooldown_minutes": 20,
-        "auto_pause_losses": 4,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # ═══════════════════════════════════════════════════════════════════════
@@ -700,8 +700,8 @@ SYMBOL_CONFIG = {
         "adx_thresh": 20,
         "min_rr": 1.8,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
-        "cooldown_minutes": 20,
-        "auto_pause_losses": 3,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # BNBUSD H1 — Binance Coin (AJOUTÉ 1er Juillet 2026)
@@ -727,8 +727,8 @@ SYMBOL_CONFIG = {
         "adx_thresh": 20,
         "min_rr": 1.8,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
-        "cooldown_minutes": 20,
-        "auto_pause_losses": 3,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # GER40.cash H1 — DAX 40 Allemand (AJOUTÉ 1er Juillet 2026)
@@ -808,8 +808,8 @@ SYMBOL_CONFIG = {
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
-        "cooldown_minutes": 20,
-        "auto_pause_losses": 4,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # NATGAS.cash H1 — Natural Gas (AJOUTÉ 1er Juillet 2026)
@@ -835,8 +835,8 @@ SYMBOL_CONFIG = {
         "adx_thresh": 22,
         "min_rr": 1.8,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
-        "cooldown_minutes": 30,
-        "auto_pause_losses": 3,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
 }
 
