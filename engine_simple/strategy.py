@@ -148,10 +148,10 @@ SYMBOL_CONFIG = {
         #   RÈGLE D'OR → revenir à 3.5 ou plafonner contribution ≤ 25%
         # ═══════════════════════════════════════════════════════════════════
         "momentum_period": 20,
-        # 🔧 28 Août 2026: SL 1.5→2.5×ATR (uniformisé partout). TP 6.0→5.0 (RR 2.0 conservé).
-        "sl_atr_trending": 2.5,
+        # 🔧 2 Sept 2026: SL 2.5→2.0 (edge prouvé p=0.0012, SL plus serré = RR meilleur)
+        "sl_atr_trending": 2.0,
         "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 2.5,
+        "sl_atr_ranging": 2.0,
         "tp_atr_ranging": 5.0,
         "threshold_trending": 2.5,
         "threshold_ranging": 2.0,
@@ -638,10 +638,10 @@ SYMBOL_CONFIG = {
     # ═══════════════════════════════════════════════════════════════════════
     "SOLUSD": {
         "momentum_period": 20,
-        # 🔧 28 Août 2026: SL 2.5/2.0→2.5×ATR (uniformisé). TP 5.0/4.0→5.0 (RR 2.0 conservé).
-        "sl_atr_trending": 2.5,
+        # 🔧 2 Sept 2026: SL 2.5→2.0 (crypto edge prouvé, SL plus serré = RR meilleur)
+        "sl_atr_trending": 2.0,
         "tp_atr_trending": 5.0,
-        "sl_atr_ranging": 2.5,
+        "sl_atr_ranging": 2.0,
         "tp_atr_ranging": 5.0,
         "threshold_trending": 2.5,  # 🔧 FIX #7: Assoupli (était 3.0)  # 🔧 FIX #5  # crypto: seuils abaissés
         "threshold_ranging": 2.0,  # 🐛 FIX #14: 2.0 en ranging (était 2.5 — identique à trending!)

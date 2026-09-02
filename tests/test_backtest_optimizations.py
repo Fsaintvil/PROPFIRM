@@ -42,9 +42,9 @@ class TestForexSLTPOpt:
             assert rr >= 2.5, f"{s} RR trending {rr:.2f} < 2.5"
 
     def test_non_forex_unchanged(self):
-        """Les symboles hors forex ne doivent PAS être affectés."""
+        """Les symboles hors forex ne doivent PAS être affectés (BTCUSD SL différencié à 2.0)."""
         assert SYMBOL_CONFIG["XAUUSD"]["sl_atr_trending"] == 2.5
-        assert SYMBOL_CONFIG["BTCUSD"]["sl_atr_trending"] == 2.5
+        assert SYMBOL_CONFIG["BTCUSD"]["sl_atr_trending"] == 2.0  # 🔧 2 Sept: 2.5→2.0 (edge prouvé)
         assert SYMBOL_CONFIG["US100.cash"]["sl_atr_trending"] == 2.5
 
 
@@ -57,11 +57,11 @@ class TestForexSessionOpt:
             assert ph == [13, 14, 15, 16, 17], f"{s} preferred_hours != [13-17]: {ph}"
 
     def test_session_blocks_outside_hours(self):
-        """🔧 31 Aout 2026: preferred_hours DÉSACTIVÉ — le trade n'est PLUS bloqué par l'heure.
+        """🔧 2 Sept 2026: preferred_hours RÉACTIVÉ — le trade EST bloqué hors heures.
 
-        Avant: EURUSD à 11h UTC = bloqué (preferred_hours [13-17]).
-        Après: preferred_hours commenté dans ftmo_protector (décision utilisateur).
-        Le filtre min_score remplace le filtre horaire.
+        Avant: EURUSD à 11h UTC = accepté (preferred_hours désactivé).
+        Après: preferred_hours réactivé dans ftmo_protector (backtest prouve −70% DD).
+        EURUSD à 11h UTC = BLOQUÉ (preferred_hours [13-17]).
         """
         import sys, os
 
@@ -82,8 +82,8 @@ class TestForexSessionOpt:
                     "EURUSD",
                     signal={"action": "BUY", "score": 0.80, "sl": 1.09, "tp": 1.12},
                 )
-                # preferred_hours est désactivé → le trade est accepté à 11h UTC
-                assert ok, f"EURUSD à 11h UTC ne devrait PLUS être bloqué (preferred_hours désactivé): {reason}"
+                # preferred_hours réactivé → le trade est BLOQUÉ à 11h UTC
+                assert not ok, f"EURUSD à 11h UTC devrait être bloqué (preferred_hours [13-17])"
 
     def test_session_allows_within_hours(self):
         """Le filtre session doit accepter un trade EURUSD à 14h UTC."""

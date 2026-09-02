@@ -1294,12 +1294,11 @@ class FTMOProtector:
         # if utc_dow == 0 and 0 <= utc_hour < 9:
         #     return False, f"Monday session block: {utc_hour}h UTC (Monday 00-09 = -$2,150, WR 34%)"
 
-        # 🔧 FIX #5 (DÉSACTIVÉ 31 Août 2026): DANGER_HOURS supprimé
-        # Priorité aux signaux de qualité (score > min_score) plutôt qu'un filtre horaire.
-        # Les signaux MOM20x3 ont déjà ADX/DI/pullback/HTF/volume comme filtres.
-        # danger_hours = self.config.get("DANGER_HOURS", [])
-        # if utc_hour in danger_hours and check_danger_hours:
-        #     return False, f"Danger hour: {utc_hour}h UTC (0% WR historique sur ce créneau — bypass supprimé)"
+        # 🔧 FIX #5 (RÉACTIVÉ 2 Sept 2026): DANGER_HOURS restauré
+        # Données: 05h=−$1,186, 06h=−$171, 07h=−$401, 17h=−$385 (total −$2,143)
+        danger_hours = self.config.get("DANGER_HOURS", [])
+        if utc_hour in danger_hours and check_danger_hours:
+            return False, f"Danger hour: {utc_hour}h UTC (−$2,143 historique, WR 34-45%)"
 
         # Session block
         start_hour = self.config.get("TRADING_START_HOUR", 0)
@@ -1307,14 +1306,14 @@ class FTMOProtector:
         if not (start_hour <= utc_hour < end_hour):
             return False, f"Session block: {utc_hour}h UTC (trade only {start_hour}-{end_hour}h UTC)"
 
-        # Per-symbol preferred hours — DÉSACTIVÉ 31 Août 2026
-        # Priorité aux signaux de qualité (score > min_score) plutôt que filtre horaire.
-        # if signal is not None:
-        #     pref_hours = self.symbol_limits.get(symbol, {}).get("preferred_hours")
-        #     if pref_hours is not None and len(pref_hours) > 0 and utc_hour not in pref_hours:
-        #         return False, f"{symbol}: not in preferred hours {pref_hours}h UTC"
-        #     elif pref_hours is not None and len(pref_hours) == 0:
-        #         return False, f"{symbol}: preferred_hours empty — trading bloqué"
+        # Per-symbol preferred hours — RÉACTIVÉ 2 Sept 2026
+        # Backtest: DD forex 30.3%→9.0% avec session LDN-NY [13-17h GMT]
+        if signal is not None:
+            pref_hours = self.symbol_limits.get(symbol, {}).get("preferred_hours")
+            if pref_hours is not None and len(pref_hours) > 0 and utc_hour not in pref_hours:
+                return False, f"{symbol}: not in preferred hours {pref_hours}h UTC"
+            elif pref_hours is not None and len(pref_hours) == 0:
+                return False, f"{symbol}: preferred_hours empty — trading bloqué"
 
         # Per-symbol weekend block (XAUUSD = 24/5, BTC/ETH = 24/7)
         weekend_ok = self.symbol_limits.get(symbol, {}).get("weekend_trading", True)

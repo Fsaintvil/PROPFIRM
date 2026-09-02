@@ -121,7 +121,7 @@ symbol_limits:
   BTCUSD:
     timeframe: H1
     execution_timeframe: M15
-    max_lot: 0.08  # 🔧 1 Sept 2026: 0.06→0.08. BTCUSD PF 4.34, p=0.0012, edge confirmé, increase exposure, 0.06 = 0.09% du compte
+    max_lot: 0.12  # 🔧 2 Sept 2026: 0.08→0.12. BTCUSD PF 4.34, p=0.0012, seul edge prouvé, maximiser collecte
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.65
@@ -131,9 +131,9 @@ symbol_limits:
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
-    sl_atr_trending: 2.5
+    sl_atr_trending: 2.0  # 🔧 2 Sept 2026: 2.5→2.0. Edge prouvé p=0.0012, SL serré = RR meilleur
     tp_atr_trending: 5.0
-    sl_atr_ranging: 2.5
+    sl_atr_ranging: 2.0  # 🔧 2 Sept 2026: 2.5→2.0. Aligné strategy.py
     tp_atr_ranging: 5.0
     adx_slope_threshold: -3.0
     adx_slope_threshold_strong: -6.0
@@ -183,7 +183,7 @@ symbol_limits:
     max_lot: 0.04
     min_lot: 0.01
     risk_mult: 0.8  # 🔧 1 Sept 2026: 1.0→0.8. PF 1.53 marginal, W/L ~1.0 = barely above noise
-    min_score: 0.60  # 🔧 1 Sept 2026: 0.65→0.60. Dynamic score déjà pénalise (eff. ~0.72), trop restrictif
+    min_score: 0.65  # 🔧 2 Sept 2026: 0.60→0.65 — aligné sur tous les autres symboles
     max_spread_points: 45
     adx_thresh: 22
     allow_buys: true

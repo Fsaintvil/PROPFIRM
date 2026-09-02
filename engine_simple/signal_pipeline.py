@@ -170,6 +170,12 @@ class SignalPipeline:
             persist_if_stale()
         except Exception:
             pass  # ne jamais casser le pipeline pour une instrumentation
+        # 🔧 FIX 2 Sept 2026: Skip frozen symbols early (risk_mult=0 → no signal generation)
+        # Élimine 510+ signaux/2h pour USDCAD/USDJPY/AUDUSD gelés = CPU + logs inutiles
+        sym_risk_mult = self.symbol_limits.get(symbol, {}).get("risk_mult", 1.0)
+        if sym_risk_mult is not None and sym_risk_mult <= 0:
+            return None
+
         # Phase 0: Pre-trade check
         pre_ok, pre_checks = self.risk_manager.pre_trade(symbol)
         if not pre_ok:

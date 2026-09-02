@@ -105,7 +105,7 @@ def test_symbol_limits_new_portfolio():
     assert btc.risk_mult == 1.0  # 🔓 DÉBLOQUÉ 13 Août 2026 (décision utilisateur — groupe CRYPTO indépendant)
     assert btc.allow_buys is True
     assert btc.allow_shorts is True  # 🔧 FIX 28 Août 2026: SELL sélectif réactivé (marché baissier)
-    assert btc.max_lot == 0.08  # 🔧 1 Sept 2026: 0.06→0.08 (BTCUSD PF 4.34, p=0.0012, edge confirmé)
+    assert btc.max_lot == 0.12  # 🔧 2 Sept 2026: 0.08→0.12 (BTCUSD seul edge prouvé, maximiser collecte)
     # 🔧 28 Août 2026: min_score unifié à 0.65 pour tous les symboles
     assert btc.min_score == 0.65
 

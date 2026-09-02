@@ -86,8 +86,8 @@ BE_BY_SYMBOL: dict = {
     "USDCAD":  [(1.30, 0.00), (1.60, 0.15), (1.90, 0.30), (2.20, 0.45), (2.50, 0.60), (2.80, 0.75)],
     "USDJPY":  [(1.50, 0.00), (1.80, 0.15), (2.10, 0.30), (2.40, 0.45), (2.70, 0.60), (3.00, 0.75)],
     "USDCHF":  [(1.50, 0.00), (1.80, 0.15), (2.10, 0.30), (2.40, 0.45), (2.70, 0.60), (3.00, 0.75)],
-    # XAUUSD — retracement modéré au début puis permissif
-    "XAUUSD":  [(1.00, 0.00), (1.30, 0.15), (1.60, 0.30), (1.90, 0.45), (2.20, 0.60), (2.50, 0.75)],
+    # XAUUSD — retracement modéré au début puis permissif (BE plus agressif = sécuriser rares gagnants)
+    "XAUUSD":  [(0.80, 0.00), (1.10, 0.15), (1.40, 0.30), (1.70, 0.45), (2.00, 0.60), (2.30, 0.75)],
 }
 
 
@@ -382,16 +382,13 @@ class Trailer:
             if max_profit > 0
             else float(os.environ.get("TIME_STOP_MAX_HOURS_LOSS", "2"))
         )
-        # 🔧 FIX 30 Aout 2026: time-stop loss 2h→3h pour crypto (BTCUSD, SOLUSD).
-        # La zone 5-12h génère 86% du profit (+$1,489) avec 40 trades. Le time-stop
-        # loss à 2h ferme trop tôt les trades crypto qui auraient besoin de 3-5h
-        # pour se développer. Augmenter à 3h pour crypto, garder 2h pour le forex.
-        # 🔧 1 Sept 2026: extension au forex — le momentum a besoin de 3h pour se
-        # développer. 25.9% des exits = time-stop, les trades forex sont coupés trop tôt.
-        _LOSS_TIME_3H_SYMBOLS = ("BTCUSD", "SOLUSD", "EURUSD", "GBPUSD", "USDJPY",
-                                  "USDCAD", "AUDUSD", "NZDUSD", "USDCHF")
-        if max_profit <= 0 and position.symbol in _LOSS_TIME_3H_SYMBOLS:
-            max_hours = 3.0
+        # 🔧 FIX 30 Aout 2026 + 2 Sept 2026: time-stop loss différencié par classe d'actif
+        # Crypto (BTCUSD, SOLUSD): 4h — momentum a besoin de temps pour se développer
+        # Forex: default 2h — sessions mortes = momentum épuisé
+        # XAUUSD: 3h depuis YAML (time_stop_max_hours_loss=3.0)
+        _LOSS_TIME_4H_SYMBOLS = ("BTCUSD", "SOLUSD")
+        if max_profit <= 0 and position.symbol in _LOSS_TIME_4H_SYMBOLS:
+            max_hours = 4.0
         # 🔧 FIX 19 Août 2026 (Council): time-stop profit configurable par symbole.
         # XAUUSD: time_stop_max_hours_profit=8.0 (défaut 12h) → sécurise les gains
         # plus vite sur un symbole à WR faible (28.6% GR) mais gros winners.

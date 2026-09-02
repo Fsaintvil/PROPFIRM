@@ -14,9 +14,9 @@ correlation:
 
 # ── Trading — 20 SYMBOLES SIMULTANÉS ──────────────────────────────────
 trading:
-  max_positions: 20              # 🔧 31 Août 2026: 8→20 — trader jusqu'à 20 symboles en même temps
-  max_positions_per_symbol: 4    # inchangé — 4 positions max par symbole
-  max_trades_per_day: 99999
+  max_positions: 12              # 🔧 2 Sept 2026: 20→12 — 6 symboles actifs × 3 max = 18, cap à 12 pour conservation
+  max_positions_per_symbol: 3    # 🔧 2 Sept 2026: 4→3 — aligné sur max_positions/symboles actifs
+  max_trades_per_day: 50         # 🔧 2 Sept 2026: 99999→50 — protection anti-excessive trading
   max_signals_per_cycle: 20      # 🔧 10→20 — un signal par symbole max par cycle
   history_lookback_days: 3       # conservé
 
