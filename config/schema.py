@@ -73,8 +73,8 @@ class TradingConfig(BaseModel):
             "UK100.cash",
         ]
     )
-    max_positions: int = Field(default=40, ge=1, le=100)  # 27 symboles
-    max_positions_per_symbol: int = Field(default=6, ge=1, le=15)  # 3 BUY + 3 SELL en HIGH CONF
+    max_positions: int = Field(default=40, ge=1, le=99999)  # 🔧 2 Sept 2026: le=100→le=99999 pour collecte
+    max_positions_per_symbol: int = Field(default=6, ge=1, le=99999)  # 🔧 2 Sept 2026: le=15→le=99999 pour collecte
     max_trades_per_day: int = Field(default=200, ge=1, le=99999)  # Désactivé par défaut à 99999
     max_signals_per_cycle: int = Field(default=25, ge=1, le=25)
     max_orders_per_minute: int = Field(default=25, ge=1, le=25)

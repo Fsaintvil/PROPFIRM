@@ -290,8 +290,8 @@ class TradingEngine:
             errors.append(f"MAX_DD_PCT={cfg.MAX_DD_PCT} — doit être entre 0 et 12%")
         if cfg.MIN_RR_RATIO < 1.0:
             errors.append(f"MIN_RR_RATIO={cfg.MIN_RR_RATIO} < 1.0 — risque de non-rentabilité")
-        if cfg.MAX_POSITIONS > 100:
-            errors.append(f"MAX_POSITIONS={cfg.MAX_POSITIONS} trop élevé (max 100 pour Mode MAX)")
+        if cfg.MAX_POSITIONS > 99999:
+            errors.append(f"MAX_POSITIONS={cfg.MAX_POSITIONS} trop élevé (max 99999)")
         if cfg.RISK_PER_TRADE <= 0 or cfg.RISK_PER_TRADE > 0.02:
             errors.append(f"RISK_PER_TRADE={cfg.RISK_PER_TRADE} — doit être entre 0.001 et 0.02")
         if errors:
