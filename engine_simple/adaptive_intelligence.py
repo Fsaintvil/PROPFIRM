@@ -331,15 +331,26 @@ class OnlineLearner:
 
                 # 🔧 FIX 1 Sept 2026: Purger les entrées avec régime invalide
                 # (BUY/SELL/HIST/DOW/RAN/SEED/SYNTHETIC = entrées legacy/synthétiques)
+                # 🔧 FIX 2 Sept 2026: Condition corrigée — si TOUS les trades sont invalides
+                # (ex: XAUUSD 200 trades BUY/SELL/HIST), len(regime_cleaned)=0 et l'ancienne
+                # condition `n_purged > 0 and len(regime_cleaned) > 0` était FAUSSE →
+                # les données contaminées ÉTAIENT CONSERVÉES au lieu d'être purgées.
                 n_before = len(trade_list)
                 regime_cleaned = [t for t in trade_list if t.get("regime", "") in valid_regimes]
                 n_purged = n_before - len(regime_cleaned)
-                if n_purged > 0 and len(regime_cleaned) > 0:
-                    logger.info(
-                        f"[OnlineLearner] {sym}: {n_purged} entrées régime invalide purgées, "
-                        f"{len(regime_cleaned)} propres conservées"
-                    )
-                    trade_list = regime_cleaned
+                if n_purged > 0:
+                    if len(regime_cleaned) > 0:
+                        logger.info(
+                            f"[OnlineLearner] {sym}: {n_purged} entrées régime invalide purgées, "
+                            f"{len(regime_cleaned)} propres conservées"
+                        )
+                        trade_list = regime_cleaned
+                    else:
+                        logger.warning(
+                            f"[OnlineLearner] {sym}: TOUS les {n_before} trades invalides "
+                            f"(BUY/SELL/HIST/DOW) — PURGE complète, symbole ignoré"
+                        )
+                        continue
 
                 self.history[sym] = deque(trade_list[-self.window :], maxlen=self.window)
             # 🐛 FIX 31 Juillet 2026: Purger les adapted_params des symboles contaminés
@@ -729,6 +740,19 @@ class AdaptiveEngine:
                         f"({len(hist_list)} trades, burst gaps < 1s) — PURGE au chargement"
                     )
                     continue
+                # 🔧 FIX 2 Sept 2026: Filtrer les régimes HIST/DOW/RAN/BUY/SELL artifacts
+                # Ces régimes n'existent pas en live (ce sont des artefacts de seed historique).
+                # Sans ce filtre, _save_calibration les réécrit dans calibration_state.json.
+                # Note: BUY/SELL exclus car les seeds historiques (2025) ont des régimes
+                # non-standards qui ne matchent pas les régimes live MarketRegime.
+                _CAL_VALID_REGIMES = {"TREND_UP", "TREND_DOWN", "RANGING", "HIGH_VOL", "LOW_VOL"}
+                before_count = len(hist_list)
+                hist_list = [h for h in hist_list if h.get("regime", "RANGING") in _CAL_VALID_REGIMES]
+                if len(hist_list) < before_count:
+                    logger.info(
+                        f"  [CAL] {sym}: filtré {before_count - len(hist_list)} "
+                        f"entrées régimes invalides (HIST/DOW/RAN) → {len(hist_list)} restantes"
+                    )
                 current_count = len(self.learner.history.get(sym, []))
                 if current_count < 5:
                     logger.info(
