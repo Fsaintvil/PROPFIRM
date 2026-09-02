@@ -715,7 +715,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
-    min_score: 0.65
+    min_score: 0.70  # 🔧 2 Sept 2026: user request
   UKOIL.cash:
     timeframe: H1
     max_lot: 1.0
@@ -1029,7 +1029,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
-    min_score: 0.8
+    min_score: 0.70  # 🔧 2 Sept 2026: user request
   US100.cash:
     timeframe: H1
     execution_timeframe: M15
@@ -1106,7 +1106,7 @@ symbol_limits:
     weekend_trading: true
     news_minutes_before: 15
     news_minutes_after: 15
-    min_score: 0.65
+    min_score: 0.70  # 🔧 2 Sept 2026: user request
   GER40.cash:
     timeframe: H1
     max_lot: 1.0

@@ -260,7 +260,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         # 🔒 RENFORCÉ 1er Juillet 2026 — WR 28.6% live
-        "min_score": 0.8,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.70,  # 🔧 2 Sept 2026: user request
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -586,7 +586,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8],  # Asian session
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.65,  # ↓ 0.60→0.50
+        "min_score": 0.70,  # 🔧 2 Sept 2026: user request
         "adx_thresh": 22,
         "min_rr": 2.0,  # ↑ 1.5→2.0
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -639,12 +639,12 @@ SYMBOL_CONFIG = {
         ],  # 24/7 (↑ 30 Juin: débloquer Asie)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.65,  # 🔧 13 Juil 2026: ↓ 0.75→0.70 — débloque signaux TrendFollow (score stabilisé à 0.74, backtest 68.4% WR)
+        "min_score": 0.70,  # 🔧 2 Sept 2026: user request
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
-        "cooldown_minutes": 20,
-        "auto_pause_losses": 4,
+        "cooldown_minutes": 0,
+        "auto_pause_losses": 999,
     },
     # ═══════════════════════════════════════════════════════════════════════
     # ═══════════════════════════════════════════════════════════════════════
