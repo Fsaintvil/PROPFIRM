@@ -349,9 +349,10 @@ class Trailer:
     # ── Time-stop ─────────────────────────────────────────────────────
 
     def _check_time_stop(self, position: Any) -> None:
-        ticket = str(position.ticket)
-        if ticket not in self.position_open_times:
-            return
+        # 🔧 3 Sept 2026: TIME_STOP DÉSACTIVÉ (décision user).
+        # Les trades doivent courir jusqu'au BE, SL ou TP.
+        # La fermeture pré-weekend est gérée séparément si nécessaire.
+        return
         ot = self.position_open_times[ticket]["open_time"]
         if isinstance(ot, (int, float)):
             ot = datetime.fromtimestamp(ot, tz=timezone.utc)

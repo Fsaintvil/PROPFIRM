@@ -235,58 +235,29 @@ class TestCheckPartialTP:
 
 
 class TestCheckTimeStop:
-    def test_no_open_time_skips(self, trailer, mock_mt5):
-        """Pas d'open_time → skip."""
-        pos = _make_position(ticket=9999)
+    """🔧 3 Sept 2026: time_stop DÉSACTIVÉ (décision user).
+    Tous les tests vérifient que _check_time_stop ne fait RIEN (early return)."""
+
+    def test_always_noop(self, trailer, mock_mt5):
+        """Time-stop désactivé → jamais de close, quel que soit le contexte."""
+        # Position vieille de 100h, deeply losing → ne ferme PAS
+        trailer.position_open_times["1001"] = {"open_time": (datetime.utcnow() - timedelta(hours=100)).timestamp()}
+        pos = _make_position(ticket=1001, profit=-500.0)
         trailer._check_time_stop(pos)
         mock_mt5.order_send.assert_not_called()
 
-    def test_recent_position_skips(self, trailer, mock_mt5):
-        """Position < 12h → skip."""
-        trailer.position_open_times["1001"] = {"open_time": datetime.utcnow().timestamp()}
-        pos = _make_position()
+    def test_profitable_position_also_noop(self, trailer, mock_mt5):
+        """Time-stop désactivé → position profitable aussi conservée."""
+        trailer.position_open_times["1001"] = {"open_time": (datetime.utcnow() - timedelta(hours=50)).timestamp()}
+        pos = _make_position(ticket=1001, profit=500.0)
         trailer._check_time_stop(pos)
         mock_mt5.order_send.assert_not_called()
 
-    def test_old_position_closes(self, trailer, mock_mt5):
-        """🔧 FIX 28 Août 2026: position profitable > 12h NE ferme PLUS (trailing gère).
-        Seule exception: weekend close window."""
-        trailer.position_open_times["1001"] = {"open_time": (datetime.utcnow() - timedelta(hours=13)).timestamp()}
-        pos = _make_position(profit=50.0)
-        with patch.object(Trailer, "_is_weekend_close_window", return_value=False):
-            trailer._check_time_stop(pos)
-        mock_mt5.order_send.assert_not_called()  # Profitable → trailing gère
-
-    def test_respects_cooldown(self, trailer, mock_mt5):
-        """Cooldown 5min entre tentatives."""
-        trailer.position_open_times["1001"] = {"open_time": (datetime.utcnow() - timedelta(hours=13)).timestamp()}
-        trailer._time_stop_cooldown["1001"] = time.time()  # vient de tenter
-        pos = _make_position(profit=50.0)
+    def test_xauusd_noop(self, trailer, mock_mt5):
+        """Time-stop désactivé → XAUUSD aussi conservé."""
+        trailer.position_open_times["1001"] = {"open_time": (datetime.utcnow() - timedelta(hours=20)).timestamp()}
+        pos = _make_position(ticket=1001, symbol="XAUUSD", profit=-100.0)
         trailer._check_time_stop(pos)
-        mock_mt5.order_send.assert_not_called()
-
-    def test_loss_position_closes_earlier(self, trailer, mock_mt5):
-        """Position perdante fermée après 4h."""
-        trailer.position_open_times["1001"] = {"open_time": (datetime.utcnow() - timedelta(hours=5)).timestamp()}
-        pos = _make_position(profit=-30.0)
-        trailer._check_time_stop(pos)
-        mock_mt5.order_send.assert_called_once()
-
-    def test_xauusd_profit_closes_at_8h_not_12h(self, trailer, mock_mt5):
-        """🔧 FIX 28 Août 2026: XAUUSD profitable > 8h NE ferme PLUS (trailing gère).
-        Le time-stop profit est désormais inutile — le trailing stop N1-N5 gère les trades gagnants."""
-        trailer.position_open_times["1001"] = {"open_time": (datetime.utcnow() - timedelta(hours=9)).timestamp()}
-        pos = _make_position(ticket=1001, symbol="XAUUSD", profit=80.0)
-        with patch.object(Trailer, "_is_weekend_close_window", return_value=False):
-            trailer._check_time_stop(pos)
-        mock_mt5.order_send.assert_not_called()  # Profitable → trailing gère
-
-    def test_default_symbol_still_12h(self, trailer, mock_mt5):
-        """🔧 FIX 19 Août 2026: les symboles SANS override gardent le défaut 12h."""
-        trailer.position_open_times["1001"] = {"open_time": (datetime.utcnow() - timedelta(hours=9)).timestamp()}
-        pos = _make_position(ticket=1001, symbol="EURUSD", profit=50.0)
-        with patch.object(Trailer, "_is_weekend_close_window", return_value=False):
-            trailer._check_time_stop(pos)
         mock_mt5.order_send.assert_not_called()
 
 
@@ -766,36 +737,27 @@ class TestTrailingConfigLock:
         assert update_sl_args is None, f"USDJPY: BE ne doit PAS se déclencher à 1.20×ATR (seuil 1.50)"
 
     def test_time_stop_weekend_window_reduces_max_hours(self, trailer, mock_mt5, monkeypatch):
-        """🔧 FIX 17 Août 2026: fermeture pré-weekend pour les symboles non-24/7.
-
-        Un trade AUDUSD (weekend_trading=false) dans la fenêtre de clôture du
-        vendredi voit max_hours réduit à WEEKEND_CLOSE_MAX_HOURS (défaut 2h) →
-        le time-stop se déclenche AVANT la fermeture du marché. Sans le fix,
-        un trade de 13h (norme profitable) restait exposé tout le week-end."""
+        """🔧 3 Sept 2026: time_stop désactivé → fermeture pré-weekend aussi inactive."""
         from config_simple import SYMBOL_LIMITS as _cfg_symbol_limits
 
-        # Simuler vendredi 16h UTC (dans la fenêtre de clôture)
-        fake_now = datetime(2026, 8, 21, 16, 30, 0)  # vendredi 21/08/2026 16:30 UTC
+        fake_now = datetime(2026, 8, 21, 16, 30, 0)
         _FakeDatetime._fixed = fake_now
         friday_ts = fake_now.timestamp()
         monkeypatch.setattr("engine_simple.trailer.datetime", _FakeDatetime)
 
-        # Config: AUDUSD ne trade pas le week-end
         monkeypatch.setattr(
             "engine_simple.trailer.cfg.SYMBOL_LIMITS",
             {**_cfg_symbol_limits, "AUDUSD": {"weekend_trading": False}},
         )
-        # AUDUSD pas dans NO_TRAILING_SYMBOLS (pour que le time-stop s'applique normalement)
 
-        # Position ouverte vendredi 14:00 UTC → 2.5h d'ancienneté à 16:30
         trailer.position_open_times["1001"] = {"open_time": friday_ts - 2.5 * 3600}
         pos = _make_position(ticket=1001, symbol="AUDUSD", profit=10.0)
         mock_mt5.reset_mock()
 
         trailer._check_time_stop(pos)
 
-        # max_hours réduit à 2h → 2.5h > 2h → le time-stop doit tenter la fermeture
-        mock_mt5.order_send.assert_called_once()
+        # time_stop désactivé → pas de close même en fenêtre week-end
+        mock_mt5.order_send.assert_not_called()
 
     def test_time_stop_weekend_window_crypto_skipped(self, trailer, mock_mt5, monkeypatch):
         """🔧 FIX 17 Août 2026: crypto 24/7 (BTCUSD, weekend_trading=true) PAS réduit.

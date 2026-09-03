@@ -443,20 +443,22 @@ class TestPartialTP:
         assert not mt5.order_send.called
 
     def test_time_stop(self):
+        """🔧 3 Sept 2026: time_stop désactivé → plus de close."""
         mt5 = make_mock_mt5()
         ftmo = make_ftmo(mt5)
         result = MagicMock()
         result.retcode = 10009
         mt5.order_send.return_value = result
         pos = self._make_buy_pos(current=1.1010)
-        pos.profit = -25.0  # losing position → max_hours=4
+        pos.profit = -25.0
         sixteen_hours_ago = datetime.utcnow() - __import__("datetime").timedelta(hours=16)
         ftmo.position_open_times = {"1": {"open_time": sixteen_hours_ago, "symbol": "EURUSD"}}
         ftmo.trailer.position_open_times = ftmo.position_open_times
         ftmo._check_time_stop(pos)
-        assert mt5.order_send.called
+        assert not mt5.order_send.called  # time_stop désactivé
 
     def test_time_stop_tick_none_returns(self):
+        """🔧 3 Sept 2026: time_stop désactivé → tick None irrelevant."""
         mt5 = make_mock_mt5()
         mt5.get_tick.return_value = None
         ftmo = make_ftmo(mt5)

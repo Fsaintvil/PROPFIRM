@@ -2054,7 +2054,8 @@ class FTMOProtector:
         # le "readonly attribute" d'MT5 survient si la position a été modifiée
         # entre la lecture et l'envoi (ex: partial TP puis trailing dans le même cycle)
         subs = [
-            ("time_stop", self.trailer._check_time_stop),
+            # 🔧 3 Sept 2026: time_stop désactivé (décision user — trades courent jusqu'au BE/SL/TP)
+            # ("time_stop", self.trailer._check_time_stop),
             # 🔧 30 Juillet 2026: BE progressif AVANT partial TP et trailing.
             # Sécurise un profit minimal (entry ou entry+0.15×ATR) dès 0.50×ATR,
             # avant même que le trailing N1 (1.20×ATR) ne s'active.
