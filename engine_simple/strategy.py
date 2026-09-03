@@ -699,7 +699,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 0,
         "news_minutes_after": 0,
         "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
-        "adx_thresh": 20,
+        "adx_thresh": 20,  # Crypto, seuil bas (ETHUSD pattern)
         "min_rr": 1.8,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 0,
@@ -753,7 +753,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
-        "adx_thresh": 17,  # 🔧 3 Sept 2026: 20→17. SOLUSD ADX live=16-17, seuil 20 bloquait 61 signaux
+        "adx_thresh": 22,  # Aligné YAML — indice UK, standard 22
         "min_rr": 1.8,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 0,
