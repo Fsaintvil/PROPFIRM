@@ -100,7 +100,7 @@ symbol_limits:
     risk_mult: 1.0
     min_score: 0.65
     max_spread_points: 600
-    adx_thresh: 18
+    adx_thresh: 15  # 🔧 3 Sept 2026: 18→15. Crypto ADX naturellement bas (16-17), seuil bloquant
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
@@ -592,7 +592,7 @@ symbol_limits:
     risk_mult: 0.8  # 🔧 1 Sept 2026: 1.0→0.8. Compense le PF inflaté (vrai PF ~2.5 pas 4.66)
     max_spread_points: 120
     max_spread_atr_ratio: 0.25
-    adx_thresh: 20
+    adx_thresh: 17  # 🔧 3 Sept 2026: 20→17. SOLUSD ADX live=16-17, seuil 20 bloquait 61 signaux
     allow_buys: true
     allow_shorts: true
     momentum_period: 20

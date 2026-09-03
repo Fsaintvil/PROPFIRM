@@ -169,7 +169,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         "min_score": 0.65,
-        "adx_thresh": 20,
+        "adx_thresh": 15,  # 🔧 3 Sept 2026: 20→15. Crypto ADX naturellement bas (16-17), seuil bloquant
         "min_rr": 2.0,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 13 Août 2026 (décision utilisateur): PF backtest 1.18, groupe CRYPTO indépendant
         "cooldown_minutes": 0,
@@ -260,10 +260,10 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         # 🔒 RENFORCÉ 1er Juillet 2026 — WR 28.6% live
-        "min_score": 0.69,  # 🔧 2 Sept 2026: user request
+        "min_score": 0.80,  # 🔧 3 Sept 2026: US30 PF 0.18 — gelé risk_mult=0.0 dans YAML, cohérence
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
+        "risk_mult": 0.0,  # 🔧 3 Sept 2026: aligné YAML. US30 PF 0.18, gelé
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },
@@ -339,10 +339,10 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.79,
+        "min_score": 0.82,  # 🔧 3 Sept 2026: USDCAD PF 0.84 — gelé risk_mult=0.0 dans YAML, cohérence
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 1.0,  # 🔧 3 Sept 2026: dégelé (décision user)
+        "risk_mult": 0.0,  # 🔧 3 Sept 2026: aligné YAML. USDCAD PF 0.84, gelé
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },
@@ -753,8 +753,8 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
-        "adx_thresh": 22,
-        "min_rr": 1.5,
+        "adx_thresh": 17,  # 🔧 3 Sept 2026: 20→17. SOLUSD ADX live=16-17, seuil 20 bloquait 61 signaux
+        "min_rr": 1.8,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,

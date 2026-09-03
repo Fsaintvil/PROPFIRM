@@ -52,16 +52,17 @@ class TestForexSessionOpt:
     """Test 3: preferred_hours LDN-NY [13-17] GMT."""
 
     def test_forex_preferred_hours_ldn_ny(self):
+        """🔧 3 Sept 2026: tous les symboles sont 24/7 (preferred_hours = range(24))."""
         for s in FOREX_MAJORS:
             ph = SYMBOL_CONFIG[s]["preferred_hours"]
-            assert ph == [13, 14, 15, 16, 17], f"{s} preferred_hours != [13-17]: {ph}"
+            assert ph == list(range(24)), f"{s} preferred_hours != 24/7: {ph}"
 
     def test_session_blocks_outside_hours(self):
-        """🔧 2 Sept 2026: preferred_hours RÉACTIVÉ — le trade EST bloqué hors heures.
+        """🔧 3 Sept 2026: tous les symboles sont 24/7 — EURUSD à 11h UTC est AUTORISÉ.
 
-        Avant: EURUSD à 11h UTC = accepté (preferred_hours désactivé).
-        Après: preferred_hours réactivé dans ftmo_protector (backtest prouve −70% DD).
-        EURUSD à 11h UTC = BLOQUÉ (preferred_hours [13-17]).
+        Avant: preferred_hours [13-17] bloquait EURUSD à 11h UTC.
+        Après: tous les symboles 24/7 (preferred_hours = range(24)).
+        EURUSD à 11h UTC = AUTORISÉ (hors danger_hours [5,6,7,17]).
         """
         import sys, os
 
@@ -82,8 +83,8 @@ class TestForexSessionOpt:
                     "EURUSD",
                     signal={"action": "BUY", "score": 0.80, "sl": 1.09, "tp": 1.12},
                 )
-                # preferred_hours réactivé → le trade est BLOQUÉ à 11h UTC
-                assert not ok, f"EURUSD à 11h UTC devrait être bloqué (preferred_hours [13-17])"
+                # 24/7 → EURUSD à 11h UTC est autorisé (pas dans danger_hours)
+                assert ok, f"EURUSD à 11h UTC devrait être autorisé (24/7), reason={reason}"
 
     def test_session_allows_within_hours(self):
         """Le filtre session doit accepter un trade EURUSD à 14h UTC."""
