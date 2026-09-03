@@ -191,7 +191,7 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        "preferred_hours": [13, 14, 15, 16, 17],
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         "min_score": 0.70,  # 🔧 2 Sept 2026: user request — collecte qualifiée
@@ -213,7 +213,7 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        "preferred_hours": [13, 14, 15, 16, 17],
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         "min_score": 0.80,  # 🔧 2 Sept 2026: user request — perdant structurel, filtré
@@ -255,7 +255,7 @@ SYMBOL_CONFIG = {
         "pullback_band_ranging": 0.2,
         # (cmf_threshold, obv_div_penalty gérés par signal_pipeline depuis default.yaml)
         # Sessions US market hours
-        "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         # News filter (protection news US)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
@@ -287,7 +287,7 @@ SYMBOL_CONFIG = {
         "pullback_band_ranging": 0.3,
         # 🔧 19 Août 2026 (Backtest Optimizations): session LDN-NY overlap 13-17h GMT
         # (DD backtest 30.3%→9.0%, pertes −74%). Voir rapport runtime/backtest_optimizations.json.
-        "preferred_hours": [13, 14, 15, 16, 17],
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         "min_score": 0.7,  # 🔧 10 Juil 2026: ↑ 0.80→0.85 — symbole réactivé, sélectif max
@@ -311,7 +311,7 @@ SYMBOL_CONFIG = {
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
         # 🔧 19 Août 2026: session LDN-NY overlap 13-17h GMT (DD −66%, pertes −74%)
-        "preferred_hours": [13, 14, 15, 16, 17],
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         "min_score": 0.75,  # 🔧 10 Juil 2026: ↓ 0.85→0.80 — trop restrictif, scores plafonnent à 0.61
@@ -336,7 +336,7 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        "preferred_hours": [13, 14, 15, 16, 17],
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         "min_score": 0.8,
@@ -361,7 +361,7 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -8.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        "preferred_hours": [13, 14, 15, 16, 17],
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         "min_score": 0.65,
@@ -385,7 +385,7 @@ SYMBOL_CONFIG = {
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
         # 🔧 19 Août 2026: session LDN-NY overlap 13-17h GMT (DD −66%, pertes −74%)
-        "preferred_hours": [13, 14, 15, 16, 17],
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         "min_score": 0.8,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
@@ -457,7 +457,7 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -14.0,
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
-        "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         "min_score": 0.75,  # ↓ 0.60→0.50 (threshold 3.0×ATR assez sélectif)
@@ -491,7 +491,7 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
-        "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         "min_score": 0.65,
@@ -583,7 +583,7 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -14.0,
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
-        "preferred_hours": [0, 1, 2, 3, 4, 5, 6, 7, 8],  # Asian session
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         "min_score": 0.70,  # 🔧 2 Sept 2026: user request
@@ -611,32 +611,7 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        "preferred_hours": [
-            0,
-            1,
-            2,
-            3,
-            4,
-            5,
-            6,
-            7,
-            8,
-            9,
-            10,
-            11,
-            12,
-            13,
-            14,
-            15,
-            16,
-            17,
-            18,
-            19,
-            20,
-            21,
-            22,
-            23,
-        ],  # 24/7 (↑ 30 Juin: débloquer Asie)
+        "preferred_hours": list(range(24)),  # 24/7
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         "min_score": 0.70,  # 🔧 2 Sept 2026: user request
@@ -665,7 +640,7 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres seulement
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
         "min_score": 0.8,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
@@ -747,7 +722,7 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
-        "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],  # Londres
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
@@ -774,7 +749,7 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.3,
         "pullback_band_ranging": 0.2,
-        "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
@@ -801,7 +776,7 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        "preferred_hours": [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
@@ -828,7 +803,7 @@ SYMBOL_CONFIG = {
         "adx_slope_threshold_strong": -12.0,
         "pullback_band_trending": 0.5,
         "pullback_band_ranging": 0.3,
-        "preferred_hours": [13, 14, 15, 16, 17, 18, 19, 20, 21],  # NY session
+        "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)  # NY session
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
@@ -902,7 +877,7 @@ _FOREX_OPT_20260819 = {
     'tp_atr_trending': 6.25,
     'sl_atr_ranging': 2.5,
     'tp_atr_ranging': 6.67,
-    'preferred_hours': [13, 14, 15, 16, 17],
+    'preferred_hours': list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
 }
 for _sym in _MISSING_SYMBOLS:
     if _sym not in SYMBOL_CONFIG:
