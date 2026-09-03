@@ -260,10 +260,10 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         # 🔒 RENFORCÉ 1er Juillet 2026 — WR 28.6% live
-        "min_score": 0.80,  # 🔧 3 Sept 2026: US30 PF 0.18 — gelé risk_mult=0.0 dans YAML, cohérence
+        "min_score": 0.80,  # 🔧 3 Sept 2026: US30 PF 0.18 — filtrage strict
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 0.0,  # 🔧 3 Sept 2026: aligné YAML. US30 PF 0.18, gelé
+        "risk_mult": 1.0,  # 🔧 3 Sept 2026: dégelé (récolte continuation)
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },
@@ -317,7 +317,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.75,  # 🔧 10 Juil 2026: ↓ 0.85→0.80 — trop restrictif, scores plafonnent à 0.61
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 1.0,  # 🔧 3 Sept 2026: dégelé (décision user)
+        "risk_mult": 1.0,  # 🔧 3 Sept 2026: dégelé (récolte continuation)
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },
@@ -339,10 +339,10 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.82,  # 🔧 3 Sept 2026: USDCAD PF 0.84 — gelé risk_mult=0.0 dans YAML, cohérence
+        "min_score": 0.82,  # 🔧 3 Sept 2026: USDCAD PF 0.84 — filtrage strict
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 0.0,  # 🔧 3 Sept 2026: aligné YAML. USDCAD PF 0.84, gelé
+        "risk_mult": 1.0,  # 🔧 3 Sept 2026: dégelé (récolte continuation)
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },
@@ -367,7 +367,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.65,
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 1.0,  # 🔧 3 Sept 2026: dégelé (décision user)
+        "risk_mult": 1.0,  # 🔧 3 Sept 2026: dégelé (récolte continuation)
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },
@@ -463,11 +463,11 @@ SYMBOL_CONFIG = {
         "min_score": 0.75,  # ↓ 0.60→0.50 (threshold 3.0×ATR assez sélectif)
         "adx_thresh": 22,
         "min_rr": 2.0,  # ↑ 1.5→2.0 (TP 6.0 / SL 1.5 = RR 4.0)
-        "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.58, perdant (aligné default.yaml)
+        "risk_mult": 1.0,  # 🔧 3 Sept 2026: dégelé (récolte continuation)
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },
-    # ═══════════════════════════════════════════════════════════
+    # ═══════════════════════════════════════════════════════════════════════
     # US500.cash H1 — S&P 500 (AJOUTÉ 29 Juin 2026 — Target 80% WR)
     # Backtest avec coûts: WR 73.6%, PF 1.04, DD 10.5%
     # ═══════════════════════════════════════════════════════════════════════
@@ -672,7 +672,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 0,
         "news_minutes_after": 0,
         "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
-        "adx_thresh": 20,
+        "adx_thresh": 17,  # 🔧 3 Sept 2026: 20→17. SOLUSD ADX live=16-17, seuil 20 bloquait 61 signaux
         "min_rr": 1.8,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
         "cooldown_minutes": 0,
