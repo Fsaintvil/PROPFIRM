@@ -1591,6 +1591,14 @@ class TradingEngine:
                 # Action #10: Alerte si DD > 5%
                 if dd_pct > 5.0 and hasattr(self, "notifier"):
                     self.notifier.send(f"⚠️ ALERTE DD {dd_pct:.1f}% — Eq=${account.equity:.0f} Positions={pos_count}")
+                    # Notification Telegram pour alerte DD
+                    try:
+                        send_error_notification(
+                            f"DD {dd_pct:.1f}% - Equity ${account.equity:.0f} - {pos_count} positions",
+                            "Alerte Drawdown"
+                        )
+                    except Exception as _e:
+                        logger.debug(f"[TELEGRAM] Notification DD échouée: {_e}")
                 # Métriques
                 self.metrics.gauge("balance", account.balance)
                 self.metrics.gauge("equity", account.equity)

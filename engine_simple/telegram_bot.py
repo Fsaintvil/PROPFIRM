@@ -37,7 +37,7 @@ class TelegramBot:
     def __init__(self):
         self.token = os.getenv("TELEGRAM_BOT_TOKEN", "")
         self.chat_id = os.getenv("TELEGRAM_CHAT_ID", "")
-        self.authorized_chat_ids = self._load_authorized_ids()
+        self.authorized_chat_ids = self._load_authorized_chat_ids()
         self._enabled = bool(self.token and self.chat_id)
         self._last_command_time = {}  # chat_id -> timestamp
         self._command_cooldown = 5  # secondes

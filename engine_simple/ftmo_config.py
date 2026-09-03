@@ -331,7 +331,7 @@ def get_first_lock_atr(symbol: str) -> float:
 # (ex: tuple bug positions_get → 91 positions au lieu de 18).
 # Une fois ce seuil atteint, calculate_lot() retourne min_lot pour tout nouveau trade.
 # ============================================================================
-MAX_TOTAL_LOTS = 2.0  # volume total max (ex: 20 positions × 0.10 = 2.0)
+MAX_TOTAL_LOTS = 20.0  # 🔧 3 Sept 2026: CHALLENGE MODE (2→20)
 
 # ============================================================================
 # SYMBOL MAX RISK — Per-symbol risk_mult override (hard blocks)
