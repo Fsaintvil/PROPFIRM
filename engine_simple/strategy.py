@@ -115,7 +115,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 10,
         "news_minutes_after": 10,
-        "min_score": 0.85,  # 🔧 31 Aout 2026: 0.75→0.80. XAUUSD restrictif (WR 25%, PF 1.09), seuls les signaux forts
+        "min_score": 0.77,  # 🔧 3 Sept 2026: −10% (0.85→0.77)
         "adx_thresh": 22,
         "min_rr": 2.0,
         "risk_mult": 1.0,  # 🔧 ALIGNÉ 14 Aout 2026: 0.0→1.0 (décision utilisateur — réactivation XAUUSD)
@@ -168,7 +168,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.65,
+        "min_score": 0.59,
         "adx_thresh": 20,
         "min_rr": 2.0,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 13 Août 2026 (décision utilisateur): PF backtest 1.18, groupe CRYPTO indépendant
@@ -194,7 +194,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.70,  # 🔧 2 Sept 2026: user request — collecte qualifiée
+        "min_score": 0.63,  # 🔧 2 Sept 2026: user request — collecte qualifiée
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -216,7 +216,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.80,  # 🔧 2 Sept 2026: user request — perdant structurel, filtré
+        "min_score": 0.72,  # 🔧 2 Sept 2026: user request — perdant structurel, filtré
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.0,  # 🔴 GELÉ: PF 0.60, perdant structurel
@@ -260,7 +260,7 @@ SYMBOL_CONFIG = {
         "news_minutes_before": 15,
         "news_minutes_after": 15,
         # 🔒 RENFORCÉ 1er Juillet 2026 — WR 28.6% live
-        "min_score": 0.70,  # 🔧 2 Sept 2026: user request
+        "min_score": 0.63,  # 🔧 2 Sept 2026: user request
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -290,7 +290,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.7,  # 🔧 10 Juil 2026: ↑ 0.80→0.85 — symbole réactivé, sélectif max
+        "min_score": 0.63,  # 🔧 10 Juil 2026: ↑ 0.80→0.85 — symbole réactivé, sélectif max
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.18, perdant structurel (aligné default.yaml)
@@ -314,7 +314,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.75,  # 🔧 10 Juil 2026: ↓ 0.85→0.80 — trop restrictif, scores plafonnent à 0.61
+        "min_score": 0.68,  # 🔧 10 Juil 2026: ↓ 0.85→0.80 — trop restrictif, scores plafonnent à 0.61
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.86, aucun edge (aligné default.yaml)
@@ -339,7 +339,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.8,
+        "min_score": 0.72,
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.84, spread dead (aligné default.yaml)
@@ -364,7 +364,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.65,
+        "min_score": 0.59,
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: WR 12.5% historique, aucun edge (aligné default.yaml)
@@ -388,7 +388,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.8,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.72,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.3,
         "risk_mult": 1.0,
@@ -421,7 +421,7 @@ SYMBOL_CONFIG = {
         # 🔒 SOFT BLOCK 1er Juillet 2026 — WR 29.4% live, -$139
         # risk_mult=0.05 = 95% de réduction de risque, micro-lot 0.05 (×5)
         # min_score=0.90 = seuls les signaux exceptionnels passent
-        "min_score": 0.65,  # très sélectif
+        "min_score": 0.59,  # très sélectif
         "adx_thresh": 20,
         "min_rr": 2.0,
         "risk_mult": 0.0,  # 🔴 GEL TEMPORAIRE par automation: freeze symbol due to large losses
@@ -460,7 +460,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.75,  # ↓ 0.60→0.50 (threshold 3.0×ATR assez sélectif)
+        "min_score": 0.68,  # ↓ 0.60→0.50 (threshold 3.0×ATR assez sélectif)
         "adx_thresh": 22,
         "min_rr": 2.0,  # ↑ 1.5→2.0 (TP 6.0 / SL 1.5 = RR 4.0)
         "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.58, perdant (aligné default.yaml)
@@ -494,7 +494,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.65,
+        "min_score": 0.59,
         "adx_thresh": 22,
         "min_rr": 2.0,
         "risk_mult": 1.0,
@@ -522,7 +522,7 @@ SYMBOL_CONFIG = {
         # min_score=0.90 = seuls les signaux exceptionnels passent
         # Si les signaux redeviennent bons, l'OL détectera la guérison
         # 🔧 FIX_SUPREME_COUNCIL 2 Juillet 2026: ADX 22→25 pour réduire faux signaux
-        "min_score": 0.65,  # très sélectif
+        "min_score": 0.59,  # très sélectif
         "adx_thresh": 25,
         "min_rr": 2.0,
         "risk_mult": 0.0,  # 🔴 GEL TEMPORAIRE par automation: freeze symbol due to large losses
@@ -550,7 +550,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.65,  # 🔧 10 Juil 2026: débloqué min_score=0.85 — 11 trades, -$1, test progressif
+        "min_score": 0.59,  # 🔧 10 Juil 2026: débloqué min_score=0.85 — 11 trades, -$1, test progressif
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -586,7 +586,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.70,  # 🔧 2 Sept 2026: user request
+        "min_score": 0.63,  # 🔧 2 Sept 2026: user request
         "adx_thresh": 22,
         "min_rr": 2.0,  # ↑ 1.5→2.0
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -614,7 +614,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 24/7
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.70,  # 🔧 2 Sept 2026: user request
+        "min_score": 0.63,  # 🔧 2 Sept 2026: user request
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -643,7 +643,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 5,
         "news_minutes_after": 5,
-        "min_score": 0.8,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.72,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.5,
         "risk_mult": 1.0,  # 🔧 ↑ 0.8→1.0 (bon performer)
@@ -671,7 +671,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 24/7
         "news_minutes_before": 0,
         "news_minutes_after": 0,
-        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.59,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.8,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -698,7 +698,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),
         "news_minutes_before": 0,
         "news_minutes_after": 0,
-        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.59,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.8,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -725,7 +725,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.59,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,
@@ -752,7 +752,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.59,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.5,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -779,7 +779,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.59,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.6,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -806,7 +806,7 @@ SYMBOL_CONFIG = {
         "preferred_hours": list(range(24)),  # 🔧 3 Sept 2026: 24/5 (FTMO autorise)  # NY session
         "news_minutes_before": 15,
         "news_minutes_after": 15,
-        "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+        "min_score": 0.59,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.8,
         "risk_mult": 1.0,  # 🔓 DÉBLOQUÉ 29 Juillet 2026
@@ -839,7 +839,7 @@ DEFAULT_SYMBOL_CONFIG = {
     "news_minutes_before": 5,
     "news_minutes_after": 5,
     # ── Filtres & Score ───────────────────────────────────────────────
-    "min_score": 0.65,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
+    "min_score": 0.59,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
     "conf": 0.85,  # seuil HIGH_CONF confidence
     "adx_thresh": 22,  # ADX minimum pour régime TREND
     "min_rr": 1.5,  # RR minimum exigé
