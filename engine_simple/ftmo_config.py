@@ -208,24 +208,24 @@ FIRST_LOCK_ATR = (
 
 # Per-symbol risk_mult cap — 27 symboles (fix M12: étendu 1er Juillet 2026)
 RISK_MULT_CAP = {
-    "XAUUSD": 1.50,
-    "BTCUSD": 1.25,
-    "US30.cash": 1.30,
-    "ETHUSD": 1.15,
-    "US100.cash": 1.20,
-    "US500.cash": 1.15,
-    "XAGUSD": 1.10,
-    "EURUSD": 1.15,
-    "GBPUSD": 1.15,
-    "USDJPY": 2.00,  # 🚀 16 Juil: ↑ 1.15→2.00 — meilleur symbole, WR 61% stable
-    "USDCAD": 1.15,
-    "AUDUSD": 1.15,
-    "NZDUSD": 1.15,
-    "USDCHF": 1.15,
-    "EURJPY": 1.10,
-    "GBPJPY": 1.10,
-    "EURGBP": 1.10,
-    "AUDJPY": 1.50,  # 🚀 16 Juil: ↑ 1.10→1.50 — débloqué, WR 55.6%
+    "XAUUSD": 3.50,   # 🔧 3 Sept 2026: ×2.3 collecte
+    "BTCUSD": 3.00,
+    "US30.cash": 3.00,
+    "ETHUSD": 2.75,
+    "US100.cash": 2.75,
+    "US500.cash": 2.75,
+    "XAGUSD": 2.50,
+    "EURUSD": 2.75,
+    "GBPUSD": 2.75,
+    "USDJPY": 4.50,   # 🚀 meilleur symbole
+    "USDCAD": 2.75,
+    "AUDUSD": 2.75,
+    "NZDUSD": 2.75,
+    "USDCHF": 2.75,
+    "EURJPY": 2.50,
+    "GBPJPY": 2.50,
+    "EURGBP": 2.50,
+    "AUDJPY": 3.50,
     "USOIL.cash": 2.00,  # 🚀 16 Juil: ↑ 1.10→2.00 — PF 5.30, +$33
     "UKOIL.cash": 1.10,
     "NATGAS.cash": 1.05,
