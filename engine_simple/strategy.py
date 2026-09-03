@@ -219,7 +219,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.79,  # 🔧 2 Sept 2026: user request — perdant structurel, filtré
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 0.0,  # 🔴 GELÉ: PF 0.60, perdant structurel
+        "risk_mult": 1.0,  # 🔧 3 Sept 2026: dégelé (décision user)
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },
@@ -317,7 +317,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.75,  # 🔧 10 Juil 2026: ↓ 0.85→0.80 — trop restrictif, scores plafonnent à 0.61
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.86, aucun edge (aligné default.yaml)
+        "risk_mult": 1.0,  # 🔧 3 Sept 2026: dégelé (décision user)
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },
@@ -342,7 +342,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.79,
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: PF 0.84, spread dead (aligné default.yaml)
+        "risk_mult": 1.0,  # 🔧 3 Sept 2026: dégelé (décision user)
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },
@@ -367,7 +367,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.65,
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 0.0,  # 🔴 GELÉ 1 Sept 2026: WR 12.5% historique, aucun edge (aligné default.yaml)
+        "risk_mult": 1.0,  # 🔧 3 Sept 2026: dégelé (décision user)
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },
