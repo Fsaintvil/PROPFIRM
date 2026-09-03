@@ -46,7 +46,7 @@ def test_load_default_config():
     assert "NZDUSD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
     assert "USDCHF" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
     assert "GBPUSD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
-    assert cfg.risk.per_trade_pct == 0.008  # 🔧 3 Sept 2026: ×2 collecte
+    assert cfg.risk.per_trade_pct == 0.02  # 🔧 3 Sept 2026: CHALLENGE MODE
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 2.0  # conservé
 
@@ -61,7 +61,7 @@ def test_as_flat_dict():
     cfg = load_config("default")
     flat = cfg.as_flat_dict()
     assert flat["ROBOT_MAGIC"] == 999001
-    assert flat["RISK_PER_TRADE_PCT"] == 0.008  # 🔧 3 Sept 2026: ×2 collecte
+    assert flat["RISK_PER_TRADE_PCT"] == 0.02  # 🔧 3 Sept 2026: CHALLENGE MODE
     assert flat["TRADING_MAX_POSITIONS"] == 99999  # 🔧 2 Sept 2026: désactivé pour collecte maximale
     assert flat["RISK_MAX_DD_PCT"] == 0.10
 
@@ -161,7 +161,7 @@ def test_config_simple_compat():
     import config_simple as cfg
 
     assert cfg.ROBOT_MAGIC == 999001
-    assert cfg.RISK_PER_TRADE == 0.007  # 🔧 3 Sept 2026: ×2.3 collecte (production override)
+    assert cfg.RISK_PER_TRADE == 0.02  # 🔧 3 Sept 2026: CHALLENGE MODE (production override)
     assert cfg.MAX_ORDERS_PER_MINUTE == 6  # CONFIG PIC 23 Juin 2026
     assert cfg.__version__ == "4.1.0"
     assert cfg.MIN_SIGNAL_SCORE == 0.65  # 🔧 13 Août 2026: 0.70→0.65 (décision utilisateur — +~30% de signaux)

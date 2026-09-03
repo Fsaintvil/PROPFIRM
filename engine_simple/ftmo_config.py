@@ -208,24 +208,24 @@ FIRST_LOCK_ATR = (
 
 # Per-symbol risk_mult cap — 27 symboles (fix M12: étendu 1er Juillet 2026)
 RISK_MULT_CAP = {
-    "XAUUSD": 3.50,   # 🔧 3 Sept 2026: ×2.3 collecte
-    "BTCUSD": 3.00,
-    "US30.cash": 3.00,
-    "ETHUSD": 2.75,
-    "US100.cash": 2.75,
-    "US500.cash": 2.75,
-    "XAGUSD": 2.50,
-    "EURUSD": 2.75,
-    "GBPUSD": 2.75,
-    "USDJPY": 4.50,   # 🚀 meilleur symbole
-    "USDCAD": 2.75,
-    "AUDUSD": 2.75,
-    "NZDUSD": 2.75,
-    "USDCHF": 2.75,
-    "EURJPY": 2.50,
-    "GBPJPY": 2.50,
-    "EURGBP": 2.50,
-    "AUDJPY": 3.50,
+    "XAUUSD": 10.0,   # 🔧 3 Sept 2026: CHALLENGE MODE ×3
+    "BTCUSD": 9.0,
+    "US30.cash": 9.0,
+    "ETHUSD": 8.0,
+    "US100.cash": 8.0,
+    "US500.cash": 8.0,
+    "XAGUSD": 7.5,
+    "EURUSD": 8.0,
+    "GBPUSD": 8.0,
+    "USDJPY": 13.0,   # 🚀 meilleur symbole
+    "USDCAD": 8.0,
+    "AUDUSD": 8.0,
+    "NZDUSD": 8.0,
+    "USDCHF": 8.0,
+    "EURJPY": 7.5,
+    "GBPJPY": 7.5,
+    "EURGBP": 7.5,
+    "AUDJPY": 10.0,
     "USOIL.cash": 2.00,  # 🚀 16 Juil: ↑ 1.10→2.00 — PF 5.30, +$33
     "UKOIL.cash": 1.10,
     "NATGAS.cash": 1.05,

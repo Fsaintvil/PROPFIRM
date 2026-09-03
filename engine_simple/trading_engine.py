@@ -31,6 +31,7 @@ from engine_simple.indicators import atr as ind_atr
 from engine_simple.dashboard import HealthServer, MetricsCollector
 from engine_simple.mt5_connector import MT5Connector
 from engine_simple.notifier import Notifier
+from engine_simple.telegram_bot import get_telegram_bot, send_trade_notification, send_error_notification
 from engine_simple.position_tracker import PositionTracker
 from engine_simple.rate_cache import RateCache
 from engine_simple.risk_manager import RiskManager
@@ -329,6 +330,12 @@ class TradingEngine:
                 "TELEGRAM NON CONFIGURE: les notifications de crash "
                 "ne seront pas envoyees. Configure les tokens dans .env"
             )
+        
+        # Initialiser le bot Telegram bidirectionnel
+        self.telegram_bot = get_telegram_bot()
+        if self.telegram_bot._enabled:
+            self.telegram_bot.start()
+            logger.info("[TELEGRAM] Bot bidirectionnel démarré")
         if not self.mt5.connect():
             self.audit.log_error("init", "Echec connexion MT5")
             sys.exit(1)
@@ -1315,6 +1322,11 @@ class TradingEngine:
         except Exception as e:
             logger.error(f"Erreur fatale: {e}", exc_info=True)
             self.notifier.send(f"Robot crashed: {e}")
+            # Notification Telegram pour erreur critique
+            try:
+                send_error_notification(str(e), "Erreur fatale du robot")
+            except Exception as _e:
+                logger.debug(f"[TELEGRAM] Notification erreur échouée: {_e}")
         finally:
             self.stop()
         return True
@@ -2077,6 +2089,16 @@ class TradingEngine:
                 logger.info(
                     f"  [TRADE] >>> {symbol} {signal['action']} (score={score:.2f}, strat={signal.get('details', '?')})"
                 )
+                # Notification Telegram pour trade exécuté
+                try:
+                    send_trade_notification(
+                        symbol=symbol,
+                        direction=signal['action'],
+                        entry=signal.get('entry_price', 0),
+                        pnl=None  # Trade ouvert, PnL inconnu
+                    )
+                except Exception as _e:
+                    logger.debug(f"[TELEGRAM] Notification trade échouée: {_e}")
                 # 🆕 Phase 14b: Sauvegarder les features + prédictions pour retraining futur
                 # Appelé IMMÉDIATEMENT après exécution pour capturer l'état avant que
                 # track_new() ne crée son propre meta (add_meta pré-remplit _position_meta)
