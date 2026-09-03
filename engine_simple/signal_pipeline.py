@@ -87,6 +87,11 @@ class SignalPipeline:
         self._rates_cache: dict[tuple[str, str, int], tuple[float, object]] = {}
         self.RATES_CACHE_TTL = 10  # secondes
         self._rates_cache_max_size = 200
+        # 🔧 3 Sept 2026: ADX skip counter — skip symbols with N consecutive ADX rejections
+        # Évite de vérifier GBPUSD (ADX=17.2) ~4x/minute pour un rejet certain.
+        # Reset automatique quand l'ADX remonte au-dessus du seuil.
+        self._adx_consecutive_rejects: dict[str, int] = {}
+        self.ADX_SKIP_THRESHOLD = 10  # skip après 10 rejections consécutives
         self._last_rates_purge = 0.0
         self._rates_purge_interval = 300  # secondes (5min)
 
@@ -175,6 +180,16 @@ class SignalPipeline:
         sym_risk_mult = self.symbol_limits.get(symbol, {}).get("risk_mult", 1.0)
         if sym_risk_mult is not None and sym_risk_mult <= 0:
             return None
+
+        # 🔧 3 Sept 2026: ADX skip — skip symbols with N consecutive ADX rejections
+        # GBPUSD ADX=17.2 structurel → 467 rejets/3h = CPU gaspillé.
+        # Skip après 10 rejets consécutives, reset quand ADX remonte.
+        consecutive_adx = self._adx_consecutive_rejects.get(symbol, 0)
+        if consecutive_adx >= self.ADX_SKIP_THRESHOLD:
+            # Vérifier l'ADX une fois tous les 10 cycles (~2.5 min) pour reset
+            if cycle_count % 10 != 0:
+                return None
+            # Sinon, laisser passer pour re-vérifier l'ADX
 
         # Phase 0: Pre-trade check
         pre_ok, pre_checks = self.risk_manager.pre_trade(symbol)
@@ -1035,8 +1050,11 @@ class SignalPipeline:
         if regime in ("RANGING", "LOW_VOL"):
             adx_thresh = min(adx_thresh, 20)  # Aligné validator RANGING gate (ADX<20 → rejeté)
         if signal_adx < adx_thresh:
-            logger.info(f"  [ADX] {symbol}: ADX={signal_adx:.1f} < {adx_thresh} → skip")
+            self._adx_consecutive_rejects[symbol] = self._adx_consecutive_rejects.get(symbol, 0) + 1
+            logger.info(f"  [ADX] {symbol}: ADX={signal_adx:.1f} < {adx_thresh} → skip (consec={self._adx_consecutive_rejects[symbol]})")
             return False
+        # ADX OK — reset counter
+        self._adx_consecutive_rejects.pop(symbol, None)
         return True
 
     # ── Phase 3: Session Filter — RETIRÉ 26 Juin 2026 ────────────────────

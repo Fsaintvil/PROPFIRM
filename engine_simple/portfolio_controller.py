@@ -73,7 +73,7 @@ from config_simple import MAX_POSITIONS_PER_SYMBOL
 MAX_POSITIONS_PER_DIRECTION = MAX_POSITIONS_TOTAL // 2  # Dynamique depuis config_simple
 MAX_TRADES_PER_GROUP = 3  # 🔧 30 Juil: ↓ 4→3 (aligné sur default.yaml)
 MAX_TRADES_PER_DIRECTION_IN_GROUP = 2  # 🔧 30 Juil: ↓ 3→2 (aligné sur default.yaml)
-MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION = 2  # 🔧 07 Août 2026: 1→2 (mode preuve — 2 BUY simultanés/symbole autorisés)
+MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION = 1  # 🔧 3 Sept 2026: 2→1. Évite double exposition (XAUUSD 2 BUY négatifs simultanés)
 
 
 class PortfolioController:

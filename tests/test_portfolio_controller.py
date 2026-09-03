@@ -338,13 +338,11 @@ class TestCanOpenHighConfidence:
 
     def test_block_second_same_dir_same_symbol_hc(self):
         pc = PortfolioController()
-        # 🔧 07 Août 2026 (mode preuve): MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION 1→2.
-        # 1 position BUY ZZZ_USD → la 2e est AUTORISÉE (max 2/direction).
-        # La 3e est bloquée (testé dans test_still_block_at_direction_limit_hc).
+        # 🔧 3 Sept 2026: MAX_POSITIONS_PER_SYMBOL_PER_DIRECTION = 1.
+        # 1 position BUY ZZZ_USD → la 2e est BLOQUÉE (max 1/direction).
         sym_positions = [MAKE_POSITION("ZZZ_USD", "BUY", 0.1, 1.10)]
         can, reason = pc.can_open_position("ZZZ_USD", "BUY", sym_positions, high_confidence=True)
-        assert can is True
-        assert "HIGH CONFIDENCE" in reason
+        assert can is False
 
     def test_block_third_same_dir_same_symbol_hc(self):
         pc = PortfolioController()

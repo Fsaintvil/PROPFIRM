@@ -1102,14 +1102,21 @@ class FTMOProtector:
         daily_equity_change = current_equity - self.daily_start_equity
         daily_pnl_pct = daily_equity_change / max(self.initial_balance, 1)
         profit_limit = self.config.get("DAILY_PROFIT_LIMIT_PCT", 0.008)
+        was_reduced = self._daily_profit_reduced
         if daily_pnl_pct >= profit_limit:
             self._daily_profit_reduced = True
-            logger.info(
-                f"  [PROFIT LIMIT] daily PnL ${self.daily_stats['pnl']:.0f} "
-                f"({daily_pnl_pct:.3%}) >= {profit_limit:.3%} — risk reduit a 25%"
-            )
+            # 🔧 3 Sept 2026: log throttled — only on state change (was not reduced → now reduced)
+            if not was_reduced:
+                logger.info(
+                    f"  [PROFIT LIMIT] daily PnL ${self.daily_stats['pnl']:.0f} "
+                    f"({daily_pnl_pct:.3%}) >= {profit_limit:.3%} — risk reduit a 25%"
+                )
         else:
             self._daily_profit_reduced = False
+            if was_reduced:
+                logger.info(
+                    f"  [PROFIT LIMIT] cleared — daily PnL {daily_pnl_pct:.3%} < {profit_limit:.3%}"
+                )
         if current_equity > self.peak_equity:
             self.peak_equity = current_equity
             self.challenge.peak_equity = current_equity  # Sync challenge tracker
