@@ -27,13 +27,13 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # 🔧 4 Sept 2026: 13→10 symboles. US30/NZDUSD/XAUUSD gelés (PF<1, WR<25%)
+    # 🔧 4 Sept 2026: 13→10 symboles. US30/NZDUSD/EURUSD gelés (PF<1, WR<25%, noise)
     assert len(cfg.trading.symbols) == 10
     assert "US100.cash" in cfg.trading.symbols
     assert "JP225.cash" in cfg.trading.symbols
     assert "SOLUSD" in cfg.trading.symbols
     assert "BTCUSD" in cfg.trading.symbols
-    assert "EURUSD" in cfg.trading.symbols
+    assert "XAUUSD" in cfg.trading.symbols
     assert "USDJPY" in cfg.trading.symbols
     assert "USDCAD" in cfg.trading.symbols
     assert "AUDUSD" in cfg.trading.symbols
@@ -65,10 +65,10 @@ def test_symbol_limits_defaults():
     assert "BTCUSD" in cfg.symbol_limits
     assert cfg.symbol_limits["XAUUSD"].max_lot == 1.5  # 🔧 2 Sept 2026: user request max_lot 1.0-2.0
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
-    # 🔧 4 Sept 2026: XAUUSD risk_mult 0.8→0.0 (gelé, WR 23%, PF 1.09)
+    # 🔧 4 Sept 2026: XAUUSD risk_mult 0.0→1.0 (réactivé, +$676 hier, WR 71%)
     assert (
-        cfg.symbol_limits["XAUUSD"].risk_mult == 0.0
-    )  # 🔴 GEL 4 Sept 2026
+        cfg.symbol_limits["XAUUSD"].risk_mult == 1.0
+    )  # 🔓 RÉACTIVÉ 4 Sept 2026
     assert (
         cfg.symbol_limits["XAUUSD"].min_score == 0.85
     )  # 🔧 2 Sept 2026: user request 0.80→0.85
@@ -98,7 +98,7 @@ def test_symbol_limits_new_portfolio():
     assert btc.risk_mult == 1.0  # 🔓 DÉBLOQUÉ 13 Août 2026 (décision utilisateur — groupe CRYPTO indépendant)
     assert btc.allow_buys is True
     assert btc.allow_shorts is True  # 🔧 FIX 28 Août 2026: SELL sélectif réactivé (marché baissier)
-    assert btc.max_lot == 2.0  # 🔧 2 Sept 2026: user request max_lot 2.0 pour BTCUSD
+    assert btc.max_lot == 3.5  # 🔧 4 Sept 2026: 2.0→3.5. BTCUSD seul edge prouvé, ×1.75
     # 🔧 28 Août 2026: min_score unifié à 0.65 pour tous les symboles
     assert btc.min_score == 0.65
 

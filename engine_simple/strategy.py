@@ -118,7 +118,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.85,  # 🔧 3 Sept 2026: −10% (0.85→0.77)
         "adx_thresh": 22,
         "min_rr": 2.0,
-        "risk_mult": 0.0,  # 🔴 GEL 4 Sept 2026 — WR 23%, PF 1.09, -$872 SL, -$415 time_stop
+        "risk_mult": 1.0,  # 🔓 RÉACTIVÉ 4 Sept 2026 — +$676 hier, WR 71%, gel obsolète
         #    AVERTISSEMENT historique: le 14 Août seul config/default.yaml avait été mis à jour
         #    (0.0→1.0) mais PAS strategy.py → XAUUSD restait gelé car get_symbol_param lit
         #    strategy.py, PAS le YAML (c'était "la doc"). Aligné le 14 Aout sur la décision
@@ -293,7 +293,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.69,  # 🔧 10 Juil 2026: ↑ 0.80→0.85 — symbole réactivé, sélectif max
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 1.0,  # 🔧 3 Sept 2026: EDGE confirmé (PF 1.53)
+        "risk_mult": 0.0,  # 🔴 GEL 4 Sept 2026 — EURUSD noise, $16 PnL sur 5 trades, breakeven pur
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },

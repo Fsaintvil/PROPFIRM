@@ -8,7 +8,7 @@ trading:
   - JP225.cash
   - SOLUSD
   - BTCUSD
-  - EURUSD
+  - XAUUSD
   - GBPUSD
   - USDJPY
   - USDCAD
@@ -61,7 +61,7 @@ symbol_limits:
     execution_timeframe: M15
     max_lot: 1.5  # 🔧 FIX 30 Août 2026: réduit 0.04→0.03. XAUUSD p=0.0008 (significativement perdant, Quant Auditor). Les SELL fonctionnent (+$77 flottant) mais les BUY historiques sont catastrophiques (WR 23%).
     min_lot: 0.01
-    risk_mult: 0.0  # 🔴 GEL 4 Sept 2026 — WR 23%, PF 1.09, -$872 SL, -$415 time_stop
+    risk_mult: 1.0  # 🔓 RÉACTIVÉ 4 Sept 2026 — +$676 hier, WR 71%, gel obsolète
     min_score: 0.85  # 🔧 31 Aout 2026: 0.75→0.80. XAUUSD restrictif (WR 25%, PF 1.09), seuls les signaux forts passent
     # 🔧 19 Août 2026 (Council): sécurisation des gains XAUUSD.
     # WR GR 28.6% mais asymétrie positive (gros winners) → verrouiller plus tôt.
@@ -92,7 +92,7 @@ symbol_limits:
   BTCUSD:
     timeframe: H1
     execution_timeframe: M15
-    max_lot: 2.0  # 🔧 2 Sept 2026: 0.08→0.12. BTCUSD PF 4.34, p=0.0012, seul edge prouvé, maximiser collecte
+    max_lot: 3.5  # 🔧 4 Sept 2026: 2.0→3.5. BTCUSD PF 4.34, p=0.0012, seul edge prouvé, ×1.75
     min_lot: 0.01
     risk_mult: 1.0
     min_score: 0.65
@@ -128,7 +128,7 @@ symbol_limits:
     timeframe: H1
     max_lot: 1.0
     min_lot: 0.01
-    risk_mult: 0.8  # 🔧 1 Sept 2026: 1.0→0.8. PF 1.53 marginal, W/L ~1.0 = barely above noise
+    risk_mult: 0.0  # 🔴 GEL 4 Sept 2026 — noise, $16 PnL sur 5 trades, breakeven pur
     min_score: 0.7  # 🔧 2 Sept 2026: 0.60→0.65 — aligné sur tous les autres symboles
     max_spread_points: 45
     adx_thresh: 22
