@@ -259,6 +259,9 @@ class Trailer:
         close_vol = position.volume * 0.75
         if close_vol < 0.01:
             return
+        # 🔧 4 Sept 2026: guard — si close_vol >= 99% du volume, skip (min-lot = full close)
+        if close_vol >= position.volume * 0.99:
+            return
         info = self.mt5.get_symbol_info(position.symbol)
         if info is None:
             return
@@ -353,6 +356,7 @@ class Trailer:
         # Les trades doivent courir jusqu'au BE, SL ou TP.
         # La fermeture pré-weekend est gérée séparément si nécessaire.
         return
+        ticket = str(position.ticket)  # 🔧 4 Sept 2026: défini AVANT le dead code (réactivation safe)
         ot = self.position_open_times[ticket]["open_time"]
         if isinstance(ot, (int, float)):
             ot = datetime.fromtimestamp(ot, tz=timezone.utc)

@@ -1317,7 +1317,7 @@ class SignalPipeline:
             bb_width = bb_upper - bb_lower
 
             # Keltner Channels (20, 1.5×ATR)
-            atr_val = self._get_atr(symbol, "H1", count=15)
+            atr_val = self._get_atr(symbol, period=15)
             if atr_val is None or atr_val <= 0:
                 return
             kc_upper = sma + 1.5 * atr_val

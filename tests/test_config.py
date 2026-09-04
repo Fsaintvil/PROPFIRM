@@ -27,25 +27,18 @@ from config.schema import (
 def test_load_default_config():
     cfg = load_config("default")
     assert cfg.robot.magic == 999001
-    # 🔧 14 Aout 2026 - XAUUSD + PAIRES PRIMAIRES ACTIVES (decision utilisateur)
-    # 13 symboles: 5 repositionnés (PF edge démontré) + XAUUSD + 7 paires FOREX majeures.
-    # Garde-fous: BUY-only, risk_mult 1.0, min_score 0.65.
-    # Backup: config/backup_default_20260814_avant_xauusd_forex.yaml
-    assert len(cfg.trading.symbols) == 13
-    assert "US100.cash" in cfg.trading.symbols  # 🔧 PF 1.20, 6/6 annees positives
-    assert "US30.cash" in cfg.trading.symbols  # 🔧 PF 1.14, 8/8 annees positives
-    assert "JP225.cash" in cfg.trading.symbols  # 🔧 PF 1.23, 6/6 annees positives
-    assert "SOLUSD" in cfg.trading.symbols  # 🔧 PF 1.25, spread live 3 pts
-    assert "BTCUSD" in cfg.trading.symbols  # 🔧 PF 1.18, groupe CRYPTO independant (13/08)
-    # 🔧 14 Aout 2026 - REACTIVATION utilisateur (XAUUSD + paires primaires)
-    assert "XAUUSD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (decision utilisateur)
-    assert "EURUSD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
-    assert "USDJPY" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
-    assert "USDCAD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
-    assert "AUDUSD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
-    assert "NZDUSD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
-    assert "USDCHF" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
-    assert "GBPUSD" in cfg.trading.symbols  # 🔧 REACTIVE 14 Aout 2026 (paire primaire)
+    # 🔧 4 Sept 2026: 13→10 symboles. US30/NZDUSD/XAUUSD gelés (PF<1, WR<25%)
+    assert len(cfg.trading.symbols) == 10
+    assert "US100.cash" in cfg.trading.symbols
+    assert "JP225.cash" in cfg.trading.symbols
+    assert "SOLUSD" in cfg.trading.symbols
+    assert "BTCUSD" in cfg.trading.symbols
+    assert "EURUSD" in cfg.trading.symbols
+    assert "USDJPY" in cfg.trading.symbols
+    assert "USDCAD" in cfg.trading.symbols
+    assert "AUDUSD" in cfg.trading.symbols
+    assert "USDCHF" in cfg.trading.symbols
+    assert "GBPUSD" in cfg.trading.symbols
     assert cfg.risk.per_trade_pct == 0.02  # 🔧 3 Sept 2026: CHALLENGE MODE
     assert cfg.risk.max_dd_pct == 0.10
     assert cfg.risk.min_rr_ratio == 2.0  # conservé
@@ -72,10 +65,10 @@ def test_symbol_limits_defaults():
     assert "BTCUSD" in cfg.symbol_limits
     assert cfg.symbol_limits["XAUUSD"].max_lot == 1.5  # 🔧 2 Sept 2026: user request max_lot 1.0-2.0
     assert cfg.symbol_limits["XAUUSD"].min_lot == 0.01
-    # 🔧 1 Sept 2026: XAUUSD risk_mult 1.0→0.8 (WR 25% justifie réduction)
+    # 🔧 4 Sept 2026: XAUUSD risk_mult 0.8→0.0 (gelé, WR 23%, PF 1.09)
     assert (
-        cfg.symbol_limits["XAUUSD"].risk_mult == 0.8
-    )  # 🔧 1 Sept 2026: WR 25% → réduction exposure
+        cfg.symbol_limits["XAUUSD"].risk_mult == 0.0
+    )  # 🔴 GEL 4 Sept 2026
     assert (
         cfg.symbol_limits["XAUUSD"].min_score == 0.85
     )  # 🔧 2 Sept 2026: user request 0.80→0.85

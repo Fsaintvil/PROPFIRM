@@ -150,10 +150,11 @@ class TestFTMOCycle:
 
     def test_check_price_staleness_stale(self):
         mt5 = make_mock_mt5()
+        ftmo = make_ftmo(mt5)
+        # 🔧 4 Sept 2026: set stale tick AFTER ftmo init (offset was measured with fresh tick)
         old_tick = MagicMock(ask=1.1, bid=1.099)
         old_tick.time = time.time() - 300
         mt5.get_tick.return_value = old_tick
-        ftmo = make_ftmo(mt5)
         assert not ftmo.check_price_staleness("EURUSD", max_age=60)
 
     def test_volatility_circuit_breaker(self):

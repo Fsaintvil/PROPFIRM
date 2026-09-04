@@ -799,7 +799,9 @@ class FTMOProtector:
         if tick_time is None:
             return False
         try:
-            age = time.time() - float(tick_time)
+            # 🔧 4 Sept 2026: appliquer server_offset pour calculer l'âge réel
+            _srv_off = getattr(self, "_server_offset_s", 0) or 0
+            age = time.time() - (float(tick_time) - _srv_off)
         except (TypeError, ValueError):
             # Si on ne peut pas déterminer l'âge, CONSERVATEUR : considérer comme stale
             return False

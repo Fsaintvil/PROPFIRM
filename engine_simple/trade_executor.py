@@ -323,7 +323,7 @@ class TradeExecutor:
                         # chacun -338$ / -113$). Fix : on soustrait l'offset serveur mesuré
                         # (_server_offset_s, fix time-stop du 19/08) AVANT de calculer l'age.
                         server_offset = getattr(getattr(self, "ftmo", None), "_server_offset_s", None)
-                        if not isinstance(server_offset, (int, float)) or server_offset == 0:
+                        if not isinstance(server_offset, (int, float)):
                             # 🔧 FIX 28 Août 2026: si offset=0 (non mesuré), logger un warning
                             # et skip le price-dedup proprement au lieu de le rendre inerte silencieusement.
                             logger.debug(
@@ -670,7 +670,9 @@ class TradeExecutor:
                 for p in our_positions:
                     if getattr(p, "symbol", None) == symbol:
                         pos_time = getattr(p, "time", 0) or 0
-                        if pos_time and (time.time() - pos_time) < 60:
+                        # 🔧 4 Sept 2026: appliquer server_offset pour comparaison correcte
+                        _srv_off = getattr(getattr(self, "ftmo", None), "_server_offset_s", 0) or 0
+                        if pos_time and (time.time() - (pos_time - _srv_off)) < 60:
                             logger.info(
                                 f"  [POST-TIMEOUT] {symbol}: position #{getattr(p, 'ticket', '?')} "
                                 f"ouverte récemment (time={pos_time}) — ordre probablement rempli, "

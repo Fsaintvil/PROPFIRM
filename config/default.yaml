@@ -5,17 +5,14 @@ robot:
 trading:
   symbols:
   - US100.cash
-  - US30.cash
   - JP225.cash
   - SOLUSD
   - BTCUSD
-  - XAUUSD
   - EURUSD
   - GBPUSD
   - USDJPY
   - USDCAD
   - AUDUSD
-  - NZDUSD
   - USDCHF
   max_positions: 99999           # 🔧 2 Sept 2026: DÉSACTIVÉ pour collecte maximale
   max_positions_per_symbol: 99999  # 🔧 2 Sept 2026: DÉSACTIVÉ pour collecte maximale
@@ -52,8 +49,8 @@ risk:
   max_risk_amount: 4500.0  # 🔧 3 Sept 2026: CHALLENGE MODE — ×2.5 (1800→4500)
   min_rr_ratio: 2.0
   atr_multiplier: 1.5
-  cooldown_minutes: 0  # 🔧 2 Sept 2026: DÉSACTIVÉ pour collecte maximale
-  auto_pause_losses: 999  # 🔧 2 Sept 2026: DÉSACTIVÉ pour collecte maximale (circuit breaker off)
+  cooldown_minutes: 5  # 🔧 4 Sept 2026: réactivé (0→5). Protège contre cascades de pertes
+  auto_pause_losses: 5  # 🔧 4 Sept 2026: réactivé (999→5). 5 pertes = pause obligatoire
   conservation_mode_enabled: false
   max_spread_points: 120
   circuit_breaker_dd_pct: 0.08
@@ -64,7 +61,7 @@ symbol_limits:
     execution_timeframe: M15
     max_lot: 1.5  # 🔧 FIX 30 Août 2026: réduit 0.04→0.03. XAUUSD p=0.0008 (significativement perdant, Quant Auditor). Les SELL fonctionnent (+$77 flottant) mais les BUY historiques sont catastrophiques (WR 23%).
     min_lot: 0.01
-    risk_mult: 0.8  # 🔧 1 Sept 2026: 1.0→0.8. WR 25% justifie réduction exposure
+    risk_mult: 0.0  # 🔴 GEL 4 Sept 2026 — WR 23%, PF 1.09, -$872 SL, -$415 time_stop
     min_score: 0.85  # 🔧 31 Aout 2026: 0.75→0.80. XAUUSD restrictif (WR 25%, PF 1.09), seuls les signaux forts passent
     # 🔧 19 Août 2026 (Council): sécurisation des gains XAUUSD.
     # WR GR 28.6% mais asymétrie positive (gros winners) → verrouiller plus tôt.
@@ -273,7 +270,7 @@ symbol_limits:
     timeframe: H1
     max_lot: 1.0  # 🔧 1 Sept 2026: 0.05→0.03. Défensif — disabled symbol ne devrait pas avoir de gros lot
     min_lot: 0.01
-    risk_mult: 1.0  # 🔧 3 Sept 2026: dégelé (récolte continuation)
+    risk_mult: 0.0  # 🔴 GEL 4 Sept 2026 — WR 14%, 7 trades, 6 pertes consécutives
     max_spread_points: 40
     adx_thresh: 22
     allow_buys: true
@@ -673,7 +670,7 @@ symbol_limits:
     timeframe: H1
     max_lot: 1.5  # 🔧 1 Sept 2026: 0.06→0.01. Défensif — PF 0.18 ne justifie pas un lot égal à BTCUSD
     min_lot: 0.01
-    risk_mult: 1.0  # 🔧 3 Sept 2026: dégelé (récolte continuation)
+    risk_mult: 0.0  # 🔴 GEL 4 Sept 2026 — PF 0.17, 6 trades tous SL, RR 0.42
     max_spread_points: 300
     adx_thresh: 22
     allow_buys: true

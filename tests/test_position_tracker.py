@@ -177,7 +177,7 @@ class TestPositionTracker:
         mock_pos.magic = cfg.ROBOT_MAGIC
         mock_pos.ticket = 101
         mock_pos.type = 1  # SELL
-        mock_pos.symbol = "US30.cash"  # ?? 13 Aout 2026 (EURUSD retiré - PF 0.74 après coûts)
+        mock_pos.symbol = "GBPUSD"  # 🔧 4 Sept 2026: US30 gelé, remplacé par GBPUSD actif
         mock_pos.volume = 0.05
         mock_pos.price_open = 1.1000
         mock_pos.sl = 1.1100

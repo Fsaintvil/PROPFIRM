@@ -118,7 +118,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.85,  # 🔧 3 Sept 2026: −10% (0.85→0.77)
         "adx_thresh": 22,
         "min_rr": 2.0,
-        "risk_mult": 1.0,  # 🔧 ALIGNÉ 14 Aout 2026: 0.0→1.0 (décision utilisateur — réactivation XAUUSD)
+        "risk_mult": 0.0,  # 🔴 GEL 4 Sept 2026 — WR 23%, PF 1.09, -$872 SL, -$415 time_stop
         #    AVERTISSEMENT historique: le 14 Août seul config/default.yaml avait été mis à jour
         #    (0.0→1.0) mais PAS strategy.py → XAUUSD restait gelé car get_symbol_param lit
         #    strategy.py, PAS le YAML (c'était "la doc"). Aligné le 14 Aout sur la décision
@@ -263,7 +263,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.80,  # 🔧 3 Sept 2026: US30 PF 0.18 — filtrage strict
         "adx_thresh": 22,
         "min_rr": 1.5,
-        "risk_mult": 1.0,  # 🔧 3 Sept 2026: dégelé (récolte continuation)
+        "risk_mult": 0.0,  # 🔴 GEL 4 Sept 2026 — PF 0.17, 6 trades tous SL, RR 0.42
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },
@@ -391,7 +391,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.79,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 22,
         "min_rr": 1.3,
-        "risk_mult": 1.0,
+        "risk_mult": 0.0,  # 🔴 GEL 4 Sept 2026 — WR 14%, 7 trades, 6 pertes consécutives
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },
@@ -646,7 +646,7 @@ SYMBOL_CONFIG = {
         "min_score": 0.79,  # 🔧 14 Juil 2026: ↓ 0.75→0.60 — rétabli, le dynamic min_score (signal_validator) monte si WR<50%
         "adx_thresh": 20,
         "min_rr": 1.5,
-        "risk_mult": 1.0,  # 🔧 ↑ 0.8→1.0 (bon performer)
+        "risk_mult": 0.0,  # 🔴 GEL 4 Sept 2026 — aligné YAML freeze (WR 29.4% live, -$139)
         "cooldown_minutes": 0,
         "auto_pause_losses": 999,
     },

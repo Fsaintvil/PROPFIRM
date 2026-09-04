@@ -492,12 +492,7 @@ class TestMT5DisconnectRecovery:
         mt5.get_account_info.return_value = MagicMock(equity=200000, balance=200000)
         mt5.get_symbol_info.return_value = MagicMock(point=0.0001, digits=5, spread=10)
 
-        old_tick = MagicMock(ask=1.1000, bid=1.0995)
-        old_tick.time = time.time() - 600  # 10 min old
-        mt5.get_tick.return_value = old_tick
-        mt5.ORDER_TYPE_BUY = 0
-        mt5.ORDER_TYPE_SELL = 1
-
+        # 🔧 4 Sept 2026: create ftmo FIRST (measures offset with fresh tick), THEN set stale tick
         ftmo = FTMOProtector(
             mt5,
             dict(
@@ -524,6 +519,10 @@ class TestMT5DisconnectRecovery:
                 CIRCUIT_BREAKER_DD_PCT=0.08,
             ),
         )
+        # 🔧 4 Sept 2026: set stale tick AFTER ftmo init (offset measured with fresh tick)
+        old_tick = MagicMock(ask=1.1000, bid=1.0995)
+        old_tick.time = time.time() - 600  # 10 min old
+        mt5.get_tick.return_value = old_tick
         assert not ftmo.check_price_staleness("EURUSD", max_age=60)
 
     def test_ftmo_recovers_after_reconnection(self):
