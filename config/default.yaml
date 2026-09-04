@@ -584,7 +584,7 @@ symbol_limits:
     min_score: 0.65
   SOLUSD:
     timeframe: H1
-    max_lot: 2.0  # 🔧 3 Sept 2026: 1.5→2.0. SOLUSD PF 4.66, edge fort, maximiser collecte
+    max_lot: 2.5  # 🔧 4 Sept 2026: 2.0→2.5. SOLUSD PF 4.66 sur 84 trades, edge le plus solide
     min_lot: 0.05
     risk_mult: 0.8  # 🔧 1 Sept 2026: 1.0→0.8. Compense le PF inflaté (vrai PF ~2.5 pas 4.66)
     max_spread_points: 120
@@ -734,6 +734,7 @@ symbol_limits:
     risk_mult: 0.5  # 🔧 1 Sept 2026: 1.0→0.5. 0 GR trades, backtest PF 1.23 mais non validé en live
     max_spread_points: 1200
     adx_thresh: 18  # 🔧 1 Sept 2026: 22→18. 617 rejets ADX, seuil trop strict pour indice asiatique
+    skip_h4_filter: true  # 🔧 4 Sept 2026: H4 direction filter bloquait 100% des signaux (8/8 rejections)
     allow_buys: true
     allow_shorts: true
     momentum_period: 20
