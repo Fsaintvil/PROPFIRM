@@ -1213,6 +1213,16 @@ class FTMOProtector:
             if self.global_cooldown_until is not None and now < self.global_cooldown_until:
                 remaining = int((self.global_cooldown_until - now).total_seconds() // 60)
                 return False, f"Cooldown global: {remaining}min restantes ({consec} pertes)"
+            # 🔧 4 Sept 2026: HARD STOP re-arm — si stage 3 cooldown expiré mais
+            # consec encore ≥10, ré-armer le cooldown (robot ne reprend qu'après win)
+            if stage == 3 and consec >= 10:
+                self._circuit_stage_served = 3
+                self.global_cooldown_until = now + timedelta(minutes=stage_cooldown)
+                logger.critical(
+                    f"HARD STOP ({symbol}): {consec} pertes consécutives! "
+                    f"Cooldown {stage_cooldown}min — vérifier le marché"
+                )
+                return False, f"Cooldown: {stage_cooldown}min ({consec} pertes consécutives)"
             # Nouveau palier atteint (escalade) → armer le cooldown de CE palier
             if stage > self._circuit_stage_served:
                 self._circuit_stage_served = stage
